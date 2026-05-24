@@ -1,0 +1,15 @@
+package com.politikapp.backend.module1.repository;
+
+import com.politikapp.backend.module1.entity.Politician;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface PoliticianRepository extends JpaRepository<Politician, UUID> {
+    List<Politician> findByStatusOrderByFullNameAsc(String status);
+
+    List<Politician> findByFullNameContainingIgnoreCaseAndStatusOrderByFullNameAsc(String fullName, String status);
+
+    Optional<Politician> findByWikidataId(String wikidataId);
+}

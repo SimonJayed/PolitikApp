@@ -1,0 +1,530 @@
+.appShell {
+  min-height: 100vh;
+  background: #f8fafc;
+}
+
+.topBar {
+  align-items: end;
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  padding: 28px clamp(20px, 4vw, 48px);
+}
+
+.eyebrow {
+  color: #0f766e;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin: 0 0 4px;
+  text-transform: uppercase;
+}
+
+.topBar h1,
+.profileSummary h2,
+.timeline h2,
+.matrix h2 {
+  color: #111827;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+.topBar h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 2.5rem;
+}
+
+.viewTabs {
+  background: #eef2f7;
+  border: 1px solid #d7dee8;
+  border-radius: 8px;
+  display: flex;
+  padding: 4px;
+}
+
+.viewTabs button {
+  background: transparent;
+  color: #475569;
+  min-width: 96px;
+}
+
+.viewTabs button.active {
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+  color: #111827;
+}
+
+.workspace {
+  display: grid;
+  gap: 20px;
+  padding: 28px clamp(20px, 4vw, 48px) 48px;
+}
+
+.directoryWorkspace {
+  align-items: start;
+}
+
+.editorPanel,
+.lookupBar,
+.directoryToolbar,
+.politicianList,
+.importedProfile,
+.profileSummary,
+.timeline,
+.matrix {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.directoryToolbar {
+  align-items: end;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  padding: 18px;
+}
+
+.searchBar {
+  align-items: end;
+  display: grid;
+  flex: 1;
+  gap: 12px;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+}
+
+.directoryGrid {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+}
+
+.politicianList {
+  display: grid;
+  gap: 8px;
+  max-height: calc(100vh - 240px);
+  overflow: auto;
+  padding: 12px;
+}
+
+.politicianRow {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  min-height: 66px;
+  padding: 12px;
+  text-align: left;
+}
+
+.politicianRow.active {
+  background: #ecfdf5;
+  border-color: #5eead4;
+}
+
+.politicianRow span {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35rem;
+}
+
+.politicianRow small {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.1rem;
+}
+
+.importedProfile {
+  display: grid;
+  gap: 20px;
+  padding: 22px;
+}
+
+.profileHero {
+  align-items: center;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 132px minmax(0, 1fr);
+}
+
+.profileHero h2 {
+  color: #111827;
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 2.5rem;
+  margin: 0 0 8px;
+}
+
+.profileHero p {
+  color: #4b5563;
+  margin: 0;
+}
+
+.portraitFrame {
+  align-items: center;
+  aspect-ratio: 1;
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  color: #1e3a8a;
+  display: flex;
+  font-size: 2rem;
+  font-weight: 800;
+  justify-content: center;
+  overflow: hidden;
+  width: 132px;
+}
+
+.portraitFrame img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.profileFacts {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.factItem {
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+  padding: 12px;
+}
+
+.factItem span {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.factItem strong {
+  color: #111827;
+  font-size: 0.95rem;
+  line-height: 1.3rem;
+  overflow-wrap: anywhere;
+}
+
+.biographyBlock {
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 10px;
+  padding-top: 18px;
+}
+
+.biographyBlock h2 {
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.75rem;
+  margin: 0;
+}
+
+.biographyBlock p {
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  margin: 0;
+}
+
+.biographyBlock a {
+  color: #0f766e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.editorPanel {
+  display: grid;
+  gap: 18px;
+  max-width: 920px;
+  padding: 24px;
+}
+
+.lookupBar {
+  align-items: end;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  padding: 18px;
+}
+
+.lookupBar.twoColumn {
+  grid-template-columns: minmax(220px, 1fr) minmax(220px, 1fr) auto;
+}
+
+.fieldRow {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+label {
+  color: #1f2937;
+  display: grid;
+  font-size: 0.875rem;
+  font-weight: 600;
+  gap: 7px;
+  line-height: 1.25rem;
+  text-align: left;
+}
+
+input,
+select,
+textarea {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-sizing: border-box;
+  color: #111827;
+  font: 1rem/1.5rem var(--sans);
+  min-height: 44px;
+  padding: 9px 11px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+button:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.24);
+  outline-offset: 1px;
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  font: 700 0.95rem/1rem var(--sans);
+  min-height: 42px;
+  padding: 0 18px;
+}
+
+button[type='submit'] {
+  background: #134e4a;
+  color: #ffffff;
+}
+
+button:disabled {
+  cursor: progress;
+  opacity: 0.68;
+}
+
+.formFooter {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.sourceBadge {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 999px;
+  color: #9a3412;
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1rem;
+  padding: 8px 12px;
+}
+
+.sourceBadge.approved {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.statusLine {
+  border-radius: 6px;
+  font-weight: 600;
+  margin: 0;
+  padding: 12px 14px;
+}
+
+.statusLine.success {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.statusLine.error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.statusLine.loading {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.dashboardGrid,
+.comparisonGrid {
+  display: grid;
+  gap: 20px;
+}
+
+.comparisonGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.profileSummary {
+  display: grid;
+  gap: 8px;
+  padding: 22px;
+}
+
+.profileSummary h2,
+.timeline h2,
+.matrix h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.75rem;
+}
+
+.profileSummary p {
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  margin: 0;
+}
+
+.kpiGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.kpiGrid.compact {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.kpiCard {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-left: 4px solid #0f766e;
+  border-radius: 8px;
+  display: grid;
+  gap: 6px;
+  min-height: 84px;
+  padding: 16px;
+}
+
+.kpiCard span {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.kpiCard strong {
+  color: #111827;
+  font-size: 1.35rem;
+  line-height: 1.75rem;
+  overflow-wrap: anywhere;
+}
+
+.timeline,
+.matrix {
+  display: grid;
+  gap: 14px;
+  padding: 22px;
+}
+
+.matrix {
+  grid-column: 1 / -1;
+}
+
+.timeline.compact {
+  border: 0;
+  padding: 0;
+}
+
+.timelineItem,
+.matrixRow {
+  border-top: 1px solid #e5e7eb;
+  display: grid;
+  gap: 8px;
+  padding-top: 14px;
+}
+
+.timelineItem div {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.timelineItem strong,
+.matrixRow h3 {
+  color: #1f2937;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5rem;
+  margin: 0;
+}
+
+.timelineItem span,
+.emptyState {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.timelineItem p {
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  margin: 0;
+}
+
+.timelineItem a {
+  color: #0f766e;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+@media (max-width: 900px) {
+  .topBar,
+  .directoryToolbar,
+  .formFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .viewTabs,
+  .lookupBar,
+  .lookupBar.twoColumn,
+  .searchBar,
+  .directoryGrid,
+  .fieldRow,
+  .comparisonGrid,
+  .profileHero,
+  .profileFacts,
+  .kpiGrid,
+  .kpiGrid.compact {
+    grid-template-columns: 1fr;
+  }
+
+  .viewTabs {
+    display: grid;
+    width: 100%;
+  }
+
+  .politicianList {
+    max-height: none;
+  }
+}
