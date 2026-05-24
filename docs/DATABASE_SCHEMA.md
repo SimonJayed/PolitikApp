@@ -54,4 +54,18 @@ This document defines the persistent relational data layer schemas deployed on t
   * `submission_id`: `UUID` (Foreign Key -> `profile_edit_submissions.submission_id`, ON DELETE CASCADE)
   * `politician_id`: `UUID` (Foreign Key -> `politicians.politician_id`, ON DELETE CASCADE)
   * `queue_status`: `VARCHAR(50)` (Default: 'PENDING') -- 'PENDING', 'JURY_REVIEW', 'REVISION_REQUIRED', 'PUBLISHED', 'REJECTED'
-  * `escalation_flag`: `BOOLEAN` (Default: false
+  * `escalation_flag`: `BOOLEAN` (NOT NULL, Default: false) -- Flags if a tie deadlock or timeout occurred
+  * `assigned_at`: `TIMESTAMP` (Default: CURRENT_TIMESTAMP) -- Used by background daemon to compute 24-hour timeout limits
+  * `created_at`: `TIMESTAMP` (Default: CURRENT_TIMESTAMP)
+  * `updated_at`: `TIMESTAMP` (Default: CURRENT_TIMESTAMP)
+
+## 🗳️ 5. Table: `jury_votes`
+* **Purpose:** Stores individual anonymous verification ballots cast by peer reviewers to calculate real-time community consensus.
+* **Columns:**
+  * `vote_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
+  * `queue_id`: `UUID` (Foreign Key -> `moderation_queue.queue_id`, ON DELETE CASCADE)
+  * `peer_id`: `UUID` (Foreign Key -> `contributors.contributor_id`, ON DELETE RESTRICT) -- Identifies the reviewer
+  * `vote_type`: `VARCHAR(50)` (NOT NULL) -- 'AGREE', 'DISAGREE', 'FLAG'
+  * `vote_weight`: `INTEGER` (NOT NULL, Default: 1) -- Stores the scaled influence multiplier (1 or 5) applied at session runtime
+  * `vote_reason`: `TEXT` (NOT NULL) -- Reviewer's justification statement string
+  * `created_at`: `TIMESTAMP` (Default: CURRENT_TIMESTAMP)
