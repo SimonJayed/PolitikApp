@@ -32,14 +32,12 @@ The backend also contains the migration in:
 backend/src/main/resources/db/migration/V1__create_politikapp_core_schema.sql
 ```
 
-To let Spring Boot create the tables through Flyway, point it to Supabase and enable Flyway:
+The backend requires Supabase/PostgreSQL environment variables. Without them, Spring Boot will fail to start instead of falling back to a local database.
 
 ```powershell
 $env:DATABASE_URL="jdbc:postgresql://db.wqzlesfkieqjkvdjdjng.supabase.co:5432/postgres?sslmode=require"
 $env:DATABASE_USERNAME="postgres"
 $env:DATABASE_PASSWORD="your-supabase-database-password"
-$env:DATABASE_DRIVER="org.postgresql.Driver"
-$env:JPA_DATABASE_PLATFORM="org.hibernate.dialect.PostgreSQLDialect"
 $env:JPA_DDL_AUTO="validate"
 $env:FLYWAY_ENABLED="true"
 mvn -f backend\pom.xml spring-boot:run
