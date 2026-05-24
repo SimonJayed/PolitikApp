@@ -1,4 +1,4 @@
-"# PolitikApp" 
+# PolitikApp
 
 ## Git Workflow Guidelines
 
