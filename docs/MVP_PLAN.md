@@ -1,7 +1,7 @@
 # PolitikApp MVP Development Plan & Vertical Slice Execution Strategy
 
-**Document Status:** RELEASED / ALIGNED WITH MAY 2026 SDD
-**Target Milestone:** Phase 3 MVP - 60% Vertical Slice Connection Strategy
+**Document Status:** RELEASED / ALIGNED WITH MAY 2026 SDD  
+**Target Milestone:** Phase 3 MVP - 80% Enhanced Vertical Slice Connection Strategy  
 
 ---
 
@@ -24,35 +24,24 @@
     3. `profile_edit_submissions` (Evidentiary data payloads, source whitelist indicators).
     4. `moderation_queue` (Community review tickets, velocity markers, escalation trackers).
     5. `jury_votes` (Double-blind ballot logs, scaled user weights).
+    6. **`reputation_audit_logs` [NEW]:** tracks real-time score additions, subtractions, and penalty calculations for audit trails.
 * [ ] **2.2 Index Deployment Optimization**
   * Establish query performance lookups (`idx_pending_edits_politician_status`) across foreign keys to optimize runtime retrieval cycles for dashboards.
+  * **Index Expansion [NEW]:** Deploy `idx_reputation_logs_peer_date` to accelerate chronological score aggregation over long-term jury histories.
 
 ---
 
 ## ⚙️ Phase 3: Backend Controller & Service Layer Engineering
-* [ ] **3.1 Module 1: Source-First Aggregator Logic**
+* [ ] **3.1 Module 1: Source-First Profile Aggregator Logic**
   * **Build `EditSubmissionController`:** Expose `POST /api/submissions` to capture incoming crowdsourced adjustments.
   * **Build `SourceValidationService`:** Implement a defensive interceptor gate verifying incoming URLs against approved government domain structures (`.gov.ph` and `.edu.ph`) using strict regular expression whitelist checks. Throw an explicit `422 Unprocessable Entity` response map if validation evaluates to False.
   * **Build `DashboardService` & `KPIComputationService`:** Implement optimized read routines for `GET /api/politicians/{politicianId}/dashboard`. Calculate the Legislative Efficiency Ratio on-the-fly in active server memory loops to bypass database rows calculation bloat.
 * [ ] **3.2 Module 2: Asynchronous Judicial Moderation Engine**
   * **Build `ModerationController`:** Expose `GET /api/moderation/pending` to serve the queue deck views.
   * **Implement Privacy Masking Interceptor:** Strip authorship details completely inside the data retrieval service layer before payload transmission to maintain strict double-blind community neutrality (`contributor_id = null`).
-  * **Build `VoteService` & `ConsensusService`:** Code `POST /api/moderation/vote` to log peer evaluation ballots. Integrate the active reviewer session's dynamic trust scaling variables (`vote_weight = 1` or `vote_weight = 5`). If community threshold limits are met, cascade aggregate updates cleanly onto the core `politicians` table records.
+  * **Build `VoteService` & `ConsensusService`:** Code `POST /api/moderation/vote` to log peer evaluation ballots. **Integrate Module 3 Engine Link:** Intercept the active reviewer session's dynamic trust score from `ReputationEngineService` to dynamically multiply their vote impact ($T_i \ge 90 \rightarrow \text{weight } 5$, otherwise $1$). If community consensus thresholds are achieved, cascade the updates cleanly onto the core `politicians` table records.
   * **Build `EscalationSchedulerService`:** Create an automated cron job daemon on the server clock running every hour to monitor queue data ages. If a row age is $\ge$ 24 hours or experiences a perfect 50-50 split tie deadlock, automatically write its identifier flag to `STATUS_TIMEOUT_ESCALATION` and route it directly to the private Admin panel.
-
----
-
-## 🎨 Phase 4: Frontend View Layout Component Assembly
-* [ ] **4.1 Module 1 Dashboard Views**
-  * **Assemble `EditSubmissionForm.jsx`:** Map reactive local form states perfectly to match your backend DTO fields. Integrate sub-components `SourceUrlInput.jsx` and `AlSummaryGenerator.jsx`.
-  * **Assemble `PoliticianDashboard.jsx`:** Group basic header components with interactive `KPIWidget.jsx` metric frames and chronological `TimelineLedger.jsx` lists.
-* [ ] **4.2 Module 2 Moderation Views**
-  * **Assemble `ModerationQueueDashboard.jsx`:** Construct an anonymized verification data matrix mapping entry info blocks cleanly accompanied by operational `PeerVotingPanel.jsx` trigger controls ("Agree", "Disagree", "Flag for Revision").
-
----
-
-## 🧪 Phase 5: Verification & Checkpoint Alignment
-* [ ] **5.1 Alignment Validation Audit**
-  * Verify that all input parameters match the database schemas.
-  * Confirm that all system-automated operations (like the 15% contributor lockout trigger or the hourly deadlock scanner evaluation loops) run safely inside the server context layers.
-  * Cross-examine all execution boundaries before demonstrating the final working 60% pipeline to Sir Jensar sayson.
+* [ ] **3.3 Module 3: Reputation-Based Trust Architecture [NEW MODULE ADDITION]**
+  * **Build `ReputationEngineService`:** Code the core automated scoring loops. When Module 2 achieves consensus, process a background math evaluation:
+    * *Reward Matrix:* Peers whose ballots aligned with the winning historical consensus path receive a $+5.00$ reputation bump.
+    * *Penalty Matrix:* Peers whose ballots directly opposed the final consensus are penalized with a $-

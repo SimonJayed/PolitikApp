@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
+import ModerationPanel from './components/ModerationPanel'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const SOURCE_URL_PATTERN = /^https?:\/\/([a-zA-Z0-9-]+\.)*(gov\.ph|edu\.ph)(\/.*)?$/
@@ -22,7 +23,7 @@ const actionOptions = [
 ]
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
-const tabs = ['directory', 'submit', 'dashboard', 'compare']
+const tabs = ['directory', 'submit', 'dashboard', 'compare', 'moderation']
 
 async function readApiResponse(response) {
   const body = await response.json().catch(() => ({}))
@@ -178,8 +179,8 @@ function App() {
     <main className="appShell">
       <header className="topBar">
         <div>
-          <p className="eyebrow">Module 1</p>
-          <h1>Source-First Profile Aggregator</h1>
+          <p className="eyebrow">{activeView === 'moderation' ? 'Module 2' : 'Module 1'}</p>
+          <h1>{activeView === 'moderation' ? 'Judicial Moderation Engine' : 'Source-First Profile Aggregator'}</h1>
         </div>
         <nav className="viewTabs" aria-label="Module views">
           {tabs.map((view) => (
@@ -236,6 +237,10 @@ function App() {
           onSubmit={handleComparisonLookup}
           state={comparisonState}
         />
+      )}
+
+      {activeView === 'moderation' && (
+        <ModerationPanel />
       )}
     </main>
   )
