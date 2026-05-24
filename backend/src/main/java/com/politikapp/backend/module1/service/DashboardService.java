@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 @Service
+@SuppressWarnings("null")
 public class DashboardService {
     private final PoliticianRepository politicianRepository;
     private final TimelineEntryRepository timelineEntryRepository;

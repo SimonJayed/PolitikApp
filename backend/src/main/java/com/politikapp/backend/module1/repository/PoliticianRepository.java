@@ -11,5 +11,5 @@ public interface PoliticianRepository extends JpaRepository<Politician, UUID> {
 
     List<Politician> findByFullNameContainingIgnoreCaseAndStatusOrderByFullNameAsc(String fullName, String status);
 
-    Optional<Politician> findByWikidataId(String wikidataId);
+    Optional<Politician> findByFullName(String fullName);
 }

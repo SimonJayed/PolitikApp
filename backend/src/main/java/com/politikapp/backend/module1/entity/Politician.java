@@ -26,9 +26,6 @@ public class Politician {
     @Column(name = "politician_id", nullable = false)
     private UUID politicianId;
 
-    @Column(name = "wikidata_id", unique = true, length = 50)
-    private String wikidataId;
-
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
@@ -41,10 +38,10 @@ public class Politician {
     @Column(name = "party_affiliation", length = 100)
     private String partyAffiliation;
 
-    @Column(name = "term_start")
+    @Column(name = "term_start", nullable = false)
     private LocalDate termStart;
 
-    @Column(name = "term_end")
+    @Column(name = "term_end", nullable = false)
     private LocalDate termEnd;
 
     @Column(name = "profile_image_url", columnDefinition = "TEXT")
@@ -53,14 +50,8 @@ public class Politician {
     @Column(name = "biography", columnDefinition = "TEXT")
     private String biography;
 
-    @Column(name = "source_url", columnDefinition = "TEXT")
-    private String sourceUrl;
-
     @Column(name = "status", length = 50)
     private String status = "ACTIVE";
-
-    @Column(name = "last_synced_at")
-    private Instant lastSyncedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

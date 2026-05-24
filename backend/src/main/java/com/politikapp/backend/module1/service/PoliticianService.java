@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@SuppressWarnings("null")
 public class PoliticianService {
     private static final String ACTIVE_STATUS = "ACTIVE";
 
