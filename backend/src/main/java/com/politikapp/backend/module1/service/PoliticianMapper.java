@@ -9,7 +9,6 @@ public class PoliticianMapper {
     public PoliticianResponse toResponse(Politician politician) {
         return new PoliticianResponse(
                 politician.getPoliticianId(),
-                politician.getWikidataId(),
                 politician.getFullName(),
                 politician.getPosition(),
                 politician.getJurisdiction(),
@@ -18,9 +17,7 @@ public class PoliticianMapper {
                 politician.getTermEnd(),
                 politician.getProfileImageUrl(),
                 politician.getBiography(),
-                politician.getSourceUrl(),
-                politician.getStatus(),
-                politician.getLastSyncedAt()
+                politician.getStatus()
         );
     }
 }

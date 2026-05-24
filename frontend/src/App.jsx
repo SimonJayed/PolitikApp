@@ -331,9 +331,7 @@ function PoliticianProfile({ politician }) {
       </div>
 
       <div className="profileFacts">
-        <Fact label="Wikidata ID" value={politician.wikidataId} />
         <Fact label="Status" value={politician.status} />
-        <Fact label="Last synced" value={formatDateTime(politician.lastSyncedAt)} />
         <Fact label="Term start" value={formatDate(politician.termStart)} />
         <Fact label="Term end" value={formatDate(politician.termEnd)} />
       </div>
@@ -341,11 +339,6 @@ function PoliticianProfile({ politician }) {
       <section className="biographyBlock">
         <h2>Biography</h2>
         <p>{politician.biography || 'No Wikipedia summary was returned for this profile.'}</p>
-        {politician.sourceUrl && (
-          <a href={politician.sourceUrl} rel="noreferrer" target="_blank">
-            Open Wikidata source
-          </a>
-        )}
       </section>
     </section>
   )

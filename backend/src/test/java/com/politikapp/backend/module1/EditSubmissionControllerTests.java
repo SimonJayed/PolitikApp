@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc(addFilters = false)
+@SuppressWarnings("null")
 class EditSubmissionControllerTests {
     @Autowired
     private MockMvc mockMvc;
