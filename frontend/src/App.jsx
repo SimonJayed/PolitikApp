@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
+import { DeveloperSandboxProvider, useDeveloperSandbox } from './developer/DeveloperSandboxContext'
+import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const SOURCE_URL_PATTERN = /^https?:\/\/([a-zA-Z0-9-]+\.)*(gov\.ph|edu\.ph)(\/.*)?$/
@@ -33,7 +35,18 @@ async function readApiResponse(response) {
   return body
 }
 
-function App() {
+function AppInner() {
+  const sandboxContext = useDeveloperSandbox()
+  const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
+  const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
+
+  const visibleTabs = useMemo(() => {
+    if (isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR') {
+      return tabs.filter((t) => t !== 'moderation')
+    }
+    return tabs
+  }, [isDevModeActive, manipulatedUser])
+
   const [activeView, setActiveView] = useState('directory')
   const [politiciansState, setPoliticiansState] = useState({
     data: [],
@@ -183,7 +196,7 @@ function App() {
           <h1>{activeView === 'moderation' ? 'Judicial Moderation Engine' : 'Source-First Profile Aggregator'}</h1>
         </div>
         <nav className="viewTabs" aria-label="Module views">
-          {tabs.map((view) => (
+          {visibleTabs.map((view) => (
             <button
               className={activeView === view ? 'active' : ''}
               key={view}
@@ -240,9 +253,30 @@ function App() {
       )}
 
       {activeView === 'moderation' && (
-        <ModerationPanel />
+        isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR' ? (
+          <section className="workspace" style={{ textAlign: 'center', padding: '40px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+            <h2 style={{ color: '#dc2626', fontSize: '24px', margin: '0 0 12px 0' }}>🛑 Access Restricted</h2>
+            <p style={{ color: '#64748b', margin: 0, fontSize: '15px', lineHeight: '1.5' }}>
+              Contributor accounts do not have authorized clearance to view or moderate pending queue cards.
+            </p>
+            <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '14px', fontStyle: 'italic' }}>
+              *Presentation Note: Open the floating user profile drawer spoofer to reset your Session Role Override back to JUDICIAL_REVIEWER.*
+            </p>
+          </section>
+        ) : (
+          <ModerationPanel />
+        )
       )}
     </main>
+  )
+}
+
+function App() {
+  return (
+    <DeveloperSandboxProvider>
+      <AppInner />
+      <DeveloperOptionsPanel />
+    </DeveloperSandboxProvider>
   )
 }
 

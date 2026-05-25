@@ -756,47 +756,6 @@ button:disabled {
   font-weight: bold;
 }
 
-/* Sandbox Tab and Layout Container Styles */
-.sandbox-tab-row {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
-  border-bottom: 2px solid #e5e7eb;
-  padding-bottom: 10px;
-}
 
-.tab-btn {
-  background: none;
-  border: none;
-  color: #6b7280;
-  font-size: 15px;
-  font-weight: 600;
-  padding: 8px 16px;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.15s ease-in-out;
-}
-
-.tab-btn.active, .tab-btn:hover {
-  background-color: #f3f4f6;
-  color: #2563eb;
-}
-
-.sandbox-slider {
-  width: 100%;
-  margin: 10px 0;
-  cursor: pointer;
-}
-
-.sandbox-action-buttons {
-  display: flex;
-  gap: 16px;
-  margin-top: 12px;
-}
-
-.bg-agree { background-color: #16a34a !important; }
-.bg-agree:hover { background-color: #15803d !important; }
-.bg-disagree { background-color: #dc2626 !important; }
-.bg-disagree:hover { background-color: #b91c1c !important; }
 
 
