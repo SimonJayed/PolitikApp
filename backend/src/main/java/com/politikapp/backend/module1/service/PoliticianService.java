@@ -2,6 +2,8 @@ package com.politikapp.backend.module1.service;
 
 import com.politikapp.backend.common.HttpResponseException;
 import com.politikapp.backend.module1.dto.PoliticianResponse;
+import com.politikapp.backend.module1.dto.UpdatePoliticianRequest;
+import com.politikapp.backend.module1.entity.Politician;
 import com.politikapp.backend.module1.repository.PoliticianRepository;
 import java.util.List;
 import java.util.UUID;
@@ -47,5 +49,21 @@ public class PoliticianService {
                 .stream()
                 .map(politicianMapper::toResponse)
                 .toList();
+    }
+
+    @Transactional
+    public PoliticianResponse updatePolitician(UUID politicianId, UpdatePoliticianRequest updates) {
+        Politician politician = politicianRepository.findById(politicianId)
+                .orElseThrow(() -> new HttpResponseException(404, "Not Found: Politician record does not exist."));
+
+        politician.setFullName(updates.fullName());
+        politician.setPosition(updates.position());
+        politician.setJurisdiction(updates.jurisdiction());
+        politician.setPartyAffiliation(updates.partyAffiliation());
+        politician.setProfileImageUrl(updates.profileImageUrl());
+        politician.setBiography(updates.biography());
+
+        Politician saved = politicianRepository.save(politician);
+        return politicianMapper.toResponse(saved);
     }
 }

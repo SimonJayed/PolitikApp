@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -41,7 +42,7 @@ public class ContributorReputationService {
         this.tokenInvalidationPort = tokenInvalidationPort;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public ContributorReputationResponse evaluateContributorReputation(UUID contributorId) {
         if (contributorId == null) {
             log.warn("Module 3 reputation check skipped because contributorId was missing.");

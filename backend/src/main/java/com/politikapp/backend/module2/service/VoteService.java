@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+import org.springframework.lang.NonNull;
 
 @Service
 public class VoteService {
@@ -45,7 +46,7 @@ public class VoteService {
      * persists the JuryVote, runs the consensus algorithm, and returns the calculation trace.
      */
     @Transactional
-    public VoteCalculationTrace processPeerBallot(UUID queueId, UUID peerId, String voteSelection, String voteReason) {
+    public VoteCalculationTrace processPeerBallot(@NonNull UUID queueId, UUID peerId, String voteSelection, String voteReason) {
         log.info("Processing peer ballot: peerId={}, queueId={}, vote={}", peerId, queueId, voteSelection);
 
         // 1. Verify queue entry exists and is in JURY_REVIEW status

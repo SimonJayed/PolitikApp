@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'; 
 
 export default function ModerationPanel() {
@@ -29,7 +29,12 @@ export default function ModerationPanel() {
     }
   };
 
-  useEffect(() => { fetchQueue(); }, []);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchQueue();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Combine live database queue with your in-memory sandbox array entries dynamically
   const displayedQueue = [...injectedQueue, ...queue];

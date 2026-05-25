@@ -10,6 +10,8 @@ public record DashboardCompositeResponse(
         String position,
         String jurisdiction,
         String partyAffiliation,
+        String profileImageUrl,
+        String biography,
         long billsAuthored,
         long projectCompletions,
         double legislativeEfficiencyRatio,

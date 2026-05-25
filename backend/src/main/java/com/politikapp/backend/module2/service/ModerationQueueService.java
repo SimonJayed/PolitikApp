@@ -9,6 +9,7 @@ import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -30,7 +31,7 @@ public class ModerationQueueService {
      * Enqueues a new submission into the moderation queue in response to the
      * SubmissionCreatedEvent, setting the starting status to JURY_REVIEW.
      */
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void enqueueAnonymizedSubmission(SubmissionCreatedEvent event) {
         log.info("Enqueuing new submission ID: {} to moderation queue", event.submissionId());
         
@@ -38,9 +39,24 @@ public class ModerationQueueService {
             event.submissionId(),
             event.politicianId()
         );
+        queueEntry.setQueueId(event.submissionId());
         queueEntry.setQueueStatus("JURY_REVIEW");
         
         moderationQueueRepository.save(queueEntry);
+
+        // Update the underlying ProfileEditSubmission status to JURY_REVIEW so it appears in the queue
+        ProfileEditSubmission submission = entityManager.find(ProfileEditSubmission.class, event.submissionId());
+        if (submission != null) {
+            try {
+                java.lang.reflect.Field field = ProfileEditSubmission.class.getDeclaredField("status");
+                field.setAccessible(true);
+                field.set(submission, "JURY_REVIEW");
+                entityManager.merge(submission);
+            } catch (Exception e) {
+                log.error("Failed to update ProfileEditSubmission status to JURY_REVIEW: {}", e.getMessage());
+            }
+        }
+        
         log.info("Successfully enqueued submission. Assigned queue ID: {}", queueEntry.getQueueId());
     }
 

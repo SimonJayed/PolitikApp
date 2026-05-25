@@ -5,6 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.util.UUID;
+import org.springframework.lang.NonNull;
 
 @Entity
 @Table(name = "jury_votes")
@@ -29,6 +30,7 @@ public class JuryVoteTrustRecord {
         return voteId;
     }
 
+    @NonNull
     public UUID getQueueId() {
         return queueId;
     }

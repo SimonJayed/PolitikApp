@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
-import { DeveloperSandboxProvider, useDeveloperSandbox } from './developer/DeveloperSandboxContext'
+import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
+import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -106,6 +107,13 @@ function AppInner() {
 
   async function handleSubmission(event) {
     event.preventDefault()
+    if (!formData.politicianId) {
+      setSubmissionState({
+        status: 'error',
+        message: 'Please select a politician from the dropdown list.',
+      })
+      return
+    }
     if (!isSourceAllowed) {
       setSubmissionState({
         status: 'error',
@@ -118,6 +126,7 @@ function AppInner() {
     try {
       const payload = {
         ...formData,
+        contributorId: (formData.contributorId || '').trim() || '88bc8912-43ba-4abc-882a-ef92481aa323',
         sourceUrl: formData.sourceUrl.trim(),
         quantitativeMetric: Number(formData.quantitativeMetric),
       }
@@ -229,6 +238,7 @@ function AppInner() {
             onChange={updateFormField}
             onSubmit={handleSubmission}
             state={submissionState}
+            politicians={politiciansState.data}
           />
         )}
 
@@ -450,12 +460,27 @@ function PoliticianProfile({ politician }) {
   )
 }
 
-function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, state }) {
+function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, state, politicians = [] }) {
   return (
     <section className="workspace">
       <form className="editorPanel" onSubmit={onSubmit}>
-        <Field label="Politician ID" name="politicianId" value={formData.politicianId} onChange={onChange} />
-        <Field label="Contributor ID" name="contributorId" value={formData.contributorId} onChange={onChange} />
+        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+          Select Politician Profile
+          <select 
+            name="politicianId" 
+            value={formData.politicianId} 
+            onChange={onChange} 
+            required 
+            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+          >
+            <option value="">-- Choose a Politician Profile --</option>
+            {politicians.map((p) => (
+              <option key={p.politicianId} value={p.politicianId}>
+                {p.fullName} ({p.position || 'UNSPECIFIED'})
+              </option>
+            ))}
+          </select>
+        </label>
         <Field label="Source URL" name="sourceUrl" value={formData.sourceUrl} onChange={onChange} />
         <div className="fieldRow">
           <label>
@@ -608,24 +633,41 @@ function DashboardPanel({
     return Object.keys(nextErrors).length === 0
   }
 
-  function handleSaveEdit(event) {
+  async function handleSaveEdit(event) {
     event.preventDefault()
     if (!detailsData || !validateEditForm()) {
       return
     }
 
     const updates = {
-      biography: editForm.biography.trim(),
+      politicianId: detailsData.politicianId,
       fullName: editForm.fullName.trim(),
+      position: editForm.position.trim(),
       jurisdiction: editForm.jurisdiction.trim(),
       partyAffiliation: editForm.partyAffiliation.trim(),
-      position: editForm.position.trim(),
       profileImageUrl: editForm.profileImageUrl.trim(),
+      biography: editForm.biography.trim(),
     }
 
-    setDetailsData((current) => ({ ...current, ...updates }))
-    onPoliticianUpdate(detailsData.politicianId, updates)
-    setIsEditOpen(false)
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/politicians/${detailsData.politicianId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (res.ok) {
+        const savedData = await readApiResponse(res)
+        setDetailsData((current) => ({ ...current, ...savedData }))
+        onPoliticianUpdate(detailsData.politicianId, savedData)
+        setIsEditOpen(false)
+      } else {
+        const errorData = await res.json().catch(() => ({}))
+        alert(errorData.message || 'Failed to persist profile updates to database.')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Network error: Could not contact server to save profile updates.')
+    }
   }
 
   return (
