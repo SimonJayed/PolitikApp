@@ -8,6 +8,8 @@ This document defines the persistent relational data layer schemas deployed on t
   * `contributor_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
   * `full_name`: `VARCHAR(150)` (NOT NULL)
   * `email`: `VARCHAR(150)` (NOT NULL, UNIQUE)
+  * `username`: `VARCHAR(80)` (UNIQUE)
+  * `password_hash`: `VARCHAR(255)` (NOT NULL)
   * `role`: `VARCHAR(50)` (NOT NULL, Default: 'CONTRIBUTOR') -- 'CONTRIBUTOR', 'PEER', 'ADMIN'
   * `account_status`: `VARCHAR(50)` (NOT NULL, Default: 'ACTIVE') -- 'ACTIVE', 'LOCKED', 'SUSPENDED'
   * `trust_score`: `DECIMAL(5,2)` (Default: 100.00)

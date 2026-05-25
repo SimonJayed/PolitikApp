@@ -14,6 +14,8 @@ create table if not exists public.contributors (
   contributor_id uuid primary key default gen_random_uuid(),
   full_name varchar(150) not null,
   email varchar(150) not null unique,
+  username varchar(80) unique,
+  password_hash varchar(255) not null,
   role varchar(50) not null default 'CONTRIBUTOR',
   account_status varchar(50) not null default 'ACTIVE',
   trust_score numeric(5, 2) default 100.00,
