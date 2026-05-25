@@ -1,7 +1,7 @@
 package com.politikapp.backend.module2.service;
 
 import com.politikapp.backend.common.event.SubmissionCreatedEvent;
-import com.politikapp.backend.module1.entity.ProfileEditSubmission;
+import com.politikapp.backend.module2.dto.PendingQueueCardResponse;
 import com.politikapp.backend.module2.entity.ModerationQueue;
 import com.politikapp.backend.module2.repository.ModerationQueueRepository;
 import jakarta.persistence.EntityManager;
@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class ModerationQueueService {
@@ -44,18 +45,11 @@ public class ModerationQueueService {
         
         moderationQueueRepository.save(queueEntry);
 
-        // Update the underlying ProfileEditSubmission status to JURY_REVIEW so it appears in the queue
-        ProfileEditSubmission submission = entityManager.find(ProfileEditSubmission.class, event.submissionId());
-        if (submission != null) {
-            try {
-                java.lang.reflect.Field field = ProfileEditSubmission.class.getDeclaredField("status");
-                field.setAccessible(true);
-                field.set(submission, "JURY_REVIEW");
-                entityManager.merge(submission);
-            } catch (Exception e) {
-                log.error("Failed to update ProfileEditSubmission status to JURY_REVIEW: {}", e.getMessage());
-            }
-        }
+        entityManager.createNativeQuery(
+            "UPDATE public.profile_edit_submissions SET status = 'JURY_REVIEW', updated_at = CURRENT_TIMESTAMP WHERE submission_id = :submissionId"
+        )
+        .setParameter("submissionId", event.submissionId())
+        .executeUpdate();
         
         log.info("Successfully enqueued submission. Assigned queue ID: {}", queueEntry.getQueueId());
     }
@@ -65,25 +59,31 @@ public class ModerationQueueService {
      * Sets the contributor ID to null dynamically prior to payload transmission.
      */
     @Transactional(readOnly = true)
-    public List<ProfileEditSubmission> getAnonymizedModerationQueue() {
+    public List<PendingQueueCardResponse> getAnonymizedModerationQueue() {
         log.info("Fetching anonymized moderation queue for JURY_REVIEW status");
-        
-        List<ProfileEditSubmission> rawQueue = entityManager.createQuery(
-            "SELECT p FROM ProfileEditSubmission p WHERE p.status = 'JURY_REVIEW'", 
-            ProfileEditSubmission.class
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> rawRows = entityManager.createNativeQuery(
+            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, pes.source_url, pes.category_tag, pes.action_identifier, " +
+            "pes.impact_summary, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at " +
+            "FROM public.moderation_queue mq " +
+            "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
+            "WHERE mq.queue_status IN ('PENDING', 'JURY_REVIEW') " +
+            "ORDER BY mq.created_at ASC"
         ).getResultList();
-        
-        for (ProfileEditSubmission record : rawQueue) {
-            // Identity Masking: Strip contributor ID completely before exposing to API
-            try {
-                java.lang.reflect.Field field = ProfileEditSubmission.class.getDeclaredField("contributorId");
-                field.setAccessible(true);
-                field.set(record, null);
-            } catch (Exception e) {
-                log.warn("Identity masking warning: failed to strip contributor ID via reflection: {}", e.getMessage());
-            }
-        }
-        
-        return rawQueue;
+
+        return rawRows.stream().map(row -> new PendingQueueCardResponse(
+            (UUID) row[0],
+            (UUID) row[1],
+            (UUID) row[2],
+            (String) row[3],
+            (String) row[4],
+            (String) row[5],
+            (String) row[6],
+            (String) row[7],
+            (Boolean) row[8],
+            row[9] != null ? ((java.sql.Timestamp) row[9]).toInstant() : null,
+            row[10] != null ? ((java.sql.Timestamp) row[10]).toInstant() : null
+        )).toList();
     }
 }

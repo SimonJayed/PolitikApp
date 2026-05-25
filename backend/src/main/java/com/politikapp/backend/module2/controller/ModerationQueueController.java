@@ -1,7 +1,7 @@
 package com.politikapp.backend.module2.controller;
 
-import com.politikapp.backend.module1.entity.ProfileEditSubmission;
 import com.politikapp.backend.module2.dto.BallotSubmissionPayload;
+import com.politikapp.backend.module2.dto.PendingQueueCardResponse;
 import com.politikapp.backend.module2.scheduler.EscalationSchedulerService;
 import com.politikapp.backend.module2.service.ModerationQueueService;
 import com.politikapp.backend.module2.service.VoteService;
@@ -34,9 +34,9 @@ public class ModerationQueueController {
     }
 
     @GetMapping("/pending")
-    public ResponseEntity<List<ProfileEditSubmission>> getAnonymizedQueue() {
+    public ResponseEntity<List<PendingQueueCardResponse>> getAnonymizedQueue() {
         log.info("Received request for double-blind anonymized moderation queue");
-        List<ProfileEditSubmission> anonymizedQueue = moderationQueueService.getAnonymizedModerationQueue();
+        List<PendingQueueCardResponse> anonymizedQueue = moderationQueueService.getAnonymizedModerationQueue();
         return ResponseEntity.ok(anonymizedQueue);
     }
 

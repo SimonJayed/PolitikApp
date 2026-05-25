@@ -1,227 +1,253 @@
-import { useState, useEffect } from 'react';
-import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'; 
+import { useEffect, useMemo, useState } from 'react';
+import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const STAGES = ['SUBMITTED', 'JURY_REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED'];
+
+function stageIndexFor(queueStatus) {
+  switch ((queueStatus || '').toUpperCase()) {
+    case 'PENDING':
+      return 0;
+    case 'JURY_REVIEW':
+      return 1;
+    case 'ESCALATED':
+    case 'REVISION_REQUIRED':
+      return 2;
+    case 'REJECTED':
+      return 3;
+    case 'PUBLISHED':
+      return 4;
+    default:
+      return 0;
+  }
+}
 
 export default function ModerationPanel() {
   const [queue, setQueue] = useState([]);
-  const [voteSelection, setVoteSelection] = useState('AGREE'); 
-  const [voteReason, setVoteReason] = useState('');
   const [traceLogs, setTraceLogs] = useState([]);
+  const [formByCard, setFormByCard] = useState({});
 
-  // Read developer switch states safely
   const sandboxContext = useDeveloperSandbox() || {};
   const isDevModeActive = sandboxContext.isDevModeActive || false;
   const manipulatedUser = sandboxContext.manipulatedUser || null;
-  const setManipulatedUser = sandboxContext.setManipulatedUser;
-  const injectedQueue = sandboxContext.injectedQueue || [];
-  const setInjectedQueue = sandboxContext.setInjectedQueue;
   const voteWeight = sandboxContext.voteWeight || 1;
 
-  // Determine active constraints derived from role override selection
   const isReadOnlyMode = isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR';
 
-  const fetchQueue = async () => {
+  useEffect(() => {
+    fetchQueue();
+  }, []);
+
+  async function fetchQueue() {
     try {
-      const res = await fetch('http://localhost:8080/api/moderation/pending');
+      const res = await fetch(`${API_BASE_URL}/api/moderation/pending`);
       const data = await res.json();
-      setQueue(data);
+      setQueue(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to update review queue:', err);
     }
-  };
+  }
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchQueue();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, []);
+  const queueDeck = useMemo(() => queue, [queue]);
 
-  // Combine live database queue with your in-memory sandbox array entries dynamically
-  const displayedQueue = [...injectedQueue, ...queue];
+  function getForm(queueId) {
+    return formByCard[queueId] || { voteSelection: 'AGREE', voteReason: '' };
+  }
 
-  const handleVoteSubmit = async (submissionId) => {
-    // 🛡️ STATUS SECURITY GATE
+  function updateForm(queueId, updates) {
+    setFormByCard((current) => ({
+      ...current,
+      [queueId]: { ...getForm(queueId), ...updates },
+    }));
+  }
+
+  async function handleVoteSubmit(card) {
+    if (!card?.queueId) {
+      return;
+    }
+
     if (isDevModeActive && manipulatedUser && manipulatedUser.status === 'SUSPENDED') {
-      setTraceLogs(prev => [`[SECURITY BLOCK] 🛑 Locked out user "${manipulatedUser.name}" from voting. Status: SUSPENDED.`, ...prev]);
+      setTraceLogs((prev) => [
+        `[SECURITY BLOCK] Locked out user "${manipulatedUser.name}" from voting. Status: SUSPENDED.`,
+        ...prev,
+      ]);
       return;
     }
 
-    // 🛡️ ROLE INTERCEPTOR GATE
-    if (isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR') {
-      setTraceLogs(prev => [`[SECURITY BLOCK] 🛑 Locked out user "${manipulatedUser.name}" from voting. Role: CONTRIBUTOR (Restricted Read-Only).`, ...prev]);
+    if (isReadOnlyMode) {
+      setTraceLogs((prev) => [
+        `[SECURITY BLOCK] Locked out user "${manipulatedUser.name}" from voting. Role: CONTRIBUTOR (Read-Only).`,
+        ...prev,
+      ]);
       return;
     }
 
-    // Locating tracking entities across displayed vs mock memory arrays
-    const targetCard = displayedQueue.find(card => card.submissionId === submissionId);
-    const isMockCard = injectedQueue.some(card => card.submissionId === submissionId);
-
-    if (isMockCard && targetCard) {
-      const userWeight = voteWeight;
-      const currentAgree = targetCard.backgroundAgreeWeight || 0;
-      const currentDisagree = targetCard.backgroundDisagreeWeight || 0;
-
-      if (voteSelection === 'AGREE') {
-        const totalAgree = currentAgree + userWeight;
-        const threshold = targetCard.consensusTargetThreshold || 10;
-
-        if (totalAgree >= threshold) {
-          setTraceLogs(prev => [
-            `[MODULE 3 EVENT] ⚡ Consensus reached: PUBLISHED. Applied +5.00 Trust Balance bonus to user "${manipulatedUser.name}".`,
-            `[CONVERGENCE TRACE] User weight (${userWeight}) + Background Agree (${currentAgree}) = ${totalAgree} Aggregate. Target (${threshold}) CROSSED. [BYPASSED SUPABASE COMMIT]`,
-            ...prev
-          ]);
-          
-          // Dynamic state update: Boost trust score on-screen to prove Module 3 tracking functions live!
-          if (setManipulatedUser) {
-            setManipulatedUser(prev => ({
-              ...prev,
-              trustScore: Math.min(100, prev.trustScore + 5)
-            }));
-          }
-        } else {
-          setTraceLogs(prev => [`[SIMULATING] Added weight ${userWeight}. Total Agree is now ${totalAgree}/${threshold}. Consensus still pending...`, ...prev]);
-        }
-      } else {
-        setTraceLogs(prev => [`[SIMULATING] Cast DISAGREE with weight ${userWeight}. Total Disagree: ${currentDisagree + userWeight}.`, ...prev]);
-      }
-
-      // Flush card out of memory queue since verification lifecycle is completed
-      if (setInjectedQueue) {
-        setInjectedQueue(prev => prev.filter(c => c.submissionId !== submissionId));
-      }
-      setVoteReason('');
-      return;
-    }
-
-    const payload = { 
-      queueId: submissionId, 
-      peerId: "88bc8912-43ba-4abc-882a-ef92481aa323", 
-      voteSelection, 
-      voteReason 
+    const form = getForm(card.queueId);
+    const payload = {
+      queueId: card.queueId,
+      peerId: '88bc8912-43ba-4abc-882a-ef92481aa323',
+      voteSelection: form.voteSelection,
+      voteReason: form.voteReason,
     };
 
     try {
-      const res = await fetch('http://localhost:8080/api/moderation/vote', {
+      const res = await fetch(`${API_BASE_URL}/api/moderation/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
-      if (res.ok) {
-        const trace = await res.json();
-        setTraceLogs(prev => [
-          `[CALC TRACE] ${isDevModeActive ? manipulatedUser.name : trace.peerName} voted ${voteSelection}. Weight derived: ${isDevModeActive ? (manipulatedUser.trustScore >= 90 ? 5 : 1) : trace.derivedWeight}. Outcome: ${trace.finalOutcomeStatus}`,
-          ...prev
-        ]);
-        setVoteReason('');
-        fetchQueue();
+
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || 'Vote failed');
       }
+
+      const trace = await res.json();
+      setTraceLogs((prev) => [
+        `[CALC TRACE] ${(isDevModeActive ? manipulatedUser?.name : trace.peerName) || 'Reviewer'} voted ${form.voteSelection}. Weight: ${isDevModeActive ? voteWeight : trace.derivedWeight}. Outcome: ${trace.finalOutcomeStatus}`,
+        ...prev,
+      ]);
+
+      updateForm(card.queueId, { voteReason: '' });
+      fetchQueue();
     } catch (err) {
-      console.error(err);
+      setTraceLogs((prev) => [`[ERROR] ${err.message}`, ...prev]);
     }
-  };
+  }
 
   return (
-    <div className="moderation-container" style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h2>⚖️ Asynchronous Judicial Moderation Engine</h2>
+    <div className="moderation-container">
+      <div className="mod-header">
+        <div>
+          <h2>Asynchronous Judicial Moderation Engine</h2>
+          <p>Pending Queue cards require community jury adjudication before publication.</p>
+        </div>
+      </div>
 
       {traceLogs.length > 0 && (
-        <div style={{ background: '#1e293b', color: '#34d399', padding: '12px', borderRadius: '6px', fontFamily: 'monospace', marginBottom: '20px' }}>
-          {traceLogs.map((log, index) => <p key={index} style={{ margin: '4px 0' }}>{log}</p>)}
+        <div className="terminal-audit-console">
+          <div className="terminal-titlebar">Moderation Trace Monitor</div>
+          <div className="terminal-screen">
+            {traceLogs.slice(0, 8).map((log, index) => (
+              <p className="terminal-line" key={`${log}-${index}`}>{log}</p>
+            ))}
+          </div>
         </div>
       )}
 
-      <div className="queue-deck" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {displayedQueue.map((card) => {
-          const isMock = injectedQueue.some(c => c.submissionId === card.submissionId);
-          
-          return (
-            <div 
-              key={card.submissionId} 
-              className="review-card" 
-              style={{ 
-                border: isMock ? '2px dashed #f59e0b' : isDevModeActive ? '2px dashed #38bdf8' : '1px solid #cbd5e1', 
-                padding: '16px', 
-                borderRadius: '8px', 
-                background: '#fff',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
-              }}
-            >
-              {isDevModeActive && manipulatedUser ? (
-                <div style={{ background: isMock ? '#78350f' : '#0c4a6e', padding: '10px', borderRadius: '4px', marginBottom: '10px', color: '#fff' }}>
-                  <p style={{ color: isMock ? '#fbbf24' : '#38bdf8', margin: 0, fontWeight: 'bold' }}>
-                    {isMock ? '⚙️ [DEV SIMULATOR - INJECTED MOCK CARD]' : '⚙️ [DEV MODE ACTIVE - LIVE BACKEND DATA]'}
-                  </p>
-                  <p style={{ margin: '4px 0 0 0' }}><strong>Acting Reviewer:</strong> {manipulatedUser.name}</p>
-                  <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: isMock ? '#fde68a' : '#94a3b8' }}>*Bio override:* "{manipulatedUser.biography}"</p>
-                </div>
-              ) : (
-                <p><strong>Contributor:</strong> <span className="anonymized-tag">🛡️ Anonymized Peer</span></p>
-              )}
+      <div className="queue-deck">
+        {queueDeck.length === 0 && (
+          <div className="review-card">
+            <p className="emptyState">No pending moderation cards in queue.</p>
+          </div>
+        )}
 
-              <p style={{ fontSize: '14px', margin: '6px 0' }}><strong>Target Reference:</strong> {card.politicianId || 'SYSTEM-MAIN-TRACK'}</p>
-              <p style={{ fontSize: '14px', margin: '6px 0' }}><strong>Source Link:</strong> <a href={card.sourceUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>{card.sourceUrl}</a></p>
-              {card.impactSummary && <p style={{ fontSize: '13px', color: '#475569', fontStyle: 'italic', background: '#f8fafc', padding: '8px', borderRadius: '4px' }}>"{card.impactSummary}"</p>}
-              
-              <div style={{ borderTop: '1px solid #e2e8f0', marginTop: '12px', paddingTop: '12px' }}>
-                <p style={{ margin: '0 0 6px 0', fontSize: '13px', fontWeight: 'bold', color: '#475569' }}>Cast Evaluation Ballot</p>
-                
+        {queueDeck.map((card) => {
+          const form = getForm(card.queueId);
+          const activeStage = stageIndexFor(card.queueStatus);
+
+          return (
+            <div className="review-card" key={card.queueId}>
+              <p><strong>Contributor:</strong> <span className="anonymized-tag">Anonymized Peer</span></p>
+              <p><strong>Queue ID:</strong> {card.queueId}</p>
+              <p><strong>Target Reference:</strong> {card.politicianId || 'SYSTEM-MAIN-TRACK'}</p>
+              <p>
+                <strong>Source Link:</strong>{' '}
+                <a href={card.sourceUrl} rel="noreferrer" target="_blank">{card.sourceUrl}</a>
+              </p>
+              {card.impactSummary && <div className="summary-box">"{card.impactSummary}"</div>}
+
+              <div className="detailsBlock" style={{ marginTop: '4px' }}>
+                <h5>Edit Lifecycle</h5>
+                <div style={{ display: 'grid', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '8px' }}>
+                    {STAGES.map((stage, index) => (
+                      <span
+                        key={`${card.queueId}-${stage}`}
+                        style={{
+                          textAlign: 'center',
+                          padding: '6px 8px',
+                          borderRadius: '999px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          border: '1px solid #d1d5db',
+                          background: index <= activeStage ? '#0f766e' : '#f8fafc',
+                          color: index <= activeStage ? '#ffffff' : '#64748b',
+                          transition: 'all 220ms ease',
+                        }}
+                      >
+                        {stage.replace('_', ' ')}
+                      </span>
+                    ))}
+                  </div>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
+                    Current status: <strong>{card.queueStatus}</strong>
+                    {card.escalationFlag ? ' (Escalated to admin review)' : ''}
+                  </p>
+                </div>
+              </div>
+
+              <div className="ballot-console">
+                <h4>Cast Evaluation Ballot</h4>
+
                 {isReadOnlyMode && (
-                  <div style={{ background: '#fef2f2', color: '#991b1b', border: '1px solid #fca5a5', padding: '8px 12px', borderRadius: '4px', fontSize: '12px', fontWeight: 'bold', marginBottom: '10px' }}>
-                    ⚠️ Access Denied: Contributor accounts are restricted to Read-Only mode.
+                  <div className="status-toast" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#991b1b' }}>
+                    Access Denied: Contributor accounts are restricted to Read-Only mode.
                   </div>
                 )}
 
-                <div className="vote-options" style={{ margin: '12px 0', display: 'flex', gap: '16px' }}>
-                  <label style={{ cursor: isReadOnlyMode ? 'not-allowed' : 'pointer', fontWeight: '600', color: isReadOnlyMode ? '#94a3b8' : '#16a34a' }}>
-                    <input 
-                      type="radio" 
-                      name={`vote-live-${card.submissionId}`} 
-                      value="AGREE"
+                <div className="vote-options">
+                  <label className="text-agree">
+                    <input
+                      checked={form.voteSelection === 'AGREE'}
                       disabled={isReadOnlyMode}
-                      checked={voteSelection === 'AGREE'} 
-                      onChange={(e) => setVoteSelection(e.target.value)} 
-                      style={{ marginRight: '6px', cursor: isReadOnlyMode ? 'not-allowed' : 'pointer' }}
-                    /> 
+                      name={`vote-${card.queueId}`}
+                      onChange={(e) => updateForm(card.queueId, { voteSelection: e.target.value })}
+                      type="radio"
+                      value="AGREE"
+                    />
                     AGREE
                   </label>
 
-                  <label style={{ cursor: isReadOnlyMode ? 'not-allowed' : 'pointer', fontWeight: '600', color: isReadOnlyMode ? '#94a3b8' : '#dc2626' }}>
-                    <input 
-                      type="radio" 
-                      name={`vote-live-${card.submissionId}`} 
-                      value="DISAGREE"
+                  <label className="text-disagree">
+                    <input
+                      checked={form.voteSelection === 'DISAGREE'}
                       disabled={isReadOnlyMode}
-                      checked={voteSelection === 'DISAGREE'} 
-                      onChange={(e) => setVoteSelection(e.target.value)} 
-                      style={{ marginRight: '6px', cursor: isReadOnlyMode ? 'not-allowed' : 'pointer' }}
-                    /> 
+                      name={`vote-${card.queueId}`}
+                      onChange={(e) => updateForm(card.queueId, { voteSelection: e.target.value })}
+                      type="radio"
+                      value="DISAGREE"
+                    />
                     DISAGREE
+                  </label>
+
+                  <label style={{ color: '#7c3aed', fontWeight: 700 }}>
+                    <input
+                      checked={form.voteSelection === 'FLAG'}
+                      disabled={isReadOnlyMode}
+                      name={`vote-${card.queueId}`}
+                      onChange={(e) => updateForm(card.queueId, { voteSelection: e.target.value })}
+                      type="radio"
+                      value="FLAG"
+                    />
+                    FLAG FOR REVISION
                   </label>
                 </div>
 
-                <input 
-                  type="text" 
-                  placeholder={isReadOnlyMode ? "Evaluation input disabled (Read-Only Mode)..." : "Structural validation justification text lines..."} 
-                  value={voteReason} 
+                <input
+                  className="justification-input"
                   disabled={isReadOnlyMode}
-                  onChange={(e) => setVoteReason(e.target.value)} 
-                  style={{ width: '100%', padding: '8px', margin: '10px 0', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: isReadOnlyMode ? 'not-allowed' : 'auto' }} 
+                  onChange={(e) => updateForm(card.queueId, { voteReason: e.target.value })}
+                  placeholder="Structural validation justification text lines..."
+                  type="text"
+                  value={form.voteReason}
                 />
-                
-                <button 
-                  onClick={() => handleVoteSubmit(card.submissionId)} 
+
+                <button
+                  className="btn-submit-ballot"
                   disabled={isReadOnlyMode}
-                  style={{ 
-                    padding: '8px 16px', 
-                    background: isReadOnlyMode ? '#94a3b8' : '#2563eb', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: '4px', 
-                    cursor: isReadOnlyMode ? 'not-allowed' : 'pointer', 
-                    fontWeight: 'bold',
-                    transition: 'background 0.2s'
-                  }}
+                  onClick={() => handleVoteSubmit(card)}
+                  type="button"
                 >
                   Submit Live Ballot
                 </button>

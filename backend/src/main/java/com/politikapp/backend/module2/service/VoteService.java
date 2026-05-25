@@ -48,6 +48,10 @@ public class VoteService {
     @Transactional
     public VoteCalculationTrace processPeerBallot(@NonNull UUID queueId, UUID peerId, String voteSelection, String voteReason) {
         log.info("Processing peer ballot: peerId={}, queueId={}, vote={}", peerId, queueId, voteSelection);
+        String normalizedVote = voteSelection == null ? "" : voteSelection.trim().toUpperCase();
+        if (!normalizedVote.equals("AGREE") && !normalizedVote.equals("DISAGREE") && !normalizedVote.equals("FLAG")) {
+            throw new HttpResponseException(422, "Unprocessable Entity: voteSelection must be AGREE, DISAGREE, or FLAG.");
+        }
 
         // 1. Verify queue entry exists and is in JURY_REVIEW status
         ModerationQueue queueRow = moderationQueueRepository.findById(queueId)
@@ -84,7 +88,7 @@ public class VoteService {
         JuryVote vote = new JuryVote(
             queueId,
             peerId,
-            voteSelection,
+            normalizedVote,
             derivedWeight,
             voteReason
         );
@@ -92,7 +96,7 @@ public class VoteService {
         log.info("Persisted jury vote. ID={}, derivedWeight={}", vote.getVoteId(), derivedWeight);
 
         // 5. Recalculate Consensus
-        return calculateConsensusOutcome(queueRow, peerId, peerName, trustScore, derivedWeight, voteSelection);
+        return calculateConsensusOutcome(queueRow, peerId, peerName, trustScore, derivedWeight, normalizedVote);
     }
 
     private VoteCalculationTrace calculateConsensusOutcome(
@@ -118,7 +122,14 @@ public class VoteService {
         boolean thresholdMet = false;
         String thresholdFormula = "AGREE >= 10 AND AGREE >= 2*DISAGREE (Publish) | DISAGREE >= 10 AND DISAGREE >= 2*AGREE (Reject)";
 
-        if (agreeSum >= 10 && (agreeSum >= disagreeSum * 2)) {
+        if ("FLAG".equals(voteSelection)) {
+            queue.setQueueStatus("REVISION_REQUIRED");
+            setSubmissionStatus(submission, "REVISION_REQUIRED");
+            finalOutcomeStatus = "REVISION_REQUIRED";
+            databaseActionTaken = "ROUTED_FOR_REVISION";
+            thresholdMet = true;
+            thresholdFormula = "Any FLAG vote routes submission to REVISION_REQUIRED";
+        } else if (agreeSum >= 10 && (agreeSum >= disagreeSum * 2)) {
             log.info("Consensus reached: APPROVED submission ID={}", submission.getSubmissionId());
             queue.setQueueStatus("PUBLISHED");
             setSubmissionStatus(submission, "PUBLISHED");
