@@ -53,6 +53,7 @@ function AppInner() {
   const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' })
   const [dashboardId, setDashboardId] = useState('')
   const [dashboardState, setDashboardState] = useState({ status: 'idle', message: '', data: null })
+  const [selectedPoliticianId, setSelectedPoliticianId] = useState('')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
 
@@ -167,6 +168,25 @@ function AppInner() {
     }
   }
 
+  async function openPoliticianProfile(politicianId) {
+    if (!politicianId) {
+      return
+    }
+    setSelectedPoliticianId(politicianId)
+    setDashboardId(politicianId)
+    await loadDashboardById(politicianId)
+    setActiveView('profile')
+  }
+
+  function openSubmitContributionForPolitician(politicianId) {
+    if (!politicianId) {
+      return
+    }
+    setSelectedPoliticianId(politicianId)
+    setFormData((current) => ({ ...current, politicianId }))
+    setActiveView('submit')
+  }
+
   function handlePoliticianLocalUpdate(politicianId, updates) {
     setPoliticiansState((current) => {
       const nextData = current.data.map((politician) =>
@@ -222,10 +242,9 @@ function AppInner() {
           <PoliticianDirectory
             onRefresh={loadPoliticians}
             onSearch={handleSearch}
-            onSelect={handleSelectPolitician}
+            onViewProfile={openPoliticianProfile}
             politicians={politiciansState.data}
             searchName={searchName}
-            selectedPolitician={politiciansState.selected}
             setSearchName={setSearchName}
             state={politiciansState}
           />
@@ -237,8 +256,20 @@ function AppInner() {
             isSourceAllowed={isSourceAllowed}
             onChange={updateFormField}
             onSubmit={handleSubmission}
+            selectedPoliticianId={selectedPoliticianId}
             state={submissionState}
             politicians={politiciansState.data}
+          />
+        )}
+
+        {activeView === 'profile' && (
+          <PoliticianProfilePage
+            onAddContribution={openSubmitContributionForPolitician}
+            onPoliticianUpdate={handlePoliticianLocalUpdate}
+            onReload={openPoliticianProfile}
+            politicianId={selectedPoliticianId}
+            politicians={politiciansState.data}
+            state={dashboardState}
           />
         )}
 
@@ -247,7 +278,7 @@ function AppInner() {
             dashboardId={dashboardId}
             onChange={setDashboardId}
             onLoadById={loadDashboardById}
-            onPoliticianUpdate={handlePoliticianLocalUpdate}
+            onViewProfile={openPoliticianProfile}
             onSubmit={handleDashboardLookup}
             politicians={politiciansState.data}
             politiciansState={politiciansState}
@@ -298,10 +329,9 @@ function App() {
 function PoliticianDirectory({
   onRefresh,
   onSearch,
-  onSelect,
+  onViewProfile,
   politicians,
   searchName,
-  selectedPolitician,
   setSearchName,
   state,
 }) {
@@ -356,16 +386,13 @@ function PoliticianDirectory({
 
       <div className="directoryGrid">
         <section className="politicianList" aria-label="Politicians">
-          {sortedPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
+          {state.status === 'loading' && <LoadingSkeletonList rows={6} />}
+          {state.status !== 'loading' && sortedPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
           {sortedPoliticians.map((politician, index) => (
             <button
-              className={
-                selectedPolitician?.politicianId === politician.politicianId
-                  ? 'politicianRow active'
-                  : 'politicianRow'
-              }
+              className="politicianRow"
               key={politician.politicianId}
-              onClick={() => onSelect(politician.politicianId)}
+              onClick={() => onViewProfile(politician.politicianId)}
               type="button"
               style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative', minHeight: 'auto', padding: '12px' }}
             >
@@ -390,13 +417,9 @@ function PoliticianDirectory({
           ))}
         </section>
 
-        {selectedPolitician ? (
-          <PoliticianProfile politician={selectedPolitician} />
-        ) : (
-          <section className="profileSummary">
-            <p className="emptyState">Select a politician to view profile details.</p>
-          </section>
-        )}
+        <section className="profileSummary">
+          <p className="emptyState">Click a politician card to open the dedicated profile page.</p>
+        </section>
       </div>
     </section>
   )
@@ -460,10 +483,24 @@ function PoliticianProfile({ politician }) {
   )
 }
 
-function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, state, politicians = [] }) {
+function SubmissionPanel({
+  formData,
+  isSourceAllowed,
+  onChange,
+  onSubmit,
+  selectedPoliticianId,
+  state,
+  politicians = [],
+}) {
+  const selectedPolitician = politicians.find((p) => p.politicianId === (formData.politicianId || selectedPoliticianId))
   return (
     <section className="workspace">
       <form className="editorPanel" onSubmit={onSubmit}>
+        {selectedPolitician && (
+          <p className="statusLine success">
+            Adding contribution for: <strong>{selectedPolitician.fullName}</strong>
+          </p>
+        )}
         <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
           Select Politician Profile
           <select 
@@ -533,7 +570,7 @@ function DashboardPanel({
   dashboardId,
   onChange,
   onLoadById,
-  onPoliticianUpdate,
+  onViewProfile,
   onSubmit,
   politicians,
   politiciansState,
@@ -591,10 +628,7 @@ function DashboardPanel({
 
   async function handleCardSelect(politician) {
     const politicianId = politician.politicianId
-    onChange(politicianId)
-    const result = await onLoadById(politicianId)
-    setDetailsData(result?.ok ? result.data : politician)
-    setIsDetailsOpen(true)
+    await onViewProfile(politicianId)
   }
 
   function openEditModal() {
@@ -717,9 +751,11 @@ function DashboardPanel({
 
       <StatusLine state={politiciansState} />
       <StatusLine state={state} />
+      {state.status === 'loading' && <PageSectionLoader />}
 
       <section className="dashboardCardGrid" aria-label="Politician dashboard selection">
-        {filteredPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
+        {state.status === 'loading' && <LoadingSkeletonCards count={4} />}
+        {state.status !== 'loading' && filteredPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
         {filteredPoliticians.map((politician) => (
           <button
             className="dashboardCard"
@@ -808,6 +844,198 @@ function DashboardPanel({
             </footer>
           </section>
         </div>
+      )}
+
+      {isEditOpen && (
+        <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
+          <section
+            aria-label="Edit politician details"
+            aria-modal="true"
+            className="editModal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <header className="detailsModalHeader">
+              <h3>Edit Politician Details</h3>
+              <button onClick={() => setIsEditOpen(false)} type="button">
+                Close
+              </button>
+            </header>
+            <form className="editFormGrid" onSubmit={handleSaveEdit}>
+              <label>
+                Full Name
+                <input name="fullName" onChange={updateEditField} required type="text" value={editForm.fullName} />
+                {editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}
+              </label>
+              <label>
+                Position
+                <input name="position" onChange={updateEditField} required type="text" value={editForm.position} />
+                {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
+              </label>
+              <label>
+                Jurisdiction
+                <select
+                  name="jurisdiction"
+                  onChange={updateEditField}
+                  required
+                  value={editForm.jurisdiction}
+                >
+                  <option value="NATIONAL">NATIONAL</option>
+                  <option value="CEBU_CITY">CEBU_CITY</option>
+                </select>
+                {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
+              </label>
+              <label>
+                Party / Affiliation
+                <input name="partyAffiliation" onChange={updateEditField} type="text" value={editForm.partyAffiliation} />
+              </label>
+              <label>
+                Profile Image URL
+                <input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} />
+              </label>
+              <label>
+                Biography
+                <textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} />
+              </label>
+              <div className="editModalActions">
+                <button onClick={() => setIsEditOpen(false)} type="button">
+                  Cancel
+                </button>
+                <button type="submit">Save Update</button>
+              </div>
+            </form>
+          </section>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function PoliticianProfilePage({
+  onAddContribution,
+  onPoliticianUpdate,
+  onReload,
+  politicianId,
+  politicians,
+  state,
+}) {
+  const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
+  const profile = state.data || fallbackProfile
+  const timelineEntries =
+    state.data?.publishedTimelineLedger ||
+    state.data?.timeline ||
+    state.data?.entries ||
+    []
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [editErrors, setEditErrors] = useState({})
+  const [editForm, setEditForm] = useState({
+    biography: '',
+    fullName: '',
+    jurisdiction: '',
+    partyAffiliation: '',
+    position: '',
+    profileImageUrl: '',
+  })
+
+  function openEditModal() {
+    if (!profile) {
+      return
+    }
+    setEditErrors({})
+    setEditForm({
+      biography: profile.biography || '',
+      fullName: profile.fullName || '',
+      jurisdiction: profile.jurisdiction || '',
+      partyAffiliation: profile.partyAffiliation || '',
+      position: profile.position || '',
+      profileImageUrl: profile.profileImageUrl || '',
+    })
+    setIsEditOpen(true)
+  }
+
+  function updateEditField(event) {
+    const { name, value } = event.target
+    setEditForm((current) => ({ ...current, [name]: value }))
+  }
+
+  function validateEditForm() {
+    const nextErrors = {}
+    if (!editForm.fullName.trim()) nextErrors.fullName = 'Full name is required.'
+    if (!editForm.position.trim()) nextErrors.position = 'Position is required.'
+    if (!editForm.jurisdiction.trim()) nextErrors.jurisdiction = 'Jurisdiction is required.'
+    setEditErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  async function handleSaveEdit(event) {
+    event.preventDefault()
+    if (!profile || !validateEditForm()) {
+      return
+    }
+
+    const updates = {
+      politicianId: profile.politicianId,
+      fullName: editForm.fullName.trim(),
+      position: editForm.position.trim(),
+      jurisdiction: editForm.jurisdiction.trim(),
+      partyAffiliation: editForm.partyAffiliation.trim(),
+      profileImageUrl: editForm.profileImageUrl.trim(),
+      biography: editForm.biography.trim(),
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/politicians/${profile.politicianId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      })
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}))
+        alert(errorData.message || 'Failed to persist profile updates to database.')
+        return
+      }
+      const savedData = await readApiResponse(res)
+      onPoliticianUpdate(profile.politicianId, savedData)
+      setIsEditOpen(false)
+      await onReload(profile.politicianId)
+    } catch (err) {
+      console.error(err)
+      alert('Network error: Could not contact server to save profile updates.')
+    }
+  }
+
+  if (!politicianId) {
+    return (
+      <section className="workspace">
+        <p className="emptyState">Select a politician card first.</p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="workspace">
+      <StatusLine state={state} />
+      {state.status === 'loading' && <PageSectionLoader />}
+      {state.status === 'loading' && !profile && <ProfileSkeleton />}
+      {profile && (
+        <>
+          <section className="profileSummary">
+            <p className="eyebrow">{profile.position || 'UNKNOWN'}</p>
+            <h2>{profile.fullName}</h2>
+            <p>{profile.jurisdiction || 'Unspecified jurisdiction'}</p>
+            <p>{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
+          </section>
+          <div style={{ display: 'flex', gap: '10px', margin: '12px 0 16px' }}>
+            <button onClick={openEditModal} type="button">Edit Profile</button>
+            <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
+          </div>
+          <KpiGrid profile={profile} />
+          <section className="biographyBlock" style={{ marginTop: '20px' }}>
+            <h2>Biography</h2>
+            <p>{profile.biography || 'No biography information available.'}</p>
+          </section>
+          <TimelineLedger entries={timelineEntries} title="Published Contribution / History Timeline" />
+        </>
       )}
 
       {isEditOpen && (
@@ -1164,7 +1392,109 @@ function StatusLine({ state }) {
   if (!state.message) {
     return null
   }
-  return <p className={`statusLine ${state.status}`}>{state.message}</p>
+  if (state.status === 'loading') {
+    return (
+      <div className="rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-white px-4 py-3 text-slate-700 shadow-sm transition-opacity duration-300 ease-out">
+        <div className="flex items-center gap-3">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" aria-hidden="true" />
+          <span className="sr-only">{state.message}</span>
+          <div className="h-2.5 w-48 rounded-full bg-slate-200/80 animate-pulse" aria-hidden="true" />
+        </div>
+      </div>
+    )
+  }
+  return (
+    <p className={`statusLine ${state.status}`}>
+      {state.message}
+    </p>
+  )
+}
+
+function LoadingSkeletonList({ rows = 4 }) {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      {Array.from({ length: rows }).map((_, index) => (
+        <div
+          className="h-16 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 bg-[length:220%_100%] animate-[pulse_1.5s_ease-in-out_infinite]"
+          key={`s-row-${index}`}
+        />
+      ))}
+    </div>
+  )
+}
+
+function LoadingSkeletonCards({ count = 4 }) {
+  return (
+    <div className="col-span-full grid grid-cols-1 gap-4 md:grid-cols-2" aria-hidden="true">
+      {Array.from({ length: count }).map((_, index) => (
+        <article
+          className="grid min-h-[152px] grid-cols-[94px_minmax(0,1fr)] items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5"
+          key={`s-card-${index}`}
+        >
+          <span className="h-[94px] w-[94px] rounded-2xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+          <div className="space-y-2.5">
+            <span className="block h-4 w-2/3 rounded-md bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+            <span className="block h-3 w-1/2 rounded-md bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+            <span className="block h-3 w-3/5 rounded-md bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+          </div>
+        </article>
+      ))}
+    </div>
+  )
+}
+
+function ProfileSkeleton() {
+  return (
+    <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 ease-out">
+      <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50/70">
+        <div className="flex items-center gap-3 text-slate-600">
+          <span className="h-5 w-5 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600" aria-hidden="true" />
+          <span className="text-sm font-medium">Loading profile</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[132px_minmax(0,1fr)] gap-5 max-md:grid-cols-1">
+        <div className="h-[132px] w-[132px] rounded-xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+        <div className="space-y-3">
+          <div className="h-3 w-24 rounded bg-slate-200 animate-pulse" />
+          <div className="h-8 w-2/3 rounded bg-slate-200 animate-pulse" />
+          <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+          <div className="h-4 w-1/3 rounded bg-slate-200 animate-pulse" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/70 p-4" key={`kpi-${index}`}>
+            <div className="h-3 w-2/3 rounded bg-slate-200 animate-pulse" />
+            <div className="h-5 w-1/2 rounded bg-slate-200 animate-pulse" />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
+        <div className="h-5 w-40 rounded bg-slate-200 animate-pulse" />
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div className="space-y-2 border-t border-slate-100 pt-3" key={`tl-${index}`}>
+            <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
+            <div className="h-3 w-5/6 rounded bg-slate-200 animate-pulse" />
+            <div className="h-3 w-24 rounded bg-slate-200 animate-pulse" />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function PageSectionLoader() {
+  return (
+    <section className="flex min-h-[140px] items-center justify-center rounded-xl border border-slate-200 bg-white/90 p-6 shadow-sm transition-all duration-300 ease-out" aria-live="polite">
+      <div className="flex items-center gap-3 text-slate-600">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600" aria-hidden="true" />
+        <span className="text-sm font-semibold tracking-wide">Loading content</span>
+      </div>
+    </section>
+  )
 }
 
 function initialsFor(name) {

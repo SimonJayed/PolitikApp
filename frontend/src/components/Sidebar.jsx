@@ -18,7 +18,6 @@ function Sidebar({ activeView, onSelectView, title = 'PolitikApp' }) {
   const navSections = useMemo(() => {
     const featureItems = [
       { key: 'directory', label: 'Directory', icon: 'R', accent: '#5c8a9f' },
-      { key: 'submit', label: 'Submit', icon: 'S', accent: '#10b981' },
       { key: 'compare', label: 'Compare', icon: 'C', accent: '#b06b4a' },
     ]
 
