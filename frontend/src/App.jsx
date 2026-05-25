@@ -5,13 +5,14 @@ import ModerationPanel from './components/ModerationPanel'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
+import { useAuth } from './auth/AuthContext'
+import AuthPages from './auth/AuthPages'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const SOURCE_URL_PATTERN = /^https?:\/\/([a-zA-Z0-9-]+\.)*(gov\.ph|edu\.ph)(\/.*)?$/
 
 const emptySubmission = {
   politicianId: '',
-  contributorId: '',
   sourceUrl: '',
   categoryTag: 'Audit',
   actionIdentifier: 'COA_FINDING',
@@ -35,13 +36,13 @@ async function readApiResponse(response) {
   return body
 }
 
-function AppInner() {
+function AppInner({ currentUser, onLogout, token }) {
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
   const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : 'JUDICIAL_REVIEWER'
 
-  const [activeView, setActiveView] = useState('directory')
+  const [activeView, setActiveView] = useState('dashboard')
   const [politiciansState, setPoliticiansState] = useState({
     data: [],
     message: '',
@@ -127,13 +128,12 @@ function AppInner() {
     try {
       const payload = {
         ...formData,
-        contributorId: (formData.contributorId || '').trim() || '88bc8912-43ba-4abc-882a-ef92481aa323',
         sourceUrl: formData.sourceUrl.trim(),
         quantitativeMetric: Number(formData.quantitativeMetric),
       }
       const data = await fetch(`${API_BASE_URL}/api/submissions`, {
         body: JSON.stringify(payload),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         method: 'POST',
       }).then(readApiResponse)
 
@@ -228,7 +228,7 @@ function AppInner() {
 
   return (
     <main className="appShell">
-      <Sidebar activeView={activeView} onSelectView={setActiveView} title="PolitikApp" />
+      <Sidebar activeView={activeView} onLogout={onLogout} onSelectView={setActiveView} title="PolitikApp" user={currentUser} />
 
       <section className="pageContent">
         <header className="topBar">
@@ -239,14 +239,15 @@ function AppInner() {
         </header>
 
         {activeView === 'directory' && (
-          <PoliticianDirectory
-            onRefresh={loadPoliticians}
-            onSearch={handleSearch}
+          <DashboardPanel
+            dashboardId={dashboardId}
+            onChange={setDashboardId}
+            onLoadById={loadDashboardById}
             onViewProfile={openPoliticianProfile}
+            onSubmit={handleDashboardLookup}
             politicians={politiciansState.data}
-            searchName={searchName}
-            setSearchName={setSearchName}
-            state={politiciansState}
+            politiciansState={politiciansState}
+            state={dashboardState}
           />
         )}
 
@@ -273,18 +274,7 @@ function AppInner() {
           />
         )}
 
-        {activeView === 'dashboard' && (
-          <DashboardPanel
-            dashboardId={dashboardId}
-            onChange={setDashboardId}
-            onLoadById={loadDashboardById}
-            onViewProfile={openPoliticianProfile}
-            onSubmit={handleDashboardLookup}
-            politicians={politiciansState.data}
-            politiciansState={politiciansState}
-            state={dashboardState}
-          />
-        )}
+        {activeView === 'dashboard' && <DashboardPlaceholder />}
 
         {activeView === 'compare' && (
           <ComparisonPanel
@@ -312,17 +302,81 @@ function AppInner() {
             <ModerationPanel />
           )
         )}
+        {activeView === 'account' && <UserAccountPage token={token} user={currentUser} />}
       </section>
     </main>
   )
 }
 
 function App() {
+  const { isAuthenticated, logout, token, user } = useAuth()
+  if (!isAuthenticated) {
+    return <AuthPages />
+  }
   return (
     <DeveloperSandboxProvider>
-      <AppInner />
+      <AppInner currentUser={user} onLogout={logout} token={token} />
       <DeveloperOptionsPanel />
     </DeveloperSandboxProvider>
+  )
+}
+
+function DashboardPlaceholder() {
+  return (
+    <section className="workspace">
+      <p className="emptyState">Dashboard content coming soon.</p>
+    </section>
+  )
+}
+
+function UserAccountPage({ token, user }) {
+  const [profile, setProfile] = useState(user)
+  const [state, setState] = useState({ status: 'idle', message: '' })
+  const [form, setForm] = useState({ fullName: user.fullName || '', username: user.username || '' })
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/users/me`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        setProfile(data)
+        setForm({ fullName: data.fullName || '', username: data.username || '' })
+      })
+      .catch(() => null)
+  }, [token])
+
+  async function onSave(event) {
+    event.preventDefault()
+    setState({ status: 'loading', message: 'Saving profile...' })
+    try {
+      const data = await fetch(`${API_BASE_URL}/users/me`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(form),
+      }).then(readApiResponse)
+      setProfile(data)
+      setState({ status: 'success', message: 'Profile updated.' })
+    } catch (error) {
+      setState({ status: 'error', message: error.message })
+    }
+  }
+
+  return (
+    <section className="workspace">
+      <section className="profileSummary">
+        <p className="eyebrow">Account</p>
+        <h2>{profile?.fullName}</h2>
+        <p>{profile?.email}</p>
+        <p>Role: {profile?.role}</p>
+      </section>
+      <form className="editorPanel" onSubmit={onSave}>
+        <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
+        <label>Username<input value={form.username} onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))} /></label>
+        <button type="submit" disabled={state.status === 'loading'}>Save</button>
+      </form>
+      <StatusLine state={state} />
+    </section>
   )
 }
 

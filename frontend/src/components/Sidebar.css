@@ -181,6 +181,10 @@
   background: var(--page-bg);
 }
 
+.appSidebar .bottom > button.navItem.active {
+  background: var(--page-bg);
+}
+
 .appSidebar li.navItem.active::before {
   content: '';
   position: absolute;
@@ -208,6 +212,7 @@
 }
 
 .appSidebar li.navItem:not(.active):hover,
+.appSidebar .bottom > button.navItem:not(.active):hover,
 .bottom > button:hover {
   background: var(--sidebar-hover);
 }
@@ -299,6 +304,11 @@
 
 .appSidebar li.navItem.active .icon,
 .appSidebar li.navItem.active .text {
+  color: #0f766e;
+}
+
+.appSidebar .bottom > button.navItem.active .icon,
+.appSidebar .bottom > button.navItem.active .text {
   color: #0f766e;
 }
 

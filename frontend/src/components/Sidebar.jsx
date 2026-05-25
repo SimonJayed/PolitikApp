@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'
 import './Sidebar.css'
 
-function Sidebar({ activeView, onSelectView, title = 'PolitikApp' }) {
+function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', user }) {
   const [isOpen, setIsOpen] = useState(true)
 
   const sandboxContext = useDeveloperSandbox()
@@ -17,7 +17,7 @@ function Sidebar({ activeView, onSelectView, title = 'PolitikApp' }) {
 
   const navSections = useMemo(() => {
     const featureItems = [
-      { key: 'directory', label: 'Directory', icon: 'R', accent: '#5c8a9f' },
+      { key: 'directory', label: 'Politicians', icon: 'R', accent: '#5c8a9f' },
       { key: 'compare', label: 'Compare', icon: 'C', accent: '#b06b4a' },
     ]
 
@@ -80,11 +80,22 @@ function Sidebar({ activeView, onSelectView, title = 'PolitikApp' }) {
       </nav>
 
       <div className="bottom">
-        <button className="navItem" style={{ '--bg': '#2d3142' }} type="button">
+        <button
+          className={activeView === 'account' ? 'navItem active' : 'navItem'}
+          onClick={() => onSelectView('account')}
+          style={{ '--bg': '#2d3142' }}
+          type="button"
+        >
           <span className="icon" aria-hidden="true">
             <span>*</span>
           </span>
-          <span className="text">Utilities</span>
+          <span className="text">{user?.username || 'Utilities'}</span>
+        </button>
+        <button className="navItem" onClick={onLogout} style={{ '--bg': '#9f1239' }} type="button">
+          <span className="icon" aria-hidden="true">
+            <span>L</span>
+          </span>
+          <span className="text">Logout</span>
         </button>
       </div>
     </aside>

@@ -6,6 +6,7 @@ import com.politikapp.backend.module1.dto.BallotSubmissionPayload;
 import com.politikapp.backend.module1.dto.SubmissionResponse;
 import com.politikapp.backend.module1.entity.ProfileEditSubmission;
 import com.politikapp.backend.module1.repository.ProfileEditSubmissionRepository;
+import java.util.UUID;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,14 +32,17 @@ public class SubmissionService {
     }
 
     @Transactional
-    public SubmissionResponse createSubmission(BallotSubmissionPayload payload) {
+    public SubmissionResponse createSubmission(BallotSubmissionPayload payload, UUID contributorId) {
+        if (contributorId == null) {
+            throw new HttpResponseException(401, "Authentication required.");
+        }
         sourceValidationService.validateSourceUrl(payload.sourceUrl());
 
         try {
             boolean parserSuccess = executeExternalAiSummaryExtraction(payload.impactSummary());
             ProfileEditSubmission submission = submissionRepository.save(ProfileEditSubmission.submitted(
                     payload.politicianId(),
-                    payload.contributorId(),
+                    contributorId,
                     payload.sourceUrl(),
                     payload.categoryTag(),
                     payload.actionIdentifier(),
