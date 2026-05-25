@@ -1,5 +1,6 @@
 package com.politikapp.backend.module1.dto;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -13,6 +14,9 @@ public record PoliticianResponse(
         LocalDate termEnd,
         String profileImageUrl,
         String biography,
-        String status
+        String status,
+        double efficiencyRatio,
+        int coaAuditDiscrepancies,
+        BigDecimal trackedBudgetAllocated
 ) {
 }

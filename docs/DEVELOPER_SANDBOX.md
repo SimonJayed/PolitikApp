@@ -36,7 +36,7 @@ export function DeveloperSandboxProvider({ children }) {
       submissionId: mockId,
       politicianId: "CEBU-GOV-" + Math.floor(1000 + Math.random() * 9000),
       impactSummary: "Simulated verification check entry regarding municipal infrastructure resource allocations.",
-      sourceUrl: "[https://cebucity.gov.ph/mock-data-audit-trace-](https://cebucity.gov.ph/mock-data-audit-trace-)" + mockId
+      sourceUrl: "https://cebucity.gov.ph/mock-data-audit-trace-" + mockId
     };
     setInjectedQueue(prev => [...prev, newCard]);
   };
@@ -50,6 +50,7 @@ export function DeveloperSandboxProvider({ children }) {
       manipulatedUser, 
       setManipulatedUser,
       injectedQueue,
+      setInjectedQueue,
       injectMockCard,
       clearInjectedQueue
     }}>
@@ -197,7 +198,7 @@ export default function DeveloperOptionsPanel() {
       {/* ========================================================================= */}
       {showDataModal && (
         <div style={{ 
-          background: '#0f172a', color: '#f8fafc', border: '2px solid #2563eb', borderRadius: '6px', padding: '16px', width: '320px', boxShadow: '0 10px 15px rgba(0,0,0,0.3)',
+          background: '#0f172a', color: '#f8fafc', border: '2px solid #2563eb', borderRadius: '6px', padding: '16px', width: isLargePreset ? '480px' : '320px', boxShadow: '0 10px 15px rgba(0,0,0,0.3)',
           display: 'flex', flexDirection: 'column', gap: '12px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '6px' }}>
@@ -240,7 +241,7 @@ export default function DeveloperOptionsPanel() {
 ```
 
 ## File 3: Your Moderation Deck (Updated to listen to the toggle switch)
-Where to store it: Replace your existing code inside frontend/src/components/ModerationPanel.jsx
+Where to store it: Replace your existing code inside `frontend/src/components/ModerationPanel.jsx`
 
 Code to copy and paste:
 
@@ -450,7 +451,7 @@ export default function ModerationPanel() {
 ```
 
 ## File 4: The Application Shell Frame Mount
-Where to store it: Wrap your view components inside frontend/src/App.jsx
+Where to store it: Wrap your view components inside `frontend/src/App.jsx`
 
 Code to copy and paste:
 

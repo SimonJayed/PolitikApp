@@ -282,3 +282,26 @@ const [comparisonGrid, setComparisonGrid] = useState({
   ]
 });
 ```
+
+## 📊 SRS-Aligned Performance Ranking & Score Aggregation Specs
+In strict accordance with the functional parameters defined in **SRS Section 1.2 and UC-1.2**, the Module 1 layout space tracks and hosts Tiered Performance Leaderboards (National & Cebu City Scope) alongside the Side-by-Side Politician Profile Comparator Matrix.
+
+### 🧮 Legislative Efficiency Ratio Formulation
+A politician persona entity's placement index ranking across the active directory board is determined through an automatic computational logic ratio using validated data updates:
+
+$$Legislative\ Efficiency\ Ratio = \left( \frac{Passed\ Ordinances\ /\ Bills}{Total\ Authored\ Submissions} \right) \times 100$$
+
+### 🛠️ Core Evaluation Metrics (Key Performance Indicators)
+The system data processing pipelines aggregate database tracking items across three distinct quantitative markers to compute public standing:
+1. **Legislative Efficiency Ratio:** Calculated continuously using the ratio formula above to evaluate structural performance layers.
+2. **Budget Allocations:** Aggregated financial values tracking managed public funds and resource provisions. 
+3. **COA Audit Discrepancies:** Commission on Audit public portal data markers tracking transaction inconsistencies. 
+
+### 🔒 UC-1.2 Alternative Flow A2 Exception Guard Rules
+To prevent critical calculation errors or application crashes when processing empty data records or uncalculated profile items:
+* **Division-by-Zero Protection:** If a politician record contains a `totalAuthored` bill metric value of `0`, the computation engine must capture the exception instantly.
+* **Fallback Resolution Rule:** The system blocks layout compilation errors by discarding the standard calculation loop and outputting a default fallback score configuration of `0.0` instead, preserving user dashboard stability.
+
+### 🎨 Frontend Sorting & Layout Classifications
+* **Descending Data Array Mapping:** The `<PoliticianDirectory />` view segment must sort incoming data collections cleanly using a descending evaluation method (`.sort((a, b) => b.efficiencyRatio - a.efficiencyRatio)`).
+* **Grid Alerts Interception:** Any profile card component running a state lifecycle trace where `coaAuditDiscrepancies > 0` must append an amber alert styling badge indicator onto its relative layout frame boundaries to maintain high visual accountability tracking.

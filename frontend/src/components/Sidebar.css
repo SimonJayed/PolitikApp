@@ -1,0 +1,369 @@
+.appSidebar {
+  --motion-duration: 320ms;
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --sidebar-bg: #c9d1d3;
+  --sidebar-border: #b9c3c7;
+  --sidebar-text: #2d3142;
+  --sidebar-muted: #4f5d75;
+  --sidebar-surface: #f8fafc;
+  position: fixed;
+  width: 92px;
+  height: 100vh;
+  background: linear-gradient(180deg, #d3dadc 0%, var(--sidebar-bg) 18%, #c3cdcf 100%);
+  transition: width var(--motion-duration) var(--motion-ease), padding var(--motion-duration) var(--motion-ease);
+  padding: 1.75rem 0 1.5rem 22px;
+  overflow: hidden;
+  z-index: 1000;
+  box-shadow: none;
+  border-right: 0;
+  font-family: 'Outfit', 'Elms Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+.appSidebar.active {
+  width: 320px;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  height: 72px;
+  padding-right: 1.2rem;
+  margin-bottom: 1.45rem;
+  border-bottom: 0;
+  padding-bottom: 0.9rem;
+}
+
+.sidebarBrand {
+  display: flex;
+  align-items: center;
+  color: var(--sidebar-text);
+}
+
+.sidebarBrandText {
+  font-size: 1.18rem;
+  font-weight: 700;
+  letter-spacing: 0.015em;
+  white-space: nowrap;
+  max-width: 188px;
+  overflow: hidden;
+  transition: opacity var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease), max-width var(--motion-duration) var(--motion-ease);
+}
+
+.appSidebar:not(.active) .sidebarBrandText {
+  opacity: 0;
+  transform: translateX(-10px);
+  max-width: 0;
+}
+
+.appSidebar:not(.active) {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.appSidebar:not(.active) .sidebarHeader {
+  justify-content: center;
+  padding-right: 0;
+  margin-bottom: 1.2rem;
+}
+
+.appSidebar:not(.active) .sidebarToggle {
+  width: 92px;
+}
+
+.sidebarToggle {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border: none;
+  background: transparent;
+  border-radius: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform var(--motion-duration) var(--motion-ease),
+    background-color var(--motion-duration) var(--motion-ease), box-shadow var(--motion-duration) var(--motion-ease);
+}
+
+.sidebarToggle::before,
+.sidebarToggle::after {
+  content: '';
+  position: absolute;
+  width: 26px;
+  height: 3px;
+  background: var(--sidebar-text);
+  transition: transform var(--motion-duration) var(--motion-ease),
+    box-shadow var(--motion-duration) var(--motion-ease), background-color var(--motion-duration) var(--motion-ease);
+}
+
+.sidebarToggle::before {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 0 var(--sidebar-text);
+}
+
+.sidebarToggle::after {
+  transform: translateY(8px);
+}
+
+.sidebarToggle:hover {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(45, 49, 66, 0.08);
+  transform: translateY(-1px);
+}
+
+.appSidebar.active .sidebarToggle::before {
+  transform: translateY(0) rotate(45deg);
+  box-shadow: none;
+}
+
+.appSidebar.active .sidebarToggle::after {
+  transform: translateY(0) rotate(-45deg);
+}
+
+.appSidebar ul {
+  padding: 0;
+  margin: 0;
+}
+
+.appSidebar > nav > ul {
+  position: relative;
+  height: calc(100vh - 210px);
+}
+
+.appSidebar li {
+  position: relative;
+  list-style: none;
+}
+
+.appSidebar li.sectionLabel {
+  margin-bottom: 1.9rem;
+}
+
+.appSidebar li.sectionLabel > span {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+  padding: 0.35rem 0 0.45rem 1.05rem;
+  transition: opacity var(--motion-duration) var(--motion-ease),
+    transform var(--motion-duration) var(--motion-ease);
+}
+
+.appSidebar:not(.active) .sectionLabel > span {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.appSidebar li.sectionLabel > ul {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.appSidebar:not(.active) li.sectionLabel > ul {
+  justify-items: center;
+}
+
+.appSidebar li.navItem {
+  border-top-left-radius: 50px;
+  border-bottom-left-radius: 50px;
+  transition: background-color 0.2s ease;
+}
+
+.appSidebar li.navItem.active {
+  background: var(--page-bg, var(--sidebar-surface));
+}
+
+.appSidebar li.navItem:not(.active):hover {
+  background: rgba(248, 250, 252, 0.26);
+}
+
+.appSidebar li.navItem.active::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-bottom-right-radius: 20px;
+  box-shadow: 5px 5px 0 5px var(--page-bg, var(--sidebar-surface));
+  background: transparent;
+  transition: box-shadow 0.2s ease;
+}
+
+.appSidebar li.navItem.active::after {
+  content: '';
+  position: absolute;
+  bottom: -20px;
+  right: 0;
+  width: 20px;
+  height: 20px;
+  border-top-right-radius: 20px;
+  box-shadow: 5px -5px 0 5px var(--page-bg, var(--sidebar-surface));
+  background: transparent;
+  transition: box-shadow 0.2s ease;
+}
+
+.appSidebar li.navItem button,
+.appSidebar .bottom > button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none;
+  background: none;
+  text-decoration: none;
+  color: var(--sidebar-text);
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 0;
+  min-height: auto;
+  font: inherit;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.appSidebar li.navItem button:focus-visible,
+.appSidebar .bottom > button:focus-visible,
+.sidebarToggle:focus-visible {
+  outline: 3px solid rgba(20, 184, 166, 0.24);
+  outline-offset: 2px;
+}
+
+.appSidebar li.navItem .icon,
+.appSidebar .bottom .icon {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 74px;
+  min-width: 74px;
+  height: 68px;
+  font-size: 1.28rem;
+  color: var(--sidebar-text);
+  transition: background-color 0.2s ease, color 0.2s ease,
+    width var(--motion-duration) var(--motion-ease), min-width var(--motion-duration) var(--motion-ease);
+}
+
+.appSidebar:not(.active) li.navItem .icon,
+.appSidebar:not(.active) .bottom .icon {
+  width: 92px;
+  min-width: 92px;
+}
+
+.appSidebar li.navItem .text,
+.appSidebar .bottom .text {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: var(--sidebar-text);
+  padding-left: 14px;
+  letter-spacing: 0.01em;
+  font-weight: 700;
+  max-width: 196px;
+  overflow: hidden;
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease,
+    max-width var(--motion-duration) var(--motion-ease);
+}
+
+.appSidebar:not(.active) .text {
+  opacity: 0;
+  max-width: 0;
+}
+
+.appSidebar li.navItem.active .icon {
+  color: #fff;
+}
+
+.appSidebar li.navItem.active .text {
+  color: var(--bg);
+}
+
+.appSidebar li.navItem:not(.active):hover .icon,
+.appSidebar li.navItem:not(.active):hover .text,
+.appSidebar .bottom button:hover .icon,
+.appSidebar .bottom button:hover .text {
+  color: var(--bg);
+}
+
+.appSidebar li.navItem.active .icon::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  width: 54px;
+  height: 54px;
+  background: var(--bg);
+  border-radius: 50%;
+  z-index: 1;
+  transition: background-color 0.2s ease;
+}
+
+.appSidebar li.navItem .icon > span,
+.appSidebar .bottom .icon > span {
+  position: relative;
+  z-index: 2;
+  font-weight: 700;
+}
+
+.bottom {
+  position: absolute;
+  bottom: 1.35rem;
+  width: calc(100% - 22px);
+  border-top: 0;
+  padding-top: 0.9rem;
+}
+
+.appSidebar:not(.active) .bottom {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.appSidebar:not(.active) .bottom > button {
+  width: 92px;
+}
+
+.bottom > button {
+  border-top-left-radius: 50px;
+  border-bottom-left-radius: 50px;
+}
+
+@media (max-width: 900px) {
+  .appSidebar,
+  .appSidebar.active {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    padding: 0.9rem;
+    position: sticky;
+  }
+
+  .appSidebar > nav > ul {
+    height: auto;
+  }
+
+  .bottom {
+    position: static;
+    width: 100%;
+    margin-top: 0.75rem;
+  }
+
+  .appSidebar:not(.active) {
+    padding: 0.9rem;
+  }
+
+  .appSidebar:not(.active) nav,
+  .appSidebar:not(.active) .bottom {
+    display: none;
+  }
+
+  .appSidebar:not(.active) .sidebarBrandText {
+    max-width: 160px;
+    opacity: 1;
+    transform: none;
+  }
+}

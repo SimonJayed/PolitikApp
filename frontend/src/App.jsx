@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Sidebar from './components/Sidebar'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import { DeveloperSandboxProvider, useDeveloperSandbox } from './developer/DeveloperSandboxContext'
@@ -25,8 +26,6 @@ const actionOptions = [
 ]
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
-const tabs = ['directory', 'submit', 'dashboard', 'compare', 'moderation']
-
 async function readApiResponse(response) {
   const body = await response.json().catch(() => ({}))
   if (!response.ok) {
@@ -39,13 +38,7 @@ function AppInner() {
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-
-  const visibleTabs = useMemo(() => {
-    if (isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR') {
-      return tabs.filter((t) => t !== 'moderation')
-    }
-    return tabs
-  }, [isDevModeActive, manipulatedUser])
+  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : 'JUDICIAL_REVIEWER'
 
   const [activeView, setActiveView] = useState('directory')
   const [politiciansState, setPoliticiansState] = useState({
@@ -160,15 +153,46 @@ function AppInner() {
 
   async function handleDashboardLookup(event) {
     event.preventDefault()
+    await loadDashboardById(dashboardId.trim())
+  }
+
+  async function loadDashboardById(politicianId) {
+    if (!politicianId) {
+      setDashboardState({ status: 'error', message: 'Select a politician first.', data: null })
+      return { ok: false }
+    }
+
     setDashboardState({ status: 'loading', message: 'Loading dashboard...', data: null })
     try {
       const data = await fetch(
-        `${API_BASE_URL}/api/politicians/${dashboardId.trim()}/dashboard`,
+        `${API_BASE_URL}/api/politicians/${politicianId}/dashboard`,
       ).then(readApiResponse)
       setDashboardState({ status: 'success', message: '', data })
+      return { ok: true, data }
     } catch (error) {
       setDashboardState({ status: 'error', message: error.message, data: null })
+      return { ok: false, error }
     }
+  }
+
+  function handlePoliticianLocalUpdate(politicianId, updates) {
+    setPoliticiansState((current) => {
+      const nextData = current.data.map((politician) =>
+        politician.politicianId === politicianId ? { ...politician, ...updates } : politician,
+      )
+      const nextSelected =
+        current.selected && current.selected.politicianId === politicianId
+          ? { ...current.selected, ...updates }
+          : current.selected
+      return { ...current, data: nextData, selected: nextSelected }
+    })
+
+    setDashboardState((current) => {
+      if (!current.data || current.data.politicianId !== politicianId) {
+        return current
+      }
+      return { ...current, data: { ...current.data, ...updates } }
+    })
   }
 
   async function handleComparisonLookup(event) {
@@ -183,90 +207,90 @@ function AppInner() {
         readApiResponse,
       )
       setComparisonState({ status: 'success', message: '', data })
+      return { ok: true, data }
     } catch (error) {
       setComparisonState({ status: 'error', message: error.message, data: null })
+      return { ok: false, error }
     }
   }
 
   return (
     <main className="appShell">
-      <header className="topBar">
-        <div>
-          <p className="eyebrow">{activeView === 'moderation' ? 'Module 2' : 'Module 1'}</p>
-          <h1>{activeView === 'moderation' ? 'Judicial Moderation Engine' : 'Source-First Profile Aggregator'}</h1>
-        </div>
-        <nav className="viewTabs" aria-label="Module views">
-          {visibleTabs.map((view) => (
-            <button
-              className={activeView === view ? 'active' : ''}
-              key={view}
-              onClick={() => setActiveView(view)}
-              type="button"
-            >
-              {view}
-            </button>
-          ))}
-        </nav>
-      </header>
+      <Sidebar activeView={activeView} onSelectView={setActiveView} title="PolitikApp" />
 
-      {activeView === 'directory' && (
-        <PoliticianDirectory
-          importState={importState}
-          onImport={handleImport}
-          onRefresh={loadPoliticians}
-          onSearch={handleSearch}
-          onSelect={handleSelectPolitician}
-          politicians={politiciansState.data}
-          searchName={searchName}
-          selectedPolitician={politiciansState.selected}
-          setSearchName={setSearchName}
-          state={politiciansState}
-        />
-      )}
+      <section className="pageContent">
+        <header className="topBar">
+          <div>
+            <p className="eyebrow">{activeView === 'moderation' ? 'Module 2' : 'Module 1'}</p>
+            <h1>{activeView === 'moderation' ? 'Judicial Moderation Engine' : 'Source-First Profile Aggregator'}</h1>
+          </div>
+        </header>
 
-      {activeView === 'submit' && (
-        <SubmissionPanel
-          formData={formData}
-          isSourceAllowed={isSourceAllowed}
-          onChange={updateFormField}
-          onSubmit={handleSubmission}
-          state={submissionState}
-        />
-      )}
+        {activeView === 'directory' && (
+          <PoliticianDirectory
+            importState={importState}
+            onImport={handleImport}
+            onRefresh={loadPoliticians}
+            onSearch={handleSearch}
+            onSelect={handleSelectPolitician}
+            politicians={politiciansState.data}
+            searchName={searchName}
+            selectedPolitician={politiciansState.selected}
+            setSearchName={setSearchName}
+            state={politiciansState}
+          />
+        )}
 
-      {activeView === 'dashboard' && (
-        <DashboardPanel
-          dashboardId={dashboardId}
-          onChange={setDashboardId}
-          onSubmit={handleDashboardLookup}
-          state={dashboardState}
-        />
-      )}
+        {activeView === 'submit' && (
+          <SubmissionPanel
+            formData={formData}
+            isSourceAllowed={isSourceAllowed}
+            onChange={updateFormField}
+            onSubmit={handleSubmission}
+            state={submissionState}
+          />
+        )}
 
-      {activeView === 'compare' && (
-        <ComparisonPanel
-          compareIds={compareIds}
-          onChange={setCompareIds}
-          onSubmit={handleComparisonLookup}
-          state={comparisonState}
-        />
-      )}
+        {activeView === 'dashboard' && (
+          <DashboardPanel
+            dashboardId={dashboardId}
+            onChange={setDashboardId}
+            onLoadById={loadDashboardById}
+            onPoliticianUpdate={handlePoliticianLocalUpdate}
+            onSubmit={handleDashboardLookup}
+            politicians={politiciansState.data}
+            politiciansState={politiciansState}
+            state={dashboardState}
+          />
+        )}
 
-      {activeView === 'moderation' && (
-        isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR' ? (
-          <section className="workspace" style={{ textAlign: 'center', padding: '40px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-            <h2 style={{ color: '#dc2626', fontSize: '24px', margin: '0 0 12px 0' }}>🛑 Access Restricted</h2>
-            <p style={{ color: '#64748b', margin: 0, fontSize: '15px', lineHeight: '1.5' }}>
-              Contributor accounts do not have authorized clearance to view or moderate pending queue cards.
-            </p>
-            <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '14px', fontStyle: 'italic' }}>
-              *Presentation Note: Open the floating user profile drawer spoofer to reset your Session Role Override back to JUDICIAL_REVIEWER.*
-            </p>
-          </section>
-        ) : (
-          <ModerationPanel />
-        )
-      )}
+        {activeView === 'compare' && (
+          <ComparisonPanel
+            compareIds={compareIds}
+            onChange={setCompareIds}
+            onSubmit={handleComparisonLookup}
+            politicians={politiciansState.data}
+            politiciansState={politiciansState}
+            state={comparisonState}
+          />
+        )}
+
+        {activeView === 'moderation' && (
+          currentRole === 'CONTRIBUTOR' ? (
+            <section className="workspace" style={{ textAlign: 'center', padding: '40px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
+              <h2 style={{ color: '#dc2626', fontSize: '24px', margin: '0 0 12px 0' }}>🛑 Access Restricted</h2>
+              <p style={{ color: '#64748b', margin: 0, fontSize: '15px', lineHeight: '1.5' }}>
+                Contributor accounts do not have authorized clearance to view or moderate pending queue cards.
+              </p>
+              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '14px', fontStyle: 'italic' }}>
+                *Presentation Note: Open the floating user profile drawer spoofer to reset your Session Role Override back to JUDICIAL_REVIEWER.*
+              </p>
+            </section>
+          ) : (
+            <ModerationPanel />
+          )
+        )}
+      </section>
     </main>
   )
 }
@@ -292,6 +316,10 @@ function PoliticianDirectory({
   setSearchName,
   state,
 }) {
+  const sortedPoliticians = [...politicians].sort(
+    (a, b) => (b.efficiencyRatio || 0) - (a.efficiencyRatio || 0)
+  );
+
   return (
     <section className="workspace directoryWorkspace">
       <section className="directoryToolbar">
@@ -320,8 +348,8 @@ function PoliticianDirectory({
 
       <div className="directoryGrid">
         <section className="politicianList" aria-label="Politicians">
-          {politicians.length === 0 && <p className="emptyState">No politicians found.</p>}
-          {politicians.map((politician) => (
+          {sortedPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
+          {sortedPoliticians.map((politician, index) => (
             <button
               className={
                 selectedPolitician?.politicianId === politician.politicianId
@@ -331,9 +359,25 @@ function PoliticianDirectory({
               key={politician.politicianId}
               onClick={() => onSelect(politician.politicianId)}
               type="button"
+              style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative', minHeight: 'auto', padding: '12px' }}
             >
-              <span>{politician.fullName}</span>
-              <small>{politician.position || 'UNKNOWN'}</small>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold' }}>{politician.fullName}</span>
+                <span style={{ fontSize: '11px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
+                  Rank #{index + 1}
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <small style={{ color: '#6b7280' }}>{politician.position || 'UNKNOWN'}</small>
+                <small style={{ color: '#059669', fontWeight: 'bold' }}>
+                  Eff: {Number(politician.efficiencyRatio || 0).toFixed(1)}%
+                </small>
+              </div>
+              {politician.coaAuditDiscrepancies > 0 && (
+                <div style={{ alignSelf: 'flex-start', background: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', marginTop: '2px' }}>
+                  ⚠️ COA Findings Flagged ({politician.coaAuditDiscrepancies})
+                </div>
+              )}
             </button>
           ))}
         </section>
@@ -352,7 +396,29 @@ function PoliticianDirectory({
 
 function PoliticianProfile({ politician }) {
   return (
-    <section className="importedProfile">
+    <section className="importedProfile" style={{ position: 'relative' }}>
+      {politician.coaAuditDiscrepancies > 0 && (
+        <div 
+          className="coa-alert-badge"
+          style={{ 
+            background: '#fffbeb', 
+            color: '#b45309', 
+            border: '1px solid #f59e0b', 
+            padding: '10px 16px', 
+            borderRadius: '8px', 
+            fontSize: '13px', 
+            fontWeight: 'bold', 
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginBottom: '16px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+          }}
+        >
+          ⚠️ HIGH ACCOUNTABILITY WARNING: COA Audit Discrepancies Flagged ({politician.coaAuditDiscrepancies} instances resolved in public ledger).
+        </div>
+      )}
+
       <div className="profileHero">
         <div className="portraitFrame">
           {politician.profileImageUrl ? (
@@ -369,13 +435,16 @@ function PoliticianProfile({ politician }) {
         </div>
       </div>
 
-      <div className="profileFacts">
+      <div className="profileFacts" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
         <Fact label="Status" value={politician.status} />
         <Fact label="Term start" value={formatDate(politician.termStart)} />
         <Fact label="Term end" value={formatDate(politician.termEnd)} />
+        <Fact label="Legislative Efficiency" value={`${Number(politician.efficiencyRatio || 0).toFixed(1)}%`} />
+        <Fact label="COA Discrepancies" value={`${politician.coaAuditDiscrepancies || 0}`} />
+        <Fact label="Tracked Budget Allocated" value={formatCurrency(politician.trackedBudgetAllocated)} />
       </div>
 
-      <section className="biographyBlock">
+      <section className="biographyBlock" style={{ marginTop: '20px' }}>
         <h2>Biography</h2>
         <p>{politician.biography || 'No Wikipedia summary was returned for this profile.'}</p>
       </section>
@@ -437,66 +506,525 @@ function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, state 
   )
 }
 
-function DashboardPanel({ dashboardId, onChange, onSubmit, state }) {
+function DashboardPanel({
+  dashboardId,
+  onChange,
+  onLoadById,
+  onPoliticianUpdate,
+  onSubmit,
+  politicians,
+  politiciansState,
+  state,
+}) {
+  const [query, setQuery] = useState('')
+  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [detailsData, setDetailsData] = useState(null)
+  const [editErrors, setEditErrors] = useState({})
+  const [editForm, setEditForm] = useState({
+    biography: '',
+    fullName: '',
+    jurisdiction: '',
+    partyAffiliation: '',
+    position: '',
+    profileImageUrl: '',
+  })
+
+  const filteredPoliticians = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+    return politicians.filter((politician) => {
+      const matchesJurisdiction =
+        jurisdictionFilter === 'ALL' || politician.jurisdiction === jurisdictionFilter
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        politician.fullName.toLowerCase().includes(normalizedQuery) ||
+        (politician.position || '').toLowerCase().includes(normalizedQuery)
+      return matchesJurisdiction && matchesQuery
+    })
+  }, [jurisdictionFilter, politicians, query])
+
+  useEffect(() => {
+    if (!isDetailsOpen && !isEditOpen) {
+      return undefined
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setIsEditOpen(false)
+        setIsDetailsOpen(false)
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isDetailsOpen, isEditOpen])
+
+  async function handleCardSelect(politician) {
+    const politicianId = politician.politicianId
+    onChange(politicianId)
+    const result = await onLoadById(politicianId)
+    setDetailsData(result?.ok ? result.data : politician)
+    setIsDetailsOpen(true)
+  }
+
+  function openEditModal() {
+    if (!detailsData) {
+      return
+    }
+    setEditErrors({})
+    setEditForm({
+      biography: detailsData.biography || '',
+      fullName: detailsData.fullName || '',
+      jurisdiction: detailsData.jurisdiction || '',
+      partyAffiliation: detailsData.partyAffiliation || '',
+      position: detailsData.position || '',
+      profileImageUrl: detailsData.profileImageUrl || '',
+    })
+    setIsEditOpen(true)
+  }
+
+  function updateEditField(event) {
+    const { name, value } = event.target
+    setEditForm((current) => ({ ...current, [name]: value }))
+  }
+
+  function validateEditForm() {
+    const nextErrors = {}
+    if (!editForm.fullName.trim()) {
+      nextErrors.fullName = 'Full name is required.'
+    }
+    if (!editForm.position.trim()) {
+      nextErrors.position = 'Position is required.'
+    }
+    if (!editForm.jurisdiction.trim()) {
+      nextErrors.jurisdiction = 'Jurisdiction is required.'
+    }
+    setEditErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
+  }
+
+  function handleSaveEdit(event) {
+    event.preventDefault()
+    if (!detailsData || !validateEditForm()) {
+      return
+    }
+
+    const updates = {
+      biography: editForm.biography.trim(),
+      fullName: editForm.fullName.trim(),
+      jurisdiction: editForm.jurisdiction.trim(),
+      partyAffiliation: editForm.partyAffiliation.trim(),
+      position: editForm.position.trim(),
+      profileImageUrl: editForm.profileImageUrl.trim(),
+    }
+
+    setDetailsData((current) => ({ ...current, ...updates }))
+    onPoliticianUpdate(detailsData.politicianId, updates)
+    setIsEditOpen(false)
+  }
+
   return (
-    <section className="workspace">
-      <form className="lookupBar" onSubmit={onSubmit}>
-        <Field
-          label="Politician ID"
-          name="dashboardId"
-          onChange={(event) => onChange(event.target.value)}
-          value={dashboardId}
-        />
-        <button disabled={state.status === 'loading'} type="submit">
-          Load
-        </button>
-      </form>
+    <section className="workspace dashboardWorkspace">
+      <section className="dashboardHeaderBlock">
+        <h2>Politician Dashboard</h2>
+        <p>Browse and select a politician to load their performance dashboard instantly.</p>
+      </section>
+
+      <section className="dashboardFilterBar" aria-label="Dashboard filters">
+        <label>
+          Search politician
+          <input
+            name="dashboardSearch"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by name or role"
+            type="text"
+            value={query}
+          />
+        </label>
+        <label>
+          Jurisdiction
+          <select
+            name="dashboardJurisdiction"
+            onChange={(event) => setJurisdictionFilter(event.target.value)}
+            value={jurisdictionFilter}
+          >
+            <option value="ALL">All</option>
+            <option value="NATIONAL">National</option>
+            <option value="CEBU_CITY">Cebu City</option>
+          </select>
+        </label>
+        <form className="dashboardQuickLoad" onSubmit={onSubmit}>
+          <Field
+            label="Manual ID"
+            name="dashboardId"
+            onChange={(event) => onChange(event.target.value)}
+            value={dashboardId}
+          />
+          <button disabled={state.status === 'loading'} type="submit">
+            Load
+          </button>
+        </form>
+      </section>
+
+      <div className="dashboardDivider" aria-hidden="true" />
+
+      <StatusLine state={politiciansState} />
       <StatusLine state={state} />
-      {state.data && (
-        <ProfileDashboard dashboard={state.data} timeline={state.data.publishedTimelineLedger || []} />
+
+      <section className="dashboardCardGrid" aria-label="Politician dashboard selection">
+        {filteredPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
+        {filteredPoliticians.map((politician) => (
+          <button
+            className="dashboardCard"
+            key={politician.politicianId}
+            onClick={() => handleCardSelect(politician)}
+            type="button"
+          >
+            <span className="dashboardCardAvatar">
+              {politician.profileImageUrl ? (
+                <img alt={politician.fullName} src={politician.profileImageUrl} />
+              ) : (
+                initialsFor(politician.fullName)
+              )}
+            </span>
+            <span className="dashboardCardBody" style={{ display: 'flex', flexDirection: 'column', gap: '2px', position: 'relative' }}>
+              <strong>{politician.fullName}</strong>
+              <small>{politician.position || 'UNKNOWN'}</small>
+              <small>{politician.jurisdiction || 'Unspecified jurisdiction'}</small>
+              <small>{politician.partyAffiliation || 'Party not disclosed'}</small>
+              {politician.coaAuditDiscrepancies > 0 && (
+                <span 
+                  className="coa-alert-badge"
+                  style={{ 
+                    alignSelf: 'flex-start', 
+                    background: '#fef3c7', 
+                    color: '#d97706', 
+                    border: '1px solid #f59e0b', 
+                    padding: '2px 8px', 
+                    borderRadius: '4px', 
+                    fontSize: '11px', 
+                    fontWeight: 'bold', 
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    marginTop: '4px'
+                  }}
+                >
+                  ⚠️ COA Findings Flagged ({politician.coaAuditDiscrepancies})
+                </span>
+              )}
+            </span>
+          </button>
+        ))}
+      </section>
+
+      {isDetailsOpen && detailsData && (
+        <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsDetailsOpen(false)}>
+          <section
+            aria-label="Politician details"
+            aria-modal="true"
+            className="detailsModal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <header className="detailsModalHeader">
+              <h3>Politician Details</h3>
+              <button onClick={() => setIsDetailsOpen(false)} type="button">
+                Close
+              </button>
+            </header>
+            <div className="detailsModalBody">
+              <div className="detailsHero">
+                <span className="detailsAvatar">
+                  {detailsData.profileImageUrl ? (
+                    <img alt={detailsData.fullName} src={detailsData.profileImageUrl} />
+                  ) : (
+                    initialsFor(detailsData.fullName || '')
+                  )}
+                </span>
+                <div className="detailsIdentity">
+                  <h4>{detailsData.fullName}</h4>
+                  <p>{detailsData.position || 'UNKNOWN'}</p>
+                  <p>{detailsData.jurisdiction || 'Unspecified jurisdiction'}</p>
+                  <p>{detailsData.partyAffiliation || 'Party not disclosed'}</p>
+                </div>
+              </div>
+              <section className="detailsBlock">
+                <h5>Biography</h5>
+                <p>{detailsData.biography || 'No biography information available.'}</p>
+              </section>
+            </div>
+            <footer className="detailsModalFooter">
+              <button className="detailsEditButton" onClick={openEditModal} type="button">
+                Edit
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+
+      {isEditOpen && (
+        <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
+          <section
+            aria-label="Edit politician details"
+            aria-modal="true"
+            className="editModal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <header className="detailsModalHeader">
+              <h3>Edit Politician Details</h3>
+              <button onClick={() => setIsEditOpen(false)} type="button">
+                Close
+              </button>
+            </header>
+            <form className="editFormGrid" onSubmit={handleSaveEdit}>
+              <label>
+                Full Name
+                <input name="fullName" onChange={updateEditField} required type="text" value={editForm.fullName} />
+                {editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}
+              </label>
+              <label>
+                Position
+                <input name="position" onChange={updateEditField} required type="text" value={editForm.position} />
+                {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
+              </label>
+              <label>
+                Jurisdiction
+                <input
+                  name="jurisdiction"
+                  onChange={updateEditField}
+                  required
+                  type="text"
+                  value={editForm.jurisdiction}
+                />
+                {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
+              </label>
+              <label>
+                Party / Affiliation
+                <input name="partyAffiliation" onChange={updateEditField} type="text" value={editForm.partyAffiliation} />
+              </label>
+              <label>
+                Profile Image URL
+                <input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} />
+              </label>
+              <label>
+                Biography
+                <textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} />
+              </label>
+              <div className="editModalActions">
+                <button onClick={() => setIsEditOpen(false)} type="button">
+                  Cancel
+                </button>
+                <button type="submit">Save Update</button>
+              </div>
+            </form>
+          </section>
+        </div>
       )}
     </section>
   )
 }
 
-function ComparisonPanel({ compareIds, onChange, onSubmit, state }) {
+function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politiciansState, state }) {
+  const [query, setQuery] = useState('')
+  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const filteredPoliticians = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase()
+    return politicians.filter((politician) => {
+      const matchesJurisdiction =
+        jurisdictionFilter === 'ALL' || politician.jurisdiction === jurisdictionFilter
+      const matchesQuery =
+        normalizedQuery.length === 0 ||
+        politician.fullName.toLowerCase().includes(normalizedQuery) ||
+        (politician.position || '').toLowerCase().includes(normalizedQuery)
+      return matchesJurisdiction && matchesQuery
+    })
+  }, [jurisdictionFilter, politicians, query])
+
+  const leftCandidates = filteredPoliticians
+  const rightCandidates = filteredPoliticians
+  const compareDisabled = state.status === 'loading' || !compareIds.idA || !compareIds.idB
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      return undefined
+    }
+
+    function handleEscape(event) {
+      if (event.key === 'Escape') {
+        setIsModalOpen(false)
+      }
+    }
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isModalOpen])
+
+  function selectCandidate(side, politicianId) {
+    if (side === 'left') {
+      onChange((current) => ({ ...current, idA: politicianId }))
+      return
+    }
+    onChange((current) => ({ ...current, idB: politicianId }))
+  }
+
+  async function handleCompareSubmit(event) {
+    const result = await onSubmit(event)
+    if (result?.ok) {
+      setIsModalOpen(true)
+    }
+  }
+
   return (
-    <section className="workspace">
-      <form className="lookupBar twoColumn" onSubmit={onSubmit}>
-        <Field
-          label="Candidate A ID"
-          name="idA"
-          value={compareIds.idA}
-          onChange={(event) => onChange((current) => ({ ...current, idA: event.target.value }))}
-        />
-        <Field
-          label="Candidate B ID"
-          name="idB"
-          value={compareIds.idB}
-          onChange={(event) => onChange((current) => ({ ...current, idB: event.target.value }))}
-        />
-        <button disabled={state.status === 'loading'} type="submit">
+    <section className="workspace compareWorkspace">
+      <section className="compareHeader">
+        <h2>Compare Politicians</h2>
+        <p>Select one candidate on each side, then run comparison.</p>
+      </section>
+
+      <section className="compareFilterBar" aria-label="Candidate filters">
+        <label>
+          Search candidate
+          <input
+            name="candidateSearch"
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search by name or position"
+            type="text"
+            value={query}
+          />
+        </label>
+        <label>
+          Jurisdiction
+          <select
+            name="jurisdiction"
+            onChange={(event) => setJurisdictionFilter(event.target.value)}
+            value={jurisdictionFilter}
+          >
+            <option value="ALL">All</option>
+            <option value="NATIONAL">National</option>
+            <option value="CEBU_CITY">Cebu City</option>
+          </select>
+        </label>
+      </section>
+
+      <StatusLine state={state} />
+      <StatusLine state={politiciansState} />
+
+      <div className="compareSelectionGrid">
+        <section className="compareColumn" aria-label="Candidate A selection">
+          <p className="compareColumnTitle">Candidate A</p>
+          <div className="compareCardList">
+            {leftCandidates.length === 0 && <p className="emptyState">No candidates found.</p>}
+            {leftCandidates.map((politician) => (
+              <button
+                className={
+                  compareIds.idA === politician.politicianId ? 'compareCard selected' : 'compareCard'
+                }
+                key={`left-${politician.politicianId}`}
+                onClick={() => selectCandidate('left', politician.politicianId)}
+                type="button"
+              >
+                <span className="compareCardAvatar">
+                  {politician.profileImageUrl ? (
+                    <img alt={politician.fullName} src={politician.profileImageUrl} />
+                  ) : (
+                    initialsFor(politician.fullName)
+                  )}
+                </span>
+                <span className="compareCardBody">
+                  <strong>{politician.fullName}</strong>
+                  <small>{politician.position || 'UNKNOWN'}</small>
+                  <small>{politician.jurisdiction || 'Unspecified jurisdiction'}</small>
+                </span>
+                <span className="selectDot" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="compareColumn right" aria-label="Candidate B selection">
+          <p className="compareColumnTitle">Candidate B</p>
+          <div className="compareCardList">
+            {rightCandidates.length === 0 && <p className="emptyState">No candidates found.</p>}
+            {rightCandidates.map((politician) => (
+              <button
+                className={
+                  compareIds.idB === politician.politicianId ? 'compareCard selected' : 'compareCard'
+                }
+                key={`right-${politician.politicianId}`}
+                onClick={() => selectCandidate('right', politician.politicianId)}
+                type="button"
+              >
+                <span className="compareCardAvatar">
+                  {politician.profileImageUrl ? (
+                    <img alt={politician.fullName} src={politician.profileImageUrl} />
+                  ) : (
+                    initialsFor(politician.fullName)
+                  )}
+                </span>
+                <span className="compareCardBody">
+                  <strong>{politician.fullName}</strong>
+                  <small>{politician.position || 'UNKNOWN'}</small>
+                  <small>{politician.jurisdiction || 'Unspecified jurisdiction'}</small>
+                </span>
+                <span className="selectDot" aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <form className="compareActionBar" onSubmit={handleCompareSubmit}>
+        <button disabled={compareDisabled} type="submit">
           Compare
         </button>
       </form>
-      <StatusLine state={state} />
-      {state.data && <ComparisonGrid comparison={state.data} />}
-    </section>
-  )
-}
 
-function ProfileDashboard({ dashboard, timeline }) {
-  return (
-    <div className="dashboardGrid">
-      <section className="profileSummary">
-        <p className="eyebrow">{dashboard.position}</p>
-        <h2>{dashboard.fullName}</h2>
-        <p>{dashboard.jurisdiction}</p>
-        <p>{dashboard.partyAffiliation || 'Independent or undisclosed affiliation'}</p>
-      </section>
-      <KpiGrid profile={dashboard} />
-      <TimelineLedger entries={timeline} />
-    </div>
+      {isModalOpen && state.data && (
+        <div
+          aria-hidden="true"
+          className="comparisonModalBackdrop"
+          onClick={() => setIsModalOpen(false)}
+        >
+          <section
+            aria-label="Comparison results"
+            aria-modal="true"
+            className="comparisonModal"
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <header className="comparisonModalHeader">
+              <h2>Comparison Result</h2>
+              <button
+                aria-label="Close comparison modal"
+                className="comparisonModalClose"
+                onClick={() => setIsModalOpen(false)}
+                type="button"
+              >
+                Close
+              </button>
+            </header>
+            <ComparisonGrid comparison={state.data} />
+          </section>
+        </div>
+      )}
+    </section>
   )
 }
 
@@ -620,16 +1148,6 @@ function formatDate(value) {
     return null
   }
   return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
-}
-
-function formatDateTime(value) {
-  if (!value) {
-    return null
-  }
-  return new Intl.DateTimeFormat('en-PH', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(new Date(value))
 }
 
 export default App
