@@ -1,6 +1,7 @@
 package com.politikapp.backend.module2.service;
 
 import com.politikapp.backend.common.HttpResponseException;
+import com.politikapp.backend.common.event.ConsensusReachedEvent;
 import com.politikapp.backend.module1.entity.ProfileEditSubmission;
 import com.politikapp.backend.module2.dto.VoteCalculationTrace;
 import com.politikapp.backend.module2.entity.JuryVote;
@@ -11,6 +12,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,13 +26,18 @@ public class VoteService {
 
     private final ModerationQueueRepository moderationQueueRepository;
     private final JuryVoteRepository juryVoteRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    public VoteService(ModerationQueueRepository moderationQueueRepository, JuryVoteRepository juryVoteRepository) {
+    public VoteService(
+            ModerationQueueRepository moderationQueueRepository, 
+            JuryVoteRepository juryVoteRepository,
+            ApplicationEventPublisher eventPublisher) {
         this.moderationQueueRepository = moderationQueueRepository;
         this.juryVoteRepository = juryVoteRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -120,6 +127,14 @@ public class VoteService {
             databaseActionTaken = "CASCADED_TO_TIMELINE";
             thresholdMet = true;
 
+            // Publish dynamic consensus event to decouple Module 3 reputation updates
+            eventPublisher.publishEvent(new ConsensusReachedEvent(
+                queueId,
+                submission.getSubmissionId(),
+                submission.getContributorId(),
+                "PUBLISHED"
+            ));
+
         } else if (disagreeSum >= 10 && (disagreeSum >= agreeSum * 2)) {
             log.info("Consensus reached: REJECTED submission ID={}", submission.getSubmissionId());
             queue.setQueueStatus("REJECTED");
@@ -128,6 +143,14 @@ public class VoteService {
             finalOutcomeStatus = "REJECTED";
             databaseActionTaken = "REJECTED_SUBMISSION";
             thresholdMet = true;
+
+            // Publish dynamic consensus event to decouple Module 3 reputation updates
+            eventPublisher.publishEvent(new ConsensusReachedEvent(
+                queueId,
+                submission.getSubmissionId(),
+                submission.getContributorId(),
+                "REJECTED"
+            ));
         }
 
         moderationQueueRepository.save(queue);

@@ -316,9 +316,20 @@ function PoliticianDirectory({
   setSearchName,
   state,
 }) {
-  const sortedPoliticians = [...politicians].sort(
+  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+
+  const filteredPoliticians = useMemo(() => {
+    return politicians.filter((politician) => {
+      return (
+        jurisdictionFilter === 'ALL' ||
+        politician.jurisdiction === jurisdictionFilter
+      )
+    })
+  }, [jurisdictionFilter, politicians])
+
+  const sortedPoliticians = [...filteredPoliticians].sort(
     (a, b) => (b.efficiencyRatio || 0) - (a.efficiencyRatio || 0)
-  );
+  )
 
   return (
     <section className="workspace directoryWorkspace">
@@ -331,6 +342,18 @@ function PoliticianDirectory({
             required={false}
             value={searchName}
           />
+          <label>
+            Jurisdiction
+            <select
+              name="directoryJurisdiction"
+              onChange={(event) => setJurisdictionFilter(event.target.value)}
+              value={jurisdictionFilter}
+            >
+              <option value="ALL">All</option>
+              <option value="NATIONAL">National</option>
+              <option value="CEBU_CITY">Cebu City</option>
+            </select>
+          </label>
           <button disabled={state.status === 'loading'} type="submit">
             Search
           </button>
@@ -798,13 +821,15 @@ function DashboardPanel({
               </label>
               <label>
                 Jurisdiction
-                <input
+                <select
                   name="jurisdiction"
                   onChange={updateEditField}
                   required
-                  type="text"
                   value={editForm.jurisdiction}
-                />
+                >
+                  <option value="NATIONAL">NATIONAL</option>
+                  <option value="CEBU_CITY">CEBU_CITY</option>
+                </select>
                 {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
               </label>
               <label>

@@ -1,5 +1,9 @@
 # Developer Sandbox Mode (Mocking User Attributes)
 
+> [!IMPORTANT]
+> **MULTI-MODULE TESTING SUITE NOTICE:**
+> For testing advanced user reputation metrics, asynchronous crowd consensus multipliers, and Module 3 backend score transformations, please refer directly to the companion extension guide: `docs/DEVELOPER_SANDBOX_2.md`. These two testing utilities **work hand in hand** to maintain a synchronized system state and should be implemented and reviewed together.
+
 ## 🎛️ Sandbox Layout & Window Behavior
 To ensure a clean, intuitive testing layout, the developer tools are split into two separate operational windows to decouple user session profile spoofing from system mock data generation:
 * **🟢 Control Anchor Dock:** The sandbox mounts a persistent control bar onto the bottom-right corner of the viewport frame. This panel contains independent toggle buttons to launch or collapse specific simulation utilities on command.

@@ -525,7 +525,7 @@
   display: grid;
   flex: 1;
   gap: 12px;
-  grid-template-columns: minmax(220px, 1fr) auto auto;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(130px, 180px) auto auto;
 }
 
 .directoryGrid {

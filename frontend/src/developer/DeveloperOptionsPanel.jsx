@@ -8,7 +8,8 @@ export default function DeveloperOptionsPanel() {
     manipulatedUser, 
     setManipulatedUser,
     injectMockCard,
-    clearInjectedQueue 
+    clearInjectedQueue,
+    voteWeight
   } = useDeveloperSandbox();
   
   // Decoupled modular interface state switches
@@ -101,7 +102,10 @@ export default function DeveloperOptionsPanel() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Trust Balance Score: {manipulatedUser.trustScore}%</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
+              <label>Trust Balance Score: <strong style={{ color: '#34d399' }}>{manipulatedUser.trustScore}%</strong></label>
+              <span>Vote Weight: <strong style={{ color: '#38bdf8' }}>x{voteWeight}</strong></span>
+            </div>
             <input 
               type="range" min="0" max="100" value={manipulatedUser.trustScore} 
               onChange={(e) => setManipulatedUser({ ...manipulatedUser, trustScore: parseFloat(e.target.value) })}

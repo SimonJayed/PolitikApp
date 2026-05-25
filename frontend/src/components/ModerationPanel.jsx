@@ -8,10 +8,13 @@ export default function ModerationPanel() {
   const [traceLogs, setTraceLogs] = useState([]);
 
   // Read developer switch states safely
-  const sandboxContext = useDeveloperSandbox();
-  const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false;
-  const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null;
-  const injectedQueue = sandboxContext ? sandboxContext.injectedQueue : [];
+  const sandboxContext = useDeveloperSandbox() || {};
+  const isDevModeActive = sandboxContext.isDevModeActive || false;
+  const manipulatedUser = sandboxContext.manipulatedUser || null;
+  const setManipulatedUser = sandboxContext.setManipulatedUser;
+  const injectedQueue = sandboxContext.injectedQueue || [];
+  const setInjectedQueue = sandboxContext.setInjectedQueue;
+  const voteWeight = sandboxContext.voteWeight || 1;
 
   // Determine active constraints derived from role override selection
   const isReadOnlyMode = isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR';
@@ -44,20 +47,45 @@ export default function ModerationPanel() {
       return;
     }
 
-    // Determine if processing an in-memory simulated card asset
+    // Locating tracking entities across displayed vs mock memory arrays
+    const targetCard = displayedQueue.find(card => card.submissionId === submissionId);
     const isMockCard = injectedQueue.some(card => card.submissionId === submissionId);
 
-    if (isMockCard) {
-      const derivedWeight = manipulatedUser.trustScore >= 90 ? 5 : 1;
-      setTraceLogs(prev => [
-        `[SIMULATED ENGINE TRACE] ${manipulatedUser.name} cast ${voteSelection} (Simulated Weight: ${derivedWeight}) on injected card ${submissionId}... Outcome: PENDING. [BYPASSED SUPABASE COMMIT]`,
-        ...prev
-      ]);
-      setVoteReason('');
-      
-      if (sandboxContext && sandboxContext.setInjectedQueue) {
-        sandboxContext.setInjectedQueue(prev => prev.filter(c => c.submissionId !== submissionId));
+    if (isMockCard && targetCard) {
+      const userWeight = voteWeight;
+      const currentAgree = targetCard.backgroundAgreeWeight || 0;
+      const currentDisagree = targetCard.backgroundDisagreeWeight || 0;
+
+      if (voteSelection === 'AGREE') {
+        const totalAgree = currentAgree + userWeight;
+        const threshold = targetCard.consensusTargetThreshold || 10;
+
+        if (totalAgree >= threshold) {
+          setTraceLogs(prev => [
+            `[MODULE 3 EVENT] ⚡ Consensus reached: PUBLISHED. Applied +5.00 Trust Balance bonus to user "${manipulatedUser.name}".`,
+            `[CONVERGENCE TRACE] User weight (${userWeight}) + Background Agree (${currentAgree}) = ${totalAgree} Aggregate. Target (${threshold}) CROSSED. [BYPASSED SUPABASE COMMIT]`,
+            ...prev
+          ]);
+          
+          // Dynamic state update: Boost trust score on-screen to prove Module 3 tracking functions live!
+          if (setManipulatedUser) {
+            setManipulatedUser(prev => ({
+              ...prev,
+              trustScore: Math.min(100, prev.trustScore + 5)
+            }));
+          }
+        } else {
+          setTraceLogs(prev => [`[SIMULATING] Added weight ${userWeight}. Total Agree is now ${totalAgree}/${threshold}. Consensus still pending...`, ...prev]);
+        }
+      } else {
+        setTraceLogs(prev => [`[SIMULATING] Cast DISAGREE with weight ${userWeight}. Total Disagree: ${currentDisagree + userWeight}.`, ...prev]);
       }
+
+      // Flush card out of memory queue since verification lifecycle is completed
+      if (setInjectedQueue) {
+        setInjectedQueue(prev => prev.filter(c => c.submissionId !== submissionId));
+      }
+      setVoteReason('');
       return;
     }
 
