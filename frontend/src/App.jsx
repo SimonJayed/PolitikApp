@@ -48,7 +48,6 @@ function AppInner() {
     status: 'idle',
   })
   const [searchName, setSearchName] = useState('')
-  const [importState, setImportState] = useState({ status: 'idle', message: '' })
   const [formData, setFormData] = useState(emptySubmission)
   const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' })
   const [dashboardId, setDashboardId] = useState('')
@@ -87,22 +86,6 @@ function AppInner() {
       setPoliticiansState({ data, message: '', selected: data[0] || null, status: 'success' })
     } catch (error) {
       setPoliticiansState({ data: [], message: error.message, selected: null, status: 'error' })
-    }
-  }
-
-  async function handleImport() {
-    setImportState({ status: 'loading', message: 'Importing from Wikidata...' })
-    try {
-      const data = await fetch(`${API_BASE_URL}/api/import/wikidata/politicians`, {
-        method: 'POST',
-      }).then(readApiResponse)
-      setImportState({
-        status: 'success',
-        message: `${data.importedCount} politicians imported or updated.`,
-      })
-      await loadPoliticians()
-    } catch (error) {
-      setImportState({ status: 'error', message: error.message })
     }
   }
 
@@ -228,8 +211,6 @@ function AppInner() {
 
         {activeView === 'directory' && (
           <PoliticianDirectory
-            importState={importState}
-            onImport={handleImport}
             onRefresh={loadPoliticians}
             onSearch={handleSearch}
             onSelect={handleSelectPolitician}
@@ -305,8 +286,6 @@ function App() {
 }
 
 function PoliticianDirectory({
-  importState,
-  onImport,
   onRefresh,
   onSearch,
   onSelect,
@@ -361,12 +340,8 @@ function PoliticianDirectory({
             Refresh
           </button>
         </form>
-        <button disabled={importState.status === 'loading'} onClick={onImport} type="button">
-          Import Wikidata
-        </button>
       </section>
 
-      <StatusLine state={importState} />
       <StatusLine state={state} />
 
       <div className="directoryGrid">
