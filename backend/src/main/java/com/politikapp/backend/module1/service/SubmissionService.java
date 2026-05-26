@@ -81,8 +81,14 @@ public class SubmissionService {
         return submissionMapper.toResponse(submission, "Submission record retrieved.");
     }
 
+    @Transactional(readOnly = true)
+    public java.util.List<SubmissionResponse> getSubmissionsByContributor(UUID contributorId) {
+        return submissionRepository.findByContributorId(contributorId).stream()
+                .map(s -> submissionMapper.toResponse(s, "Submission retrieved."))
+                .toList();
+    }
+
     private boolean executeExternalAiSummaryExtraction(String text) {
         return text != null && !text.isBlank();
     }
 }
-

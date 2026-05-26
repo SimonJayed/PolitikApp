@@ -3,6 +3,7 @@ package com.politikapp.backend.module2.scheduler;
 import com.politikapp.backend.module2.dto.AuditTrace;
 import com.politikapp.backend.module2.entity.ModerationQueue;
 import com.politikapp.backend.module2.repository.ModerationQueueRepository;
+import com.politikapp.backend.module1.entity.ProfileEditSubmission;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
@@ -78,6 +79,13 @@ public class EscalationSchedulerService {
                 entry.setEscalationFlag(true);
                 moderationQueueRepository.save(entry);
                 escalated = true;
+                
+                // Synchronize parent submission status
+                ProfileEditSubmission submission = entityManager.find(ProfileEditSubmission.class, entry.getSubmissionId());
+                if (submission != null) {
+                    submission.setStatus("ESCALATED");
+                    entityManager.merge(submission);
+                }
                 
                 if (triggerGridlockEscalation) {
                      reason = "Tie deadlock detected (" + agreeSum + " AGREE vs " + disagreeSum + " DISAGREE). Routed to Admin.";

@@ -9,9 +9,9 @@ import jakarta.persistence.PersistenceContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -32,7 +32,7 @@ public class ModerationQueueService {
      * Enqueues a new submission into the moderation queue in response to the
      * SubmissionCreatedEvent, setting the starting status to JURY_REVIEW.
      */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @Transactional
     public void enqueueAnonymizedSubmission(SubmissionCreatedEvent event) {
         log.info("Enqueuing new submission ID: {} to moderation queue", event.submissionId());
         
@@ -73,17 +73,89 @@ public class ModerationQueueService {
         ).getResultList();
 
         return rawRows.stream().map(row -> new PendingQueueCardResponse(
-            (UUID) row[0],
-            (UUID) row[1],
-            (UUID) row[2],
+            convertToUUID(row[0]),
+            convertToUUID(row[1]),
+            convertToUUID(row[2]),
             (String) row[3],
             (String) row[4],
             (String) row[5],
             (String) row[6],
             (String) row[7],
-            (Boolean) row[8],
-            row[9] != null ? ((java.sql.Timestamp) row[9]).toInstant() : null,
-            row[10] != null ? ((java.sql.Timestamp) row[10]).toInstant() : null
+            convertToBoolean(row[8]),
+            convertToInstant(row[9]),
+            convertToInstant(row[10])
         )).toList();
+    }
+
+    /**
+     * Fetches all entries currently flagged as ESCALATED, along with their agree and disagree weighted sums.
+     */
+    @Transactional(readOnly = true)
+    public List<com.politikapp.backend.module2.dto.EscalatedQueueCardResponse> getEscalatedModerationQueue() {
+        log.info("Fetching escalated moderation queue entries");
+
+        @SuppressWarnings("unchecked")
+        List<Object[]> rawRows = entityManager.createNativeQuery(
+            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, pes.source_url, pes.category_tag, pes.action_identifier, " +
+            "pes.impact_summary, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at, " +
+            "(SELECT COALESCE(SUM(jv1.vote_weight), 0) FROM public.jury_votes jv1 WHERE jv1.queue_id = mq.queue_id AND jv1.vote_type = 'AGREE') as agree_sum, " +
+            "(SELECT COALESCE(SUM(jv2.vote_weight), 0) FROM public.jury_votes jv2 WHERE jv2.queue_id = mq.queue_id AND jv2.vote_type = 'DISAGREE') as disagree_sum " +
+            "FROM public.moderation_queue mq " +
+            "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
+            "WHERE mq.queue_status = 'ESCALATED' " +
+            "ORDER BY mq.created_at ASC"
+        ).getResultList();
+
+        return rawRows.stream().map(row -> new com.politikapp.backend.module2.dto.EscalatedQueueCardResponse(
+            convertToUUID(row[0]),
+            convertToUUID(row[1]),
+            convertToUUID(row[2]),
+            (String) row[3],
+            (String) row[4],
+            (String) row[5],
+            (String) row[6],
+            (String) row[7],
+            convertToBoolean(row[8]),
+            row[11] != null ? ((Number) row[11]).longValue() : 0L,
+            row[12] != null ? ((Number) row[12]).longValue() : 0L,
+            convertToInstant(row[9]),
+            convertToInstant(row[10])
+        )).toList();
+    }
+
+    private java.util.UUID convertToUUID(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.util.UUID) {
+            return (java.util.UUID) obj;
+        }
+        return java.util.UUID.fromString(obj.toString());
+    }
+
+    private boolean convertToBoolean(Object obj) {
+        if (obj == null) return false;
+        if (obj instanceof Boolean) {
+            return (Boolean) obj;
+        } else if (obj instanceof Number) {
+            return ((Number) obj).intValue() != 0;
+        }
+        return Boolean.parseBoolean(obj.toString());
+    }
+
+    private java.time.Instant convertToInstant(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.sql.Timestamp) {
+            return ((java.sql.Timestamp) obj).toInstant();
+        } else if (obj instanceof java.time.Instant) {
+            return (java.time.Instant) obj;
+        } else if (obj instanceof java.time.OffsetDateTime) {
+            return ((java.time.OffsetDateTime) obj).toInstant();
+        } else if (obj instanceof java.util.Date) {
+            return ((java.util.Date) obj).toInstant();
+        }
+        try {
+            return java.time.Instant.parse(obj.toString());
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

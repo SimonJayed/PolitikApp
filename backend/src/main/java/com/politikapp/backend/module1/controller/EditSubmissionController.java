@@ -40,4 +40,14 @@ public class EditSubmissionController {
     public ResponseEntity<SubmissionResponse> getSubmissionById(@PathVariable("id") UUID id) {
         return ResponseEntity.ok(submissionService.getSubmissionById(id));
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<java.util.List<SubmissionResponse>> getMySubmissions(
+            @AuthenticationPrincipal AuthPrincipal principal
+    ) {
+        if (principal == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(401, "Authentication required.");
+        }
+        return ResponseEntity.ok(submissionService.getSubmissionsByContributor(principal.getUserId()));
+    }
 }

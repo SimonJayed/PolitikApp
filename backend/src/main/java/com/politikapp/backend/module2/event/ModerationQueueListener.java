@@ -4,9 +4,8 @@ import com.politikapp.backend.common.event.SubmissionCreatedEvent;
 import com.politikapp.backend.module2.service.ModerationQueueService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
 public class ModerationQueueListener {
@@ -18,7 +17,7 @@ public class ModerationQueueListener {
         this.moderationQueueService = moderationQueueService;
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @EventListener
     public void handleSubmissionCreated(SubmissionCreatedEvent event) {
         log.info("Intercepted submission created event for submission ID: {}", event.submissionId());
         try {

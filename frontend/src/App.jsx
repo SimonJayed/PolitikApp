@@ -49,7 +49,6 @@ function AppInner({ currentUser, onLogout, token }) {
     selected: null,
     status: 'idle',
   })
-  const [searchName, setSearchName] = useState('')
   const [formData, setFormData] = useState(emptySubmission)
   const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' })
   const [dashboardId, setDashboardId] = useState('')
@@ -76,31 +75,6 @@ function AppInner({ currentUser, onLogout, token }) {
   useEffect(() => {
     loadPoliticians()
   }, [loadPoliticians])
-
-  async function handleSearch(event) {
-    event.preventDefault()
-    const endpoint = searchName.trim()
-      ? `${API_BASE_URL}/api/politicians/search?${new URLSearchParams({ name: searchName.trim() })}`
-      : `${API_BASE_URL}/api/politicians`
-
-    setPoliticiansState((current) => ({ ...current, message: 'Searching politicians...', status: 'loading' }))
-    try {
-      const data = await fetch(endpoint).then(readApiResponse)
-      setPoliticiansState({ data, message: '', selected: data[0] || null, status: 'success' })
-    } catch (error) {
-      setPoliticiansState({ data: [], message: error.message, selected: null, status: 'error' })
-    }
-  }
-
-  async function handleSelectPolitician(politicianId) {
-    setPoliticiansState((current) => ({ ...current, message: 'Loading profile...', status: 'loading' }))
-    try {
-      const selected = await fetch(`${API_BASE_URL}/api/politicians/${politicianId}`).then(readApiResponse)
-      setPoliticiansState((current) => ({ ...current, message: '', selected, status: 'success' }))
-    } catch (error) {
-      setPoliticiansState((current) => ({ ...current, message: error.message, status: 'error' }))
-    }
-  }
 
   function updateFormField(event) {
     const { name, value } = event.target
@@ -239,15 +213,15 @@ function AppInner({ currentUser, onLogout, token }) {
         </header>
 
         {activeView === 'directory' && (
-          <DashboardPanel
+          <PoliticianDirectoryLoaderPanel
             dashboardId={dashboardId}
             onChange={setDashboardId}
-            onLoadById={loadDashboardById}
             onViewProfile={openPoliticianProfile}
             onSubmit={handleDashboardLookup}
             politicians={politiciansState.data}
             politiciansState={politiciansState}
             state={dashboardState}
+            onPoliticianUpdate={handlePoliticianLocalUpdate}
           />
         )}
 
@@ -274,7 +248,13 @@ function AppInner({ currentUser, onLogout, token }) {
           />
         )}
 
-        {activeView === 'dashboard' && <DashboardPlaceholder />}
+        {activeView === 'dashboard' && (
+          <DashboardPanel
+            onNavigate={setActiveView}
+            politicians={politiciansState.data}
+            user={currentUser}
+          />
+        )}
 
         {activeView === 'compare' && (
           <ComparisonPanel
@@ -285,6 +265,10 @@ function AppInner({ currentUser, onLogout, token }) {
             politiciansState={politiciansState}
             state={comparisonState}
           />
+        )}
+
+        {activeView === 'contributions' && (
+          <MyContributionsPanel token={token} />
         )}
 
         {activeView === 'moderation' && (
@@ -299,7 +283,7 @@ function AppInner({ currentUser, onLogout, token }) {
               </p>
             </section>
           ) : (
-            <ModerationPanel />
+            <ModerationPanel token={token} user={currentUser} />
           )
         )}
         {activeView === 'account' && <UserAccountPage token={token} user={currentUser} />}
@@ -321,10 +305,131 @@ function App() {
   )
 }
 
-function DashboardPlaceholder() {
+function DashboardPanel({ politicians, onNavigate, user }) {
+  const totalProfiles = politicians.length
+  
+  // Dynamically calculate published metrics from loaded politicians
+  const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0)
+  const averageEfficiency = totalProfiles > 0 
+    ? (politicians.reduce((acc, curr) => acc + (curr.efficiencyRatio || 0), 0) / totalProfiles)
+    : 0.0
+
   return (
-    <section className="workspace">
-      <p className="emptyState">Dashboard content coming soon.</p>
+    <section className="workspace dashboardWorkspace" style={{ gap: '24px' }}>
+      <section className="dashboardHeaderBlock" style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)', color: '#ffffff', border: 'none', position: 'relative', overflow: 'hidden', padding: '32px', borderRadius: '18px', boxShadow: '0 8px 30px rgba(13, 148, 136, 0.15)' }}>
+        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+        <div style={{ position: 'absolute', bottom: '-20px', left: '10%', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+        <h2 style={{ color: '#ffffff', fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Mabuhay, {user?.fullName || 'Guest Contributor'}!</h2>
+        <p style={{ color: '#e6f7f4', fontSize: '15px', maxWidth: '640px', margin: 0, opacity: 0.95 }}>
+          Welcome to the PolitikApp civic aggregation interface. Track, analyze, and verify official legislative and audit logs across local and national jurisdictions.
+        </p>
+      </section>
+
+      <div className="profileFacts" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '18px' }}>
+        <article className="kpiCard" style={{ borderLeft: '4px solid #0f766e', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>Politician Profiles</span>
+          <strong style={{ fontSize: '28px', color: 'var(--text-primary)', margin: '6px 0 2px' }}>{totalProfiles}</strong>
+          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Active database profiles</small>
+        </article>
+
+        <article className="kpiCard" style={{ borderLeft: '4px solid #f59e0b', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>COA Flags Resolved</span>
+          <strong style={{ fontSize: '28px', color: '#d97706', margin: '6px 0 2px' }}>{totalCoaDiscrepancies}</strong>
+          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Audit discrepancies tracked</small>
+        </article>
+
+        <article className="kpiCard" style={{ borderLeft: '4px solid #0ea5e9', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>Avg Legislative Eff.</span>
+          <strong style={{ fontSize: '28px', color: 'var(--text-primary)', margin: '6px 0 2px' }}>{averageEfficiency.toFixed(1)}%</strong>
+          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Sustained profile average</small>
+        </article>
+
+        <article className="kpiCard" style={{ borderLeft: '4px solid #a855f7', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>My Account Role</span>
+          <strong style={{ fontSize: '20px', color: '#7c3aed', margin: '10px 0 2px' }}>{user?.role || 'CONTRIBUTOR'}</strong>
+          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Authorized session clearance</small>
+        </article>
+      </div>
+
+      <section style={{ display: 'grid', gap: '16px' }}>
+        <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Platform Quick Actions</h2>
+        
+        <div className="dashboardCardGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '18px' }}>
+          <button 
+            onClick={() => onNavigate('directory')} 
+            className="dashboardCard" 
+            type="button"
+            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <span style={{ padding: '8px', background: '#e6f7f4', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>📊</span>
+            <strong style={{ fontSize: '14px', fontWeight: '800' }}>Explore Directory</strong>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Browse public profiles</small>
+          </button>
+
+          <button 
+            onClick={() => onNavigate('submit')} 
+            className="dashboardCard" 
+            type="button"
+            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <span style={{ padding: '8px', background: '#fffbeb', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>✍️</span>
+            <strong style={{ fontSize: '14px', fontWeight: '800' }}>File Evidence</strong>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Submit official audit details</small>
+          </button>
+
+          <button 
+            onClick={() => onNavigate('compare')} 
+            className="dashboardCard" 
+            type="button"
+            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <span style={{ padding: '8px', background: '#eff6ff', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>⚖️</span>
+            <strong style={{ fontSize: '14px', fontWeight: '800' }}>Compare Profiles</strong>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Side-by-side candidates sweep</small>
+          </button>
+
+          <button 
+            onClick={() => onNavigate('moderation')} 
+            className="dashboardCard" 
+            type="button"
+            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <span style={{ padding: '8px', background: '#faf5ff', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>🛡️</span>
+            <strong style={{ fontSize: '14px', fontWeight: '800' }}>Moderation Jury</strong>
+            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cast double-blind ballot</small>
+          </button>
+        </div>
+      </section>
+
+      <section style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '18px', alignItems: 'start' }}>
+        <article style={{ background: '#ffffff', border: '1px solid #dbe5ea', borderRadius: '14px', padding: '22px', display: 'grid', gap: '14px', boxShadow: 'var(--shadow-xs)' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>System Accountability Guidelines</h3>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '13.5px', lineHeight: '1.6', margin: 0 }}>
+            To maintain platform integrity, all crowdsourced edit submissions require whitelisted Philippine domains (<strong>.gov.ph</strong> or <strong>.edu.ph</strong>). Post-consensus loops evaluate voter accuracy: peers aligned with the final consensus receive a <strong>+5.0 reputation bump</strong>, while those opposing it receive a <strong>-5.0 penalty</strong>.
+          </p>
+          <div style={{ padding: '12px 14px', background: '#fffbeb', borderLeft: '4px solid #f59e0b', borderRadius: '6px', fontSize: '12px', color: '#b45309', fontWeight: '700', lineHeight: '1.5' }}>
+            ⚠️ PENALTY INTERCEPTOR ACTIVE: If a contributor's lifetime rejection metric scales past 15%, their dynamic write clearance tokens are instantly invalidated.
+          </div>
+        </article>
+
+        <article style={{ background: '#ffffff', border: '1px solid #dbe5ea', borderRadius: '14px', padding: '22px', display: 'grid', gap: '14px', boxShadow: 'var(--shadow-xs)', height: '100%' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Developer Sandbox Status</h3>
+          <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #dbe5ea', paddingBottom: '6px' }}>
+              <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Host Environment</span>
+              <strong style={{ color: 'var(--text-primary)' }}>Development WiFi</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #dbe5ea', paddingBottom: '6px' }}>
+              <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Active API Host</span>
+              <strong style={{ color: 'var(--accent)' }}>{API_BASE_URL}</strong>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Auth Session status</span>
+              <strong style={{ color: 'var(--success)' }}>ACTIVE</strong>
+            </div>
+          </div>
+        </article>
+      </section>
     </section>
   )
 }
@@ -380,162 +485,7 @@ function UserAccountPage({ token, user }) {
   )
 }
 
-function PoliticianDirectory({
-  onRefresh,
-  onSearch,
-  onViewProfile,
-  politicians,
-  searchName,
-  setSearchName,
-  state,
-}) {
-  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
 
-  const filteredPoliticians = useMemo(() => {
-    return politicians.filter((politician) => {
-      return (
-        jurisdictionFilter === 'ALL' ||
-        politician.jurisdiction === jurisdictionFilter
-      )
-    })
-  }, [jurisdictionFilter, politicians])
-
-  const sortedPoliticians = [...filteredPoliticians].sort(
-    (a, b) => (b.efficiencyRatio || 0) - (a.efficiencyRatio || 0)
-  )
-
-  return (
-    <section className="workspace directoryWorkspace">
-      <section className="directoryToolbar">
-        <form className="searchBar" onSubmit={onSearch}>
-          <Field
-            label="Search by name"
-            name="searchName"
-            onChange={(event) => setSearchName(event.target.value)}
-            required={false}
-            value={searchName}
-          />
-          <label>
-            Jurisdiction
-            <select
-              name="directoryJurisdiction"
-              onChange={(event) => setJurisdictionFilter(event.target.value)}
-              value={jurisdictionFilter}
-            >
-              <option value="ALL">All</option>
-              <option value="NATIONAL">National</option>
-              <option value="CEBU_CITY">Cebu City</option>
-            </select>
-          </label>
-          <button disabled={state.status === 'loading'} type="submit">
-            Search
-          </button>
-          <button onClick={onRefresh} type="button">
-            Refresh
-          </button>
-        </form>
-      </section>
-
-      <StatusLine state={state} />
-
-      <div className="directoryGrid">
-        <section className="politicianList" aria-label="Politicians">
-          {state.status === 'loading' && <LoadingSkeletonList rows={6} />}
-          {state.status !== 'loading' && sortedPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
-          {sortedPoliticians.map((politician, index) => (
-            <button
-              className="politicianRow"
-              key={politician.politicianId}
-              onClick={() => onViewProfile(politician.politicianId)}
-              type="button"
-              style={{ display: 'flex', flexDirection: 'column', gap: '4px', position: 'relative', minHeight: 'auto', padding: '12px' }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                <span style={{ fontWeight: 'bold' }}>{politician.fullName}</span>
-                <span style={{ fontSize: '11px', background: '#e0f2fe', color: '#0369a1', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                  Rank #{index + 1}
-                </span>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                <small style={{ color: '#6b7280' }}>{politician.position || 'UNKNOWN'}</small>
-                <small style={{ color: '#059669', fontWeight: 'bold' }}>
-                  Eff: {Number(politician.efficiencyRatio || 0).toFixed(1)}%
-                </small>
-              </div>
-              {politician.coaAuditDiscrepancies > 0 && (
-                <div style={{ alignSelf: 'flex-start', background: '#fef3c7', color: '#d97706', border: '1px solid #f59e0b', padding: '1px 6px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold', marginTop: '2px' }}>
-                  ⚠️ COA Findings Flagged ({politician.coaAuditDiscrepancies})
-                </div>
-              )}
-            </button>
-          ))}
-        </section>
-
-        <section className="profileSummary">
-          <p className="emptyState">Click a politician card to open the dedicated profile page.</p>
-        </section>
-      </div>
-    </section>
-  )
-}
-
-function PoliticianProfile({ politician }) {
-  return (
-    <section className="importedProfile" style={{ position: 'relative' }}>
-      {politician.coaAuditDiscrepancies > 0 && (
-        <div 
-          className="coa-alert-badge"
-          style={{ 
-            background: '#fffbeb', 
-            color: '#b45309', 
-            border: '1px solid #f59e0b', 
-            padding: '10px 16px', 
-            borderRadius: '8px', 
-            fontSize: '13px', 
-            fontWeight: 'bold', 
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginBottom: '16px',
-            boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
-          }}
-        >
-          ⚠️ HIGH ACCOUNTABILITY WARNING: COA Audit Discrepancies Flagged ({politician.coaAuditDiscrepancies} instances resolved in public ledger).
-        </div>
-      )}
-
-      <div className="profileHero">
-        <div className="portraitFrame">
-          {politician.profileImageUrl ? (
-            <img alt={politician.fullName} src={politician.profileImageUrl} />
-          ) : (
-            <span>{initialsFor(politician.fullName)}</span>
-          )}
-        </div>
-        <div>
-          <p className="eyebrow">{politician.position || 'UNKNOWN'}</p>
-          <h2>{politician.fullName}</h2>
-          <p>{politician.jurisdiction}</p>
-          <p>{politician.partyAffiliation || 'Party affiliation unavailable'}</p>
-        </div>
-      </div>
-
-      <div className="profileFacts" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
-        <Fact label="Status" value={politician.status} />
-        <Fact label="Term start" value={formatDate(politician.termStart)} />
-        <Fact label="Term end" value={formatDate(politician.termEnd)} />
-        <Fact label="Legislative Efficiency" value={`${Number(politician.efficiencyRatio || 0).toFixed(1)}%`} />
-        <Fact label="COA Discrepancies" value={`${politician.coaAuditDiscrepancies || 0}`} />
-        <Fact label="Tracked Budget Allocated" value={formatCurrency(politician.trackedBudgetAllocated)} />
-      </div>
-
-      <section className="biographyBlock" style={{ marginTop: '20px' }}>
-        <h2>Biography</h2>
-        <p>{politician.biography || 'No Wikipedia summary was returned for this profile.'}</p>
-      </section>
-    </section>
-  )
-}
 
 function SubmissionPanel({
   formData,
@@ -620,15 +570,15 @@ function SubmissionPanel({
   )
 }
 
-function DashboardPanel({
+function PoliticianDirectoryLoaderPanel({
   dashboardId,
   onChange,
-  onLoadById,
   onViewProfile,
   onSubmit,
   politicians,
   politiciansState,
   state,
+  onPoliticianUpdate,
 }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
@@ -1574,6 +1524,129 @@ function formatDate(value) {
     return null
   }
   return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
+}
+
+function MyContributionsPanel({ token }) {
+  const [contributions, setContributions] = useState([])
+  const [state, setState] = useState({
+    status: 'loading',
+    message: 'Retrieving your crowdsourced contribution history...'
+  })
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/submissions/my`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        setContributions(Array.isArray(data) ? data : [])
+        setState({ status: 'success', message: '' })
+      })
+      .catch((err) => {
+        setContributions([])
+        setState({ status: 'error', message: err.message })
+      })
+  }, [token])
+
+  const STAGES = ['SUBMITTED', 'JURY_REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED']
+
+  function stageIndexFor(status) {
+    switch ((status || '').toUpperCase()) {
+      case 'SUBMITTED':
+      case 'PENDING': return 0;
+      case 'JURY_REVIEW': return 1;
+      case 'ESCALATED':
+      case 'REVISION_REQUIRED': return 2;
+      case 'REJECTED': return 3;
+      case 'PUBLISHED': return 4;
+      default: return 0;
+    }
+  }
+
+  return (
+    <section className="workspace">
+      <section className="dashboardHeaderBlock" style={{ padding: '20px' }}>
+        <h2>My Crowdsourced Contributions</h2>
+        <p>Track the dynamic verification status of your submitted political records.</p>
+      </section>
+
+      <StatusLine state={state} />
+
+      <div style={{ display: 'grid', gap: '20px', marginTop: '10px' }}>
+        {state.status !== 'loading' && contributions.length === 0 && (
+          <p className="emptyState" style={{ background: '#ffffff', border: '1px dashed #dbe5ea', borderRadius: '14px', padding: '40px' }}>
+            You haven't submitted any political record edits yet. Go to the "Submit Evidence" tab to file your first record!
+          </p>
+        )}
+
+        {contributions.map((item) => {
+          const activeStage = stageIndexFor(item.status)
+          return (
+            <article key={item.submissionId} className="review-card" style={{ background: '#ffffff', padding: '24px', borderRadius: '14px', border: '1px solid #dbe5ea', boxShadow: 'var(--shadow-xs)', display: 'grid', gap: '12px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '11px', background: '#eff6ff', color: '#1e40af', padding: '4px 9px', borderRadius: '999px', fontWeight: '800' }}>
+                  ID: {item.submissionId.substring(0, 8)}
+                </span>
+                <span style={{ fontSize: '12px', color: '#6e8594', fontWeight: 'bold' }}>
+                  Filed: {formatDate(item.createdAt)}
+                </span>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', fontSize: '13px' }}>
+                <div><span style={{ color: '#6e8594' }}>Category:</span> <strong>{item.categoryTag}</strong></div>
+                <div><span style={{ color: '#6e8594' }}>Action Tag:</span> <strong>{item.actionIdentifier}</strong></div>
+                <div><span style={{ color: '#6e8594' }}>Metric:</span> <strong>{item.quantitativeMetric ? formatCurrency(item.quantitativeMetric) : 'N/A'}</strong></div>
+              </div>
+
+              <div style={{ background: '#f7fafc', border: '1px solid #dbe5ea', borderLeft: '4px solid #0f766e', padding: '12px', borderRadius: '0 8px 8px 0', fontStyle: 'italic', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                "{item.impactSummary}"
+              </div>
+
+              <div>
+                <span style={{ fontSize: '12px', color: '#6e8594' }}>Source:</span>{' '}
+                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#0f766e', fontWeight: 'bold', textDecoration: 'none' }}>
+                  {item.sourceUrl}
+                </a>
+              </div>
+
+              <div style={{ marginTop: '8px', paddingTop: '14px', borderTop: '1px dashed #dbe5ea' }}>
+                <h5 style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 10px 0', color: 'var(--text-primary)' }}>Dynamic Edit Lifecycle Stage</h5>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '8px' }}>
+                  {STAGES.map((stage, index) => {
+                    const isPassed = index <= activeStage
+                    let bg = '#f8fafc'
+                    let fg = '#64748b'
+                    if (isPassed) {
+                      bg = item.status === 'REJECTED' && index === 3 ? '#ef4444' : '#0f766e'
+                      fg = '#ffffff'
+                    }
+                    return (
+                      <span
+                        key={`${item.submissionId}-${stage}`}
+                        style={{
+                          textAlign: 'center',
+                          padding: '6px 8px',
+                          borderRadius: '999px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          border: '1px solid #d1d5db',
+                          background: bg,
+                          color: fg,
+                          transition: 'all 220ms ease',
+                        }}
+                      >
+                        {stage === 'FINALIZED' && item.status === 'REJECTED' ? 'REJECTED' : stage.replace('_', ' ')}
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    </section>
+  )
 }
 
 export default App

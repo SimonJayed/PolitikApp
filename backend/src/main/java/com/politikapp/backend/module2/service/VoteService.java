@@ -124,7 +124,7 @@ public class VoteService {
 
         if ("FLAG".equals(voteSelection)) {
             queue.setQueueStatus("REVISION_REQUIRED");
-            setSubmissionStatus(submission, "REVISION_REQUIRED");
+            submission.setStatus("REVISION_REQUIRED");
             finalOutcomeStatus = "REVISION_REQUIRED";
             databaseActionTaken = "ROUTED_FOR_REVISION";
             thresholdMet = true;
@@ -132,7 +132,7 @@ public class VoteService {
         } else if (agreeSum >= 10 && (agreeSum >= disagreeSum * 2)) {
             log.info("Consensus reached: APPROVED submission ID={}", submission.getSubmissionId());
             queue.setQueueStatus("PUBLISHED");
-            setSubmissionStatus(submission, "PUBLISHED");
+            submission.setStatus("PUBLISHED");
             cascadeToTimeline(submission);
             
             finalOutcomeStatus = "PUBLISHED";
@@ -150,7 +150,7 @@ public class VoteService {
         } else if (disagreeSum >= 10 && (disagreeSum >= agreeSum * 2)) {
             log.info("Consensus reached: REJECTED submission ID={}", submission.getSubmissionId());
             queue.setQueueStatus("REJECTED");
-            setSubmissionStatus(submission, "REJECTED");
+            submission.setStatus("REJECTED");
             
             finalOutcomeStatus = "REJECTED";
             databaseActionTaken = "REJECTED_SUBMISSION";
@@ -185,16 +185,6 @@ public class VoteService {
         );
     }
 
-    private void setSubmissionStatus(ProfileEditSubmission submission, String status) {
-        try {
-            java.lang.reflect.Field field = ProfileEditSubmission.class.getDeclaredField("status");
-            field.setAccessible(true);
-            field.set(submission, status);
-        } catch (Exception e) {
-            log.error("Failed to update status on ProfileEditSubmission via reflection: {}", e.getMessage());
-        }
-    }
-
     private void cascadeToTimeline(ProfileEditSubmission submission) {
         log.info("Cascading approved edits to timeline_entries for politician ID={}", submission.getPoliticianId());
         try {
@@ -224,5 +214,72 @@ public class VoteService {
         .setParameter("voteType", voteType)
         .getSingleResult();
         return sum != null ? sum : 0L;
+    }
+
+    /**
+     * Processes administrative tie-breakers or overrides.
+     * Bypasses standard community consensus, transitioning statuses directly.
+     */
+    @Transactional
+    public VoteCalculationTrace processAdminOverride(UUID queueId, String action, String reason) {
+        log.info("Processing administrative override: queueId={}, action={}, reason={}", queueId, action, reason);
+        String normalizedAction = action == null ? "" : action.trim().toUpperCase();
+        if (!normalizedAction.equals("PUBLISHED") && !normalizedAction.equals("REJECTED")) {
+            throw new HttpResponseException(422, "Unprocessable Entity: action must be PUBLISHED or REJECTED.");
+        }
+
+        // 1. Verify queue entry exists
+        ModerationQueue queueRow = moderationQueueRepository.findById(queueId)
+                .orElseThrow(() -> new HttpResponseException(404, "Not Found: Target moderation queue entry not found."));
+
+        // 2. Fetch the corresponding ProfileEditSubmission
+        ProfileEditSubmission submission = entityManager.find(ProfileEditSubmission.class, queueRow.getSubmissionId());
+        if (submission == null) {
+            log.error("Corrupted state: profile submission {} associated with queue entry {} does not exist", 
+                queueRow.getSubmissionId(), queueId);
+            throw new HttpResponseException(500, "Internal Server Error: Associated profile submission not found.");
+        }
+
+        String finalOutcomeStatus = normalizedAction;
+        String databaseActionTaken = "ADMIN_OVERRIDE_" + normalizedAction;
+
+        queueRow.setQueueStatus(normalizedAction);
+        queueRow.setEscalationFlag(true); // Ensure flag remains marked for override tracing
+        submission.setStatus(normalizedAction);
+
+        if ("PUBLISHED".equals(normalizedAction)) {
+            cascadeToTimeline(submission);
+        }
+
+        moderationQueueRepository.save(queueRow);
+        entityManager.merge(submission);
+
+        // Publish dynamic consensus event to decouple Module 3 reputation updates
+        eventPublisher.publishEvent(new ConsensusReachedEvent(
+            queueId,
+            submission.getSubmissionId(),
+            submission.getContributorId(),
+            normalizedAction
+        ));
+
+        // Fetch current sums for tracing details
+        long agreeSum = fetchWeightedVoteSum(queueId, "AGREE");
+        long disagreeSum = fetchWeightedVoteSum(queueId, "DISAGREE");
+
+        return new VoteCalculationTrace(
+            queueId,
+            UUID.fromString("00000000-0000-0000-0000-000000000000"), // System Admin ID
+            "System Administrator",
+            100.0,
+            100, // Absolute admin override weight
+            "OVERRIDE_" + normalizedAction,
+            agreeSum,
+            disagreeSum,
+            "ADMINISTRATIVE_OVERRIDE_DECISION",
+            true,
+            finalOutcomeStatus,
+            databaseActionTaken,
+            Instant.now().toString()
+        );
     }
 }

@@ -65,5 +65,23 @@ public class ModerationQueueController {
         ));
     }
 
-}
+    @GetMapping("/escalated")
+    public ResponseEntity<List<com.politikapp.backend.module2.dto.EscalatedQueueCardResponse>> getEscalatedQueue() {
+        log.info("Received request for escalated moderation queue");
+        List<com.politikapp.backend.module2.dto.EscalatedQueueCardResponse> escalatedQueue = moderationQueueService.getEscalatedModerationQueue();
+        return ResponseEntity.ok(escalatedQueue);
+    }
 
+    @PostMapping("/override")
+    public ResponseEntity<com.politikapp.backend.module2.dto.VoteCalculationTrace> processOverride(
+            @RequestBody com.politikapp.backend.module2.dto.AdminOverridePayload payload
+    ) {
+        log.info("Received administrative override action for queue ID: {}", payload.queueId());
+        com.politikapp.backend.module2.dto.VoteCalculationTrace trace = voteService.processAdminOverride(
+            payload.queueId(),
+            payload.action(),
+            payload.reason()
+        );
+        return ResponseEntity.ok(trace);
+    }
+}

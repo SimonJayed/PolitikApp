@@ -19,6 +19,7 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
     const featureItems = [
       { key: 'directory', label: 'Politicians', icon: 'R', accent: '#5c8a9f' },
       { key: 'compare', label: 'Compare', icon: 'C', accent: '#b06b4a' },
+      { key: 'contributions', label: 'My Contributions', icon: 'H', accent: '#4f46e5' }
     ]
 
     if (currentRole !== 'CONTRIBUTOR') {

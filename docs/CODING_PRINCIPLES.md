@@ -34,38 +34,68 @@
 * Data payloads constructed within frontend methods must identically map properties to match the backend ingestion transfer schemas to prevent data mapping failures.
 
 ### 3. Typography & UI Layout Style System
-To ensure a unified, professional user interface across all dashboards, all CSS modules and inline components must strictly adhere to the following typographic hierarchy scales:
+To ensure a unified, professional, and premium user interface across all dashboards, all CSS modules and style structures must strictly utilize the dynamic design tokens and layout classes declared in [App.css](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/PolitikApp/PolitikApp/frontend/src/App.css):
 
-* **Primary Application Font Stack:** `'Outfit', 'Elms Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif`
-* **Main Section Headers (e.g., Politician Name, Dashboard Title):**
-  * `font-size: 2.25rem;` (36px)
-  * `font-weight: 700;` (Bold)
-  * `line-height: 2.5rem;`
-  * `color: #111827;` (Deep Charcoal)
-* **Sub-Section Headers & Card Titles (e.g., KPI Titles, Timeline Cards):**
-  * `font-size: 1.25rem;` (20px)
-  * `font-weight: 600;` (Semi-Bold)
-  * `line-height: 1.75rem;`
-  * `color: #1f2937;` (Medium Slate)
-* **Body Text & Summary Paragraphs (e.g., Impact Summary Blocks):**
-  * `font-size: 1.0rem;` (16px)
-  * `font-weight: 400;` (Regular)
-  * `line-height: 1.5rem;`
-  * `color: #4b5563;` (Muted Gray-Charcoal)
-* **Micro Metadata & Timestamps (e.g., 'Assigned at' clock logs):**
-  * `font-size: 0.875rem;` (14px)
-  * `font-weight: 500;` (Medium)
-  * `color: #6b7280;` (Muted Light Gray)
+#### A. Core Style System & Design Tokens (`App.css` Root Variables)
+* **Tailored Colors (Curated Slate-Teal Palette):**
+  * `--bg-page`: `#f3f7f9` (Light gray-blue canvas background)
+  * `--bg-surface`: `#ffffff` (Pure white card face surface)
+  * `--bg-soft`: `#f7fafc` (Soft cool-gray block fill background)
+  * `--line-soft`: `#dbe5ea` (Subtle boundary border line)
+  * `--line-strong`: `#c7d4dc` (Highly visible separator outline)
+  * `--text-primary`: `#10212b` (Deep obsidian/navy primary text)
+  * `--text-secondary`: `#4b6271` (Cool charcoal secondary text)
+  * `--text-muted`: `#6e8594` (Muted steel metadata text)
+  * `--accent`: `#0f766e` (Standard brand deep teal)
+  * `--accent-strong`: `#115e59` (Hover brand teal highlight)
+  * `--accent-soft`: `#e6f7f4` (Light teal backdrop accent)
+* **Dynamic Radii & Shadows:**
+  * `--radius-sm`: `10px` | `--radius-md`: `14px` | `--radius-lg`: `18px` | `--radius-xl`: `24px`
+  * `--shadow-xs`: `0 1px 2px rgba(16, 33, 43, 0.06)`
+  * `--shadow-sm`: `0 6px 18px rgba(16, 33, 43, 0.06)`
+  * `--shadow-md`: `0 12px 30px rgba(16, 33, 43, 0.1)`
+* **Micro-Animations & Transitions:**
+  * `--motion-fast`: `180ms` | `--motion-base`: `260ms` | `--motion-slow`: `360ms`
+  * `--motion-ease`: `cubic-bezier(0.22, 1, 0.36, 1)`
+  * Hover standard for card components (`.dashboardCard`, `.politicianRow`, `.compareCard`):
+    ```css
+    transition: transform var(--motion-fast) var(--motion-ease),
+                box-shadow var(--motion-fast) var(--motion-ease),
+                border-color var(--motion-fast) var(--motion-ease),
+                background-color var(--motion-fast) var(--motion-ease);
+    ```
+
+#### B. Typographic Hierarchy Scales
+* **Primary Application Font Stack:** `'Outfit', 'Elms Sans', system-ui, sans-serif`
+* **Main Section Headers (e.g., `.topBar h1`, `.profileHero h2`):**
+  * `font-size: clamp(1.55rem, 2vw, 2.2rem);` (35px - 44px)
+  * `font-weight: 800;` (Extra Bold)
+  * `color: var(--text-primary);`
+* **Jury Queue / Detail Headers (e.g., `.mod-header h2`, `.timeline h2`):**
+  * `font-size: 1.2rem;` (19.2px)
+  * `font-weight: 800;`
+  * `color: var(--text-primary);`
+* **Sub-Section Headers / Cards Title Block (e.g., `strong` label inside `.dashboardCard`):**
+  * `font-size: 1.08rem;` (17.3px)
+  * `font-weight: 800;`
+  * `color: var(--text-primary);`
+* **Body Text & Summary Paragraphs (e.g., `.timelineItem p`, `.biographyBlock p`):**
+  * `font-size: 0.96rem;` (15.4px)
+  * `line-height: 1.58;`
+  * `color: var(--text-secondary);`
+* **Micro Metadata & Timestamps (e.g., `small` metadata labels):**
+  * `font-size: 0.84rem;` (13.4px)
+  * `font-weight: 600;`
+  * `color: var(--text-muted);`
 
 ```javascript
 // Reference React State Schema Structure (2-Space Indent)
 const [formData, setFormData] = useState({
-  politician_id: null,       // UUID/BIGINT target selector reference
-  contributor_id: null,      // UUID/BIGINT tracking author credentials
-  source_url: '',            // TEXT verified URL field
-  category_tag: '',          // VARCHAR taxonomy selector
-  action_identifier: '',     // VARCHAR operation code
-  quantitative_metric: '',   // DECIMAL numerical tracking balance
-  impact_summary: '',        // TEXT descriptive translation summary
-  ai_generated: false        // BOOLEAN tracking if AI generator tool was used
+  politicianId: '',          // camelCase target selector reference
+  sourceUrl: '',             // camelCase verified URL field
+  categoryTag: 'Audit',      // camelCase taxonomy selector
+  actionIdentifier: 'COA_FINDING', // camelCase operation code
+  quantitativeMetric: '',    // camelCase numerical tracking balance
+  impactSummary: ''          // camelCase descriptive translation summary
 });
+```
