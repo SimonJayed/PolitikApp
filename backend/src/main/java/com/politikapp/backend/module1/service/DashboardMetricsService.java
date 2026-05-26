@@ -29,8 +29,14 @@ public class DashboardMetricsService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         double efficiencyRatio = 0.0;
-        if (billsAuthored > 0) {
-            efficiencyRatio = ((double) projectCompletions / billsAuthored) * 100.0;
+        try {
+            if (billsAuthored > 0) {
+                efficiencyRatio = ((double) projectCompletions / billsAuthored) * 100.0;
+            } else {
+                efficiencyRatio = 0.0;
+            }
+        } catch (ArithmeticException | NullPointerException e) {
+            efficiencyRatio = 0.0;
         }
 
         return new SymmetricalKpiPayload(

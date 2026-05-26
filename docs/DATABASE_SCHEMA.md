@@ -8,6 +8,8 @@ This document defines the persistent relational data layer schemas deployed on t
   * `contributor_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
   * `full_name`: `VARCHAR(150)` (NOT NULL)
   * `email`: `VARCHAR(150)` (NOT NULL, UNIQUE)
+  * `username`: `VARCHAR(80)` (UNIQUE)
+  * `password_hash`: `VARCHAR(255)` (NOT NULL)
   * `role`: `VARCHAR(50)` (NOT NULL, Default: 'CONTRIBUTOR') -- 'CONTRIBUTOR', 'PEER', 'ADMIN'
   * `account_status`: `VARCHAR(50)` (NOT NULL, Default: 'ACTIVE') -- 'ACTIVE', 'LOCKED', 'SUSPENDED'
   * `trust_score`: `DECIMAL(5,2)` (Default: 100.00)
@@ -69,3 +71,15 @@ This document defines the persistent relational data layer schemas deployed on t
   * `vote_weight`: `INTEGER` (NOT NULL, Default: 1) -- Stores the scaled influence multiplier (1 or 5) applied at session runtime
   * `vote_reason`: `TEXT` (NOT NULL) -- Reviewer's justification statement string
   * `created_at`: `TIMESTAMP` (Default: CURRENT_TIMESTAMP)
+
+## 📊 6. Table: `reputation_audit_logs`
+* **Purpose:** Stores transactional audit trails tracing all reviewer reputation score increases, decreases, and platform penalties.
+* **Columns:**
+  * `log_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
+  * `peer_id`: `UUID` (Foreign Key -> `contributors.contributor_id`, ON DELETE RESTRICT) -- Reviewer account being audited
+  * `queue_id`: `UUID` (Foreign Key -> `moderation_queue.queue_id`, ON DELETE SET NULL) -- Ticket associated with the vote
+  * `score_change`: `DECIMAL(5,2)` (NOT NULL) -- Amount added/subtracted (e.g. +5.00 or -5.00)
+  * `previous_score`: `DECIMAL(5,2)` (NOT NULL) -- Reviewer trust score before calculations
+  * `new_score`: `DECIMAL(5,2)` (NOT NULL) -- Reviewer trust score after calculations
+  * `reason`: `TEXT` (NOT NULL) -- Informative narrative justification trace string
+  * `created_at`: `TIMESTAMP` (Default: `CURRENT_TIMESTAMP`)

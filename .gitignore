@@ -1,0 +1,28 @@
+# ==========================================
+# Unified Root Gitignore
+# ==========================================
+
+# OS Metadata
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors / IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.suo
+*.sln
+*.swp
+.settings/
+.project
+.classpath
+
+# Logs, Temp, and Backups
+*.log
+*.tmp
+*.bak
+temp/
+tmp/

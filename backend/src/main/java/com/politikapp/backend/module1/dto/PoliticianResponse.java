@@ -1,8 +1,11 @@
 package com.politikapp.backend.module1.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record PoliticianResponse(
         UUID politicianId,
         String fullName,
@@ -13,6 +16,9 @@ public record PoliticianResponse(
         LocalDate termEnd,
         String profileImageUrl,
         String biography,
-        String status
+        String status,
+        double efficiencyRatio,
+        int coaAuditDiscrepancies,
+        BigDecimal trackedBudgetAllocated
 ) {
 }

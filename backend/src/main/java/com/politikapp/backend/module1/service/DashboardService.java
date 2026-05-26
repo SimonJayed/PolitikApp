@@ -48,6 +48,8 @@ public class DashboardService {
                 kpis.position(),
                 kpis.jurisdiction(),
                 kpis.partyAffiliation(),
+                politician.getProfileImageUrl(),
+                politician.getBiography(),
                 kpis.billsAuthored(),
                 kpis.projectCompletions(),
                 kpis.legislativeEfficiencyRatio(),

@@ -14,6 +14,8 @@ create table if not exists public.contributors (
   contributor_id uuid primary key default gen_random_uuid(),
   full_name varchar(150) not null,
   email varchar(150) not null unique,
+  username varchar(80) unique,
+  password_hash varchar(255) not null,
   role varchar(50) not null default 'CONTRIBUTOR',
   account_status varchar(50) not null default 'ACTIVE',
   trust_score numeric(5, 2) default 100.00,
@@ -57,7 +59,7 @@ create table if not exists public.profile_edit_submissions (
   created_at timestamp default current_timestamp,
   updated_at timestamp default current_timestamp,
   constraint profile_edit_submissions_status_check check (
-    status in ('SUBMITTED', 'REJECTED', 'JURY_REVIEW', 'PUBLISHED')
+    status in ('SUBMITTED', 'JURY_REVIEW', 'REVISION_REQUIRED', 'ESCALATED', 'PUBLISHED', 'REJECTED')
   )
 );
 
@@ -71,7 +73,7 @@ create table if not exists public.moderation_queue (
   created_at timestamp default current_timestamp,
   updated_at timestamp default current_timestamp,
   constraint moderation_queue_status_check check (
-    queue_status in ('PENDING', 'JURY_REVIEW', 'REVISION_REQUIRED', 'PUBLISHED', 'REJECTED')
+    queue_status in ('PENDING', 'JURY_REVIEW', 'REVISION_REQUIRED', 'ESCALATED', 'PUBLISHED', 'REJECTED')
   )
 );
 
