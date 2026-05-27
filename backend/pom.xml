@@ -54,12 +54,12 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
-		
-		<plugin>
+
+		<!-- <plugin>
     		<groupId>org.flywaydb</groupId>
     		<artifactId>flyway-maven-plugin</artifactId>
     		<version>11.7.2</version>
-		</plugin>
+		</plugin> -->
 
 		<dependency>
 			<groupId>org.postgresql</groupId>
