@@ -46,7 +46,7 @@ public class SubmissionService {
                     payload.sourceUrl(),
                     payload.categoryTag(),
                     payload.actionIdentifier(),
-                    payload.quantitativeMetric(),
+                    payload.actionDetails(),
                     payload.impactSummary()
             ));
 
@@ -58,7 +58,7 @@ public class SubmissionService {
                     submission.getSourceUrl(),
                     submission.getCategoryTag(),
                     submission.getActionIdentifier(),
-                    submission.getQuantitativeMetric(),
+                    submission.getActionDetails(),
                     submission.getImpactSummary()
             ));
 

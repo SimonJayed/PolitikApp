@@ -12,7 +12,7 @@ public class TimelineMapper {
                 entry.getPoliticianId(),
                 entry.getCategoryTag(),
                 entry.getActionIdentifier(),
-                entry.getQuantitativeMetric(),
+                entry.getActionDetails(),
                 entry.getSummary(),
                 entry.getSourceUrl(),
                 entry.getPublicationStatus(),

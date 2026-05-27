@@ -30,7 +30,7 @@ const emptySubmission = {
   sourceUrl: '',
   categoryTag: 'Audit',
   actionIdentifier: 'COA_FINDING',
-  quantitativeMetric: '',
+  actionDetails: {},
   impactSummary: '',
 }
 
@@ -42,6 +42,28 @@ const actionOptions = [
 ]
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
+
+const actionDetailFields = {
+  COA_FINDING: [
+    { key: 'flaggedAmount', label: 'Audit Flagged Amount (PHP)', type: 'number' },
+  ],
+  BUDGET_ALLOCATION: [
+    { key: 'allocationAmount', label: 'Budget Allocation Amount (PHP)', type: 'number' },
+  ],
+  PROJECT_COMPLETION: [
+    { key: 'completionPercentage', label: 'Project Completion Percentage (%)', max: 100, type: 'number' },
+  ],
+  SPONSORED_LEGISLATION: [
+    { key: 'legislationTitle', label: 'Legislation Title', type: 'text' },
+    { key: 'dateFiled', label: 'Date Filed', type: 'date' },
+    {
+      key: 'legislativeStatus',
+      label: 'Legislative Status',
+      options: ['Filed', 'In Committee', 'Approved', 'Rejected', 'Withdrawn'],
+      type: 'select',
+    },
+  ],
+}
 
 async function readApiResponse(response) {
   const body = await response.json().catch(() => ({}))
@@ -105,7 +127,21 @@ function AppInner({ currentUser, onLogout, token }) {
 
   function updateFormField(event) {
     const { name, value } = event.target
-    setFormData((current) => ({ ...current, [name]: value }))
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'actionIdentifier' ? { actionDetails: {} } : {}),
+    }))
+  }
+
+  function updateActionDetail(key, value) {
+    setFormData((current) => ({
+      ...current,
+      actionDetails: {
+        ...(current.actionDetails || {}),
+        [key]: value,
+      },
+    }))
   }
 
   async function handleSubmission(event) {
@@ -123,8 +159,8 @@ function AppInner({ currentUser, onLogout, token }) {
       const payload = {
         ...formData,
         contributorId: currentUser?.userId,
+        actionDetails: normalizeActionDetails(formData.actionDetails),
         sourceUrl: formData.sourceUrl.trim(),
-        quantitativeMetric: Number(formData.quantitativeMetric),
       }
       const data = await fetch(`${API_BASE_URL}/api/submissions`, {
         body: JSON.stringify(payload),
@@ -247,6 +283,7 @@ function AppInner({ currentUser, onLogout, token }) {
             formData={formData}
             isSourceAllowed={isSourceAllowed}
             onChange={updateFormField}
+            onDetailChange={updateActionDetail}
             onSubmit={handleSubmission}
             selectedPoliticianId={selectedPoliticianId}
             state={submissionState}
@@ -661,7 +698,7 @@ function UserAccountPage({ token, user }) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Submission Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, selectedPoliticianId, state, politicians = [] }) {
+function SubmissionPanel({ formData, isSourceAllowed, onChange, onDetailChange, onSubmit, selectedPoliticianId, state, politicians = [] }) {
   const selectedPolitician = politicians.find((p) => p.politicianId === (formData.politicianId || selectedPoliticianId))
   return (
     <section className="workspace">
@@ -697,7 +734,11 @@ function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, select
             </select>
           </label>
         </div>
-        <Field label="Quantitative Metric" name="quantitativeMetric" onChange={onChange} type="number" value={formData.quantitativeMetric} />
+        <ActionDetailsFields
+          actionDetails={formData.actionDetails || {}}
+          actionIdentifier={formData.actionIdentifier}
+          onChange={onDetailChange}
+        />
         <label>
           Impact Summary
           <textarea name="impactSummary" required rows="5" value={formData.impactSummary} onChange={onChange} />
@@ -711,6 +752,43 @@ function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, select
         <StatusLine state={state} />
       </form>
     </section>
+  )
+}
+
+function ActionDetailsFields({ actionDetails, actionIdentifier, onChange }) {
+  const fields = actionDetailFields[actionIdentifier] || [{ key: 'metric', label: 'Metric', type: 'number' }]
+  return (
+    <div className="fieldRow">
+      {fields.map((field) => (
+        <label key={field.key}>
+          {field.label}
+          {field.type === 'select' ? (
+            <select
+              name={field.key}
+              required
+              value={actionDetails[field.key] ?? ''}
+              onChange={(event) => onChange(field.key, event.target.value)}
+            >
+              <option value="">Select status</option>
+              {field.options.map((option) => (
+                <option key={option} value={option}>{option}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              max={field.max}
+              min={field.type === 'number' ? '0' : undefined}
+              name={field.key}
+              required
+              step={field.type === 'number' ? 'any' : undefined}
+              type={field.type}
+              value={actionDetails[field.key] ?? ''}
+              onChange={(event) => onChange(field.key, event.target.value)}
+            />
+          )}
+        </label>
+      ))}
+    </div>
   )
 }
 
@@ -1569,7 +1647,7 @@ function MyContributionsPanel({ user }) {
                 {[
                   ['Category', item.categoryTag],
                   ['Action Tag', item.actionIdentifier],
-                  ['Metric', item.quantitativeMetric ? formatCurrency(item.quantitativeMetric) : 'N/A'],
+                  ['Metric', formatActionMetric(item.actionDetails, item.actionIdentifier)],
                 ].map(([k, v]) => (
                   <div key={k}>
                     <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
@@ -1654,6 +1732,37 @@ function initialsFor(name) {
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0))
+}
+
+function formatActionMetric(actionDetails, actionIdentifier) {
+  if (!actionDetails) return 'N/A'
+  switch (actionIdentifier) {
+    case 'COA_FINDING':
+      return formatCurrency(actionDetails.flaggedAmount)
+    case 'BUDGET_ALLOCATION':
+      return formatCurrency(actionDetails.allocationAmount)
+    case 'PROJECT_COMPLETION':
+      return `${Number(actionDetails.completionPercentage || 0).toLocaleString('en-PH')}% Completed`
+    case 'SPONSORED_LEGISLATION':
+      return [
+        actionDetails.legislationTitle,
+        actionDetails.legislativeStatus,
+        formatDate(actionDetails.dateFiled),
+      ].filter(Boolean).join(' | ') || 'Legislation details'
+    default:
+      return actionDetails.metric !== undefined ? String(actionDetails.metric) : 'View Details'
+  }
+}
+
+function normalizeActionDetails(actionDetails = {}) {
+  return Object.fromEntries(
+    Object.entries(actionDetails)
+      .filter(([, value]) => value !== '')
+      .map(([key, value]) => {
+        const numericValue = Number(value)
+        return Number.isFinite(numericValue) && value !== null && value !== '' ? [key, numericValue] : [key, value]
+      }),
+  )
 }
 
 function formatDate(value) {

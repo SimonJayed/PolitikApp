@@ -56,13 +56,29 @@ function formatLedgerDate(value) {
   }).format(new Date(value));
 }
 
-function formatMetric(value) {
-  if (value === null || value === undefined || value === '') return 'N/A';
-  const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) return String(value);
-  return new Intl.NumberFormat('en-PH', {
-    maximumFractionDigits: 2,
-  }).format(numericValue);
+function formatCurrency(value) {
+  return `PHP ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatActionMetric(actionDetails, actionIdentifier) {
+  if (!actionDetails) return 'N/A';
+
+  switch (actionIdentifier) {
+    case 'COA_FINDING':
+      return formatCurrency(actionDetails.flaggedAmount);
+    case 'BUDGET_ALLOCATION':
+      return formatCurrency(actionDetails.allocationAmount);
+    case 'PROJECT_COMPLETION':
+      return `${Number(actionDetails.completionPercentage || 0).toLocaleString('en-PH')}% Completed`;
+    case 'SPONSORED_LEGISLATION':
+      return [
+        actionDetails.legislationTitle,
+        actionDetails.legislativeStatus,
+        formatLedgerDate(actionDetails.dateFiled),
+      ].filter(Boolean).join(' | ') || 'Legislation details';
+    default:
+      return actionDetails.metric !== undefined ? String(actionDetails.metric) : 'View Details';
+  }
 }
 
 function normalizeLedgerText(value) {
@@ -295,7 +311,7 @@ function LedgerFilterTabs({ entries, state }) {
               <div className="ledgerEntryMeta">
                 <span>{entry.categoryTag || 'UNCATEGORIZED'}</span>
                 <span>{entry.actionIdentifier || 'NO_ACTION'}</span>
-                <span>{formatMetric(entry.quantitativeMetric)}</span>
+                <span>{formatActionMetric(entry.actionDetails, entry.actionIdentifier)}</span>
                 <span>{entry.status || 'SUBMITTED'}</span>
               </div>
               {entry.sourceUrl && (

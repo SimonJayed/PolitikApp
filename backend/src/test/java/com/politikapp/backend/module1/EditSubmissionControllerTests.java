@@ -29,7 +29,7 @@ class EditSubmissionControllerTests {
                                   "sourceUrl": "https://www.coa.gov.ph/reports/audit-cebu-2025",
                                   "categoryTag": "Audit",
                                   "actionIdentifier": "COA_FINDING",
-                                  "quantitativeMetric": 184500.00,
+                                  "actionDetails": { "flaggedAmount": 184500.00 },
                                   "impactSummary": "The Commission on Audit flagged baseline logistical supply invoice record mismatches."
                                 }
                                 """))
@@ -49,7 +49,7 @@ class EditSubmissionControllerTests {
                                   "sourceUrl": "https://example.com/reports/audit-cebu-2025",
                                   "categoryTag": "Audit",
                                   "actionIdentifier": "COA_FINDING",
-                                  "quantitativeMetric": 184500.00,
+                                  "actionDetails": { "flaggedAmount": 184500.00 },
                                   "impactSummary": "The Commission on Audit flagged baseline logistical supply invoice record mismatches."
                                 }
                                 """))

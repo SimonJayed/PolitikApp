@@ -14,5 +14,5 @@ CREATE TABLE IF NOT EXISTS public.reputation_audit_logs (
 );
 
 -- 2. Deploy Index Expansion Optimization
-CREATE INDEX IF NOT EXISTS idx_reputation_logs_peer_date 
+CREATE INDEX IF NOT EXISTS idx_reputation_logs_peer_date
 ON public.reputation_audit_logs(peer_id, created_at DESC);

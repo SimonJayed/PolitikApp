@@ -6,6 +6,7 @@ import com.politikapp.backend.module1.entity.ProfileEditSubmission;
 import com.politikapp.backend.module1.repository.ProfileEditSubmissionRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,7 +27,7 @@ public class PoliticianMapper {
         
         BigDecimal totalBudget = submissions.stream()
                 .filter(submission -> "BUDGET_ALLOCATION".equals(submission.getActionIdentifier()))
-                .map(ProfileEditSubmission::getQuantitativeMetric)
+                .map(this::allocationAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         double efficiencyRatio = 0.0;
@@ -61,5 +62,21 @@ public class PoliticianMapper {
         return submissions.stream()
                 .filter(submission -> actionIdentifier.equals(submission.getActionIdentifier()))
                 .count();
+    }
+
+    private BigDecimal allocationAmount(ProfileEditSubmission submission) {
+        Map<String, Object> details = submission.getActionDetails();
+        if (details == null || !details.containsKey("allocationAmount")) {
+            return BigDecimal.ZERO;
+        }
+        Object value = details.get("allocationAmount");
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return new BigDecimal(value.toString());
+        } catch (NumberFormatException exception) {
+            return BigDecimal.ZERO;
+        }
     }
 }

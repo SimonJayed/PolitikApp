@@ -4,11 +4,14 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "timeline_entries")
@@ -26,8 +29,9 @@ public class TimelineEntry {
     @Column(name = "action_identifier", nullable = false, length = 150)
     private String actionIdentifier;
 
-    @Column(name = "quantitative_metric", precision = 10, scale = 2)
-    private BigDecimal quantitativeMetric = BigDecimal.ZERO;
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "action_details", nullable = false, columnDefinition = "jsonb")
+    private Map<String, Object> actionDetails = Collections.emptyMap();
 
     @Column(name = "summary", nullable = false, columnDefinition = "TEXT")
     private String summary;
@@ -46,6 +50,20 @@ public class TimelineEntry {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    public static TimelineEntry publishedFrom(ProfileEditSubmission submission) {
+        TimelineEntry entry = new TimelineEntry();
+        entry.politicianId = submission.getPoliticianId();
+        entry.categoryTag = submission.getCategoryTag();
+        entry.actionIdentifier = submission.getActionIdentifier();
+        entry.actionDetails = submission.getActionDetails() == null
+                ? Collections.emptyMap()
+                : submission.getActionDetails();
+        entry.summary = submission.getImpactSummary();
+        entry.sourceUrl = submission.getSourceUrl();
+        entry.publicationStatus = "PUBLISHED";
+        return entry;
+    }
+
     public UUID getTimelineId() {
         return timelineId;
     }
@@ -62,8 +80,8 @@ public class TimelineEntry {
         return actionIdentifier;
     }
 
-    public BigDecimal getQuantitativeMetric() {
-        return quantitativeMetric;
+    public Map<String, Object> getActionDetails() {
+        return actionDetails;
     }
 
     public String getSummary() {

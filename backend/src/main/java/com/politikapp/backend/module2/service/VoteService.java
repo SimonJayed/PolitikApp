@@ -3,6 +3,8 @@ package com.politikapp.backend.module2.service;
 import com.politikapp.backend.common.HttpResponseException;
 import com.politikapp.backend.common.event.ConsensusReachedEvent;
 import com.politikapp.backend.module1.entity.ProfileEditSubmission;
+import com.politikapp.backend.module1.entity.TimelineEntry;
+import com.politikapp.backend.module1.repository.TimelineEntryRepository;
 import com.politikapp.backend.module2.dto.VoteCalculationTrace;
 import com.politikapp.backend.module2.entity.JuryVote;
 import com.politikapp.backend.module2.entity.ModerationQueue;
@@ -27,6 +29,7 @@ public class VoteService {
 
     private final ModerationQueueRepository moderationQueueRepository;
     private final JuryVoteRepository juryVoteRepository;
+    private final TimelineEntryRepository timelineEntryRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @PersistenceContext
@@ -35,9 +38,11 @@ public class VoteService {
     public VoteService(
             ModerationQueueRepository moderationQueueRepository, 
             JuryVoteRepository juryVoteRepository,
+            TimelineEntryRepository timelineEntryRepository,
             ApplicationEventPublisher eventPublisher) {
         this.moderationQueueRepository = moderationQueueRepository;
         this.juryVoteRepository = juryVoteRepository;
+        this.timelineEntryRepository = timelineEntryRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -188,18 +193,7 @@ public class VoteService {
     private void cascadeToTimeline(ProfileEditSubmission submission) {
         log.info("Cascading approved edits to timeline_entries for politician ID={}", submission.getPoliticianId());
         try {
-            entityManager.createNativeQuery(
-                "INSERT INTO public.timeline_entries (timeline_id, politician_id, category_tag, action_identifier, quantitative_metric, summary, source_url, publication_status) " +
-                "VALUES (:timelineId, :politicianId, :category, :action, :metric, :summary, :url, 'PUBLISHED')"
-            )
-            .setParameter("timelineId", UUID.randomUUID())
-            .setParameter("politicianId", submission.getPoliticianId())
-            .setParameter("category", submission.getCategoryTag())
-            .setParameter("action", submission.getActionIdentifier())
-            .setParameter("metric", submission.getQuantitativeMetric())
-            .setParameter("summary", submission.getImpactSummary())
-            .setParameter("url", submission.getSourceUrl())
-            .executeUpdate();
+            timelineEntryRepository.save(TimelineEntry.publishedFrom(submission));
             log.info("Successfully persisted timeline ledger record for politician ID={}", submission.getPoliticianId());
         } catch (Exception e) {
             log.error("Failed to cascade verified edits to timeline: {}", e.getMessage());

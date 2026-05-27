@@ -1,7 +1,7 @@
 package com.politikapp.backend.module1.dto;
 
-import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public record TimelineEntryResponse(
@@ -9,7 +9,7 @@ public record TimelineEntryResponse(
         UUID politicianId,
         String categoryTag,
         String actionIdentifier,
-        BigDecimal quantitativeMetric,
+        Map<String, Object> actionDetails,
         String summary,
         String sourceUrl,
         String publicationStatus,

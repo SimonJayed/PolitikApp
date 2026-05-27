@@ -1,6 +1,6 @@
 package com.politikapp.backend.common.event;
 
-import java.math.BigDecimal;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -14,6 +14,6 @@ public record SubmissionCreatedEvent(
     String sourceUrl,
     String categoryTag,
     String actionIdentifier,
-    BigDecimal quantitativeMetric,
+    Map<String, Object> actionDetails,
     String impactSummary
 ) {}
