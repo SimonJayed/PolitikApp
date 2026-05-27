@@ -1,5 +1,6 @@
 package com.politikapp.backend.auth.controller;
 
+import com.politikapp.backend.auth.dto.AuthDtos.AuthResponse;
 import com.politikapp.backend.auth.dto.AuthDtos.UpdateMeRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.UserResponse;
 import com.politikapp.backend.auth.security.AuthPrincipal;
@@ -28,7 +29,7 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<UserResponse> updateMe(
+    public ResponseEntity<AuthResponse> updateMe(
             @AuthenticationPrincipal AuthPrincipal principal,
             @Valid @RequestBody UpdateMeRequest request
     ) {

@@ -5,13 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "timeline_entries")
@@ -29,9 +26,9 @@ public class TimelineEntry {
     @Column(name = "action_identifier", nullable = false, length = 150)
     private String actionIdentifier;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "action_details", nullable = false, columnDefinition = "jsonb")
-    private Map<String, Object> actionDetails = Collections.emptyMap();
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "action_details", columnDefinition = "jsonb")
+    private Map<String, Object> actionDetails;
 
     @Column(name = "summary", nullable = false, columnDefinition = "TEXT")
     private String summary;
@@ -52,15 +49,13 @@ public class TimelineEntry {
 
     public static TimelineEntry publishedFrom(ProfileEditSubmission submission) {
         TimelineEntry entry = new TimelineEntry();
-        entry.politicianId = submission.getPoliticianId();
-        entry.categoryTag = submission.getCategoryTag();
-        entry.actionIdentifier = submission.getActionIdentifier();
-        entry.actionDetails = submission.getActionDetails() == null
-                ? Collections.emptyMap()
-                : submission.getActionDetails();
-        entry.summary = submission.getImpactSummary();
-        entry.sourceUrl = submission.getSourceUrl();
-        entry.publicationStatus = "PUBLISHED";
+        entry.setPoliticianId(submission.getPoliticianId());
+        entry.setCategoryTag(submission.getCategoryTag());
+        entry.setActionIdentifier(submission.getActionIdentifier());
+        entry.setActionDetails(submission.getActionDetails());
+        entry.setSummary(submission.getImpactSummary());
+        entry.setSourceUrl(submission.getSourceUrl());
+        entry.setPublicationStatus("PUBLISHED");
         return entry;
     }
 
@@ -68,32 +63,64 @@ public class TimelineEntry {
         return timelineId;
     }
 
+    public void setTimelineId(UUID timelineId) {
+        this.timelineId = timelineId;
+    }
+
     public UUID getPoliticianId() {
         return politicianId;
+    }
+
+    public void setPoliticianId(UUID politicianId) {
+        this.politicianId = politicianId;
     }
 
     public String getCategoryTag() {
         return categoryTag;
     }
 
+    public void setCategoryTag(String categoryTag) {
+        this.categoryTag = categoryTag;
+    }
+
     public String getActionIdentifier() {
         return actionIdentifier;
+    }
+
+    public void setActionIdentifier(String actionIdentifier) {
+        this.actionIdentifier = actionIdentifier;
     }
 
     public Map<String, Object> getActionDetails() {
         return actionDetails;
     }
 
+    public void setActionDetails(Map<String, Object> actionDetails) {
+        this.actionDetails = actionDetails;
+    }
+
     public String getSummary() {
         return summary;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
     public String getSourceUrl() {
         return sourceUrl;
     }
 
+    public void setSourceUrl(String sourceUrl) {
+        this.sourceUrl = sourceUrl;
+    }
+
     public String getPublicationStatus() {
         return publicationStatus;
+    }
+
+    public void setPublicationStatus(String publicationStatus) {
+        this.publicationStatus = publicationStatus;
     }
 
     public Instant getCreatedAt() {

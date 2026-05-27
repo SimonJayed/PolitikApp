@@ -77,7 +77,8 @@ function AppInner({ currentUser, onLogout, token }) {
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : 'JUDICIAL_REVIEWER'
+  const activeUser = isDevModeActive && manipulatedUser ? manipulatedUser : currentUser;
+  const currentRole = activeUser?.role || 'CONTRIBUTOR';
 
   const [activeView, setActiveView] = useState('dashboard')
   const [politiciansState, setPoliticiansState] = useState({
@@ -255,7 +256,7 @@ function AppInner({ currentUser, onLogout, token }) {
         onLogout={onLogout}
         onSelectView={setActiveView}
         title="PolitikApp"
-        user={currentUser}
+        user={activeUser}
       />
 
       <section className={isCompareModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'}>
@@ -318,7 +319,7 @@ function AppInner({ currentUser, onLogout, token }) {
           <DashboardPanel
             onNavigate={setActiveView}
             politicians={politiciansState.data}
-            user={currentUser}
+            user={activeUser}
           />
         )}
         {activeView === 'compare' && (
@@ -332,8 +333,8 @@ function AppInner({ currentUser, onLogout, token }) {
             state={comparisonState}
           />
         )}
-        {activeView === 'contributions' && <MyContributionsPanel user={currentUser} />}
-        {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={currentUser} />}
+        {activeView === 'contributions' && <MyContributionsPanel user={activeUser} />}
+        {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={activeUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
             <section className="workspace">
@@ -367,10 +368,10 @@ function AppInner({ currentUser, onLogout, token }) {
               </div>
             </section>
           ) : (
-            <ModerationPanel token={token} user={currentUser} />
+            <ModerationPanel token={token} user={activeUser} />
           )
         )}
-        {activeView === 'account' && <UserAccountPage token={token} user={currentUser} />}
+        {activeView === 'account' && <UserAccountPage token={token} user={activeUser} />}
       </section>
     </main>
   )
@@ -380,7 +381,7 @@ function App() {
   const { isAuthenticated, logout, token, user } = useAuth()
   if (!isAuthenticated) return <AuthPages />
   return (
-    <DeveloperSandboxProvider>
+    <DeveloperSandboxProvider currentUser={user} token={token}>
       <AppInner currentUser={user} onLogout={logout} token={token} />
       <DeveloperOptionsPanel />
     </DeveloperSandboxProvider>
@@ -662,6 +663,7 @@ function DashboardPanel({ politicians, onNavigate, user }) {
 /*  User Account Page                                                          */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function UserAccountPage({ token, user }) {
+  const { updateSession } = useAuth()
   const [profile, setProfile] = useState(user)
   const [state, setState] = useState({ status: 'idle', message: '' })
   const [form, setForm] = useState({ fullName: user.fullName || '', username: user.username || '' })
@@ -685,7 +687,8 @@ function UserAccountPage({ token, user }) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
       }).then(readApiResponse)
-      setProfile(data)
+      setProfile(data.user)
+      updateSession(data)
       setState({ status: 'success', message: 'Profile updated.' })
     } catch (error) {
       setState({ status: 'error', message: error.message })

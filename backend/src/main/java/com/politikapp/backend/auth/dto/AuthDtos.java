@@ -22,7 +22,8 @@ public class AuthDtos {
 
     public record UpdateMeRequest(
             @Size(max = 150) String fullName,
-            @Size(max = 80) String username
+            @Size(max = 80) String username,
+            @Size(max = 50) String role
     ) {}
 
     public record UserResponse(

@@ -1,5 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DeveloperSandboxContext } from './DeveloperSandboxContext';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 const DEFAULT_PROFILE_METRICS = {
   contributorSubmissions: 14,
@@ -13,6 +15,34 @@ const DEFAULT_PROFILE_METRICS = {
   adminTimeoutOverrideActive: true,
 };
 
+const ROLE_DEFAULT_METRICS = {
+  CONTRIBUTOR: {
+    contributorSubmissions: 14,
+    contributorApproved: 12,
+    contributorRejected: 2,
+  },
+  JUDICIAL_REVIEWER: {
+    reviewerConsensusVotes: 25,
+    reviewerDissentVotes: 3,
+    reviewerTotalBallots: 28,
+  },
+  PEER: {
+    reviewerConsensusVotes: 25,
+    reviewerDissentVotes: 3,
+    reviewerTotalBallots: 28,
+  },
+  ADMIN: {
+    adminInterventions: 7,
+    adminTieBreakerActive: true,
+    adminTimeoutOverrideActive: true,
+  },
+  ADMINISTRATOR: {
+    adminInterventions: 7,
+    adminTieBreakerActive: true,
+    adminTimeoutOverrideActive: true,
+  }
+};
+
 function clampNumber(value, min = 0, max = Number.POSITIVE_INFINITY) {
   const numberValue = Number(value);
   if (!Number.isFinite(numberValue)) {
@@ -21,10 +51,54 @@ function clampNumber(value, min = 0, max = Number.POSITIVE_INFINITY) {
   return Math.min(max, Math.max(min, numberValue));
 }
 
-export function DeveloperSandboxProvider({ children }) {
+export function DeveloperSandboxProvider({ children, currentUser, token }) {
   const [isDevModeActive, setIsDevModeActive] = useState(false);
   const [injectedQueue, setInjectedQueue] = useState([]); 
   const [profileMetrics, setProfileMetrics] = useState(DEFAULT_PROFILE_METRICS);
+
+  // Sync actual user and metrics dynamically when sandbox is enabled
+  useEffect(() => {
+    if (isDevModeActive && currentUser) {
+      let mappedRole = currentUser.role || "JUDICIAL_REVIEWER";
+      if (mappedRole === "PEER") {
+        mappedRole = "JUDICIAL_REVIEWER";
+      } else if (mappedRole === "ADMINISTRATOR") {
+        mappedRole = "ADMIN";
+      }
+
+      setManipulatedUser({
+        name: currentUser.fullName || currentUser.name || "Pedro Penduko",
+        biography: currentUser.biography || "Verified Capstone Contributor Profile tracking municipal budget items.",
+        trustScore: currentUser.trustScore !== undefined ? currentUser.trustScore : 95.0,
+        status: currentUser.accountStatus || currentUser.status || "ACTIVE",
+        role: mappedRole
+      });
+
+      if (currentUser.userId) {
+        fetch(`${API_BASE_URL}/api/submissions/contributor/${currentUser.userId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+          .then(res => {
+            if (!res.ok) throw new Error("Fetch failed");
+            return res.json();
+          })
+          .then(data => {
+            const entries = Array.isArray(data) ? data : [];
+            const submissions = entries.length;
+            const approved = entries.filter((e) => e.status === 'PUBLISHED').length;
+            const rejected = entries.filter((e) => e.status === 'REJECTED').length;
+
+            setProfileMetrics(current => ({
+              ...current,
+              contributorSubmissions: submissions,
+              contributorApproved: approved,
+              contributorRejected: rejected,
+            }));
+          })
+          .catch(err => console.error("Sandbox failing to pre-fetch contributor stats:", err));
+      }
+    }
+  }, [isDevModeActive, currentUser, token]);
 
   // Track changeable mock user attributes for Module 3 simulations
   const [manipulatedUser, setManipulatedUser] = useState({
@@ -34,6 +108,17 @@ export function DeveloperSandboxProvider({ children }) {
     status: "ACTIVE",
     role: "JUDICIAL_REVIEWER"
   });
+
+  // Sync profile metrics preset when the spoofed role changes
+  useEffect(() => {
+    const roleKey = manipulatedUser.role;
+    if (roleKey && ROLE_DEFAULT_METRICS[roleKey]) {
+      setProfileMetrics((current) => ({
+        ...current,
+        ...ROLE_DEFAULT_METRICS[roleKey]
+      }));
+    }
+  }, [manipulatedUser.role]);
 
   // 🧮 Compute voting weight dynamically based on SRS trust thresholds
   const getSimulatedVoteWeight = () => {

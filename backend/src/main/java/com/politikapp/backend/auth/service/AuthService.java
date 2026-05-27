@@ -12,6 +12,10 @@ import com.politikapp.backend.auth.security.JwtService;
 import com.politikapp.backend.common.HttpResponseException;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.List;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -69,7 +73,7 @@ public class AuthService {
     }
 
     @Transactional
-    public UserResponse updateMe(AuthPrincipal principal, UpdateMeRequest request) {
+    public AuthResponse updateMe(AuthPrincipal principal, UpdateMeRequest request) {
         AuthUser user = authUserRepository.findById(principal.getUserId())
                 .orElseThrow(() -> new HttpResponseException(404, "User not found."));
         if (StringUtils.hasText(request.username())
@@ -83,7 +87,35 @@ public class AuthService {
         if (StringUtils.hasText(request.username())) {
             user.setUsername(request.username().trim());
         }
-        return toSafeUser(authUserRepository.save(user));
+        if (StringUtils.hasText(request.role())) {
+            String targetRole = request.role().trim().toUpperCase(Locale.ROOT);
+            if ("JUDICIAL_REVIEWER".equals(targetRole)) {
+                targetRole = "PEER";
+            } else if ("ADMINISTRATOR".equals(targetRole)) {
+                targetRole = "ADMIN";
+            }
+            if (!"CONTRIBUTOR".equals(targetRole) && !"PEER".equals(targetRole) && !"ADMIN".equals(targetRole)) {
+                throw new HttpResponseException(400, "Invalid role name: " + request.role());
+            }
+            user.setRole(targetRole);
+        }
+        
+        AuthUser saved = authUserRepository.save(user);
+
+        // Map database role to standard Spring security authority string (e.g., "ROLE_ADMIN")
+        String securityRole = "ROLE_" + saved.getRole();
+        List<SimpleGrantedAuthority> newAuthorities = List.of(new SimpleGrantedAuthority(securityRole));
+
+        // Re-authenticate the active security context container in-memory
+        UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(
+            new AuthPrincipal(saved.getUserId(), saved.getEmail(), saved.getRole()),
+            SecurityContextHolder.getContext().getAuthentication() != null ?
+                SecurityContextHolder.getContext().getAuthentication().getCredentials() : null,
+            newAuthorities
+        );
+        SecurityContextHolder.getContext().setAuthentication(newAuth);
+
+        return toAuthResponse(saved);
     }
 
     private AuthResponse toAuthResponse(AuthUser user) {

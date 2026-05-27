@@ -11,7 +11,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -121,6 +120,78 @@ public class ModerationQueueService {
             convertToInstant(row[9]),
             convertToInstant(row[10])
         )).toList();
+    }
+
+    /**
+     * Performs a manual sandbox process stage transition override.
+     * Shifts queue status based on direction (next/prev) within the sandbox workflow bounds.
+     */
+    @Transactional
+    public String shiftSandboxStage(UUID queueId, String direction) {
+        log.info("Sandbox shifting stage for queueId={}, direction={}", queueId, direction);
+        ModerationQueue queueRow = moderationQueueRepository.findById(queueId)
+                .orElseThrow(() -> new com.politikapp.backend.common.HttpResponseException(404, "Not Found: Target entry not found."));
+
+        com.politikapp.backend.module1.entity.ProfileEditSubmission submission = entityManager.find(com.politikapp.backend.module1.entity.ProfileEditSubmission.class, queueRow.getSubmissionId());
+        if (submission == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(404, "Not Found: Associated submission not found.");
+        }
+
+        List<String> stages = List.of("PENDING", "JURY_REVIEW", "REVISION_REQUIRED", "ESCALATED", "REJECTED", "PUBLISHED");
+        String currentStatus = queueRow.getQueueStatus();
+        if ("SUBMITTED".equals(currentStatus)) {
+            currentStatus = "PENDING";
+        }
+        int currentIndex = stages.indexOf(currentStatus);
+        if (currentIndex == -1) {
+            currentIndex = 1; // default JURY_REVIEW
+        }
+
+        int newIndex = currentIndex;
+        if ("next".equalsIgnoreCase(direction)) {
+            newIndex = Math.min(stages.size() - 1, currentIndex + 1);
+        } else if ("prev".equalsIgnoreCase(direction)) {
+            newIndex = Math.max(0, currentIndex - 1);
+        }
+
+        String newStatus = stages.get(newIndex);
+        queueRow.setQueueStatus(newStatus);
+        submission.setStatus(newStatus);
+
+        if ("PUBLISHED".equals(newStatus)) {
+            cascadeToTimelineNative(submission);
+        }
+
+        moderationQueueRepository.save(queueRow);
+        entityManager.merge(submission);
+
+        return newStatus;
+    }
+
+    private void cascadeToTimelineNative(com.politikapp.backend.module1.entity.ProfileEditSubmission submission) {
+        try {
+            Long count = entityManager.createQuery(
+                "SELECT COUNT(t) FROM TimelineEntry t WHERE t.politicianId = :polId AND t.categoryTag = :cat AND t.summary = :sum", Long.class
+            )
+            .setParameter("polId", submission.getPoliticianId())
+            .setParameter("cat", submission.getCategoryTag())
+            .setParameter("sum", submission.getImpactSummary())
+            .getSingleResult();
+
+            if (count == null || count == 0) {
+                com.politikapp.backend.module1.entity.TimelineEntry entry = new com.politikapp.backend.module1.entity.TimelineEntry();
+                entry.setPoliticianId(submission.getPoliticianId());
+                entry.setCategoryTag(submission.getCategoryTag());
+                entry.setActionIdentifier(submission.getActionIdentifier());
+                entry.setActionDetails(submission.getActionDetails());
+                entry.setSummary(submission.getImpactSummary());
+                entry.setSourceUrl(submission.getSourceUrl());
+                entry.setPublicationStatus("PUBLISHED");
+                entityManager.persist(entry);
+            }
+        } catch (Exception e) {
+            log.error("Failed to cascade timeline entry in sandbox shift:", e);
+        }
     }
 
     private java.util.UUID convertToUUID(Object obj) {

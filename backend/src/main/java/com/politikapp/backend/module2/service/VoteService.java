@@ -71,7 +71,7 @@ public class VoteService {
         String peerName = "Anonymous Peer";
         try {
             Object[] contributorData = (Object[]) entityManager.createNativeQuery(
-                "SELECT trust_score, full_name FROM public.contributors WHERE contributor_id = :peerId"
+                "SELECT trust_score, full_name, role FROM public.contributors WHERE contributor_id = :peerId"
             ).setParameter("peerId", peerId).getSingleResult();
 
             if (contributorData != null && contributorData.length > 0) {
@@ -81,9 +81,21 @@ public class VoteService {
                 if (contributorData.length > 1 && contributorData[1] != null) {
                     peerName = (String) contributorData[1];
                 }
+                String peerRole = "CONTRIBUTOR";
+                if (contributorData.length > 2 && contributorData[2] != null) {
+                    peerRole = (String) contributorData[2];
+                }
+                if (!"PEER".equals(peerRole) && !"ADMIN".equals(peerRole) && !"ADMINISTRATOR".equals(peerRole)) {
+                    throw new HttpResponseException(403, "Forbidden: Only users with PEER or ADMIN roles are authorized to cast peer ballots.");
+                }
+            } else {
+                throw new HttpResponseException(404, "Not Found: Contributor profile not found.");
             }
+        } catch (HttpResponseException e) {
+            throw e;
         } catch (Exception e) {
-            log.warn("Could not retrieve contributor details for peerId={}, using default values: {}", peerId, e.getMessage());
+            log.warn("Could not retrieve contributor details for peerId={}, error: {}", peerId, e.getMessage());
+            throw new HttpResponseException(403, "Forbidden: Reviewer profile could not be validated.");
         }
 
         // 3. Scale vote weight based on trust score (accelerated weight threshold >= 90)

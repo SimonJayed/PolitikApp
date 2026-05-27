@@ -5,13 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "profile_edit_submissions")
@@ -35,9 +32,9 @@ public class ProfileEditSubmission {
     @Column(name = "action_identifier", nullable = false, length = 150)
     private String actionIdentifier;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "action_details", nullable = false, columnDefinition = "jsonb")
-    private Map<String, Object> actionDetails = Collections.emptyMap();
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "action_details", columnDefinition = "jsonb")
+    private Map<String, Object> actionDetails;
 
     @Column(name = "impact_summary", nullable = false, columnDefinition = "TEXT")
     private String impactSummary;
@@ -71,7 +68,7 @@ public class ProfileEditSubmission {
         submission.sourceUrl = sourceUrl;
         submission.categoryTag = categoryTag;
         submission.actionIdentifier = actionIdentifier;
-        submission.actionDetails = actionDetails == null ? Collections.emptyMap() : actionDetails;
+        submission.actionDetails = actionDetails;
         submission.impactSummary = impactSummary;
         return submission;
     }

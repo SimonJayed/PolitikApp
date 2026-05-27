@@ -48,6 +48,18 @@ export function AuthProvider({ children }) {
       setSession(body)
       return body
     },
+    updateSession(newSession) {
+      setSession((prev) => {
+        if (!newSession) return null;
+        if (newSession.token && newSession.user) {
+          return newSession;
+        }
+        if (prev) {
+          return { ...prev, user: { ...prev.user, ...newSession } };
+        }
+        return prev;
+      });
+    },
     logout() {
       setSession(null)
     },

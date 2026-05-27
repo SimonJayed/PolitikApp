@@ -3,6 +3,19 @@ import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0));
+}
+
+function formatLedgerDate(value) {
+  if (!value) return '';
+  try {
+    return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value));
+  } catch (e) {
+    return String(value);
+  }
+}
+
 function clampPercent(value) {
   return Math.min(100, Math.max(0, Number(value || 0)));
 }
@@ -45,19 +58,6 @@ async function readApiResponse(response) {
     throw new Error(payload?.message || 'Request failed.');
   }
   return payload;
-}
-
-function formatLedgerDate(value) {
-  if (!value) return 'Date unavailable';
-  return new Intl.DateTimeFormat('en', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(value));
-}
-
-function formatCurrency(value) {
-  return `PHP ${Number(value || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatActionMetric(actionDetails, actionIdentifier) {
@@ -149,23 +149,13 @@ export default function UserProfileMatrixPanel({ token, user }) {
         </div>
       </header>
 
-      {!isDevModeActive && (
+      {/* Contributor Matrix Layout */}
+      {activeRole === 'CONTRIBUTOR' && (
         <ContributorMatrix
-          isSandboxMode={false}
+          isSandboxMode={isDevModeActive}
           metrics={profileMetrics}
-          rejectionLocked={false}
-          rejectionRate={0}
-          token={token}
-          user={user}
-        />
-      )}
-
-      {isDevModeActive && activeRole === 'CONTRIBUTOR' && (
-        <ContributorMatrix
-          isSandboxMode
-          metrics={profileMetrics}
-          rejectionLocked={rejectionLocked}
-          rejectionRate={contributorRejectionRate}
+          rejectionLocked={isDevModeActive && rejectionLocked}
+          rejectionRate={isDevModeActive ? contributorRejectionRate : 0}
           simulateApprovedSubmission={simulateApprovedSubmission}
           simulateRejectedSubmission={simulateRejectedSubmission}
           token={token}
@@ -173,7 +163,8 @@ export default function UserProfileMatrixPanel({ token, user }) {
         />
       )}
 
-      {isDevModeActive && activeRole !== 'CONTRIBUTOR' && activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
+      {/* Reviewer Matrix Layout */}
+      {activeRole !== 'CONTRIBUTOR' && activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
         <ReviewerMatrix
           consensusRate={consensusRate}
           metrics={profileMetrics}
@@ -181,14 +172,19 @@ export default function UserProfileMatrixPanel({ token, user }) {
           simulateDissentVote={simulateDissentVote}
           tier={auditorTier}
           trustScore={trustScore}
+          isSandboxMode={isDevModeActive}
+          token={token}
+          user={actor}
         />
       )}
 
-      {isDevModeActive && (activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') && (
+      {/* Admin Matrix Layout */}
+      {(activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') && (
         <AdminMatrix
           adjustAdminInterventions={adjustAdminInterventions}
           metrics={profileMetrics}
           updateProfileMetric={updateProfileMetric}
+          isSandboxMode={isDevModeActive}
         />
       )}
     </section>
@@ -362,7 +358,56 @@ function LedgerFilterTabs({ entries, state }) {
   );
 }
 
-function ReviewerMatrix({ consensusRate, metrics, simulateConsensusVote, simulateDissentVote, tier, trustScore }) {
+function ReviewerMatrix({
+  consensusRate,
+  metrics,
+  simulateConsensusVote,
+  simulateDissentVote,
+  tier,
+  trustScore,
+  isSandboxMode = false,
+  token,
+  user,
+}) {
+  const [ledgerEntries, setLedgerEntries] = useState([]);
+  const [ledgerState, setLedgerState] = useState({ status: 'loading', message: 'Loading ledger entries...' });
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (!user?.userId) {
+      setLedgerEntries([]);
+      setLedgerState({ status: 'error', message: 'Unable to load database ledger records without a user id.' });
+      return () => {
+        ignore = true;
+      };
+    }
+
+    setLedgerState({ status: 'loading', message: 'Loading ledger entries...' });
+    fetch(`${API_BASE_URL}/api/submissions/contributor/${user.userId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        if (ignore) return;
+        const entries = Array.isArray(data) ? data : [];
+        setLedgerEntries(entries);
+        setLedgerState({
+          status: 'success',
+          message: entries.length > 0 ? '' : 'No database ledger records found.',
+        });
+      })
+      .catch((error) => {
+        if (ignore) return;
+        setLedgerEntries([]);
+        setLedgerState({ status: 'error', message: error.message || 'Could not load database ledger records.' });
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [token, user?.userId]);
+
   return (
     <>
       <section className="matrixCardGrid">
@@ -374,21 +419,25 @@ function ReviewerMatrix({ consensusRate, metrics, simulateConsensusVote, simulat
         <MetricCard label="Participation Rate" value={formatPercent(consensusRate)} />
       </section>
 
-      <section className="matrixActionPanel">
-        <div>
-          <h3 className="ty-card-title">Consensus Score Simulator</h3>
-          <p className="ty-body">SRS Section 3.2 thresholds recalculate instantly as trust changes.</p>
-        </div>
-        <div className="matrixActionRow">
-          <button onClick={simulateConsensusVote} type="button">+ Sim Consensus Vote</button>
-          <button className="dangerButton" onClick={simulateDissentVote} type="button">+ Sim Dissenting Vote</button>
-        </div>
-      </section>
+      <LedgerFilterTabs entries={ledgerEntries} state={ledgerState} />
+
+      {isSandboxMode && (
+        <section className="matrixActionPanel">
+          <div>
+            <h3 className="ty-card-title">Consensus Score Simulator</h3>
+            <p className="ty-body">SRS Section 3.2 thresholds recalculate instantly as trust changes.</p>
+          </div>
+          <div className="matrixActionRow">
+            <button onClick={simulateConsensusVote} type="button">+ Sim Consensus Vote</button>
+            <button className="dangerButton" onClick={simulateDissentVote} type="button">+ Sim Dissenting Vote</button>
+          </div>
+        </section>
+      )}
     </>
   );
 }
 
-function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric }) {
+function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric, isSandboxMode = false }) {
   return (
     <>
       <section className="matrixCardGrid">
@@ -398,35 +447,37 @@ function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric })
         <MetricCard label="24-Hour Timeout Override" value={metrics.adminTimeoutOverrideActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTimeoutOverrideActive ? 'success' : 'danger'} />
       </section>
 
-      <section className="matrixActionPanel adminPanel">
-        <div>
-          <h3 className="ty-card-title">Accountability Bypass Keys</h3>
-          <p className="ty-body">Toggle administrative override capabilities in the shared sandbox state.</p>
-        </div>
-        <div className="adminControlGrid">
-          <div className="stepperControl">
-            <button onClick={() => adjustAdminInterventions(-1)} type="button">-</button>
-            <span>{metrics.adminInterventions}</span>
-            <button onClick={() => adjustAdminInterventions(1)} type="button">+</button>
+      {isSandboxMode && (
+        <section className="matrixActionPanel adminPanel">
+          <div>
+            <h3 className="ty-card-title">Accountability Bypass Keys</h3>
+            <p className="ty-body">Toggle administrative override capabilities in the shared sandbox state.</p>
           </div>
-          <label className="matrixToggle">
-            <input
-              checked={metrics.adminTieBreakerActive}
-              onChange={(event) => updateProfileMetric('adminTieBreakerActive', event.target.checked)}
-              type="checkbox"
-            />
-            <span>50-50 Tie Breaker</span>
-          </label>
-          <label className="matrixToggle">
-            <input
-              checked={metrics.adminTimeoutOverrideActive}
-              onChange={(event) => updateProfileMetric('adminTimeoutOverrideActive', event.target.checked)}
-              type="checkbox"
-            />
-            <span>24-Hour Timeout Override</span>
-          </label>
-        </div>
-      </section>
+          <div className="adminControlGrid">
+            <div className="stepperControl">
+              <button onClick={() => adjustAdminInterventions(-1)} type="button">-</button>
+              <span>{metrics.adminInterventions}</span>
+              <button onClick={() => adjustAdminInterventions(1)} type="button">+</button>
+            </div>
+            <label className="matrixToggle">
+              <input
+                checked={metrics.adminTieBreakerActive}
+                onChange={(event) => updateProfileMetric('adminTieBreakerActive', event.target.checked)}
+                type="checkbox"
+              />
+              <span>50-50 Tie Breaker</span>
+            </label>
+            <label className="matrixToggle">
+              <input
+                checked={metrics.adminTimeoutOverrideActive}
+                onChange={(event) => updateProfileMetric('adminTimeoutOverrideActive', event.target.checked)}
+                type="checkbox"
+              />
+              <span>24-Hour Timeout Override</span>
+            </label>
+          </div>
+        </section>
+      )}
     </>
   );
 }

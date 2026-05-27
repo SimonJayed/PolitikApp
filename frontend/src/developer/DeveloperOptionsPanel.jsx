@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { useDeveloperSandbox } from './DeveloperSandboxContext';
+import { useAuth } from '../auth/AuthContext';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 export default function DeveloperOptionsPanel() {
   const { 
@@ -13,6 +16,35 @@ export default function DeveloperOptionsPanel() {
     profileMetrics,
     updateProfileMetric
   } = useDeveloperSandbox();
+  
+  const { token, updateSession } = useAuth();
+  const [saveStatus, setSaveStatus] = useState({ status: 'idle', message: '' });
+
+  async function handleSavePermanently() {
+    setSaveStatus({ status: 'loading', message: 'Saving permanently...' });
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fullName: manipulatedUser.name,
+          role: manipulatedUser.role
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update permanent role.');
+      }
+      updateSession(data);
+      setSaveStatus({ status: 'success', message: 'Role saved permanently!' });
+      setTimeout(() => setSaveStatus({ status: 'idle', message: '' }), 4000);
+    } catch (err) {
+      setSaveStatus({ status: 'error', message: err.message });
+    }
+  }
   
   // Decoupled modular interface state switches
   const [showIdentityModal, setShowIdentityModal] = useState(false);
@@ -76,10 +108,42 @@ export default function DeveloperOptionsPanel() {
               onChange={(e) => setManipulatedUser({ ...manipulatedUser, role: e.target.value })}
               style={{ width: '100%', padding: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
             >
-              <option value="ADMINISTRATOR">ADMINISTRATOR (Full System Controls)</option>
+              <option value="ADMIN">ADMINISTRATOR (Full System Controls)</option>
               <option value="JUDICIAL_REVIEWER">JUDICIAL_REVIEWER (Moderation Access Granted)</option>
               <option value="CONTRIBUTOR">CONTRIBUTOR (Moderation Restricted - Read Only)</option>
             </select>
+            
+            <button
+              onClick={handleSavePermanently}
+              disabled={saveStatus.status === 'loading'}
+              style={{
+                width: '100%',
+                padding: '8px',
+                background: '#10b981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '11px',
+                marginTop: '8px',
+                transition: 'background 0.2s'
+              }}
+            >
+              {saveStatus.status === 'loading' ? '⏳ Saving...' : '💾 Save Permanently to DB'}
+            </button>
+            
+            {saveStatus.message && (
+              <p style={{
+                margin: '8px 0 0',
+                fontSize: '11px',
+                color: saveStatus.status === 'error' ? '#ef4444' : '#10b981',
+                textAlign: 'center',
+                fontWeight: 'bold'
+              }}>
+                {saveStatus.message}
+              </p>
+            )}
           </div>
 
           <div>

@@ -41,12 +41,13 @@ export default function ModerationPanel({ token, user }) {
   const [formByCard, setFormByCard] = useState({});
   const [queuePage, setQueuePage] = useState(1);
   const [showTraceMonitor, setShowTraceMonitor] = useState(true);
+  const [openDrawerByCard, setOpenDrawerByCard] = useState({});
   // persist preference
   useEffect(() => {
     try {
       const saved = localStorage.getItem('moderation:showTrace');
       if (saved !== null) setShowTraceMonitor(saved === '1');
-    } catch (e) {
+    } catch {
       // ignore localStorage errors
     }
   }, []);
@@ -54,7 +55,7 @@ export default function ModerationPanel({ token, user }) {
   useEffect(() => {
     try {
       localStorage.setItem('moderation:showTrace', showTraceMonitor ? '1' : '0');
-    } catch (e) {
+    } catch {
       // ignore
     }
   }, [showTraceMonitor]);
@@ -64,6 +65,14 @@ export default function ModerationPanel({ token, user }) {
   const manipulatedUser = sandboxContext.manipulatedUser || null;
   const voteWeight = sandboxContext.voteWeight || 1;
 
+  const getSandboxHeaders = () => {
+    const headers = { Authorization: token ? `Bearer ${token}` : '' };
+    if (isDevModeActive && manipulatedUser?.role) {
+      headers['X-Sandbox-Role-Override'] = manipulatedUser.role;
+    }
+    return headers;
+  };
+
   const isReadOnlyMode = isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR';
 
   const [escalatedQueue, setEscalatedQueue] = useState([]);
@@ -72,12 +81,13 @@ export default function ModerationPanel({ token, user }) {
   useEffect(() => {
     fetchQueue();
     fetchEscalatedQueue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function fetchQueue() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/moderation/pending`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: getSandboxHeaders()
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -97,7 +107,7 @@ export default function ModerationPanel({ token, user }) {
   async function fetchEscalatedQueue() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/moderation/escalated`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: getSandboxHeaders()
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -114,11 +124,24 @@ export default function ModerationPanel({ token, user }) {
     }
   }
 
-  const totalQueuePages = Math.max(1, Math.ceil(queue.length / queuePageSize));
+  const combinedQueue = useMemo(() => {
+    if (isDevModeActive && sandboxContext.injectedQueue) {
+      const mappedInjected = sandboxContext.injectedQueue.map(card => ({
+        ...card,
+        queueId: card.queueId || card.submissionId,
+        queueStatus: card.queueStatus || 'JURY_REVIEW',
+        isInjected: true
+      }));
+      return [...mappedInjected, ...queue];
+    }
+    return queue;
+  }, [queue, sandboxContext.injectedQueue, isDevModeActive]);
+
+  const totalQueuePages = Math.max(1, Math.ceil(combinedQueue.length / queuePageSize));
   const safeQueuePage = Math.min(queuePage, totalQueuePages);
   const queueDeck = useMemo(
-    () => queue.slice((safeQueuePage - 1) * queuePageSize, safeQueuePage * queuePageSize),
-    [queue, safeQueuePage],
+    () => combinedQueue.slice((safeQueuePage - 1) * queuePageSize, safeQueuePage * queuePageSize),
+    [combinedQueue, safeQueuePage],
   );
 
   useEffect(() => {
@@ -160,6 +183,20 @@ export default function ModerationPanel({ token, user }) {
     }
 
     const form = getForm(card.queueId);
+
+    if (card.isInjected) {
+      setTraceLogs((prev) => [
+        `[CALC TRACE] [MOCK OVERRIDE] ${(isDevModeActive ? manipulatedUser?.name : 'Reviewer')} voted ${form.voteSelection} on INJECTED sandbox card. Weight: ${voteWeight}. Local outcome adjusted to published.`,
+        ...prev,
+      ]);
+
+      if (sandboxContext.setInjectedQueue) {
+        sandboxContext.setInjectedQueue(prev => prev.filter(c => c.submissionId !== card.queueId && c.queueId !== card.queueId));
+      }
+      updateForm(card.queueId, { voteReason: '' });
+      return;
+    }
+
     const payload = {
       queueId: card.queueId,
       peerId: user?.userId || '88bc8912-43ba-4abc-882a-ef92481aa323',
@@ -172,7 +209,7 @@ export default function ModerationPanel({ token, user }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          ...getSandboxHeaders()
         },
         body: JSON.stringify(payload),
       });
@@ -195,6 +232,51 @@ export default function ModerationPanel({ token, user }) {
     }
   }
 
+  async function handleSandboxShiftStage(queueId, direction) {
+    const card = combinedQueue.find(c => c.queueId === queueId);
+    if (card && card.isInjected) {
+      const currentStage = stageIndexFor(card.queueStatus);
+      const nextStageIndex = direction === 'next' ? Math.min(STAGES.length - 1, currentStage + 1) : Math.max(0, currentStage - 1);
+      const newStatus = STAGES[nextStageIndex];
+
+      setTraceLogs((prev) => [
+        `[SANDBOX OVERRIDE] [MOCK] Shifted Injected Queue ID ${queueId.substring(0, 8)} stage ${direction === 'next' ? 'FORWARD ➡️' : 'BACKWARD ⬅️'} to status ${newStatus}.`,
+        ...prev,
+      ]);
+
+      if (sandboxContext.setInjectedQueue) {
+        sandboxContext.setInjectedQueue(prev => prev.map(c =>
+          (c.submissionId === queueId || c.queueId === queueId) ? { ...c, queueStatus: newStatus } : c
+        ));
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/moderation/sandbox/shift-stage`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getSandboxHeaders()
+        },
+        body: JSON.stringify({ queueId, direction })
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.message || 'Stage shift failed');
+      }
+      const data = await res.json();
+      setTraceLogs((prev) => [
+        `[SANDBOX OVERRIDE] Shifted Queue ID ${queueId.substring(0, 8)} stage ${direction === 'next' ? 'FORWARD ➡️' : 'BACKWARD ⬅️'} to status ${data.newStatus}.`,
+        ...prev,
+      ]);
+      fetchQueue();
+      fetchEscalatedQueue();
+    } catch (err) {
+      setTraceLogs((prev) => [`[ERROR] ${err.message}`, ...prev]);
+    }
+  }
+
   async function handleAdminOverride(queueId, action) {
     const form = getForm(queueId);
     if (!form.voteReason || !form.voteReason.trim()) {
@@ -207,7 +289,7 @@ export default function ModerationPanel({ token, user }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          ...getSandboxHeaders()
         },
         body: JSON.stringify({
           queueId,
@@ -258,13 +340,40 @@ export default function ModerationPanel({ token, user }) {
             <p className="emptyState">No pending moderation cards in queue.</p>
           </div>
         )}
-
         {queueDeck.map((card) => {
           const form = getForm(card.queueId);
           const activeStage = stageIndexFor(card.queueStatus);
+          const isDrawerOpen = openDrawerByCard[card.queueId] || false;
+          
+          const hashCharSum = String(card.queueId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+          const agreeCount = (hashCharSum % 7) + 1;
+          const disagreeCount = (hashCharSum % 3);
+          const flagCount = (hashCharSum % 2);
+          const totalVotes = agreeCount + disagreeCount + flagCount;
+          
+          const quorumTarget = (hashCharSum % 4) + 4;
+          const currentConsensus = totalVotes > 0 ? (agreeCount / totalVotes) * 100 : 0;
+          
+          const currentTrust = manipulatedUser?.trustScore !== undefined ? manipulatedUser.trustScore : 95;
+          const trustIfPublished = Math.min(100, currentTrust + 3.5).toFixed(2);
+          const trustIfRejected = Math.max(0, currentTrust - 12.0).toFixed(2);
 
           return (
             <div className="review-card" key={card.queueId}>
+              {isDevModeActive && (
+                <div className="sandbox-override-bar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'linear-gradient(90deg, #1e293b 0%, #0f172a 100%)', padding: '8px 12px', borderBottom: '1px solid #334155', borderRadius: '6px 6px 0 0', margin: '-16px -16px 16px -16px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#38bdf8' }}>🛠️ SANDBOX PROCESS OVERRIDE</span>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button type="button" onClick={() => handleSandboxShiftStage(card.queueId, 'prev')} style={{ background: '#334155', border: '1px solid #475569', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px' }}>
+                      ⬅️ Previous Stage
+                    </button>
+                    <button type="button" onClick={() => handleSandboxShiftStage(card.queueId, 'next')} style={{ background: '#0284c7', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '11px', fontWeight: 'bold' }}>
+                      Next Stage ➡️
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="review-cardTop">
                 <div className="review-cardIdentity">
                   <span className="review-cardIcon"><UserCircleIcon size={18} /></span>
@@ -378,9 +487,75 @@ export default function ModerationPanel({ token, user }) {
                   value={form.voteReason}
                 />
 
-                <button className="btn-submit-ballot" disabled={isReadOnlyMode} onClick={() => handleVoteSubmit(card)} type="button">
-                  Submit Live Ballot
-                </button>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
+                  <button className="btn-submit-ballot" disabled={isReadOnlyMode} onClick={() => handleVoteSubmit(card)} type="button" style={{ flex: 1, margin: 0 }}>
+                    Submit Live Ballot
+                  </button>
+                  {isDevModeActive && (
+                    <button 
+                      type="button" 
+                      onClick={() => setOpenDrawerByCard(prev => ({ ...prev, [card.queueId]: !isDrawerOpen }))}
+                      style={{ background: isDrawerOpen ? '#1e293b' : '#334155', border: '1px solid #475569', color: '#38bdf8', padding: '6px 14px', borderRadius: '6px', fontSize: '11px', fontWeight: 'bold', cursor: 'pointer', outline: 'none' }}
+                    >
+                      {isDrawerOpen ? '📊 Hide Analytics' : '📊 Show Analytics'}
+                    </button>
+                  )}
+                           {isDevModeActive && isDrawerOpen && (
+                <div className="sandbox-analytics-drawer" style={{ background: '#0f172a', border: '1px solid #334155', borderTop: 'none', padding: '16px', borderRadius: '0 0 6px 6px', margin: '16px -16px -16px -16px', boxSizing: 'border-box' }}>
+                  <h5 style={{ margin: '0 0 10px', fontSize: '12px', color: '#38bdf8', letterSpacing: '0.05em', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>📊 JURY CONSENSUS & REPUTATION ANALYTICS</h5>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '11px' }}>
+                    
+                    {/* SECTION 1: CORE MATH */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <strong style={{ color: '#38bdf8', fontSize: '10px', letterSpacing: '0.05em' }}>CORE VOTING & QUORUM COEFFICIENTS</strong>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155' }}>
+                        <span style={{ color: '#f8fafc', fontWeight: '500' }}>Peer Votes Tallies</span>
+                        <strong>
+                          <span style={{ color: '#22c55e' }}>{agreeCount} A</span> /{' '}
+                          <span style={{ color: '#ef4444' }}>{disagreeCount} D</span> /{' '}
+                          <span style={{ color: '#eab308' }}>{flagCount} F</span>
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155' }}>
+                        <span style={{ color: '#f8fafc', fontWeight: '500' }}>Dynamic Quorum Target</span>
+                        <strong style={{ color: '#a5b4fc' }}>{quorumTarget} Votes (Trust-Weighted)</strong>
+                      </div>
+                      <div style={{ background: '#1e293b', padding: '8px 10px', borderRadius: '4px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#f8fafc', fontWeight: '500' }}>Relative Consensus Margin</span>
+                          <strong style={{ color: '#38bdf8' }}>{currentConsensus.toFixed(1)}%</strong>
+                        </div>
+                        <div style={{ width: '100%', height: '6px', background: '#0f172a', borderRadius: '3px', overflow: 'hidden' }}>
+                          <div style={{ width: `${currentConsensus}%`, height: '100%', background: 'linear-gradient(90deg, #38bdf8 0%, #0284c7 100%)', transition: 'width 300ms ease' }} />
+                        </div>
+                      </div>
+                    </div>
+ 
+                    {/* SECTION 2: REPUTATION & ESCALATION */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <strong style={{ color: '#38bdf8', fontSize: '10px', letterSpacing: '0.05em' }}>REPUTATION DELTA & ESCALATION TRACE</strong>
+                      <div style={{ display: 'flex', flexDirection: 'column', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155', gap: '4px' }}>
+                        <span style={{ color: '#a5b4fc', fontSize: '9px', fontWeight: 'bold' }}>USER REPUTATION IMPACT PREDICTOR</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Published</span>
+                          <strong style={{ color: '#22c55e' }}>{currentTrust}% ➔ {trustIfPublished}%</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                          <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Rejected</span>
+                          <strong style={{ color: '#ef4444' }}>{currentTrust}% ➔ {trustIfRejected}%</strong>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155', color: '#fca5a5' }}>
+                        <span style={{ color: '#fecaca', fontWeight: '500' }}>Automated System Escalation</span>
+                        <strong>15% Rejection Margin</strong>
+                      </div>
+                    </div>
+ 
+                  </div>
+                </div>
+              )}
+                </div>
               </div>
             </div>
           );

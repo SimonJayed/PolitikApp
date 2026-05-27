@@ -22,6 +22,10 @@ public class AuthPrincipal implements UserDetails {
         return userId;
     }
 
+    public String getRole() {
+        return role;
+    }
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role));
