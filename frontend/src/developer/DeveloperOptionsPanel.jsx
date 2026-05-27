@@ -9,7 +9,9 @@ export default function DeveloperOptionsPanel() {
     setManipulatedUser,
     injectMockCard,
     clearInjectedQueue,
-    voteWeight
+    voteWeight,
+    profileMetrics,
+    updateProfileMetric
   } = useDeveloperSandbox();
   
   // Decoupled modular interface state switches
@@ -17,8 +19,7 @@ export default function DeveloperOptionsPanel() {
   const [showDataModal, setShowDataModal] = useState(false);
   const [isLargePreset, setIsLargePreset] = useState(false);
 
-  const bioText = manipulatedUser.biography || '';
-  const bioRows = Math.max(2, Math.min(10, Math.ceil(bioText.length / 32) + (bioText.match(/\n/g) || []).length));
+  const numberInputStyle = { width: '100%', padding: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' };
 
   if (!isDevModeActive) {
     return (
@@ -34,7 +35,7 @@ export default function DeveloperOptionsPanel() {
   }
 
   return (
-    <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end' }}>
+    <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end', maxHeight: 'calc(100vh - 40px)' }}>
       
       {/* 🟢 FIXED PERSISTENT CONTROL ANCHOR DOCK BAR */}
       <div style={{ background: '#1e293b', padding: '6px 12px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', gap: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', flexShrink: 0 }}>
@@ -64,7 +65,7 @@ export default function DeveloperOptionsPanel() {
       {showIdentityModal && (
         <div style={{ 
           background: '#0f172a', color: '#f8fafc', border: '2px solid #0284c7', borderRadius: '6px', padding: '16px', width: '320px', boxShadow: '0 10px 15px rgba(0,0,0,0.3)',
-          display: 'flex', flexDirection: 'column', gap: '10px'
+          display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto'
         }}>
           <h3 style={{ margin: 0, fontSize: '13px', color: '#38bdf8', borderBottom: '1px solid #334155', paddingBottom: '6px' }}>👤 Sandbox Session Profile Spoofer</h3>
           
@@ -92,16 +93,6 @@ export default function DeveloperOptionsPanel() {
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Biography String:</label>
-            <textarea 
-              rows={bioRows} 
-              value={manipulatedUser.biography || ''} 
-              onChange={(e) => setManipulatedUser({ ...manipulatedUser, biography: e.target.value })}
-              style={{ width: '100%', padding: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px', boxSizing: 'border-box', height: 'auto', resize: 'none', overflow: 'hidden', lineHeight: '1.4' }}
-            />
-          </div>
-
-          <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
               <label>Trust Balance Score: <strong style={{ color: '#34d399' }}>{manipulatedUser.trustScore}%</strong></label>
               <span>Vote Weight: <strong style={{ color: '#38bdf8' }}>x{voteWeight}</strong></span>
@@ -124,6 +115,53 @@ export default function DeveloperOptionsPanel() {
               <option value="SUSPENDED">SUSPENDED (Security Blockout)</option>
             </select>
           </div>
+
+          <div style={{ borderTop: '1px solid #334155', paddingTop: '10px', display: 'grid', gap: '8px' }}>
+            <strong style={{ color: '#a5b4fc', fontSize: '12px' }}>Core Profile Metrics Matrix</strong>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+              <label style={{ fontSize: '10px', color: '#94a3b8' }}>
+                Submitted
+                <input min="0" type="number" value={profileMetrics.contributorSubmissions} onChange={(e) => updateProfileMetric('contributorSubmissions', e.target.value)} style={numberInputStyle} />
+              </label>
+              <label style={{ fontSize: '10px', color: '#94a3b8' }}>
+                Approved
+                <input min="0" type="number" value={profileMetrics.contributorApproved} onChange={(e) => updateProfileMetric('contributorApproved', e.target.value)} style={numberInputStyle} />
+              </label>
+              <label style={{ fontSize: '10px', color: '#94a3b8' }}>
+                Rejected
+                <input min="0" type="number" value={profileMetrics.contributorRejected} onChange={(e) => updateProfileMetric('contributorRejected', e.target.value)} style={numberInputStyle} />
+              </label>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+              <label style={{ fontSize: '10px', color: '#94a3b8' }}>
+                Consensus
+                <input min="0" type="number" value={profileMetrics.reviewerConsensusVotes} onChange={(e) => updateProfileMetric('reviewerConsensusVotes', e.target.value)} style={numberInputStyle} />
+              </label>
+              <label style={{ fontSize: '10px', color: '#94a3b8' }}>
+                Dissent
+                <input min="0" type="number" value={profileMetrics.reviewerDissentVotes} onChange={(e) => updateProfileMetric('reviewerDissentVotes', e.target.value)} style={numberInputStyle} />
+              </label>
+              <label style={{ fontSize: '10px', color: '#94a3b8' }}>
+                Ballots
+                <input min="0" type="number" value={profileMetrics.reviewerTotalBallots} onChange={(e) => updateProfileMetric('reviewerTotalBallots', e.target.value)} style={numberInputStyle} />
+              </label>
+            </div>
+
+            <label style={{ fontSize: '10px', color: '#94a3b8' }}>
+              Admin Interventions
+              <input min="0" type="number" value={profileMetrics.adminInterventions} onChange={(e) => updateProfileMetric('adminInterventions', e.target.value)} style={numberInputStyle} />
+            </label>
+
+            <label style={{ alignItems: 'center', display: 'flex', flexDirection: 'row', gap: '8px', color: '#cbd5e1', fontSize: '11px' }}>
+              <input checked={profileMetrics.adminTieBreakerActive} onChange={(e) => updateProfileMetric('adminTieBreakerActive', e.target.checked)} style={{ width: 'auto', minHeight: 'auto' }} type="checkbox" />
+              50-50 Tie Breaker Key
+            </label>
+            <label style={{ alignItems: 'center', display: 'flex', flexDirection: 'row', gap: '8px', color: '#cbd5e1', fontSize: '11px' }}>
+              <input checked={profileMetrics.adminTimeoutOverrideActive} onChange={(e) => updateProfileMetric('adminTimeoutOverrideActive', e.target.checked)} style={{ width: 'auto', minHeight: 'auto' }} type="checkbox" />
+              24-Hour Timeout Override Key
+            </label>
+          </div>
         </div>
       )}
 
@@ -133,7 +171,7 @@ export default function DeveloperOptionsPanel() {
       {showDataModal && (
         <div style={{ 
           background: '#0f172a', color: '#f8fafc', border: '2px solid #2563eb', borderRadius: '6px', padding: '16px', width: isLargePreset ? '480px' : '320px', boxShadow: '0 10px 15px rgba(0,0,0,0.3)',
-          display: 'flex', flexDirection: 'column', gap: '12px'
+          display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '6px' }}>
             <h3 style={{ margin: 0, fontSize: '13px', color: '#60a5fa' }}>📥 Mock Data Injection Control</h3>

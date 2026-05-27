@@ -29,7 +29,10 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
     return [
       {
         title: 'Main',
-        items: [{ key: 'dashboard', label: 'Dashboard', icon: 'D', accent: '#ef8354' }],
+        items: [
+          { key: 'dashboard', label: 'Dashboard', icon: 'D', accent: '#ef8354' },
+          { key: 'profileMatrix', label: 'My Profile', icon: 'P', accent: '#6366f1' },
+        ],
       },
       {
         title: 'Features',
