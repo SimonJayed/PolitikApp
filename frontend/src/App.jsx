@@ -93,6 +93,7 @@ function AppInner({ currentUser, onLogout, token }) {
   const [selectedPoliticianId, setSelectedPoliticianId] = useState('')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -107,6 +108,9 @@ function AppInner({ currentUser, onLogout, token }) {
       : ['My Profile', 'Contribution Metrics'],
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
+
+  const headerTitleHiddenFor = new Set(['dashboard', 'directory', 'compare', 'contributions', 'submit', 'moderation'])
+  const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const isSourceAllowed = useMemo(
     () => SOURCE_URL_PATTERN.test(formData.sourceUrl.trim()),
@@ -247,26 +251,34 @@ function AppInner({ currentUser, onLogout, token }) {
     <main className="appShell">
       <TopNav
         activeView={activeView}
+        isCompareModalOpen={isCompareModalOpen}
         onLogout={onLogout}
         onSelectView={setActiveView}
         title="PolitikApp"
         user={currentUser}
       />
 
-      <section className="pageContent pt-32 sm:pt-36">
-        <header className="topBar">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
-              <span className="ty-nav font-extrabold" aria-hidden="true">
-                {activeHeader[0]?.slice(0, 1) || 'P'}
-              </span>
+      <section className={isCompareModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'}>
+        {!isCompareModalOpen && (
+          <header className="topBar">
+              <div className="flex items-center gap-3">
+                {showHeaderTitles && (
+                  <>
+                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
+                      <span className="ty-nav font-extrabold" aria-hidden="true">
+                        {activeHeader[0]?.slice(0, 1) || 'P'}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="ty-label">{activeHeader[0]}</p>
+                      <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
+                    </div>
+                  </>
+                )}
             </div>
-            <div className="min-w-0">
-              <p className="ty-label">{activeHeader[0]}</p>
-              <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
-            </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         {activeView === 'directory' && (
           <PoliticianDirectoryLoaderPanel
@@ -313,6 +325,7 @@ function AppInner({ currentUser, onLogout, token }) {
           <ComparisonPanel
             compareIds={compareIds}
             onChange={setCompareIds}
+            onModalOpenChange={setIsCompareModalOpen}
             onSubmit={handleComparisonLookup}
             politicians={politiciansState.data}
             politiciansState={politiciansState}
@@ -1191,7 +1204,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Comparison Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politiciansState, state }) {
+function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -1231,6 +1244,11 @@ function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politici
     window.addEventListener('keydown', handleEscape)
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', handleEscape) }
   }, [isModalOpen])
+
+  useEffect(() => {
+    onModalOpenChange?.(isModalOpen)
+    return () => onModalOpenChange?.(false)
+  }, [isModalOpen, onModalOpenChange])
 
   function selectCandidate(side, id) {
     if (side === 'left') onChange((c) => ({ ...c, idA: id }))
@@ -1339,7 +1357,9 @@ function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politici
               <h2 className="ty-section-title">Comparison Result</h2>
               <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsModalOpen(false)} type="button">Close</button>
             </header>
-            <ComparisonGrid comparison={state.data} />
+            <div className="comparisonModalBody">
+              <ComparisonGrid comparison={state.data} />
+            </div>
           </section>
         </div>
       )}
@@ -1358,8 +1378,10 @@ function ComparisonGrid({ comparison }) {
         {rows.map((row) => (
           <div className="matrixRow" key={row.categoryTag}>
             <h3>{row.categoryTag}</h3>
-            <TimelineLedger entries={row.recordsA || []} compact title="Candidate A" />
-            <TimelineLedger entries={row.recordsB || []} compact title="Candidate B" />
+            <div className="compareLedgerPair">
+              <TimelineLedger className="comparisonLedgerCard" entries={row.recordsA || []} title="Candidate A" />
+              <TimelineLedger className="comparisonLedgerCard" entries={row.recordsB || []} title="Candidate B" />
+            </div>
           </div>
         ))}
       </section>
@@ -1397,9 +1419,9 @@ function KpiGrid({ profile, compact = false }) {
   )
 }
 
-function TimelineLedger({ entries, compact = false, title = 'Published Timeline Ledger' }) {
+function TimelineLedger({ className = '', entries, compact = false, title = 'Published Timeline Ledger' }) {
   return (
-    <section className={compact ? 'timeline compact' : 'timeline'}>
+    <section className={[compact ? 'timeline compact' : 'timeline', className].filter(Boolean).join(' ')}>
       <h2 className="ty-section-title">{title}</h2>
       {entries.length === 0 && <p className="emptyState">No published records returned.</p>}
       {entries.map((entry) => (

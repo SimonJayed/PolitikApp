@@ -63,7 +63,7 @@ function MobileMenuItem({ active, icon: Icon, label, onClick }) {
   )
 }
 
-function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user }) {
+function TopNav({ activeView, isCompareModalOpen = false, onLogout, onSelectView, title = 'PolitikApp', user }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
@@ -93,8 +93,14 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
     setUserMenuOpen(false)
   }
 
+  const isCompareActive = activeView === 'compare' && !isCompareModalOpen
+
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4">
+    <div
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4"
+      style={isCompareModalOpen ? { visibility: 'hidden' } : undefined}
+      aria-hidden={isCompareModalOpen}
+    >
       <div className="pointer-events-auto mx-auto w-full max-w-[1880px]">
         <div
           className="rounded-[30px] border border-white/10 shadow-[0_24px_60px_rgba(10,29,66,0.45)] backdrop-blur-xl"
@@ -123,7 +129,7 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
               {navItems.map((item) => (
                 <CenterNavItem
                   key={item.key}
-                  active={activeView === item.key}
+                  active={item.key === 'compare' ? isCompareActive : activeView === item.key}
                   icon={item.icon}
                   label={item.label}
                   onClick={() => navigate(item.key)}
@@ -170,7 +176,7 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
 
                     <div className="h-px bg-white/10" />
 
-                    <div className="p-2">
+                    <div className="p-2 user-menu-list">
                       <button
                         type="button"
                         onClick={() => navigate('profileMatrix')}
@@ -210,7 +216,7 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
                 {navItems.map((item) => (
                   <MobileMenuItem
                     key={`m-${item.key}`}
-                    active={activeView === item.key}
+                    active={item.key === 'compare' ? isCompareActive : activeView === item.key}
                     icon={item.icon}
                     label={item.label}
                     onClick={() => navigate(item.key)}

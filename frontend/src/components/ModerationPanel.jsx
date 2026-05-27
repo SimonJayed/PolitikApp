@@ -1,5 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
+import {
+  AlertTriangleIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ExternalLinkIcon,
+  FlagIcon,
+  GavelIcon,
+  ShieldCheckIcon,
+  ThumbDownIcon,
+  ThumbUpIcon,
+  UserCircleIcon,
+} from './icons/Lucide';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const STAGES = ['SUBMITTED', 'JURY_REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED'];
@@ -27,6 +39,25 @@ export default function ModerationPanel({ token, user }) {
   const [queue, setQueue] = useState([]);
   const [traceLogs, setTraceLogs] = useState([]);
   const [formByCard, setFormByCard] = useState({});
+  const [queuePage, setQueuePage] = useState(1);
+  const [showTraceMonitor, setShowTraceMonitor] = useState(true);
+  // persist preference
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('moderation:showTrace');
+      if (saved !== null) setShowTraceMonitor(saved === '1');
+    } catch (e) {
+      // ignore localStorage errors
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('moderation:showTrace', showTraceMonitor ? '1' : '0');
+    } catch (e) {
+      // ignore
+    }
+  }, [showTraceMonitor]);
 
   const sandboxContext = useDeveloperSandbox() || {};
   const isDevModeActive = sandboxContext.isDevModeActive || false;
@@ -36,6 +67,7 @@ export default function ModerationPanel({ token, user }) {
   const isReadOnlyMode = isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR';
 
   const [escalatedQueue, setEscalatedQueue] = useState([]);
+  const queuePageSize = 2;
 
   useEffect(() => {
     fetchQueue();
@@ -82,7 +114,18 @@ export default function ModerationPanel({ token, user }) {
     }
   }
 
-  const queueDeck = useMemo(() => queue, [queue]);
+  const totalQueuePages = Math.max(1, Math.ceil(queue.length / queuePageSize));
+  const safeQueuePage = Math.min(queuePage, totalQueuePages);
+  const queueDeck = useMemo(
+    () => queue.slice((safeQueuePage - 1) * queuePageSize, safeQueuePage * queuePageSize),
+    [queue, safeQueuePage],
+  );
+
+  useEffect(() => {
+    if (queuePage !== safeQueuePage) {
+      setQueuePage(safeQueuePage);
+    }
+  }, [queuePage, safeQueuePage]);
 
   function getForm(queueId) {
     return formByCard[queueId] || { voteSelection: 'AGREE', voteReason: '' };
@@ -194,22 +237,20 @@ export default function ModerationPanel({ token, user }) {
   return (
     <div className="moderation-container">
       <div className="mod-header">
-        <div>
-          <h2 className="ty-section-title">Asynchronous Judicial Moderation Engine</h2>
-          <p>Pending Queue cards require community jury adjudication before publication.</p>
-        </div>
-      </div>
-
-      {traceLogs.length > 0 && (
-        <div className="terminal-audit-console">
-          <div className="terminal-titlebar">Moderation Trace Monitor</div>
-          <div className="terminal-screen">
-            {traceLogs.slice(0, 8).map((log, index) => (
-              <p className="terminal-line" key={`${log}-${index}`}>{log}</p>
-            ))}
+        <div className="mod-header-copy">
+          <div className="mod-header-titleRow">
+            <span className="mod-header-icon"><GavelIcon size={20} /></span>
+            <div>
+              <h2 className="ty-section-title">Asynchronous Judicial Moderation Engine</h2>
+              <p>Pending Queue cards require community jury adjudication before publication.</p>
+            </div>
+          </div>
+          <div className="mod-header-stats">
+            <span className="mod-statChip"><ShieldCheckIcon size={16} /> Community Review</span>
+            <span className="mod-statChip"><AlertTriangleIcon size={16} /> Escalation Ready</span>
           </div>
         </div>
-      )}
+      </div>
 
       <div className="queue-deck">
         {queueDeck.length === 0 && (
@@ -224,39 +265,51 @@ export default function ModerationPanel({ token, user }) {
 
           return (
             <div className="review-card" key={card.queueId}>
-              <p><strong>Contributor:</strong> <span className="anonymized-tag">Anonymized Peer</span></p>
-              <p><strong>Queue ID:</strong> {card.queueId}</p>
-              <p><strong>Target Reference:</strong> {card.politicianId || 'SYSTEM-MAIN-TRACK'}</p>
-              <p>
-                <strong>Source Link:</strong>{' '}
-                <a href={card.sourceUrl} rel="noreferrer" target="_blank">{card.sourceUrl}</a>
-              </p>
+              <div className="review-cardTop">
+                <div className="review-cardIdentity">
+                  <span className="review-cardIcon"><UserCircleIcon size={18} /></span>
+                  <div>
+                    <p className="review-cardLabel">Contributor</p>
+                    <p className="review-cardValue"><span className="anonymized-tag">Anonymized Peer</span></p>
+                  </div>
+                </div>
+                <div className="review-cardMetaPill">Queue #{String(card.queueId).slice(0, 8)}</div>
+              </div>
+
+              <div className="review-cardFacts">
+                <div className="review-cardFact">
+                  <span className="review-cardFactLabel">Queue ID</span>
+                  <strong>{card.queueId}</strong>
+                </div>
+                <div className="review-cardFact">
+                  <span className="review-cardFactLabel">Target Reference</span>
+                  <strong>{card.politicianId || 'SYSTEM-MAIN-TRACK'}</strong>
+                </div>
+                <div className="review-cardFact review-cardFactLink">
+                  <span className="review-cardFactLabel">Source Link</span>
+                  <a href={card.sourceUrl} rel="noreferrer" target="_blank">
+                    <ExternalLinkIcon size={14} />
+                    <span>{card.sourceUrl}</span>
+                  </a>
+                </div>
+              </div>
+
               {card.impactSummary && <div className="summary-box">"{card.impactSummary}"</div>}
 
-              <div className="detailsBlock" style={{ marginTop: '4px' }}>
+              <div className="detailsBlock detailsBlock--moderation">
                 <h5 className="ty-label" style={{ margin: 0 }}>Edit Lifecycle</h5>
-                <div style={{ display: 'grid', gap: '10px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '8px' }}>
+                <div className="lifecycle-grid">
+                  <div className="lifecycle-track">
                     {STAGES.map((stage, index) => (
                       <span
                         key={`${card.queueId}-${stage}`}
-                        style={{
-                          textAlign: 'center',
-                          padding: '6px 8px',
-                          borderRadius: '999px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          border: '1px solid #d1d5db',
-                          background: index <= activeStage ? 'var(--ph-blue)' : '#f8fafc',
-                          color: index <= activeStage ? '#ffffff' : '#64748b',
-                          transition: 'all 220ms ease',
-                        }}
+                        className={index <= activeStage ? 'lifecycle-step active' : 'lifecycle-step'}
                       >
                         {stage.replace('_', ' ')}
                       </span>
                     ))}
                   </div>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
+                  <p className="lifecycle-status">
                     Current status: <strong>{card.queueStatus}</strong>
                     {card.escalationFlag ? ' (Escalated to admin review)' : ''}
                   </p>
@@ -264,7 +317,10 @@ export default function ModerationPanel({ token, user }) {
               </div>
 
               <div className="ballot-console">
-                <h4 className="ty-card-title" style={{ margin: 0 }}>Cast Evaluation Ballot</h4>
+                <div className="ballot-consoleHeader">
+                  <span className="ballot-consoleIcon"><ShieldCheckIcon size={18} /></span>
+                  <h4 className="ty-card-title" style={{ margin: 0 }}>Cast Evaluation Ballot</h4>
+                </div>
 
                 {isReadOnlyMode && (
                   <div className="status-toast" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#991b1b' }}>
@@ -273,7 +329,7 @@ export default function ModerationPanel({ token, user }) {
                 )}
 
                 <div className="vote-options">
-                  <label className="text-agree">
+                  <label className={form.voteSelection === 'AGREE' ? 'vote-option vote-option-agree is-selected' : 'vote-option vote-option-agree'}>
                     <input
                       checked={form.voteSelection === 'AGREE'}
                       disabled={isReadOnlyMode}
@@ -282,10 +338,11 @@ export default function ModerationPanel({ token, user }) {
                       type="radio"
                       value="AGREE"
                     />
-                    AGREE
+                    <span className="vote-optionIcon"><ThumbUpIcon size={16} /></span>
+                    <span>Agree</span>
                   </label>
 
-                  <label className="text-disagree">
+                  <label className={form.voteSelection === 'DISAGREE' ? 'vote-option vote-option-disagree is-selected' : 'vote-option vote-option-disagree'}>
                     <input
                       checked={form.voteSelection === 'DISAGREE'}
                       disabled={isReadOnlyMode}
@@ -294,10 +351,11 @@ export default function ModerationPanel({ token, user }) {
                       type="radio"
                       value="DISAGREE"
                     />
-                    DISAGREE
+                    <span className="vote-optionIcon"><ThumbDownIcon size={16} /></span>
+                    <span>Disagree</span>
                   </label>
 
-                  <label style={{ color: 'var(--ph-gold)', fontWeight: 700 }}>
+                  <label className={form.voteSelection === 'FLAG' ? 'vote-option vote-option-flag is-selected' : 'vote-option vote-option-flag'}>
                     <input
                       checked={form.voteSelection === 'FLAG'}
                       disabled={isReadOnlyMode}
@@ -306,7 +364,8 @@ export default function ModerationPanel({ token, user }) {
                       type="radio"
                       value="FLAG"
                     />
-                    FLAG FOR REVISION
+                    <span className="vote-optionIcon"><FlagIcon size={16} /></span>
+                    <span>Flag for Revision</span>
                   </label>
                 </div>
 
@@ -319,12 +378,7 @@ export default function ModerationPanel({ token, user }) {
                   value={form.voteReason}
                 />
 
-                <button
-                  className="btn-submit-ballot"
-                  disabled={isReadOnlyMode}
-                  onClick={() => handleVoteSubmit(card)}
-                  type="button"
-                >
+                <button className="btn-submit-ballot" disabled={isReadOnlyMode} onClick={() => handleVoteSubmit(card)} type="button">
                   Submit Live Ballot
                 </button>
               </div>
@@ -333,12 +387,73 @@ export default function ModerationPanel({ token, user }) {
         })}
       </div>
 
+      {queue.length > queuePageSize && (
+        <div className="moderation-paginationRow">
+          <nav className="paginationMini" aria-label="Moderation queue pagination">
+            <button
+              type="button"
+              disabled={safeQueuePage <= 1}
+              onClick={() => setQueuePage((current) => Math.max(1, current - 1))}
+              className="paginationButton"
+              aria-label="Previous queue page"
+            >
+              <ArrowLeftIcon size={17} strokeWidth={2.4} />
+            </button>
+            <span className="paginationText" aria-live="polite">
+              {safeQueuePage} / {totalQueuePages}
+            </span>
+            <button
+              type="button"
+              disabled={safeQueuePage >= totalQueuePages}
+              onClick={() => setQueuePage((current) => Math.min(totalQueuePages, current + 1))}
+              className="paginationButton"
+              aria-label="Next queue page"
+            >
+              <ArrowRightIcon size={17} strokeWidth={2.4} />
+            </button>
+          </nav>
+        </div>
+      )}
+
+      {traceLogs.length > 0 && (
+        <div className="moderation-toggleRow">
+          <label className="toggle-switch" aria-hidden="false">
+            <input
+              type="checkbox"
+              checked={showTraceMonitor}
+              onChange={(e) => setShowTraceMonitor(e.target.checked)}
+              aria-label="Show Moderation Trace Monitor"
+            />
+            <span className="switch-track">
+              <span className="switch-thumb" />
+            </span>
+            <span className="toggle-label">Show Moderation Trace Monitor</span>
+          </label>
+        </div>
+      )}
+
+      {showTraceMonitor && traceLogs.length > 0 && (
+        <div className="terminal-audit-console">
+          <div className="terminal-titlebar">Moderation Trace Monitor</div>
+          <div className="terminal-screen">
+            {traceLogs.slice(0, 8).map((log, index) => (
+              <p className="terminal-line" key={`${log}-${index}`}>{log}</p>
+            ))}
+          </div>
+        </div>
+      )}
+
       {isDevModeActive && manipulatedUser && manipulatedUser.role === 'ADMIN' && (
         <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: '2px dashed var(--line-strong)' }}>
-          <div className="mod-header" style={{ background: '#fffbeb', borderColor: '#fef3c7' }}>
-            <div>
-              <h2 className="ty-section-title" style={{ color: 'var(--ph-gold)' }}>System Admin Arbitration Adjudication Queue</h2>
-              <p className="ty-body" style={{ color: 'var(--ph-gold)' }}>Exposes deadlocked or timed-out tickets with vote weight distributions for immediate admin overrides.</p>
+          <div className="mod-header mod-header--admin">
+            <div className="mod-header-copy">
+              <div className="mod-header-titleRow">
+                <span className="mod-header-icon"><AlertTriangleIcon size={20} /></span>
+                <div>
+                  <h2 className="ty-section-title">System Admin Arbitration Adjudication Queue</h2>
+                  <p className="ty-body">Exposes deadlocked or timed-out tickets with vote weight distributions for immediate admin overrides.</p>
+                </div>
+              </div>
             </div>
           </div>
 
