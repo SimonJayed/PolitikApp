@@ -991,6 +991,240 @@ button:disabled {
   font-weight: 700;
 }
 
+.profileMatrixWorkspace {
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(17, 24, 39, 0.98)),
+    radial-gradient(circle at 74% 10%, rgba(20, 184, 166, 0.2), transparent 26%);
+  min-height: calc(100vh - 102px);
+}
+
+.matrixHero,
+.matrixActionPanel,
+.matrixMetricCard,
+.matrixLockoutCard {
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 22px 60px rgba(2, 6, 23, 0.28);
+}
+
+.matrixHero {
+  align-items: center;
+  border-radius: 18px;
+  color: #f8fafc;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: clamp(22px, 4vw, 34px);
+}
+
+.matrixHero.contributor {
+  background: linear-gradient(135deg, rgba(15, 118, 110, 0.92), rgba(30, 64, 175, 0.88));
+}
+
+.matrixHero.reviewer {
+  background: linear-gradient(135deg, rgba(79, 70, 229, 0.92), rgba(8, 145, 178, 0.88));
+}
+
+.matrixHero.admin {
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.92), rgba(180, 83, 9, 0.88));
+}
+
+.matrixHero h2 {
+  color: #ffffff;
+  font-size: clamp(1.8rem, 4vw, 3.2rem);
+  line-height: 1.05;
+  margin: 10px 0;
+}
+
+.matrixHero p,
+.matrixActionPanel p,
+.matrixLockoutCard span {
+  color: rgba(226, 232, 240, 0.86);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.matrixRoleBadge {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  padding: 8px 12px;
+}
+
+.matrixHeroScore {
+  background: rgba(15, 23, 42, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  display: grid;
+  min-width: 190px;
+  padding: 18px;
+  text-align: right;
+}
+
+.matrixHeroScore span,
+.matrixHeroScore small,
+.matrixMetricCard span {
+  color: rgba(203, 213, 225, 0.82);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.matrixHeroScore strong {
+  color: #ffffff;
+  font-size: 2.5rem;
+  line-height: 1.05;
+}
+
+.matrixCardGrid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.matrixMetricCard {
+  background: rgba(15, 23, 42, 0.74);
+  border-radius: 16px;
+  display: grid;
+  gap: 12px;
+  min-height: 132px;
+  padding: 20px;
+}
+
+.matrixMetricCard strong {
+  color: #ffffff;
+  font-size: clamp(1.45rem, 2.4vw, 2.25rem);
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.matrixMetricCard.success {
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+.matrixMetricCard.danger {
+  border-color: rgba(248, 113, 113, 0.55);
+}
+
+.matrixMetricCard.elite,
+.matrixMetricCard.admin {
+  border-color: rgba(251, 191, 36, 0.55);
+}
+
+.matrixMetricCard.senior {
+  border-color: rgba(96, 165, 250, 0.55);
+}
+
+.matrixMetricCard.standard {
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.matrixActionPanel {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.72);
+  border-radius: 16px;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 22px;
+}
+
+.matrixActionPanel h3 {
+  color: #ffffff;
+  font-size: 1.05rem;
+  margin: 0 0 6px;
+}
+
+.matrixActionRow,
+.adminControlGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.matrixActionRow button,
+.adminControlGrid button {
+  background: linear-gradient(180deg, #14b8a6 0%, #0f766e 100%);
+  border: 0;
+  color: #ffffff;
+}
+
+.matrixActionRow .dangerButton {
+  background: linear-gradient(180deg, #ef4444 0%, #b91c1c 100%);
+}
+
+.matrixLockoutCard {
+  animation: lockPulse 1.6s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(127, 29, 29, 0.96), rgba(185, 28, 28, 0.86));
+  border-color: rgba(252, 165, 165, 0.7);
+  border-radius: 16px;
+  color: #ffffff;
+  display: grid;
+  gap: 6px;
+  padding: 20px;
+}
+
+.matrixLockoutCard strong {
+  font-size: 1.1rem;
+}
+
+.stepperControl {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.38);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  display: flex;
+  gap: 8px;
+  padding: 5px;
+}
+
+.stepperControl button {
+  border-radius: 999px;
+  min-height: 36px;
+  min-width: 42px;
+  padding: 0 12px;
+}
+
+.stepperControl span {
+  color: #ffffff;
+  font-weight: 800;
+  min-width: 42px;
+  text-align: center;
+}
+
+.matrixToggle {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.38);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 999px;
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.matrixToggle input {
+  min-height: auto;
+  width: auto;
+}
+
+@keyframes lockPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(248, 113, 113, 0.2), 0 22px 60px rgba(127, 29, 29, 0.24);
+  }
+  50% {
+    box-shadow: 0 0 34px rgba(248, 113, 113, 0.42), 0 22px 60px rgba(127, 29, 29, 0.34);
+  }
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1024,14 +1258,25 @@ button:disabled {
   .compareFilterBar,
   .directoryGrid,
   .compareSelectionGrid,
-  .fieldRow,
-  .comparisonGrid,
-  .profileHero,
-  .detailsHero,
-  .profileFacts,
-  .kpiGrid,
-  .kpiGrid.compact {
+    .fieldRow,
+    .comparisonGrid,
+    .profileHero,
+    .detailsHero,
+    .profileFacts,
+    .kpiGrid,
+    .kpiGrid.compact,
+    .matrixCardGrid {
     grid-template-columns: 1fr;
+  }
+
+  .matrixHero,
+  .matrixActionPanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .matrixHeroScore {
+    text-align: left;
   }
 
   .politicianList {

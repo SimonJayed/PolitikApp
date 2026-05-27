@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Sidebar from './components/Sidebar'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
+import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
@@ -56,6 +57,17 @@ function AppInner({ currentUser, onLogout, token }) {
   const [selectedPoliticianId, setSelectedPoliticianId] = useState('')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
+  const activeHeader = {
+    account: ['User Account', 'Credential and session controls'],
+    compare: ['Module 1', 'Side-by-Side Profile Comparison'],
+    contributions: ['Module 1', 'My Contribution Ledger'],
+    dashboard: ['Module 1', 'Source-First Profile Aggregator'],
+    directory: ['Module 1', 'Politician Directory'],
+    moderation: ['Module 2', 'Judicial Moderation Engine'],
+    profile: ['Module 1', 'Published Profile Dashboard'],
+    profileMatrix: ['Developer Sandbox', 'Core Profile Metrics Matrix'],
+    submit: ['Module 1', 'Evidence Submission Console'],
+  }[activeView] || ['Module 1', 'Source-First Profile Aggregator']
 
   const isSourceAllowed = useMemo(
     () => SOURCE_URL_PATTERN.test(formData.sourceUrl.trim()),
@@ -207,8 +219,8 @@ function AppInner({ currentUser, onLogout, token }) {
       <section className="pageContent">
         <header className="topBar">
           <div>
-            <p className="eyebrow">{activeView === 'moderation' ? 'Module 2' : 'Module 1'}</p>
-            <h1>{activeView === 'moderation' ? 'Judicial Moderation Engine' : 'Source-First Profile Aggregator'}</h1>
+            <p className="eyebrow">{activeHeader[0]}</p>
+            <h1>{activeHeader[1]}</h1>
           </div>
         </header>
 
@@ -269,6 +281,10 @@ function AppInner({ currentUser, onLogout, token }) {
 
         {activeView === 'contributions' && (
           <MyContributionsPanel token={token} />
+        )}
+
+        {activeView === 'profileMatrix' && (
+          <UserProfileMatrixPanel user={currentUser} />
         )}
 
         {activeView === 'moderation' && (
