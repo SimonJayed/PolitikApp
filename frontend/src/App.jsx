@@ -102,7 +102,9 @@ function AppInner({ currentUser, onLogout, token }) {
     directory: ['Directory', 'Politician Directory'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
-    profileMatrix: ['Developer Sandbox', 'Core Profile Metrics Matrix'],
+    profileMatrix: isDevModeActive
+      ? ['Developer Sandbox', 'Core Profile Metrics Matrix']
+      : ['My Profile', 'Contribution Metrics'],
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 

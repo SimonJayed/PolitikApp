@@ -119,7 +119,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
   const trustScore = clampPercent(actor?.trustScore ?? 95);
   const descriptor = roleDescriptor(activeRole);
   const auditorTier = resolveAuditorTier(trustScore);
-  const rejectionLocked = contributorRejectionRate > 15;
+  const rejectionLocked = isDevModeActive && contributorRejectionRate > 15;
   const consensusRate = profileMetrics?.reviewerTotalBallots > 0
     ? (profileMetrics.reviewerConsensusVotes / profileMetrics.reviewerTotalBallots) * 100
     : 0;
@@ -149,8 +149,20 @@ export default function UserProfileMatrixPanel({ token, user }) {
         </div>
       </header>
 
-      {activeRole === 'CONTRIBUTOR' && (
+      {!isDevModeActive && (
         <ContributorMatrix
+          isSandboxMode={false}
+          metrics={profileMetrics}
+          rejectionLocked={false}
+          rejectionRate={0}
+          token={token}
+          user={user}
+        />
+      )}
+
+      {isDevModeActive && activeRole === 'CONTRIBUTOR' && (
+        <ContributorMatrix
+          isSandboxMode
           metrics={profileMetrics}
           rejectionLocked={rejectionLocked}
           rejectionRate={contributorRejectionRate}
@@ -161,7 +173,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
         />
       )}
 
-      {activeRole !== 'CONTRIBUTOR' && activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
+      {isDevModeActive && activeRole !== 'CONTRIBUTOR' && activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
         <ReviewerMatrix
           consensusRate={consensusRate}
           metrics={profileMetrics}
@@ -172,7 +184,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
         />
       )}
 
-      {(activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') && (
+      {isDevModeActive && (activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') && (
         <AdminMatrix
           adjustAdminInterventions={adjustAdminInterventions}
           metrics={profileMetrics}
@@ -184,6 +196,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
 }
 
 function ContributorMatrix({
+  isSandboxMode = false,
   metrics,
   rejectionLocked,
   rejectionRate,
@@ -231,6 +244,28 @@ function ContributorMatrix({
     };
   }, [token, user?.userId]);
 
+  const realMetrics = useMemo(() => {
+    const submissions = ledgerEntries.length;
+    const approved = ledgerEntries.filter((entry) => entry.status === 'PUBLISHED').length;
+    const rejected = ledgerEntries.filter((entry) => entry.status === 'REJECTED').length;
+    const rate = submissions > 0 ? (rejected / submissions) * 100 : 0;
+    return {
+      approved,
+      rate,
+      rejected,
+      submissions,
+    };
+  }, [ledgerEntries]);
+
+  const displayedMetrics = isSandboxMode
+    ? {
+        approved: metrics.contributorApproved,
+        rate: rejectionRate,
+        rejected: metrics.contributorRejected,
+        submissions: metrics.contributorSubmissions,
+      }
+    : realMetrics;
+
   return (
     <>
       {rejectionLocked && (
@@ -241,24 +276,26 @@ function ContributorMatrix({
       )}
 
       <section className="matrixCardGrid">
-        <MetricCard label="Active Submissions" value={metrics.contributorSubmissions} />
-        <MetricCard label="Approved Cards" value={metrics.contributorApproved} tone="success" />
-        <MetricCard label="Rejected Cards" value={metrics.contributorRejected} tone="danger" />
-        <MetricCard label="Lifetime Rejection Rate" value={formatPercent(rejectionRate)} tone={rejectionLocked ? 'danger' : 'neutral'} />
+        <MetricCard label="Active Submissions" value={displayedMetrics.submissions} />
+        <MetricCard label="Approved Cards" value={displayedMetrics.approved} tone="success" />
+        <MetricCard label="Rejected Cards" value={displayedMetrics.rejected} tone="danger" />
+        <MetricCard label="Lifetime Rejection Rate" value={formatPercent(displayedMetrics.rate)} tone={rejectionLocked ? 'danger' : 'neutral'} />
       </section>
 
       <LedgerFilterTabs entries={ledgerEntries} state={ledgerState} />
 
-      <section className="matrixActionPanel">
-        <div>
-          <h3 className="ty-card-title">Submission Simulator</h3>
-          <p className="ty-body">Commit mock outcomes into the shared developer context.</p>
-        </div>
-        <div className="matrixActionRow">
-          <button onClick={simulateApprovedSubmission} type="button">+ Simulate Approved Submission</button>
-          <button className="dangerButton" onClick={simulateRejectedSubmission} type="button">+ Simulate Rejected Submission</button>
-        </div>
-      </section>
+      {isSandboxMode && (
+        <section className="matrixActionPanel">
+          <div>
+            <h3 className="ty-card-title">Submission Simulator</h3>
+            <p className="ty-body">Commit mock outcomes into the shared developer context.</p>
+          </div>
+          <div className="matrixActionRow">
+            <button onClick={simulateApprovedSubmission} type="button">+ Simulate Approved Submission</button>
+            <button className="dangerButton" onClick={simulateRejectedSubmission} type="button">+ Simulate Rejected Submission</button>
+          </div>
+        </section>
+      )}
     </>
   );
 }
