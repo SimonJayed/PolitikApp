@@ -304,12 +304,12 @@
 
 .appSidebar li.navItem.active .icon,
 .appSidebar li.navItem.active .text {
-  color: #0f766e;
+  color: var(--ph-gold);
 }
 
 .appSidebar .bottom > button.navItem.active .icon,
 .appSidebar .bottom > button.navItem.active .text {
-  color: #0f766e;
+  color: var(--ph-gold);
 }
 
 .bottom {

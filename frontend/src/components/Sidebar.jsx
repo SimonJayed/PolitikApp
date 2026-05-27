@@ -17,21 +17,21 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
 
   const navSections = useMemo(() => {
     const featureItems = [
-      { key: 'directory', label: 'Politicians', icon: 'R', accent: '#5c8a9f' },
-      { key: 'compare', label: 'Compare', icon: 'C', accent: '#b06b4a' },
-      { key: 'contributions', label: 'My Contributions', icon: 'H', accent: '#4f46e5' }
+      { key: 'directory', label: 'Politicians', icon: 'R', accent: 'var(--ph-blue)' },
+      { key: 'compare', label: 'Compare', icon: 'C', accent: 'var(--ph-gold)' },
+      { key: 'contributions', label: 'My Contributions', icon: 'H', accent: 'var(--ph-gold)' }
     ]
 
     if (currentRole !== 'CONTRIBUTOR') {
-      featureItems.push({ key: 'moderation', label: 'Moderation', icon: 'M', accent: '#0f766e' })
+      featureItems.push({ key: 'moderation', label: 'Moderation', icon: 'M', accent: 'var(--ph-red)' })
     }
 
     return [
       {
         title: 'Main',
         items: [
-          { key: 'dashboard', label: 'Dashboard', icon: 'D', accent: '#ef8354' },
-          { key: 'profileMatrix', label: 'My Profile', icon: 'P', accent: '#6366f1' },
+          { key: 'dashboard', label: 'Dashboard', icon: 'D', accent: 'var(--ph-blue)' },
+          { key: 'profileMatrix', label: 'My Profile', icon: 'P', accent: 'var(--ph-blue)' },
         ],
       },
       {
@@ -87,7 +87,7 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
         <button
           className={activeView === 'account' ? 'navItem active' : 'navItem'}
           onClick={() => onSelectView('account')}
-          style={{ '--bg': '#2d3142' }}
+          style={{ '--bg': 'var(--ph-blue)' }}
           type="button"
         >
           <span className="icon" aria-hidden="true">
@@ -95,7 +95,7 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
           </span>
           <span className="text">{user?.username || 'Utilities'}</span>
         </button>
-        <button className="navItem" onClick={onLogout} style={{ '--bg': '#9f1239' }} type="button">
+        <button className="navItem" onClick={onLogout} style={{ '--bg': 'var(--ph-red)' }} type="button">
           <span className="icon" aria-hidden="true">
             <span>L</span>
           </span>

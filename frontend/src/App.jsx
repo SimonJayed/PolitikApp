@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import Sidebar from './components/Sidebar'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
@@ -8,6 +7,20 @@ import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
 import { useAuth } from './auth/AuthContext'
 import AuthPages from './auth/AuthPages'
+import TopNav from './components/TopNav'
+import {
+  AlertTriangleIcon,
+  BarChart3Icon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ExternalLinkIcon,
+  FileTextIcon,
+  FolderIcon,
+  KeyIcon,
+  ScaleIcon,
+  ShieldCheckIcon,
+  UsersIcon,
+} from './components/icons/Lucide'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const SOURCE_URL_PATTERN = /^https?:\/\/([a-zA-Z0-9-]+\.)*(gov\.ph|edu\.ph)(\/.*)?$/
@@ -29,6 +42,7 @@ const actionOptions = [
 ]
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
+
 async function readApiResponse(response) {
   const body = await response.json().catch(() => ({}))
   if (!response.ok) {
@@ -57,17 +71,18 @@ function AppInner({ currentUser, onLogout, token }) {
   const [selectedPoliticianId, setSelectedPoliticianId] = useState('')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
+
   const activeHeader = {
-    account: ['User Account', 'Credential and session controls'],
-    compare: ['Module 1', 'Side-by-Side Profile Comparison'],
-    contributions: ['Module 1', 'My Contribution Ledger'],
-    dashboard: ['Module 1', 'Source-First Profile Aggregator'],
-    directory: ['Module 1', 'Politician Directory'],
-    moderation: ['Module 2', 'Judicial Moderation Engine'],
-    profile: ['Module 1', 'Published Profile Dashboard'],
+    account: ['Account', 'User Account'],
+    compare: ['Compare', 'Compare Politicians'],
+    contributions: ['Submissions', 'My Contribution Ledger'],
+    dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
+    directory: ['Directory', 'Politician Directory'],
+    moderation: ['Moderation', 'Judicial Moderation Engine'],
+    profile: ['Profiles', 'Published Profile Dashboard'],
     profileMatrix: ['Developer Sandbox', 'Core Profile Metrics Matrix'],
-    submit: ['Module 1', 'Evidence Submission Console'],
-  }[activeView] || ['Module 1', 'Source-First Profile Aggregator']
+    submit: ['Submissions', 'Evidence Submission Console'],
+  }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
   const isSourceAllowed = useMemo(
     () => SOURCE_URL_PATTERN.test(formData.sourceUrl.trim()),
@@ -96,20 +111,13 @@ function AppInner({ currentUser, onLogout, token }) {
   async function handleSubmission(event) {
     event.preventDefault()
     if (!formData.politicianId) {
-      setSubmissionState({
-        status: 'error',
-        message: 'Please select a politician from the dropdown list.',
-      })
+      setSubmissionState({ status: 'error', message: 'Please select a politician from the dropdown list.' })
       return
     }
     if (!isSourceAllowed) {
-      setSubmissionState({
-        status: 'error',
-        message: 'Source URL must resolve to an approved .gov.ph or .edu.ph domain.',
-      })
+      setSubmissionState({ status: 'error', message: 'Source URL must resolve to an approved .gov.ph or .edu.ph domain.' })
       return
     }
-
     setSubmissionState({ status: 'loading', message: 'Submitting evidence record...' })
     try {
       const payload = {
@@ -122,7 +130,6 @@ function AppInner({ currentUser, onLogout, token }) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         method: 'POST',
       }).then(readApiResponse)
-
       setFormData(emptySubmission)
       setSubmissionState({ status: 'success', message: data.message || 'Submission queued.' })
     } catch (error) {
@@ -140,12 +147,9 @@ function AppInner({ currentUser, onLogout, token }) {
       setDashboardState({ status: 'error', message: 'Select a politician first.', data: null })
       return { ok: false }
     }
-
     setDashboardState({ status: 'loading', message: 'Loading dashboard...', data: null })
     try {
-      const data = await fetch(
-        `${API_BASE_URL}/api/politicians/${politicianId}/dashboard`,
-      ).then(readApiResponse)
+      const data = await fetch(`${API_BASE_URL}/api/politicians/${politicianId}/dashboard`).then(readApiResponse)
       setDashboardState({ status: 'success', message: '', data })
       return { ok: true, data }
     } catch (error) {
@@ -155,9 +159,7 @@ function AppInner({ currentUser, onLogout, token }) {
   }
 
   async function openPoliticianProfile(politicianId) {
-    if (!politicianId) {
-      return
-    }
+    if (!politicianId) return
     setSelectedPoliticianId(politicianId)
     setDashboardId(politicianId)
     await loadDashboardById(politicianId)
@@ -165,9 +167,7 @@ function AppInner({ currentUser, onLogout, token }) {
   }
 
   function openSubmitContributionForPolitician(politicianId) {
-    if (!politicianId) {
-      return
-    }
+    if (!politicianId) return
     setSelectedPoliticianId(politicianId)
     setFormData((current) => ({ ...current, politicianId }))
     setActiveView('submit')
@@ -175,8 +175,8 @@ function AppInner({ currentUser, onLogout, token }) {
 
   function handlePoliticianLocalUpdate(politicianId, updates) {
     setPoliticiansState((current) => {
-      const nextData = current.data.map((politician) =>
-        politician.politicianId === politicianId ? { ...politician, ...updates } : politician,
+      const nextData = current.data.map((p) =>
+        p.politicianId === politicianId ? { ...p, ...updates } : p,
       )
       const nextSelected =
         current.selected && current.selected.politicianId === politicianId
@@ -184,26 +184,18 @@ function AppInner({ currentUser, onLogout, token }) {
           : current.selected
       return { ...current, data: nextData, selected: nextSelected }
     })
-
     setDashboardState((current) => {
-      if (!current.data || current.data.politicianId !== politicianId) {
-        return current
-      }
+      if (!current.data || current.data.politicianId !== politicianId) return current
       return { ...current, data: { ...current.data, ...updates } }
     })
   }
 
   async function handleComparisonLookup(event) {
     event.preventDefault()
-    const params = new URLSearchParams({
-      idA: compareIds.idA.trim(),
-      idB: compareIds.idB.trim(),
-    })
+    const params = new URLSearchParams({ idA: compareIds.idA.trim(), idB: compareIds.idB.trim() })
     setComparisonState({ status: 'loading', message: 'Building comparison...', data: null })
     try {
-      const data = await fetch(`${API_BASE_URL}/api/politicians/compare?${params}`).then(
-        readApiResponse,
-      )
+      const data = await fetch(`${API_BASE_URL}/api/politicians/compare?${params}`).then(readApiResponse)
       setComparisonState({ status: 'success', message: '', data })
       return { ok: true, data }
     } catch (error) {
@@ -214,13 +206,26 @@ function AppInner({ currentUser, onLogout, token }) {
 
   return (
     <main className="appShell">
-      <Sidebar activeView={activeView} onLogout={onLogout} onSelectView={setActiveView} title="PolitikApp" user={currentUser} />
+      <TopNav
+        activeView={activeView}
+        onLogout={onLogout}
+        onSelectView={setActiveView}
+        title="PolitikApp"
+        user={currentUser}
+      />
 
-      <section className="pageContent">
+      <section className="pageContent pt-32 sm:pt-36">
         <header className="topBar">
-          <div>
-            <p className="eyebrow">{activeHeader[0]}</p>
-            <h1>{activeHeader[1]}</h1>
+          <div className="flex items-center gap-3">
+            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
+              <span className="ty-nav font-extrabold" aria-hidden="true">
+                {activeHeader[0]?.slice(0, 1) || 'P'}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <p className="ty-label">{activeHeader[0]}</p>
+              <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
+            </div>
           </div>
         </header>
 
@@ -236,7 +241,6 @@ function AppInner({ currentUser, onLogout, token }) {
             onPoliticianUpdate={handlePoliticianLocalUpdate}
           />
         )}
-
         {activeView === 'submit' && (
           <SubmissionPanel
             formData={formData}
@@ -248,7 +252,6 @@ function AppInner({ currentUser, onLogout, token }) {
             politicians={politiciansState.data}
           />
         )}
-
         {activeView === 'profile' && (
           <PoliticianProfilePage
             onAddContribution={openSubmitContributionForPolitician}
@@ -259,7 +262,6 @@ function AppInner({ currentUser, onLogout, token }) {
             state={dashboardState}
           />
         )}
-
         {activeView === 'dashboard' && (
           <DashboardPanel
             onNavigate={setActiveView}
@@ -267,7 +269,6 @@ function AppInner({ currentUser, onLogout, token }) {
             user={currentUser}
           />
         )}
-
         {activeView === 'compare' && (
           <ComparisonPanel
             compareIds={compareIds}
@@ -278,25 +279,39 @@ function AppInner({ currentUser, onLogout, token }) {
             state={comparisonState}
           />
         )}
-
-        {activeView === 'contributions' && (
-          <MyContributionsPanel token={token} />
-        )}
-
-        {activeView === 'profileMatrix' && (
-          <UserProfileMatrixPanel user={currentUser} />
-        )}
-
+        {activeView === 'contributions' && <MyContributionsPanel token={token} />}
+        {activeView === 'profileMatrix' && <UserProfileMatrixPanel user={currentUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
-            <section className="workspace" style={{ textAlign: 'center', padding: '40px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-              <h2 style={{ color: '#dc2626', fontSize: '24px', margin: '0 0 12px 0' }}>🛑 Access Restricted</h2>
-              <p style={{ color: '#64748b', margin: 0, fontSize: '15px', lineHeight: '1.5' }}>
-                Contributor accounts do not have authorized clearance to view or moderate pending queue cards.
-              </p>
-              <p style={{ fontSize: '12px', color: '#94a3b8', marginTop: '14px', fontStyle: 'italic' }}>
-                *Presentation Note: Open the floating user profile drawer spoofer to reset your Session Role Override back to JUDICIAL_REVIEWER.*
-              </p>
+            <section className="workspace">
+              <div style={{
+                textAlign: 'center',
+                padding: '48px 32px',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--danger-border)',
+                borderRadius: 'var(--radius-lg)',
+                boxShadow: 'var(--shadow-sm)',
+              }}>
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '52px',
+                  height: '52px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--danger-soft)',
+                  marginBottom: '16px',
+                }}>
+                  <AlertTriangleIcon size={22} />
+                </div>
+                <h2 className="ty-section-title" style={{ color: 'var(--danger)', margin: '0 0 10px' }}>Access Restricted</h2>
+                <p className="ty-body" style={{ color: 'var(--text-muted)', margin: '0 auto', maxWidth: '460px' }}>
+                  Contributor accounts do not have authorized clearance to view or moderate pending queue cards.
+                </p>
+                <p className="ty-meta" style={{ color: 'var(--text-subtle)', marginTop: '16px', fontStyle: 'italic' }}>
+                  Presentation Note: Open the floating user profile drawer to reset your Session Role Override to JUDICIAL_REVIEWER.
+                </p>
+              </div>
             </section>
           ) : (
             <ModerationPanel token={token} user={currentUser} />
@@ -310,9 +325,7 @@ function AppInner({ currentUser, onLogout, token }) {
 
 function App() {
   const { isAuthenticated, logout, token, user } = useAuth()
-  if (!isAuthenticated) {
-    return <AuthPages />
-  }
+  if (!isAuthenticated) return <AuthPages />
   return (
     <DeveloperSandboxProvider>
       <AppInner currentUser={user} onLogout={logout} token={token} />
@@ -321,144 +334,287 @@ function App() {
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Dashboard                                                                  */
+/* ─────────────────────────────────────────────────────────────────────────── */
 function DashboardPanel({ politicians, onNavigate, user }) {
   const totalProfiles = politicians.length
-  
-  // Dynamically calculate published metrics from loaded politicians
   const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0)
-  const averageEfficiency = totalProfiles > 0 
-    ? (politicians.reduce((acc, curr) => acc + (curr.efficiencyRatio || 0), 0) / totalProfiles)
-    : 0.0
+  const averageEfficiency = totalProfiles > 0
+    ? politicians.reduce((acc, curr) => acc + (curr.efficiencyRatio || 0), 0) / totalProfiles
+    : 0
+
+  const kpis = [
+    {
+      label: 'Politician Profiles',
+      value: totalProfiles,
+      sub: 'Active database profiles',
+      accent: 'var(--ph-blue)',
+      icon: FolderIcon,
+    },
+    {
+      label: 'COA Flags Tracked',
+      value: totalCoaDiscrepancies,
+      sub: 'Audit discrepancies logged',
+      accent: 'var(--ph-gold)',
+      icon: AlertTriangleIcon,
+    },
+    {
+      label: 'Avg. Legislative Eff.',
+      value: `${averageEfficiency.toFixed(1)}%`,
+      sub: 'Sustained profile average',
+      accent: 'var(--info)',
+      icon: BarChart3Icon,
+    },
+    {
+      label: 'My Clearance Role',
+      value: user?.role || 'CONTRIBUTOR',
+      sub: 'Authorized session role',
+      accent: 'var(--ph-red)',
+      icon: KeyIcon,
+    },
+  ]
+
+  const actions = [
+    {
+      key: 'directory',
+      icon: UsersIcon,
+      title: 'Explore Directory',
+      sub: 'Browse all politician profiles',
+      color: '#e8f0fe',
+      iconBg: '#c7d7fc',
+    },
+    {
+      key: 'submit',
+      icon: FileTextIcon,
+      title: 'File Evidence',
+      sub: 'Submit an official audit record',
+      color: '#fef9e8',
+      iconBg: '#faedb4',
+    },
+    {
+      key: 'compare',
+      icon: ScaleIcon,
+      title: 'Compare Profiles',
+      sub: 'Side-by-side candidate analysis',
+      color: '#eef6ff',
+      iconBg: '#c3ddf9',
+    },
+    {
+      key: 'moderation',
+      icon: ShieldCheckIcon,
+      title: 'Moderation Jury',
+      sub: 'Cast a double-blind ballot',
+      color: '#f3f0ff',
+      iconBg: '#dbd5fd',
+    },
+  ]
 
   return (
-    <section className="workspace dashboardWorkspace" style={{ gap: '24px' }}>
-      <section className="dashboardHeaderBlock" style={{ background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)', color: '#ffffff', border: 'none', position: 'relative', overflow: 'hidden', padding: '32px', borderRadius: '18px', boxShadow: '0 8px 30px rgba(13, 148, 136, 0.15)' }}>
-        <div style={{ position: 'absolute', top: '-40px', right: '-40px', width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-        <div style={{ position: 'absolute', bottom: '-20px', left: '10%', width: '100px', height: '100px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
-        <h2 style={{ color: '#ffffff', fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>Mabuhay, {user?.fullName || 'Guest Contributor'}!</h2>
-        <p style={{ color: '#e6f7f4', fontSize: '15px', maxWidth: '640px', margin: 0, opacity: 0.95 }}>
-          Welcome to the PolitikApp civic aggregation interface. Track, analyze, and verify official legislative and audit logs across local and national jurisdictions.
-        </p>
-      </section>
+    <section className="workspace dashboardWorkspace" style={{ gap: '20px' }}>
 
-      <div className="profileFacts" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '18px' }}>
-        <article className="kpiCard" style={{ borderLeft: '4px solid #0f766e', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>Politician Profiles</span>
-          <strong style={{ fontSize: '28px', color: 'var(--text-primary)', margin: '6px 0 2px' }}>{totalProfiles}</strong>
-          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Active database profiles</small>
-        </article>
+      {/* Hero banner */}
+      <div style={{
+        background: 'linear-gradient(148deg, var(--ph-blue) 0%, #0c1e4a 55%, #06102a 100%)',
+        borderRadius: 'var(--radius-xl)',
+        padding: 'clamp(24px, 4vw, 36px)',
+        position: 'relative',
+        overflow: 'hidden',
+        boxShadow: '0 16px 48px rgba(8, 20, 50, 0.28)',
+      }}>
+        {/* Decorative circles */}
+        <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: '-40px', left: '5%', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: '20px', right: '18%', width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(184, 150, 42, 0.6)' }} />
+        <div style={{ position: 'absolute', bottom: '30px', right: '35%', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(184, 150, 42, 0.35)' }} />
 
-        <article className="kpiCard" style={{ borderLeft: '4px solid #f59e0b', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>COA Flags Resolved</span>
-          <strong style={{ fontSize: '28px', color: '#d97706', margin: '6px 0 2px' }}>{totalCoaDiscrepancies}</strong>
-          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Audit discrepancies tracked</small>
-        </article>
-
-        <article className="kpiCard" style={{ borderLeft: '4px solid #0ea5e9', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>Avg Legislative Eff.</span>
-          <strong style={{ fontSize: '28px', color: 'var(--text-primary)', margin: '6px 0 2px' }}>{averageEfficiency.toFixed(1)}%</strong>
-          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Sustained profile average</small>
-        </article>
-
-        <article className="kpiCard" style={{ borderLeft: '4px solid #a855f7', background: '#ffffff', borderRadius: '14px', padding: '18px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--text-muted)', fontWeight: '700' }}>My Account Role</span>
-          <strong style={{ fontSize: '20px', color: '#7c3aed', margin: '10px 0 2px' }}>{user?.role || 'CONTRIBUTOR'}</strong>
-          <small style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Authorized session clearance</small>
-        </article>
+        <div style={{ position: 'relative' }}>
+          <span
+            className="ty-label"
+            style={{ color: 'rgba(153, 132, 44, 0.95)', marginBottom: '10px', display: 'inline-block' }}
+          >
+            Live: Civic Transparency Platform
+          </span>
+          <h2 className="ty-section-title" style={{
+            color: '#ffffff',
+            margin: '0 0 10px',
+            letterSpacing: '-0.02em',
+            lineHeight: '1.15',
+            fontSize: 'clamp(1.25rem, 2.2vw, 1.6rem)',
+          }}>
+            Mabuhay, {user?.fullName?.split(' ')[0] || 'Contributor'}.
+          </h2>
+          <p style={{ color: 'rgba(220, 228, 245, 0.82)', fontSize: '14px', lineHeight: '1.7', margin: 0, maxWidth: '560px' }}>
+            Track, analyze, and verify official legislative and audit records across local and national Philippine jurisdictions.
+          </p>
+        </div>
       </div>
 
-      <section style={{ display: 'grid', gap: '16px' }}>
-        <h2 style={{ fontSize: '18px', fontWeight: '800', color: 'var(--text-primary)', margin: 0 }}>Platform Quick Actions</h2>
-        
-        <div className="dashboardCardGrid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '18px' }}>
-          <button 
-            onClick={() => onNavigate('directory')} 
-            className="dashboardCard" 
-            type="button"
-            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
-          >
-            <span style={{ padding: '8px', background: '#e6f7f4', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>📊</span>
-            <strong style={{ fontSize: '14px', fontWeight: '800' }}>Explore Directory</strong>
-            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Browse public profiles</small>
-          </button>
+      {/* KPI row */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px' }}>
+        {kpis.map(({ label, value, sub, accent, icon: Icon }) => (
+          <article key={label} style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--line-soft)',
+            borderLeft: `3px solid ${accent}`,
+            borderRadius: 'var(--radius-md)',
+            padding: '18px 20px',
+            boxShadow: 'var(--shadow-xs)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '6px',
+          }}>
+            <span aria-hidden="true" className="inline-flex items-center justify-center" style={{ width: '22px', height: '22px', color: accent }}>
+              <Icon size={18} />
+            </span>
+            <span className="ty-label" style={{ marginTop: '4px' }}>{label}</span>
+            <strong style={{
+              fontFamily: 'var(--display)',
+              fontSize: 'clamp(1.3rem, 2vw, 1.8rem)',
+              fontWeight: '800',
+              color: 'var(--text-primary)',
+              lineHeight: '1.1',
+              letterSpacing: '-0.03em',
+            }}>{value}</strong>
+            <small className="ty-meta">{sub}</small>
+          </article>
+        ))}
+      </div>
 
-          <button 
-            onClick={() => onNavigate('submit')} 
-            className="dashboardCard" 
-            type="button"
-            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
-          >
-            <span style={{ padding: '8px', background: '#fffbeb', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>✍️</span>
-            <strong style={{ fontSize: '14px', fontWeight: '800' }}>File Evidence</strong>
-            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Submit official audit details</small>
-          </button>
-
-          <button 
-            onClick={() => onNavigate('compare')} 
-            className="dashboardCard" 
-            type="button"
-            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
-          >
-            <span style={{ padding: '8px', background: '#eff6ff', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>⚖️</span>
-            <strong style={{ fontSize: '14px', fontWeight: '800' }}>Compare Profiles</strong>
-            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Side-by-side candidates sweep</small>
-          </button>
-
-          <button 
-            onClick={() => onNavigate('moderation')} 
-            className="dashboardCard" 
-            type="button"
-            style={{ minHeight: '130px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'center', gap: '8px', cursor: 'pointer' }}
-          >
-            <span style={{ padding: '8px', background: '#faf5ff', borderRadius: '10px', display: 'inline-flex', fontSize: '18px' }}>🛡️</span>
-            <strong style={{ fontSize: '14px', fontWeight: '800' }}>Moderation Jury</strong>
-            <small style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Cast double-blind ballot</small>
-          </button>
+      {/* Quick actions */}
+      <section>
+        <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Quick Actions</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px' }}>
+          {actions.map(({ key, icon: Icon, title, sub, color, iconBg }) => (
+            <button
+              key={key}
+              onClick={() => onNavigate(key)}
+              type="button"
+              className="dashboardCard"
+              style={{
+                minHeight: '120px',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+                gap: '10px',
+                cursor: 'pointer',
+                gridTemplateColumns: 'none',
+                background: 'var(--bg-surface)',
+              }}
+            >
+              <span style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '38px',
+                height: '38px',
+                borderRadius: 'var(--radius-sm)',
+                background: color,
+                border: `1px solid ${iconBg}`,
+                color: 'var(--ph-blue)',
+              }}>
+                <Icon size={18} />
+              </span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                <strong className="ty-card-title">{title}</strong>
+                <small className="ty-meta">{sub}</small>
+              </div>
+            </button>
+          ))}
         </div>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: '1.6fr 1fr', gap: '18px', alignItems: 'start' }}>
-        <article style={{ background: '#ffffff', border: '1px solid #dbe5ea', borderRadius: '14px', padding: '22px', display: 'grid', gap: '14px', boxShadow: 'var(--shadow-xs)' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>System Accountability Guidelines</h3>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '13.5px', lineHeight: '1.6', margin: 0 }}>
-            To maintain platform integrity, all crowdsourced edit submissions require whitelisted Philippine domains (<strong>.gov.ph</strong> or <strong>.edu.ph</strong>). Post-consensus loops evaluate voter accuracy: peers aligned with the final consensus receive a <strong>+5.0 reputation bump</strong>, while those opposing it receive a <strong>-5.0 penalty</strong>.
+      {/* Info row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.65fr 1fr', gap: '16px', alignItems: 'start' }}>
+        <article style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--line-soft)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '24px',
+          boxShadow: 'var(--shadow-xs)',
+          display: 'grid',
+          gap: '16px',
+        }}>
+          <h3 className="ty-card-title" style={{ margin: 0 }}>Platform Accountability Rules</h3>
+          <p className="ty-body" style={{ margin: 0 }}>
+            All crowdsourced submissions require whitelisted Philippine domains (<strong>.gov.ph</strong> or <strong>.edu.ph</strong>). 
+            After consensus, voters aligned with the final ruling receive a <strong>+5.0 reputation bump</strong>; opposing voters receive a <strong>−5.0 penalty</strong>.
           </p>
-          <div style={{ padding: '12px 14px', background: '#fffbeb', borderLeft: '4px solid #f59e0b', borderRadius: '6px', fontSize: '12px', color: '#b45309', fontWeight: '700', lineHeight: '1.5' }}>
-            ⚠️ PENALTY INTERCEPTOR ACTIVE: If a contributor's lifetime rejection metric scales past 15%, their dynamic write clearance tokens are instantly invalidated.
+          <div style={{
+            padding: '13px 16px',
+            background: '#fffbeb',
+            border: '1px solid var(--warning-border)',
+            borderLeft: '3px solid var(--ph-gold)',
+            borderRadius: 'var(--radius-sm)',
+            color: '#7a5500',
+            fontFamily: 'var(--mono, monospace)',
+            fontSize: '12px',
+            fontWeight: '500',
+            letterSpacing: '0.02em',
+            lineHeight: '1.6',
+          }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+              <AlertTriangleIcon size={16} />
+              <span>INTERCEPTOR ACTIVE: Contributors exceeding a 15% lifetime rejection rate will have write tokens automatically revoked.</span>
+            </span>
           </div>
         </article>
 
-        <article style={{ background: '#ffffff', border: '1px solid #dbe5ea', borderRadius: '14px', padding: '22px', display: 'grid', gap: '14px', boxShadow: 'var(--shadow-xs)', height: '100%' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: 'var(--text-primary)' }}>Developer Sandbox Status</h3>
-          <div style={{ display: 'grid', gap: '10px', fontSize: '13px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #dbe5ea', paddingBottom: '6px' }}>
-              <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Host Environment</span>
-              <strong style={{ color: 'var(--text-primary)' }}>Development WiFi</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed #dbe5ea', paddingBottom: '6px' }}>
-              <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Active API Host</span>
-              <strong style={{ color: 'var(--accent)' }}>{API_BASE_URL}</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'var(--text-muted)', fontWeight: '600' }}>Auth Session status</span>
-              <strong style={{ color: 'var(--success)' }}>ACTIVE</strong>
-            </div>
+        <article style={{
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--line-soft)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '24px',
+          boxShadow: 'var(--shadow-xs)',
+          display: 'grid',
+          gap: '14px',
+        }}>
+          <h3 className="ty-card-title" style={{ margin: 0 }}>Sandbox Status</h3>
+          <div style={{ display: 'grid', gap: '0' }}>
+            {[
+              ['Host', 'Development'],
+              ['API Host', API_BASE_URL],
+              ['Auth Session', 'ACTIVE'],
+            ].map(([key, val], i, arr) => (
+              <div key={key} style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '10px 0',
+                borderBottom: i < arr.length - 1 ? '1px solid var(--line-hairline)' : 'none',
+              }}>
+                <span className="ty-meta" style={{ color: 'var(--text-muted)' }}>{key}</span>
+                <strong style={{
+                  fontFamily: 'var(--mono, monospace)',
+                  fontSize: '12px',
+                  color: key === 'Auth Session' ? 'var(--success)' : key === 'API Host' ? 'var(--info)' : 'var(--text-primary)',
+                  fontWeight: '600',
+                  maxWidth: '180px',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  textAlign: 'right',
+                }}>{val}</strong>
+              </div>
+            ))}
           </div>
         </article>
-      </section>
+      </div>
     </section>
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  User Account Page                                                          */
+/* ─────────────────────────────────────────────────────────────────────────── */
 function UserAccountPage({ token, user }) {
   const [profile, setProfile] = useState(user)
   const [state, setState] = useState({ status: 'idle', message: '' })
   const [form, setForm] = useState({ fullName: user.fullName || '', username: user.username || '' })
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/users/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(readApiResponse)
       .then((data) => {
         setProfile(data)
@@ -486,51 +642,38 @@ function UserAccountPage({ token, user }) {
   return (
     <section className="workspace">
       <section className="profileSummary">
-        <p className="eyebrow">Account</p>
-        <h2>{profile?.fullName}</h2>
-        <p>{profile?.email}</p>
-        <p>Role: {profile?.role}</p>
+        <p className="eyebrow ty-page-kicker">Account</p>
+        <h2 className="ty-section-title">{profile?.fullName}</h2>
+        <p className="ty-body">{profile?.email}</p>
+        <p className="ty-body">Role: {profile?.role}</p>
       </section>
       <form className="editorPanel" onSubmit={onSave}>
         <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
         <label>Username<input value={form.username} onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))} /></label>
-        <button type="submit" disabled={state.status === 'loading'}>Save</button>
+        <button type="submit" disabled={state.status === 'loading'}>Save Changes</button>
       </form>
       <StatusLine state={state} />
     </section>
   )
 }
 
-
-
-function SubmissionPanel({
-  formData,
-  isSourceAllowed,
-  onChange,
-  onSubmit,
-  selectedPoliticianId,
-  state,
-  politicians = [],
-}) {
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Submission Panel                                                            */
+/* ─────────────────────────────────────────────────────────────────────────── */
+function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, selectedPoliticianId, state, politicians = [] }) {
   const selectedPolitician = politicians.find((p) => p.politicianId === (formData.politicianId || selectedPoliticianId))
   return (
     <section className="workspace">
       <form className="editorPanel" onSubmit={onSubmit}>
         {selectedPolitician && (
           <p className="statusLine success">
-            Adding contribution for: <strong>{selectedPolitician.fullName}</strong>
+            Adding contribution for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
           </p>
         )}
-        <label style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+        <label>
           Select Politician Profile
-          <select 
-            name="politicianId" 
-            value={formData.politicianId} 
-            onChange={onChange} 
-            required 
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', border: '1px solid #cbd5e1', borderRadius: '4px' }}
-          >
-            <option value="">-- Choose a Politician Profile --</option>
+          <select name="politicianId" value={formData.politicianId} onChange={onChange} required>
+            <option value="">— Choose a Politician Profile —</option>
             {politicians.map((p) => (
               <option key={p.politicianId} value={p.politicianId}>
                 {p.fullName} ({p.position || 'UNSPECIFIED'})
@@ -543,42 +686,26 @@ function SubmissionPanel({
           <label>
             Category
             <select name="categoryTag" value={formData.categoryTag} onChange={onChange}>
-              {categoryOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+              {categoryOptions.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </label>
           <label>
             Action
             <select name="actionIdentifier" value={formData.actionIdentifier} onChange={onChange}>
-              {actionOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
+              {actionOptions.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </label>
         </div>
-        <Field
-          label="Quantitative Metric"
-          name="quantitativeMetric"
-          onChange={onChange}
-          type="number"
-          value={formData.quantitativeMetric}
-        />
+        <Field label="Quantitative Metric" name="quantitativeMetric" onChange={onChange} type="number" value={formData.quantitativeMetric} />
         <label>
           Impact Summary
           <textarea name="impactSummary" required rows="5" value={formData.impactSummary} onChange={onChange} />
         </label>
         <div className="formFooter">
           <span className={isSourceAllowed ? 'sourceBadge approved' : 'sourceBadge'}>
-            {isSourceAllowed ? 'Approved source' : 'Awaiting approved source'}
+            {isSourceAllowed ? '✓ Approved source' : '○ Awaiting approved source'}
           </span>
-          <button disabled={state.status === 'loading'} type="submit">
-            Submit
-          </button>
+          <button disabled={state.status === 'loading'} type="submit">Submit Evidence</button>
         </div>
         <StatusLine state={state} />
       </form>
@@ -586,75 +713,60 @@ function SubmissionPanel({
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Politician Directory                                                        */
+/* ─────────────────────────────────────────────────────────────────────────── */
 function PoliticianDirectoryLoaderPanel({
-  dashboardId,
-  onChange,
-  onViewProfile,
-  onSubmit,
-  politicians,
-  politiciansState,
-  state,
-  onPoliticianUpdate,
+  dashboardId, onChange, onViewProfile, onSubmit,
+  politicians, politiciansState, state, onPoliticianUpdate,
 }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [page, setPage] = useState(1)
+  const pageSize = 9
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [detailsData, setDetailsData] = useState(null)
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({
-    biography: '',
-    fullName: '',
-    jurisdiction: '',
-    partyAffiliation: '',
-    position: '',
-    profileImageUrl: '',
+    biography: '', fullName: '', jurisdiction: '',
+    partyAffiliation: '', position: '', profileImageUrl: '',
   })
 
   const filteredPoliticians = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    return politicians.filter((politician) => {
-      const matchesJurisdiction =
-        jurisdictionFilter === 'ALL' || politician.jurisdiction === jurisdictionFilter
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        politician.fullName.toLowerCase().includes(normalizedQuery) ||
-        (politician.position || '').toLowerCase().includes(normalizedQuery)
+    const q = query.trim().toLowerCase()
+    return politicians.filter((p) => {
+      const matchesJurisdiction = jurisdictionFilter === 'ALL' || p.jurisdiction === jurisdictionFilter
+      const matchesQuery = !q || p.fullName.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q)
       return matchesJurisdiction && matchesQuery
     })
   }, [jurisdictionFilter, politicians, query])
 
   useEffect(() => {
-    if (!isDetailsOpen && !isEditOpen) {
-      return undefined
-    }
+    setPage(1)
+  }, [query, jurisdictionFilter])
 
-    function handleEscape(event) {
-      if (event.key === 'Escape') {
-        setIsEditOpen(false)
-        setIsDetailsOpen(false)
-      }
-    }
+  const totalPages = Math.max(1, Math.ceil(filteredPoliticians.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const pagedPoliticians = filteredPoliticians.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-    const previousOverflow = document.body.style.overflow
+  useEffect(() => {
+    if (!isDetailsOpen && !isEditOpen) return undefined
+    function handleEscape(e) {
+      if (e.key === 'Escape') { setIsEditOpen(false); setIsDetailsOpen(false) }
+    }
+    const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleEscape)
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', handleEscape)
-    }
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', handleEscape) }
   }, [isDetailsOpen, isEditOpen])
 
   async function handleCardSelect(politician) {
-    const politicianId = politician.politicianId
-    await onViewProfile(politicianId)
+    await onViewProfile(politician.politicianId)
   }
 
   function openEditModal() {
-    if (!detailsData) {
-      return
-    }
+    if (!detailsData) return
     setEditErrors({})
     setEditForm({
       biography: detailsData.biography || '',
@@ -667,32 +779,23 @@ function PoliticianDirectoryLoaderPanel({
     setIsEditOpen(true)
   }
 
-  function updateEditField(event) {
-    const { name, value } = event.target
-    setEditForm((current) => ({ ...current, [name]: value }))
+  function updateEditField(e) {
+    const { name, value } = e.target
+    setEditForm((c) => ({ ...c, [name]: value }))
   }
 
   function validateEditForm() {
-    const nextErrors = {}
-    if (!editForm.fullName.trim()) {
-      nextErrors.fullName = 'Full name is required.'
-    }
-    if (!editForm.position.trim()) {
-      nextErrors.position = 'Position is required.'
-    }
-    if (!editForm.jurisdiction.trim()) {
-      nextErrors.jurisdiction = 'Jurisdiction is required.'
-    }
-    setEditErrors(nextErrors)
-    return Object.keys(nextErrors).length === 0
+    const errors = {}
+    if (!editForm.fullName.trim()) errors.fullName = 'Full name is required.'
+    if (!editForm.position.trim()) errors.position = 'Position is required.'
+    if (!editForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
+    setEditErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
-  async function handleSaveEdit(event) {
-    event.preventDefault()
-    if (!detailsData || !validateEditForm()) {
-      return
-    }
-
+  async function handleSaveEdit(e) {
+    e.preventDefault()
+    if (!detailsData || !validateEditForm()) return
     const updates = {
       politicianId: detailsData.politicianId,
       fullName: editForm.fullName.trim(),
@@ -702,7 +805,6 @@ function PoliticianDirectoryLoaderPanel({
       profileImageUrl: editForm.profileImageUrl.trim(),
       biography: editForm.biography.trim(),
     }
-
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${detailsData.politicianId}`, {
         method: 'PUT',
@@ -711,72 +813,68 @@ function PoliticianDirectoryLoaderPanel({
       })
       if (res.ok) {
         const savedData = await readApiResponse(res)
-        setDetailsData((current) => ({ ...current, ...savedData }))
+        setDetailsData((c) => ({ ...c, ...savedData }))
         onPoliticianUpdate(detailsData.politicianId, savedData)
         setIsEditOpen(false)
       } else {
-        const errorData = await res.json().catch(() => ({}))
-        alert(errorData.message || 'Failed to persist profile updates to database.')
+        const err = await res.json().catch(() => ({}))
+        alert(err.message || 'Failed to persist profile updates.')
       }
     } catch (err) {
-      console.error(err)
-      alert('Network error: Could not contact server to save profile updates.')
+      alert('Network error: Could not save profile updates.')
     }
   }
 
   return (
     <section className="workspace dashboardWorkspace">
       <section className="dashboardHeaderBlock">
-        <h2>Politician Dashboard</h2>
-        <p>Browse and select a politician to load their performance dashboard instantly.</p>
+        <h2 className="ty-section-title">Politician Directory</h2>
+        <p className="ty-body">Browse and select a politician to load their performance profile instantly.</p>
       </section>
 
-      <section className="dashboardFilterBar" aria-label="Dashboard filters">
+      <section className="dashboardFilterBar" aria-label="Directory filters">
         <label>
-          Search politician
+          Search
           <input
             name="dashboardSearch"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by name or role"
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name or position"
             type="text"
             value={query}
           />
         </label>
         <label>
           Jurisdiction
-          <select
-            name="dashboardJurisdiction"
-            onChange={(event) => setJurisdictionFilter(event.target.value)}
-            value={jurisdictionFilter}
-          >
+          <select name="dashboardJurisdiction" onChange={(e) => setJurisdictionFilter(e.target.value)} value={jurisdictionFilter}>
             <option value="ALL">All</option>
             <option value="NATIONAL">National</option>
             <option value="CEBU_CITY">Cebu City</option>
           </select>
         </label>
         <form className="dashboardQuickLoad" onSubmit={onSubmit}>
-          <Field
-            label="Manual ID"
-            name="dashboardId"
-            onChange={(event) => onChange(event.target.value)}
-            value={dashboardId}
-          />
-          <button disabled={state.status === 'loading'} type="submit">
-            Load
-          </button>
+          <Field label="Manual ID" name="dashboardId" onChange={(e) => onChange(e.target.value)} value={dashboardId} />
+          <button disabled={state.status === 'loading'} type="submit">Load</button>
         </form>
       </section>
 
       <div className="dashboardDivider" aria-hidden="true" />
-
       <StatusLine state={politiciansState} />
       <StatusLine state={state} />
       {state.status === 'loading' && <PageSectionLoader />}
 
-      <section className="dashboardCardGrid" aria-label="Politician dashboard selection">
+      <div className="flex items-center justify-between gap-3">
+        <p className="ty-meta text-[color:var(--text-muted)]">
+          Showing {filteredPoliticians.length === 0 ? 0 : (safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filteredPoliticians.length)} of {filteredPoliticians.length}
+        </p>
+        <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />
+      </div>
+
+      <section className="dashboardCardGrid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Politician directory">
         {state.status === 'loading' && <LoadingSkeletonCards count={4} />}
-        {state.status !== 'loading' && filteredPoliticians.length === 0 && <p className="emptyState">No politicians found.</p>}
-        {filteredPoliticians.map((politician) => (
+        {state.status !== 'loading' && filteredPoliticians.length === 0 && (
+          <p className="emptyState" style={{ gridColumn: '1/-1', padding: '40px', textAlign: 'center' }}>No politicians found matching your search.</p>
+        )}
+        {pagedPoliticians.map((politician) => (
           <button
             className="dashboardCard"
             key={politician.politicianId}
@@ -786,34 +884,34 @@ function PoliticianDirectoryLoaderPanel({
             <span className="dashboardCardAvatar">
               {politician.profileImageUrl ? (
                 <img alt={politician.fullName} src={politician.profileImageUrl} />
-              ) : (
-                initialsFor(politician.fullName)
-              )}
+              ) : initialsFor(politician.fullName)}
             </span>
-            <span className="dashboardCardBody" style={{ display: 'flex', flexDirection: 'column', gap: '2px', position: 'relative' }}>
-              <strong>{politician.fullName}</strong>
-              <small>{politician.position || 'UNKNOWN'}</small>
-              <small>{politician.jurisdiction || 'Unspecified jurisdiction'}</small>
-              <small>{politician.partyAffiliation || 'Party not disclosed'}</small>
+            <span className="dashboardCardBody">
+              <strong className="ty-card-title">{politician.fullName}</strong>
+              <small className="ty-meta">{politician.position || 'UNKNOWN'}</small>
+              <small className="ty-meta">{politician.jurisdiction || 'Unspecified'}</small>
+              <small className="ty-meta">{politician.partyAffiliation || 'Party not disclosed'}</small>
               {politician.coaAuditDiscrepancies > 0 && (
-                <span 
-                  className="coa-alert-badge"
-                  style={{ 
-                    alignSelf: 'flex-start', 
-                    background: '#fef3c7', 
-                    color: '#d97706', 
-                    border: '1px solid #f59e0b', 
-                    padding: '2px 8px', 
-                    borderRadius: '4px', 
-                    fontSize: '11px', 
-                    fontWeight: 'bold', 
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    marginTop: '4px'
-                  }}
-                >
-                  ⚠️ COA Findings Flagged ({politician.coaAuditDiscrepancies})
+                <span style={{
+                  alignSelf: 'flex-start',
+                  background: '#fef9e8',
+                  color: '#92660a',
+                  border: '1px solid #f0c040',
+                  padding: '3px 8px',
+                  borderRadius: 'var(--radius-full)',
+                  fontSize: '11px',
+                  fontFamily: 'var(--mono, monospace)',
+                  fontWeight: '500',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  marginTop: '6px',
+                  letterSpacing: '0.02em',
+                }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <AlertTriangleIcon size={14} />
+                    <span>COA Findings ({politician.coaAuditDiscrepancies})</span>
+                  </span>
                 </span>
               )}
             </span>
@@ -823,44 +921,32 @@ function PoliticianDirectoryLoaderPanel({
 
       {isDetailsOpen && detailsData && (
         <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsDetailsOpen(false)}>
-          <section
-            aria-label="Politician details"
-            aria-modal="true"
-            className="detailsModal"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-          >
+          <section aria-label="Politician details" aria-modal="true" className="detailsModal" onClick={(e) => e.stopPropagation()} role="dialog">
             <header className="detailsModalHeader">
-              <h3>Politician Details</h3>
-              <button onClick={() => setIsDetailsOpen(false)} type="button">
-                Close
-              </button>
+              <h3 className="ty-section-title">Politician Details</h3>
+              <button onClick={() => setIsDetailsOpen(false)} type="button">Close</button>
             </header>
             <div className="detailsModalBody">
               <div className="detailsHero">
                 <span className="detailsAvatar">
-                  {detailsData.profileImageUrl ? (
-                    <img alt={detailsData.fullName} src={detailsData.profileImageUrl} />
-                  ) : (
-                    initialsFor(detailsData.fullName || '')
-                  )}
+                  {detailsData.profileImageUrl
+                    ? <img alt={detailsData.fullName} src={detailsData.profileImageUrl} />
+                    : initialsFor(detailsData.fullName || '')}
                 </span>
                 <div className="detailsIdentity">
-                  <h4>{detailsData.fullName}</h4>
-                  <p>{detailsData.position || 'UNKNOWN'}</p>
-                  <p>{detailsData.jurisdiction || 'Unspecified jurisdiction'}</p>
-                  <p>{detailsData.partyAffiliation || 'Party not disclosed'}</p>
+                  <h4 className="ty-section-title">{detailsData.fullName}</h4>
+                  <p className="ty-body">{detailsData.position || 'UNKNOWN'}</p>
+                  <p className="ty-body">{detailsData.jurisdiction || 'Unspecified'}</p>
+                  <p className="ty-body">{detailsData.partyAffiliation || 'Party not disclosed'}</p>
                 </div>
               </div>
               <section className="detailsBlock">
-                <h5>Biography</h5>
-                <p>{detailsData.biography || 'No biography information available.'}</p>
+                <h5 className="ty-label" style={{ margin: 0 }}>Biography</h5>
+                <p className="ty-body">{detailsData.biography || 'No biography available.'}</p>
               </section>
             </div>
             <footer className="detailsModalFooter">
-              <button className="detailsEditButton" onClick={openEditModal} type="button">
-                Edit
-              </button>
+              <button onClick={openEditModal} type="button">Edit Profile</button>
             </footer>
           </section>
         </div>
@@ -868,59 +954,27 @@ function PoliticianDirectoryLoaderPanel({
 
       {isEditOpen && (
         <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section
-            aria-label="Edit politician details"
-            aria-modal="true"
-            className="editModal"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-          >
+          <section aria-label="Edit politician" aria-modal="true" className="editModal" onClick={(e) => e.stopPropagation()} role="dialog">
             <header className="detailsModalHeader">
-              <h3>Edit Politician Details</h3>
-              <button onClick={() => setIsEditOpen(false)} type="button">
-                Close
-              </button>
+              <h3 className="ty-section-title">Edit Politician</h3>
+              <button onClick={() => setIsEditOpen(false)} type="button">Close</button>
             </header>
             <form className="editFormGrid" onSubmit={handleSaveEdit}>
-              <label>
-                Full Name
-                <input name="fullName" onChange={updateEditField} required type="text" value={editForm.fullName} />
-                {editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}
-              </label>
-              <label>
-                Position
-                <input name="position" onChange={updateEditField} required type="text" value={editForm.position} />
-                {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
-              </label>
+              <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
+              <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
               <label>
                 Jurisdiction
-                <select
-                  name="jurisdiction"
-                  onChange={updateEditField}
-                  required
-                  value={editForm.jurisdiction}
-                >
+                <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
                   <option value="NATIONAL">NATIONAL</option>
                   <option value="CEBU_CITY">CEBU_CITY</option>
                 </select>
                 {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
               </label>
-              <label>
-                Party / Affiliation
-                <input name="partyAffiliation" onChange={updateEditField} type="text" value={editForm.partyAffiliation} />
-              </label>
-              <label>
-                Profile Image URL
-                <input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} />
-              </label>
-              <label>
-                Biography
-                <textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} />
-              </label>
+              <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
+              <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
+              <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
               <div className="editModalActions">
-                <button onClick={() => setIsEditOpen(false)} type="button">
-                  Cancel
-                </button>
+                <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
                 <button type="submit">Save Update</button>
               </div>
             </form>
@@ -931,68 +985,42 @@ function PoliticianDirectoryLoaderPanel({
   )
 }
 
-function PoliticianProfilePage({
-  onAddContribution,
-  onPoliticianUpdate,
-  onReload,
-  politicianId,
-  politicians,
-  state,
-}) {
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Politician Profile Page                                                     */
+/* ─────────────────────────────────────────────────────────────────────────── */
+function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload, politicianId, politicians, state }) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
-  const timelineEntries =
-    state.data?.publishedTimelineLedger ||
-    state.data?.timeline ||
-    state.data?.entries ||
-    []
+  const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editErrors, setEditErrors] = useState({})
-  const [editForm, setEditForm] = useState({
-    biography: '',
-    fullName: '',
-    jurisdiction: '',
-    partyAffiliation: '',
-    position: '',
-    profileImageUrl: '',
-  })
+  const [editForm, setEditForm] = useState({ biography: '', fullName: '', jurisdiction: '', partyAffiliation: '', position: '', profileImageUrl: '' })
 
   function openEditModal() {
-    if (!profile) {
-      return
-    }
+    if (!profile) return
     setEditErrors({})
     setEditForm({
-      biography: profile.biography || '',
-      fullName: profile.fullName || '',
-      jurisdiction: profile.jurisdiction || '',
-      partyAffiliation: profile.partyAffiliation || '',
-      position: profile.position || '',
-      profileImageUrl: profile.profileImageUrl || '',
+      biography: profile.biography || '', fullName: profile.fullName || '',
+      jurisdiction: profile.jurisdiction || '', partyAffiliation: profile.partyAffiliation || '',
+      position: profile.position || '', profileImageUrl: profile.profileImageUrl || '',
     })
     setIsEditOpen(true)
   }
 
-  function updateEditField(event) {
-    const { name, value } = event.target
-    setEditForm((current) => ({ ...current, [name]: value }))
-  }
+  function updateEditField(e) { const { name, value } = e.target; setEditForm((c) => ({ ...c, [name]: value })) }
 
   function validateEditForm() {
-    const nextErrors = {}
-    if (!editForm.fullName.trim()) nextErrors.fullName = 'Full name is required.'
-    if (!editForm.position.trim()) nextErrors.position = 'Position is required.'
-    if (!editForm.jurisdiction.trim()) nextErrors.jurisdiction = 'Jurisdiction is required.'
-    setEditErrors(nextErrors)
-    return Object.keys(nextErrors).length === 0
+    const errors = {}
+    if (!editForm.fullName.trim()) errors.fullName = 'Full name is required.'
+    if (!editForm.position.trim()) errors.position = 'Position is required.'
+    if (!editForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
+    setEditErrors(errors)
+    return Object.keys(errors).length === 0
   }
 
-  async function handleSaveEdit(event) {
-    event.preventDefault()
-    if (!profile || !validateEditForm()) {
-      return
-    }
-
+  async function handleSaveEdit(e) {
+    e.preventDefault()
+    if (!profile || !validateEditForm()) return
     const updates = {
       politicianId: profile.politicianId,
       fullName: editForm.fullName.trim(),
@@ -1002,34 +1030,22 @@ function PoliticianProfilePage({
       profileImageUrl: editForm.profileImageUrl.trim(),
       biography: editForm.biography.trim(),
     }
-
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${profile.politicianId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
       })
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}))
-        alert(errorData.message || 'Failed to persist profile updates to database.')
-        return
-      }
+      if (!res.ok) { const err = await res.json().catch(() => ({})); alert(err.message || 'Failed to save updates.'); return }
       const savedData = await readApiResponse(res)
       onPoliticianUpdate(profile.politicianId, savedData)
       setIsEditOpen(false)
       await onReload(profile.politicianId)
-    } catch (err) {
-      console.error(err)
-      alert('Network error: Could not contact server to save profile updates.')
-    }
+    } catch (err) { alert('Network error: Could not save updates.') }
   }
 
   if (!politicianId) {
-    return (
-      <section className="workspace">
-        <p className="emptyState">Select a politician card first.</p>
-      </section>
-    )
+    return <section className="workspace"><p className="emptyState">Select a politician card first.</p></section>
   }
 
   return (
@@ -1040,79 +1056,47 @@ function PoliticianProfilePage({
       {profile && (
         <>
           <section className="profileSummary">
-            <p className="eyebrow">{profile.position || 'UNKNOWN'}</p>
-            <h2>{profile.fullName}</h2>
-            <p>{profile.jurisdiction || 'Unspecified jurisdiction'}</p>
-            <p>{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
+            <p className="eyebrow ty-page-kicker">{profile.position || 'UNKNOWN'}</p>
+            <h2 className="ty-section-title">{profile.fullName}</h2>
+            <p className="ty-body">{profile.jurisdiction || 'Unspecified jurisdiction'}</p>
+            <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
-          <div style={{ display: 'flex', gap: '10px', margin: '12px 0 16px' }}>
+          <div style={{ display: 'flex', gap: '10px' }}>
             <button onClick={openEditModal} type="button">Edit Profile</button>
             <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
           </div>
           <KpiGrid profile={profile} />
-          <section className="biographyBlock" style={{ marginTop: '20px' }}>
-            <h2>Biography</h2>
-            <p>{profile.biography || 'No biography information available.'}</p>
+          <section className="biographyBlock" style={{ marginTop: '16px' }}>
+            <h2 className="ty-section-title">Biography</h2>
+            <p className="ty-body">{profile.biography || 'No biography available.'}</p>
           </section>
-          <TimelineLedger entries={timelineEntries} title="Published Contribution / History Timeline" />
+          <TimelineLedger entries={timelineEntries} title="Published Contribution Timeline" />
         </>
       )}
 
       {isEditOpen && (
         <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section
-            aria-label="Edit politician details"
-            aria-modal="true"
-            className="editModal"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-          >
+          <section aria-label="Edit politician" aria-modal="true" className="editModal" onClick={(e) => e.stopPropagation()} role="dialog">
             <header className="detailsModalHeader">
-              <h3>Edit Politician Details</h3>
-              <button onClick={() => setIsEditOpen(false)} type="button">
-                Close
-              </button>
+              <h3 className="ty-section-title">Edit Politician</h3>
+              <button onClick={() => setIsEditOpen(false)} type="button">Close</button>
             </header>
             <form className="editFormGrid" onSubmit={handleSaveEdit}>
-              <label>
-                Full Name
-                <input name="fullName" onChange={updateEditField} required type="text" value={editForm.fullName} />
-                {editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}
-              </label>
-              <label>
-                Position
-                <input name="position" onChange={updateEditField} required type="text" value={editForm.position} />
-                {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
-              </label>
+              <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
+              <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
               <label>
                 Jurisdiction
-                <select
-                  name="jurisdiction"
-                  onChange={updateEditField}
-                  required
-                  value={editForm.jurisdiction}
-                >
+                <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
                   <option value="NATIONAL">NATIONAL</option>
                   <option value="CEBU_CITY">CEBU_CITY</option>
                 </select>
                 {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
               </label>
-              <label>
-                Party / Affiliation
-                <input name="partyAffiliation" onChange={updateEditField} type="text" value={editForm.partyAffiliation} />
-              </label>
-              <label>
-                Profile Image URL
-                <input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} />
-              </label>
-              <label>
-                Biography
-                <textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} />
-              </label>
+              <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
+              <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
+              <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
               <div className="editModalActions">
-                <button onClick={() => setIsEditOpen(false)} type="button">
-                  Cancel
-                </button>
+                <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
                 <button type="submit">Save Update</button>
               </div>
             </form>
@@ -1123,89 +1107,71 @@ function PoliticianProfilePage({
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Comparison Panel                                                            */
+/* ─────────────────────────────────────────────────────────────────────────── */
 function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politiciansState, state }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [pageLeft, setPageLeft] = useState(1)
+  const [pageRight, setPageRight] = useState(1)
+  const pageSize = 5
 
   const filteredPoliticians = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase()
-    return politicians.filter((politician) => {
-      const matchesJurisdiction =
-        jurisdictionFilter === 'ALL' || politician.jurisdiction === jurisdictionFilter
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        politician.fullName.toLowerCase().includes(normalizedQuery) ||
-        (politician.position || '').toLowerCase().includes(normalizedQuery)
-      return matchesJurisdiction && matchesQuery
+    const q = query.trim().toLowerCase()
+    return politicians.filter((p) => {
+      const matchesJ = jurisdictionFilter === 'ALL' || p.jurisdiction === jurisdictionFilter
+      const matchesQ = !q || p.fullName.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q)
+      return matchesJ && matchesQ
     })
   }, [jurisdictionFilter, politicians, query])
 
-  const leftCandidates = filteredPoliticians
-  const rightCandidates = filteredPoliticians
+  useEffect(() => {
+    setPageLeft(1)
+    setPageRight(1)
+  }, [query, jurisdictionFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filteredPoliticians.length / pageSize))
+  const safeLeft = Math.min(pageLeft, totalPages)
+  const safeRight = Math.min(pageRight, totalPages)
+  const leftSlice = filteredPoliticians.slice((safeLeft - 1) * pageSize, safeLeft * pageSize)
+  const rightSlice = filteredPoliticians.slice((safeRight - 1) * pageSize, safeRight * pageSize)
+
+  const selectedCandidateA = politicians.find((p) => p.politicianId === compareIds.idA)
+  const selectedCandidateB = politicians.find((p) => p.politicianId === compareIds.idB)
   const compareDisabled = state.status === 'loading' || !compareIds.idA || !compareIds.idB
 
   useEffect(() => {
-    if (!isModalOpen) {
-      return undefined
-    }
-
-    function handleEscape(event) {
-      if (event.key === 'Escape') {
-        setIsModalOpen(false)
-      }
-    }
-
-    const previousOverflow = document.body.style.overflow
+    if (!isModalOpen) return undefined
+    function handleEscape(e) { if (e.key === 'Escape') setIsModalOpen(false) }
+    const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleEscape)
-
-    return () => {
-      document.body.style.overflow = previousOverflow
-      window.removeEventListener('keydown', handleEscape)
-    }
+    return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', handleEscape) }
   }, [isModalOpen])
 
-  function selectCandidate(side, politicianId) {
-    if (side === 'left') {
-      onChange((current) => ({ ...current, idA: politicianId }))
-      return
-    }
-    onChange((current) => ({ ...current, idB: politicianId }))
+  function selectCandidate(side, id) {
+    if (side === 'left') onChange((c) => ({ ...c, idA: id }))
+    else onChange((c) => ({ ...c, idB: id }))
   }
 
-  async function handleCompareSubmit(event) {
-    const result = await onSubmit(event)
-    if (result?.ok) {
-      setIsModalOpen(true)
-    }
+  async function handleCompareSubmit(e) {
+    const result = await onSubmit(e)
+    if (result?.ok) setIsModalOpen(true)
   }
 
   return (
     <section className="workspace compareWorkspace">
-      <section className="compareHeader">
-        <h2>Compare Politicians</h2>
-        <p>Select one candidate on each side, then run comparison.</p>
-      </section>
 
       <section className="compareFilterBar" aria-label="Candidate filters">
         <label>
           Search candidate
-          <input
-            name="candidateSearch"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search by name or position"
-            type="text"
-            value={query}
-          />
+          <input name="candidateSearch" onChange={(e) => setQuery(e.target.value)} placeholder="Search by name or position" type="text" value={query} />
         </label>
         <label>
           Jurisdiction
-          <select
-            name="jurisdiction"
-            onChange={(event) => setJurisdictionFilter(event.target.value)}
-            value={jurisdictionFilter}
-          >
+          <select name="jurisdiction" onChange={(e) => setJurisdictionFilter(e.target.value)} value={jurisdictionFilter}>
             <option value="ALL">All</option>
             <option value="NATIONAL">National</option>
             <option value="CEBU_CITY">Cebu City</option>
@@ -1216,99 +1182,81 @@ function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politici
       <StatusLine state={state} />
       <StatusLine state={politiciansState} />
 
-      <div className="compareSelectionGrid">
-        <section className="compareColumn" aria-label="Candidate A selection">
-          <p className="compareColumnTitle">Candidate A</p>
-          <div className="compareCardList">
-            {leftCandidates.length === 0 && <p className="emptyState">No candidates found.</p>}
-            {leftCandidates.map((politician) => (
-              <button
-                className={
-                  compareIds.idA === politician.politicianId ? 'compareCard selected' : 'compareCard'
-                }
-                key={`left-${politician.politicianId}`}
-                onClick={() => selectCandidate('left', politician.politicianId)}
-                type="button"
-              >
-                <span className="compareCardAvatar">
-                  {politician.profileImageUrl ? (
-                    <img alt={politician.fullName} src={politician.profileImageUrl} />
-                  ) : (
-                    initialsFor(politician.fullName)
-                  )}
-                </span>
-                <span className="compareCardBody">
-                  <strong>{politician.fullName}</strong>
-                  <small>{politician.position || 'UNKNOWN'}</small>
-                  <small>{politician.jurisdiction || 'Unspecified jurisdiction'}</small>
-                </span>
-                <span className="selectDot" aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="compareColumn right" aria-label="Candidate B selection">
-          <p className="compareColumnTitle">Candidate B</p>
-          <div className="compareCardList">
-            {rightCandidates.length === 0 && <p className="emptyState">No candidates found.</p>}
-            {rightCandidates.map((politician) => (
-              <button
-                className={
-                  compareIds.idB === politician.politicianId ? 'compareCard selected' : 'compareCard'
-                }
-                key={`right-${politician.politicianId}`}
-                onClick={() => selectCandidate('right', politician.politicianId)}
-                type="button"
-              >
-                <span className="compareCardAvatar">
-                  {politician.profileImageUrl ? (
-                    <img alt={politician.fullName} src={politician.profileImageUrl} />
-                  ) : (
-                    initialsFor(politician.fullName)
-                  )}
-                </span>
-                <span className="compareCardBody">
-                  <strong>{politician.fullName}</strong>
-                  <small>{politician.position || 'UNKNOWN'}</small>
-                  <small>{politician.jurisdiction || 'Unspecified jurisdiction'}</small>
-                </span>
-                <span className="selectDot" aria-hidden="true" />
-              </button>
-            ))}
-          </div>
-        </section>
+      <div className="compareResultsMeta">
+        <p className="ty-meta">Showing {filteredPoliticians.length} candidate{filteredPoliticians.length === 1 ? '' : 's'}</p>
       </div>
 
-      <form className="compareActionBar" onSubmit={handleCompareSubmit}>
-        <button disabled={compareDisabled} type="submit">
-          Compare
-        </button>
+      <div className="compareSelectionGrid">
+        {['left', 'right'].map((side) => {
+          const page = side === 'left' ? safeLeft : safeRight
+          const onPage = side === 'left' ? setPageLeft : setPageRight
+          const slice = side === 'left' ? leftSlice : rightSlice
+          return (
+          <section key={side} className={`compareColumn${side === 'right' ? ' right' : ''}`} aria-label={`Candidate ${side === 'left' ? 'A' : 'B'}`}>
+            <div className="compareColumnHeader">
+              <div>
+                <p className="compareColumnTitle">Candidate {side === 'left' ? 'A' : 'B'}</p>
+                <p className="ty-meta">Page {page} of {totalPages}</p>
+              </div>
+              <PaginationMini page={page} totalPages={totalPages} onChange={onPage} />
+            </div>
+            <div className="compareCardList">
+              {filteredPoliticians.length === 0 && <p className="emptyState">No candidates found.</p>}
+              {slice.map((p) => {
+                const selectedId = side === 'left' ? compareIds.idA : compareIds.idB
+                return (
+                  <button
+                    className={selectedId === p.politicianId ? 'compareCard selected' : 'compareCard'}
+                    key={`${side}-${p.politicianId}`}
+                    onClick={() => selectCandidate(side, p.politicianId)}
+                    type="button"
+                  >
+                    <span className="compareCardAvatar">
+                      {p.profileImageUrl ? <img alt={p.fullName} src={p.profileImageUrl} /> : initialsFor(p.fullName)}
+                    </span>
+                    <span className="compareCardBody">
+                      <strong className="ty-card-title">{p.fullName}</strong>
+                      <small className="ty-meta">{p.position || 'UNKNOWN'}</small>
+                      <small className="ty-meta">{p.jurisdiction || 'Unspecified'}</small>
+                    </span>
+                    <span className="selectDot" aria-hidden="true" />
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )})}
+      </div>
+
+      <form className="compareFloatingBar" onSubmit={handleCompareSubmit}>
+        <div className="compareFloatingContent">
+          <div className="compareCandidateSummary">
+            <p className="ty-label">Candidate A</p>
+            <strong>{selectedCandidateA?.fullName || 'Not selected'}</strong>
+          </div>
+
+          <span className="compareDivider" aria-hidden="true" />
+
+          <button disabled={compareDisabled} type="submit" className="compareSubmitButton">
+            <ScaleIcon size={18} />
+            <span>{state.status === 'loading' ? 'Comparing...' : 'Compare Selected'}</span>
+          </button>
+
+          <span className="compareDivider" aria-hidden="true" />
+
+          <div className="compareCandidateSummary right">
+            <p className="ty-label">Candidate B</p>
+            <strong>{selectedCandidateB?.fullName || 'Not selected'}</strong>
+          </div>
+        </div>
       </form>
 
       {isModalOpen && state.data && (
-        <div
-          aria-hidden="true"
-          className="comparisonModalBackdrop"
-          onClick={() => setIsModalOpen(false)}
-        >
-          <section
-            aria-label="Comparison results"
-            aria-modal="true"
-            className="comparisonModal"
-            onClick={(event) => event.stopPropagation()}
-            role="dialog"
-          >
+        <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsModalOpen(false)}>
+          <section aria-label="Comparison results" aria-modal="true" className="comparisonModal" onClick={(e) => e.stopPropagation()} role="dialog">
             <header className="comparisonModalHeader">
-              <h2>Comparison Result</h2>
-              <button
-                aria-label="Close comparison modal"
-                className="comparisonModalClose"
-                onClick={() => setIsModalOpen(false)}
-                type="button"
-              >
-                Close
-              </button>
+              <h2 className="ty-section-title">Comparison Result</h2>
+              <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsModalOpen(false)} type="button">Close</button>
             </header>
             <ComparisonGrid comparison={state.data} />
           </section>
@@ -1325,7 +1273,7 @@ function ComparisonGrid({ comparison }) {
       <CandidateColumn profile={comparison.profileA} />
       <CandidateColumn profile={comparison.profileB} />
       <section className="matrix">
-        <h2>Aligned Evidence Ledger</h2>
+        <h2 className="ty-section-title">Aligned Evidence Ledger</h2>
         {rows.map((row) => (
           <div className="matrixRow" key={row.categoryTag}>
             <h3>{row.categoryTag}</h3>
@@ -1341,8 +1289,8 @@ function ComparisonGrid({ comparison }) {
 function CandidateColumn({ profile }) {
   return (
     <section className="profileSummary">
-      <p className="eyebrow">{profile.position}</p>
-      <h2>{profile.fullName}</h2>
+      <p className="eyebrow ty-page-kicker">{profile.position}</p>
+      <h2 className="ty-section-title">{profile.fullName}</h2>
       <KpiGrid profile={profile} compact />
     </section>
   )
@@ -1356,13 +1304,12 @@ function KpiGrid({ profile, compact = false }) {
     ['Budget Tracked', formatCurrency(profile.trackedBudgetAllocated)],
     ['Efficiency', `${Number(profile.legislativeEfficiencyRatio || 0).toFixed(1)}%`],
   ]
-
   return (
     <section className={compact ? 'kpiGrid compact' : 'kpiGrid'}>
       {metrics.map(([label, value]) => (
         <article className="kpiCard" key={label}>
-          <span>{label}</span>
-          <strong>{value}</strong>
+          <span className="ty-label">{label}</span>
+          <strong>{value ?? 'N/A'}</strong>
         </article>
       ))}
     </section>
@@ -1372,17 +1319,29 @@ function KpiGrid({ profile, compact = false }) {
 function TimelineLedger({ entries, compact = false, title = 'Published Timeline Ledger' }) {
   return (
     <section className={compact ? 'timeline compact' : 'timeline'}>
-      <h2>{title}</h2>
+      <h2 className="ty-section-title">{title}</h2>
       {entries.length === 0 && <p className="emptyState">No published records returned.</p>}
       {entries.map((entry) => (
         <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
           <div>
             <strong>{entry.actionIdentifier}</strong>
-            <span>{entry.categoryTag}</span>
+            <span style={{
+              background: 'var(--bg-inset)',
+              border: '1px solid var(--line-soft)',
+              borderRadius: 'var(--radius-full)',
+              fontFamily: 'var(--mono, monospace)',
+              fontSize: '11px',
+              fontWeight: '500',
+              letterSpacing: '0.04em',
+              padding: '2px 8px',
+              color: 'var(--text-muted)',
+            }}>{entry.categoryTag}</span>
           </div>
-          <p>{entry.summary}</p>
+          <p className="ty-body">{entry.summary}</p>
           <a href={entry.sourceUrl} rel="noreferrer" target="_blank">
-            Source
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              View Source <ExternalLinkIcon size={14} />
+            </span>
           </a>
         </article>
       ))}
@@ -1390,6 +1349,9 @@ function TimelineLedger({ entries, compact = false, title = 'Published Timeline 
   )
 }
 
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Shared primitives                                                           */
+/* ─────────────────────────────────────────────────────────────────────────── */
 function Field({ label, name, onChange, required = true, type = 'text', value }) {
   return (
     <label>
@@ -1399,63 +1361,74 @@ function Field({ label, name, onChange, required = true, type = 'text', value })
   )
 }
 
+function PaginationMini({ page, totalPages, onChange }) {
+  const disabledPrev = page <= 1
+  const disabledNext = page >= totalPages
+  return (
+    <nav className="paginationMini" aria-label="Pagination">
+      <button
+        type="button"
+        disabled={disabledPrev}
+        onClick={() => onChange((p) => Math.max(1, p - 1))}
+        className="paginationButton"
+        aria-label="Previous page"
+      >
+        <ArrowLeftIcon size={17} strokeWidth={2.4} />
+      </button>
+      <span className="paginationText" aria-live="polite">
+        {page} / {totalPages}
+      </span>
+      <button
+        type="button"
+        disabled={disabledNext}
+        onClick={() => onChange((p) => Math.min(totalPages, p + 1))}
+        className="paginationButton"
+        aria-label="Next page"
+      >
+        <ArrowRightIcon size={17} strokeWidth={2.4} />
+      </button>
+    </nav>
+  )
+}
+
 function Fact({ label, value }) {
   return (
     <article className="factItem">
-      <span>{label}</span>
+      <span className="ty-label">{label}</span>
       <strong>{value || 'Unavailable'}</strong>
     </article>
   )
 }
 
 function StatusLine({ state }) {
-  if (!state.message) {
-    return null
-  }
+  if (!state.message) return null
   if (state.status === 'loading') {
     return (
-      <div className="rounded-lg border border-slate-200 bg-gradient-to-r from-slate-50 to-white px-4 py-3 text-slate-700 shadow-sm transition-opacity duration-300 ease-out">
+      <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-600 shadow-xs">
         <div className="flex items-center gap-3">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-200 border-t-blue-600" aria-hidden="true" />
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" />
           <span className="sr-only">{state.message}</span>
-          <div className="h-2.5 w-48 rounded-full bg-slate-200/80 animate-pulse" aria-hidden="true" />
+          <div className="h-2 w-40 rounded-full bg-slate-100 animate-pulse" aria-hidden="true" />
         </div>
       </div>
     )
   }
-  return (
-    <p className={`statusLine ${state.status}`}>
-      {state.message}
-    </p>
-  )
-}
-
-function LoadingSkeletonList({ rows = 4 }) {
-  return (
-    <div className="space-y-3" aria-hidden="true">
-      {Array.from({ length: rows }).map((_, index) => (
-        <div
-          className="h-16 rounded-xl border border-slate-200 bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 bg-[length:220%_100%] animate-[pulse_1.5s_ease-in-out_infinite]"
-          key={`s-row-${index}`}
-        />
-      ))}
-    </div>
-  )
+  return <p className={`statusLine ${state.status}`}>{state.message}</p>
 }
 
 function LoadingSkeletonCards({ count = 4 }) {
   return (
     <div className="col-span-full grid grid-cols-1 gap-4 md:grid-cols-2" aria-hidden="true">
-      {Array.from({ length: count }).map((_, index) => (
+      {Array.from({ length: count }).map((_, i) => (
         <article
-          className="grid min-h-[152px] grid-cols-[94px_minmax(0,1fr)] items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5"
-          key={`s-card-${index}`}
+          className="grid min-h-[142px] grid-cols-[88px_minmax(0,1fr)] items-center gap-4 rounded-2xl border border-slate-100 bg-white p-5"
+          key={`s-${i}`}
         >
-          <span className="h-[94px] w-[94px] rounded-2xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+          <span className="h-[88px] w-[88px] rounded-xl bg-slate-100 animate-pulse" />
           <div className="space-y-2.5">
-            <span className="block h-4 w-2/3 rounded-md bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
-            <span className="block h-3 w-1/2 rounded-md bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
-            <span className="block h-3 w-3/5 rounded-md bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+            <span className="block h-4 w-2/3 rounded bg-slate-100 animate-pulse" />
+            <span className="block h-3 w-1/2 rounded bg-slate-100 animate-pulse" />
+            <span className="block h-3 w-3/5 rounded bg-slate-100 animate-pulse" />
           </div>
         </article>
       ))}
@@ -1465,40 +1438,27 @@ function LoadingSkeletonCards({ count = 4 }) {
 
 function ProfileSkeleton() {
   return (
-    <section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 ease-out">
-      <div className="flex min-h-[220px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50/70">
-        <div className="flex items-center gap-3 text-slate-600">
-          <span className="h-5 w-5 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600" aria-hidden="true" />
+    <section className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
+      <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
+        <div className="flex items-center gap-3 text-slate-400">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-400" aria-hidden="true" />
           <span className="text-sm font-medium">Loading profile</span>
         </div>
       </div>
-
       <div className="grid grid-cols-[132px_minmax(0,1fr)] gap-5 max-md:grid-cols-1">
-        <div className="h-[132px] w-[132px] rounded-xl bg-gradient-to-r from-slate-100 via-slate-50 to-slate-100 animate-pulse" />
+        <div className="h-[132px] w-[132px] rounded-xl bg-slate-100 animate-pulse" />
         <div className="space-y-3">
-          <div className="h-3 w-24 rounded bg-slate-200 animate-pulse" />
-          <div className="h-8 w-2/3 rounded bg-slate-200 animate-pulse" />
-          <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
-          <div className="h-4 w-1/3 rounded bg-slate-200 animate-pulse" />
+          <div className="h-3 w-24 rounded bg-slate-100 animate-pulse" />
+          <div className="h-7 w-2/3 rounded bg-slate-100 animate-pulse" />
+          <div className="h-4 w-1/2 rounded bg-slate-100 animate-pulse" />
+          <div className="h-4 w-1/3 rounded bg-slate-100 animate-pulse" />
         </div>
       </div>
-
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3 lg:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50/70 p-4" key={`kpi-${index}`}>
-            <div className="h-3 w-2/3 rounded bg-slate-200 animate-pulse" />
-            <div className="h-5 w-1/2 rounded bg-slate-200 animate-pulse" />
-          </div>
-        ))}
-      </div>
-
-      <div className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
-        <div className="h-5 w-40 rounded bg-slate-200 animate-pulse" />
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div className="space-y-2 border-t border-slate-100 pt-3" key={`tl-${index}`}>
-            <div className="h-4 w-1/2 rounded bg-slate-200 animate-pulse" />
-            <div className="h-3 w-5/6 rounded bg-slate-200 animate-pulse" />
-            <div className="h-3 w-24 rounded bg-slate-200 animate-pulse" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div className="space-y-2 rounded-xl border border-slate-100 bg-slate-50 p-4" key={i}>
+            <div className="h-3 w-2/3 rounded bg-slate-100 animate-pulse" />
+            <div className="h-5 w-1/2 rounded bg-slate-100 animate-pulse" />
           </div>
         ))}
       </div>
@@ -1508,51 +1468,24 @@ function ProfileSkeleton() {
 
 function PageSectionLoader() {
   return (
-    <section className="flex min-h-[140px] items-center justify-center rounded-xl border border-slate-200 bg-white/90 p-6 shadow-sm transition-all duration-300 ease-out" aria-live="polite">
-      <div className="flex items-center gap-3 text-slate-600">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-teal-200 border-t-teal-600" aria-hidden="true" />
+    <section className="flex min-h-[120px] items-center justify-center rounded-2xl border border-slate-100 bg-white p-6 shadow-xs" aria-live="polite">
+      <div className="flex items-center gap-3 text-slate-400">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-500" aria-hidden="true" />
         <span className="text-sm font-semibold tracking-wide">Loading content</span>
       </div>
     </section>
   )
 }
 
-function initialsFor(name) {
-  return name
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase()
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-PH', {
-    currency: 'PHP',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(Number(value || 0))
-}
-
-function formatDate(value) {
-  if (!value) {
-    return null
-  }
-  return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
-}
-
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  My Contributions Panel                                                      */
+/* ─────────────────────────────────────────────────────────────────────────── */
 function MyContributionsPanel({ token }) {
   const [contributions, setContributions] = useState([])
-  const [state, setState] = useState({
-    status: 'loading',
-    message: 'Retrieving your crowdsourced contribution history...'
-  })
+  const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/submissions/my`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    fetch(`${API_BASE_URL}/api/submissions/my`, { headers: { Authorization: `Bearer ${token}` } })
       .then(readApiResponse)
       .then((data) => {
         setContributions(Array.isArray(data) ? data : [])
@@ -1564,94 +1497,134 @@ function MyContributionsPanel({ token }) {
       })
   }, [token])
 
-  const STAGES = ['SUBMITTED', 'JURY_REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED']
+  const STAGES = ['SUBMITTED', 'JURY REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED']
 
   function stageIndexFor(status) {
     switch ((status || '').toUpperCase()) {
-      case 'SUBMITTED':
-      case 'PENDING': return 0;
-      case 'JURY_REVIEW': return 1;
-      case 'ESCALATED':
-      case 'REVISION_REQUIRED': return 2;
-      case 'REJECTED': return 3;
-      case 'PUBLISHED': return 4;
-      default: return 0;
+      case 'SUBMITTED': case 'PENDING': return 0
+      case 'JURY_REVIEW': return 1
+      case 'ESCALATED': case 'REVISION_REQUIRED': return 2
+      case 'REJECTED': return 3
+      case 'PUBLISHED': return 4
+      default: return 0
     }
   }
 
   return (
     <section className="workspace">
-      <section className="dashboardHeaderBlock" style={{ padding: '20px' }}>
-        <h2>My Crowdsourced Contributions</h2>
-        <p>Track the dynamic verification status of your submitted political records.</p>
+      <section className="dashboardHeaderBlock">
+        <h2 className="ty-section-title">My Contributions</h2>
+        <p className="ty-body">Track the verification lifecycle of your submitted political records.</p>
       </section>
 
       <StatusLine state={state} />
 
-      <div style={{ display: 'grid', gap: '20px', marginTop: '10px' }}>
+      <div style={{ display: 'grid', gap: '16px' }}>
         {state.status !== 'loading' && contributions.length === 0 && (
-          <p className="emptyState" style={{ background: '#ffffff', border: '1px dashed #dbe5ea', borderRadius: '14px', padding: '40px' }}>
-            You haven't submitted any political record edits yet. Go to the "Submit Evidence" tab to file your first record!
-          </p>
+          <div style={{
+            textAlign: 'center',
+            padding: '48px 32px',
+            background: 'var(--bg-surface)',
+            border: '1px dashed var(--line-strong)',
+            borderRadius: 'var(--radius-lg)',
+          }}>
+            <p className="ty-body" style={{ color: 'var(--text-muted)' }}>
+              No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.
+            </p>
+          </div>
         )}
 
         {contributions.map((item) => {
           const activeStage = stageIndexFor(item.status)
+          const isRejected = item.status === 'REJECTED'
           return (
-            <article key={item.submissionId} className="review-card" style={{ background: '#ffffff', padding: '24px', borderRadius: '14px', border: '1px solid #dbe5ea', boxShadow: 'var(--shadow-xs)', display: 'grid', gap: '12px' }}>
+            <article key={item.submissionId} className="review-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '11px', background: '#eff6ff', color: '#1e40af', padding: '4px 9px', borderRadius: '999px', fontWeight: '800' }}>
-                  ID: {item.submissionId.substring(0, 8)}
+                <span style={{
+                  background: 'var(--info-soft)',
+                  color: 'var(--info)',
+                  border: '1px solid var(--info-border)',
+                  padding: '4px 10px',
+                  borderRadius: 'var(--radius-full)',
+                  fontFamily: 'var(--mono, monospace)',
+                  fontSize: '11px',
+                  fontWeight: '500',
+                  letterSpacing: '0.04em',
+                }}>
+                  #{item.submissionId.substring(0, 8).toUpperCase()}
                 </span>
-                <span style={{ fontSize: '12px', color: '#6e8594', fontWeight: 'bold' }}>
-                  Filed: {formatDate(item.createdAt)}
+                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>
+                  {formatDate(item.createdAt)}
                 </span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px', fontSize: '13px' }}>
-                <div><span style={{ color: '#6e8594' }}>Category:</span> <strong>{item.categoryTag}</strong></div>
-                <div><span style={{ color: '#6e8594' }}>Action Tag:</span> <strong>{item.actionIdentifier}</strong></div>
-                <div><span style={{ color: '#6e8594' }}>Metric:</span> <strong>{item.quantitativeMetric ? formatCurrency(item.quantitativeMetric) : 'N/A'}</strong></div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
+                {[
+                  ['Category', item.categoryTag],
+                  ['Action Tag', item.actionIdentifier],
+                  ['Metric', item.quantitativeMetric ? formatCurrency(item.quantitativeMetric) : 'N/A'],
+                ].map(([k, v]) => (
+                  <div key={k}>
+                    <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
+                    <strong style={{ fontFamily: 'var(--display)', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{v}</strong>
+                  </div>
+                ))}
               </div>
 
-              <div style={{ background: '#f7fafc', border: '1px solid #dbe5ea', borderLeft: '4px solid #0f766e', padding: '12px', borderRadius: '0 8px 8px 0', fontStyle: 'italic', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <div style={{
+                background: 'var(--bg-inset)',
+                border: '1px solid var(--line-hairline)',
+                borderLeft: '3px solid var(--line-strong)',
+                padding: '12px 16px',
+                borderRadius: '0 var(--radius-xs) var(--radius-xs) 0',
+                fontStyle: 'italic',
+                fontSize: '13px',
+                color: 'var(--text-secondary)',
+                lineHeight: '1.65',
+              }}>
                 "{item.impactSummary}"
               </div>
 
               <div>
-                <span style={{ fontSize: '12px', color: '#6e8594' }}>Source:</span>{' '}
-                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{ fontSize: '13px', color: '#0f766e', fontWeight: 'bold', textDecoration: 'none' }}>
+                <span className="ty-label" style={{ display: 'inline', marginRight: '6px' }}>Source</span>
+                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{
+                  fontFamily: 'var(--mono, monospace)',
+                  fontSize: '12px',
+                  color: 'var(--info)',
+                  fontWeight: '500',
+                  textDecoration: 'none',
+                  borderBottom: '1px solid var(--info-border)',
+                }}>
                   {item.sourceUrl}
                 </a>
               </div>
 
-              <div style={{ marginTop: '8px', paddingTop: '14px', borderTop: '1px dashed #dbe5ea' }}>
-                <h5 style={{ fontSize: '13px', fontWeight: 'bold', margin: '0 0 10px 0', color: 'var(--text-primary)' }}>Dynamic Edit Lifecycle Stage</h5>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '8px' }}>
+              <div style={{ marginTop: '4px', paddingTop: '16px', borderTop: '1px dashed var(--line-soft)' }}>
+                <span className="ty-label" style={{ display: 'block', marginBottom: '10px' }}>Lifecycle Stage</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '6px' }}>
                   {STAGES.map((stage, index) => {
-                    const isPassed = index <= activeStage
-                    let bg = '#f8fafc'
-                    let fg = '#64748b'
-                    if (isPassed) {
-                      bg = item.status === 'REJECTED' && index === 3 ? '#ef4444' : '#0f766e'
-                      fg = '#ffffff'
-                    }
+                    const isPast = index <= activeStage
+                    const isActive = index === activeStage
+                    const stageLabel = stage === 'FINALIZED' && isRejected ? 'REJECTED' : stage
                     return (
-                      <span
-                        key={`${item.submissionId}-${stage}`}
-                        style={{
-                          textAlign: 'center',
-                          padding: '6px 8px',
-                          borderRadius: '999px',
-                          fontSize: '11px',
-                          fontWeight: 700,
-                          border: '1px solid #d1d5db',
-                          background: bg,
-                          color: fg,
-                          transition: 'all 220ms ease',
-                        }}
-                      >
-                        {stage === 'FINALIZED' && item.status === 'REJECTED' ? 'REJECTED' : stage.replace('_', ' ')}
+                      <span key={stage} style={{
+                        textAlign: 'center',
+                        padding: '6px 4px',
+                        borderRadius: 'var(--radius-full)',
+                        fontFamily: 'var(--mono, monospace)',
+                        fontSize: '10px',
+                        fontWeight: '600',
+                        letterSpacing: '0.04em',
+                        border: `1px solid ${isPast ? (isRejected && index === 3 ? 'var(--danger-border)' : 'var(--ph-blue)') : 'var(--line-soft)'}`,
+                        background: isPast
+                          ? (isRejected && index === 3 ? 'var(--danger)' : 'var(--ph-blue)')
+                          : 'var(--bg-inset)',
+                        color: isPast ? '#ffffff' : 'var(--text-subtle)',
+                        opacity: isPast ? 1 : 0.6,
+                        boxShadow: isActive ? '0 0 0 2px rgba(10,29,66,0.15)' : 'none',
+                        transition: 'all 200ms ease',
+                      }}>
+                        {stageLabel}
                       </span>
                     )
                   })}
@@ -1663,6 +1636,22 @@ function MyContributionsPanel({ token }) {
       </div>
     </section>
   )
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
+/*  Utilities                                                                   */
+/* ─────────────────────────────────────────────────────────────────────────── */
+function initialsFor(name) {
+  return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
+}
+
+function formatCurrency(value) {
+  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0))
+}
+
+function formatDate(value) {
+  if (!value) return null
+  return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
 }
 
 export default App

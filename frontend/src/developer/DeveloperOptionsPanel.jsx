@@ -77,8 +77,8 @@ export default function DeveloperOptionsPanel() {
               style={{ width: '100%', padding: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
             >
               <option value="ADMINISTRATOR">ADMINISTRATOR (Full System Controls)</option>
-              <option value="JUDICIAL_REVIEWER">JUDICIAL_REVIEWER (Module 2 Access Granted)</option>
-              <option value="CONTRIBUTOR">CONTRIBUTOR (Module 2 Restricted - Read Only)</option>
+              <option value="JUDICIAL_REVIEWER">JUDICIAL_REVIEWER (Moderation Access Granted)</option>
+              <option value="CONTRIBUTOR">CONTRIBUTOR (Moderation Restricted - Read Only)</option>
             </select>
           </div>
 

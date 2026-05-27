@@ -69,8 +69,8 @@ export default function UserProfileMatrixPanel({ user }) {
       <header className={headerTone}>
         <div>
           <span className="matrixRoleBadge">{activeRole}</span>
-          <h2>{descriptor}</h2>
-          <p>{actor?.name || actor?.fullName || 'Sandbox Actor'} is mapped to a live role metrics matrix.</p>
+          <h2 className="ty-section-title">{descriptor}</h2>
+          <p className="ty-body">{actor?.name || actor?.fullName || 'Sandbox Actor'} is mapped to a live role metrics matrix.</p>
         </div>
         <div className="matrixHeroScore">
           <span>Trust Balance</span>
@@ -139,8 +139,8 @@ function ContributorMatrix({
 
       <section className="matrixActionPanel">
         <div>
-          <h3>Submission Simulator</h3>
-          <p>Commit mock outcomes into the shared developer context.</p>
+          <h3 className="ty-card-title">Submission Simulator</h3>
+          <p className="ty-body">Commit mock outcomes into the shared developer context.</p>
         </div>
         <div className="matrixActionRow">
           <button onClick={simulateApprovedSubmission} type="button">+ Simulate Approved Submission</button>
@@ -165,8 +165,8 @@ function ReviewerMatrix({ consensusRate, metrics, simulateConsensusVote, simulat
 
       <section className="matrixActionPanel">
         <div>
-          <h3>Consensus Score Simulator</h3>
-          <p>SRS Section 3.2 thresholds recalculate instantly as trust changes.</p>
+          <h3 className="ty-card-title">Consensus Score Simulator</h3>
+          <p className="ty-body">SRS Section 3.2 thresholds recalculate instantly as trust changes.</p>
         </div>
         <div className="matrixActionRow">
           <button onClick={simulateConsensusVote} type="button">+ Sim Consensus Vote</button>
@@ -189,8 +189,8 @@ function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric })
 
       <section className="matrixActionPanel adminPanel">
         <div>
-          <h3>Accountability Bypass Keys</h3>
-          <p>Toggle administrative override capabilities in the shared sandbox state.</p>
+          <h3 className="ty-card-title">Accountability Bypass Keys</h3>
+          <p className="ty-body">Toggle administrative override capabilities in the shared sandbox state.</p>
         </div>
         <div className="adminControlGrid">
           <div className="stepperControl">

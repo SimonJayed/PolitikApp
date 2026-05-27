@@ -195,7 +195,7 @@ export default function ModerationPanel({ token, user }) {
     <div className="moderation-container">
       <div className="mod-header">
         <div>
-          <h2>Asynchronous Judicial Moderation Engine</h2>
+          <h2 className="ty-section-title">Asynchronous Judicial Moderation Engine</h2>
           <p>Pending Queue cards require community jury adjudication before publication.</p>
         </div>
       </div>
@@ -234,7 +234,7 @@ export default function ModerationPanel({ token, user }) {
               {card.impactSummary && <div className="summary-box">"{card.impactSummary}"</div>}
 
               <div className="detailsBlock" style={{ marginTop: '4px' }}>
-                <h5>Edit Lifecycle</h5>
+                <h5 className="ty-label" style={{ margin: 0 }}>Edit Lifecycle</h5>
                 <div style={{ display: 'grid', gap: '10px' }}>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '8px' }}>
                     {STAGES.map((stage, index) => (
@@ -247,7 +247,7 @@ export default function ModerationPanel({ token, user }) {
                           fontSize: '11px',
                           fontWeight: 700,
                           border: '1px solid #d1d5db',
-                          background: index <= activeStage ? '#0f766e' : '#f8fafc',
+                          background: index <= activeStage ? 'var(--ph-blue)' : '#f8fafc',
                           color: index <= activeStage ? '#ffffff' : '#64748b',
                           transition: 'all 220ms ease',
                         }}
@@ -264,7 +264,7 @@ export default function ModerationPanel({ token, user }) {
               </div>
 
               <div className="ballot-console">
-                <h4>Cast Evaluation Ballot</h4>
+                <h4 className="ty-card-title" style={{ margin: 0 }}>Cast Evaluation Ballot</h4>
 
                 {isReadOnlyMode && (
                   <div className="status-toast" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#991b1b' }}>
@@ -297,7 +297,7 @@ export default function ModerationPanel({ token, user }) {
                     DISAGREE
                   </label>
 
-                  <label style={{ color: '#7c3aed', fontWeight: 700 }}>
+                  <label style={{ color: 'var(--ph-gold)', fontWeight: 700 }}>
                     <input
                       checked={form.voteSelection === 'FLAG'}
                       disabled={isReadOnlyMode}
@@ -337,8 +337,8 @@ export default function ModerationPanel({ token, user }) {
         <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: '2px dashed var(--line-strong)' }}>
           <div className="mod-header" style={{ background: '#fffbeb', borderColor: '#fef3c7' }}>
             <div>
-              <h2 style={{ color: '#b45309' }}>👑 System Admin Arbitration Adjudication Queue</h2>
-              <p style={{ color: '#b45309' }}>Exposes deadlocked or timed-out tickets with vote weight distributions for immediate admin overrides.</p>
+              <h2 className="ty-section-title" style={{ color: 'var(--ph-gold)' }}>System Admin Arbitration Adjudication Queue</h2>
+              <p className="ty-body" style={{ color: 'var(--ph-gold)' }}>Exposes deadlocked or timed-out tickets with vote weight distributions for immediate admin overrides.</p>
             </div>
           </div>
 
@@ -354,7 +354,7 @@ export default function ModerationPanel({ token, user }) {
               const activeStage = stageIndexFor(card.queueStatus);
 
               return (
-                <div className="review-card" key={card.queueId} style={{ borderLeft: '4px solid #f59e0b', width: '100%', boxSizing: 'border-box' }}>
+                <div className="review-card" key={card.queueId} style={{ borderLeft: '4px solid var(--ph-gold)', width: '100%', boxSizing: 'border-box' }}>
                   <p><strong>Contributor:</strong> <span className="anonymized-tag">Anonymized Peer</span></p>
                   <p><strong>Queue ID:</strong> {card.queueId}</p>
                   <p><strong>Target Reference:</strong> {card.politicianId || 'SYSTEM-MAIN-TRACK'}</p>
@@ -362,10 +362,10 @@ export default function ModerationPanel({ token, user }) {
                     <strong>Source Link:</strong>{' '}
                     <a href={card.sourceUrl} rel="noreferrer" target="_blank">{card.sourceUrl}</a>
                   </p>
-                  {card.impactSummary && <div className="summary-box" style={{ borderLeftColor: '#f59e0b' }}>"{card.impactSummary}"</div>}
+                  {card.impactSummary && <div className="summary-box" style={{ borderLeftColor: 'var(--ph-gold)' }}>"{card.impactSummary}"</div>}
 
                   <div className="detailsBlock" style={{ marginTop: '4px', background: '#fffbeb', borderColor: '#fef3c7' }}>
-                    <h5>Adjudication Lifecycle</h5>
+                    <h5 className="ty-label" style={{ margin: 0 }}>Adjudication Lifecycle</h5>
                     <div style={{ display: 'grid', gap: '10px' }}>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '8px' }}>
                         {STAGES.map((stage, index) => (
@@ -387,7 +387,7 @@ export default function ModerationPanel({ token, user }) {
                           </span>
                         ))}
                       </div>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#b45309' }}>
+                      <p className="ty-meta" style={{ margin: 0, color: 'var(--ph-gold)' }}>
                         Current status: <strong>{card.queueStatus}</strong> (Escalated to Administrator override)
                       </p>
                     </div>
@@ -399,7 +399,7 @@ export default function ModerationPanel({ token, user }) {
                   </div>
 
                   <div className="ballot-console">
-                    <h4>Admin Override Resolution</h4>
+                    <h4 className="ty-card-title" style={{ margin: 0 }}>Admin Override Resolution</h4>
                     
                     <input
                       className="justification-input"
@@ -407,7 +407,7 @@ export default function ModerationPanel({ token, user }) {
                       placeholder="Administrative override justification reason (REQUIRED)..."
                       type="text"
                       value={form.voteReason}
-                      style={{ border: '1px solid #f59e0b' }}
+                      style={{ border: '1px solid var(--ph-gold)' }}
                     />
 
                     <div style={{ display: 'flex', gap: '12px' }}>
