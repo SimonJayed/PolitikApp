@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 function clampPercent(value) {
   return Math.min(100, Math.max(0, Number(value || 0)));
@@ -29,7 +31,59 @@ function roleDescriptor(role) {
   return 'The Auditor Node';
 }
 
-export default function UserProfileMatrixPanel({ user }) {
+const LEDGER_FILTER_TABS = [
+  { key: 'all', label: 'ALL ENTRIES' },
+  { key: 'audit', label: 'AUDIT ENTRIES' },
+  { key: 'legislation', label: 'LEGISLATION ENTRIES' },
+  { key: 'project', label: 'PROJECT ENTRIES' },
+];
+
+async function readApiResponse(response) {
+  const text = await response.text();
+  const payload = text ? JSON.parse(text) : null;
+  if (!response.ok) {
+    throw new Error(payload?.message || 'Request failed.');
+  }
+  return payload;
+}
+
+function formatLedgerDate(value) {
+  if (!value) return 'Date unavailable';
+  return new Intl.DateTimeFormat('en', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(new Date(value));
+}
+
+function formatMetric(value) {
+  if (value === null || value === undefined || value === '') return 'N/A';
+  const numericValue = Number(value);
+  if (!Number.isFinite(numericValue)) return String(value);
+  return new Intl.NumberFormat('en-PH', {
+    maximumFractionDigits: 2,
+  }).format(numericValue);
+}
+
+function normalizeLedgerText(value) {
+  return String(value || '').toLowerCase();
+}
+
+function ledgerEntryKind(entry) {
+  const searchable = [
+    entry.categoryTag,
+    entry.actionIdentifier,
+    entry.impactSummary,
+    entry.sourceUrl,
+  ].map(normalizeLedgerText).join(' ');
+
+  if (searchable.includes('audit') || searchable.includes('coa')) return 'audit';
+  if (searchable.includes('project') || searchable.includes('infrastructure')) return 'project';
+  if (searchable.includes('legislation') || searchable.includes('bill') || searchable.includes('ordinance')) return 'legislation';
+  return 'audit';
+}
+
+export default function UserProfileMatrixPanel({ token, user }) {
   const sandbox = useDeveloperSandbox() || {};
   const {
     isDevModeActive,
@@ -86,7 +140,8 @@ export default function UserProfileMatrixPanel({ user }) {
           rejectionRate={contributorRejectionRate}
           simulateApprovedSubmission={simulateApprovedSubmission}
           simulateRejectedSubmission={simulateRejectedSubmission}
-          trustScore={trustScore}
+          token={token}
+          user={actor}
         />
       )}
 
@@ -118,8 +173,48 @@ function ContributorMatrix({
   rejectionRate,
   simulateApprovedSubmission,
   simulateRejectedSubmission,
-  trustScore,
+  token,
+  user,
 }) {
+  const [ledgerEntries, setLedgerEntries] = useState([]);
+  const [ledgerState, setLedgerState] = useState({ status: 'loading', message: 'Loading ledger entries...' });
+
+  useEffect(() => {
+    let ignore = false;
+
+    if (!user?.userId) {
+      setLedgerEntries([]);
+      setLedgerState({ status: 'error', message: 'Unable to load database ledger records without a user id.' });
+      return () => {
+        ignore = true;
+      };
+    }
+
+    setLedgerState({ status: 'loading', message: 'Loading ledger entries...' });
+    fetch(`${API_BASE_URL}/api/submissions/contributor/${user.userId}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        if (ignore) return;
+        const entries = Array.isArray(data) ? data : [];
+        setLedgerEntries(entries);
+        setLedgerState({
+          status: 'success',
+          message: entries.length > 0 ? '' : 'No database ledger records found.',
+        });
+      })
+      .catch((error) => {
+        if (ignore) return;
+        setLedgerEntries([]);
+        setLedgerState({ status: 'error', message: error.message || 'Could not load database ledger records.' });
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, [token, user?.userId]);
+
   return (
     <>
       {rejectionLocked && (
@@ -130,12 +225,13 @@ function ContributorMatrix({
       )}
 
       <section className="matrixCardGrid">
-        <MetricCard label="Trust Balance" value={formatPercent(trustScore, 1)} />
         <MetricCard label="Active Submissions" value={metrics.contributorSubmissions} />
         <MetricCard label="Approved Cards" value={metrics.contributorApproved} tone="success" />
         <MetricCard label="Rejected Cards" value={metrics.contributorRejected} tone="danger" />
         <MetricCard label="Lifetime Rejection Rate" value={formatPercent(rejectionRate)} tone={rejectionLocked ? 'danger' : 'neutral'} />
       </section>
+
+      <LedgerFilterTabs entries={ledgerEntries} state={ledgerState} />
 
       <section className="matrixActionPanel">
         <div>
@@ -148,6 +244,68 @@ function ContributorMatrix({
         </div>
       </section>
     </>
+  );
+}
+
+function LedgerFilterTabs({ entries, state }) {
+  const [activeTab, setActiveTab] = useState(LEDGER_FILTER_TABS[0].key);
+  const filteredEntries = useMemo(() => (
+    activeTab === 'all'
+      ? entries
+      : entries.filter((entry) => ledgerEntryKind(entry) === activeTab)
+  ), [activeTab, entries]);
+
+  return (
+    <section className="ledgerPanel" aria-label="Ledger filtering">
+      <div className="ledgerFilterSection">
+        <span className="ledgerFilterLabel">Ledger filtering:</span>
+        <div className="ledgerFilterTabs" role="tablist" aria-label="Ledger entry filters">
+          {LEDGER_FILTER_TABS.map((tab) => (
+            <button
+              aria-selected={activeTab === tab.key}
+              className={activeTab === tab.key ? 'active' : ''}
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              role="tab"
+              type="button"
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {state?.status === 'loading' && (
+        <div className="ledgerEmptyState">Loading ledger entries...</div>
+      )}
+
+      {state?.status !== 'loading' && filteredEntries.length === 0 && (
+        <div className="ledgerEmptyState">{state?.message || 'No entries match this filter.'}</div>
+      )}
+
+      {state?.status !== 'loading' && filteredEntries.length > 0 && (
+        <div className="ledgerEntryList">
+          {filteredEntries.map((entry) => (
+            <article className="ledgerEntry" key={entry.submissionId}>
+              <div className="ledgerEntryTopline">
+                <span className={`ledgerTypeBadge ${ledgerEntryKind(entry)}`}>{ledgerEntryKind(entry).toUpperCase()}</span>
+                <span>{formatLedgerDate(entry.createdAt)}</span>
+              </div>
+              <strong>{entry.impactSummary || 'No impact summary provided.'}</strong>
+              <div className="ledgerEntryMeta">
+                <span>{entry.categoryTag || 'UNCATEGORIZED'}</span>
+                <span>{entry.actionIdentifier || 'NO_ACTION'}</span>
+                <span>{formatMetric(entry.quantitativeMetric)}</span>
+                <span>{entry.status || 'SUBMITTED'}</span>
+              </div>
+              {entry.sourceUrl && (
+                <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{entry.sourceUrl}</a>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 

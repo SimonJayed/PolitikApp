@@ -122,6 +122,7 @@ function AppInner({ currentUser, onLogout, token }) {
     try {
       const payload = {
         ...formData,
+        contributorId: currentUser?.userId,
         sourceUrl: formData.sourceUrl.trim(),
         quantitativeMetric: Number(formData.quantitativeMetric),
       }
@@ -279,8 +280,8 @@ function AppInner({ currentUser, onLogout, token }) {
             state={comparisonState}
           />
         )}
-        {activeView === 'contributions' && <MyContributionsPanel token={token} />}
-        {activeView === 'profileMatrix' && <UserProfileMatrixPanel user={currentUser} />}
+        {activeView === 'contributions' && <MyContributionsPanel user={currentUser} />}
+        {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={currentUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
             <section className="workspace">
@@ -1480,12 +1481,18 @@ function PageSectionLoader() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  My Contributions Panel                                                      */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function MyContributionsPanel({ token }) {
+function MyContributionsPanel({ user }) {
   const [contributions, setContributions] = useState([])
   const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/submissions/my`, { headers: { Authorization: `Bearer ${token}` } })
+    if (!user?.userId) {
+      setContributions([])
+      setState({ status: 'error', message: 'Unable to load contribution history without a user id.' })
+      return
+    }
+
+    fetch(`${API_BASE_URL}/api/submissions/contributor/${user.userId}`)
       .then(readApiResponse)
       .then((data) => {
         setContributions(Array.isArray(data) ? data : [])
@@ -1495,7 +1502,7 @@ function MyContributionsPanel({ token }) {
         setContributions([])
         setState({ status: 'error', message: err.message })
       })
-  }, [token])
+  }, [user?.userId])
 
   const STAGES = ['SUBMITTED', 'JURY REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED']
 
