@@ -144,7 +144,9 @@ export default function UserProfileMatrixPanel({ token, user }) {
           <p className="ty-body">{actor?.name || actor?.fullName || 'Sandbox Actor'} is mapped to a live role metrics matrix.</p>
         </div>
         <div className="matrixHeroScore">
-          <TrustScoreMeter score={trustScore} showEligibility={activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN'} variant="compact" />
+          {activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
+            <TrustScoreMeter score={trustScore} showEligibility={true} variant="compact" />
+          )}
           <small>{actor?.status || 'ACTIVE'}</small>
         </div>
       </header>

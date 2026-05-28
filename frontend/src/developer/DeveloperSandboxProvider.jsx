@@ -183,6 +183,10 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
       contributorSubmissions: current.contributorSubmissions + 1,
       contributorApproved: current.contributorApproved + 1,
     }));
+    setManipulatedUser((current) => ({
+      ...current,
+      trustScore: clampTrustScore((current.trustScore || 0) + 10),
+    }));
   }
 
   function simulateRejectedSubmission() {
@@ -190,6 +194,10 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
       ...current,
       contributorSubmissions: current.contributorSubmissions + 1,
       contributorRejected: current.contributorRejected + 1,
+    }));
+    setManipulatedUser((current) => ({
+      ...current,
+      trustScore: clampTrustScore((current.trustScore || 0) - 5),
     }));
   }
 
