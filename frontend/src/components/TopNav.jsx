@@ -63,7 +63,7 @@ function MobileMenuItem({ active, icon: Icon, label, onClick }) {
   )
 }
 
-function TopNav({ activeView, isCompareModalOpen = false, onLogout, onSelectView, title = 'PolitikApp', user }) {
+function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, onLogout, onSelectView, title = 'PolitikApp', user }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
@@ -93,13 +93,14 @@ function TopNav({ activeView, isCompareModalOpen = false, onLogout, onSelectView
     setUserMenuOpen(false)
   }
 
-  const isCompareActive = activeView === 'compare' && !isCompareModalOpen
+  const hideTopNav = isCompareModalOpen || isModalOpen
+  const isCompareActive = activeView === 'compare' && !hideTopNav
 
   return (
     <div
       className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4"
-      style={isCompareModalOpen ? { visibility: 'hidden' } : undefined}
-      aria-hidden={isCompareModalOpen}
+      style={hideTopNav ? { visibility: 'hidden' } : undefined}
+      aria-hidden={hideTopNav}
     >
       <div className="pointer-events-auto mx-auto w-full max-w-[1880px]">
         <div

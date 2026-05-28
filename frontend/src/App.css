@@ -424,6 +424,53 @@
   letter-spacing: -0.015em;
 }
 
+.confirmModalBody {
+  display: grid;
+  gap: 20px;
+  min-height: 0;
+  align-items: flex-start;
+}
+
+.confirmModalBody p {
+  margin: 0;
+}
+
+.confirmModalActions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.confirmModalActions button[type='submit'] {
+  background: var(--ph-blue);
+  background-image: linear-gradient(160deg, var(--ph-blue-light) 0%, var(--ph-blue) 60%, var(--accent-strong) 100%);
+  box-shadow: 0 4px 14px rgba(10, 29, 66, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.confirmModalActions button[type='submit']:hover {
+  box-shadow: 0 8px 22px rgba(10, 29, 66, 0.36), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.confirmModalActions button[type='submit']:disabled {
+  background: var(--bg-inset);
+  border-color: var(--line-soft);
+  color: var(--text-muted);
+  box-shadow: none;
+}
+
+.dangerButton {
+  background: #b42318 !important;
+  border-color: #b42318 !important;
+  color: #ffffff !important;
+}
+
+.dangerButton:hover {
+  background: #912018 !important;
+  border-color: #912018 !important;
+}
+
 .detailsModalBody,
 .compareCardList,
 .editFormGrid,
@@ -496,6 +543,97 @@
   box-shadow: var(--shadow-sm);
   min-width: 0;
   padding: 18px;
+}
+
+.rankingPanelWrap {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.rankingPanel {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  display: grid;
+  gap: 10px;
+  min-height: 320px;
+  padding: 16px;
+}
+
+.rankingPanelHeader {
+  align-items: baseline;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rankingPanelTable {
+  display: grid;
+  gap: 8px;
+}
+
+.rankingRow {
+  align-items: center;
+  background: var(--bg-soft);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.rankingRow:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-xs);
+}
+
+.rankingRank {
+  color: var(--text-muted);
+  font-family: var(--mono, monospace);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.rankingIdentity {
+  display: grid;
+  min-width: 0;
+}
+
+.rankingMetric {
+  color: var(--text-primary);
+  font-family: var(--mono, monospace);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.rankingBudget {
+  color: var(--text-secondary);
+  font-family: var(--mono, monospace);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.rankingFlags {
+  justify-self: end;
+}
+
+.rankingFlagBadge {
+  align-items: center;
+  background: #fef9e8;
+  border: 1px solid #f0c040;
+  border-radius: var(--radius-full);
+  color: #92660a;
+  display: inline-flex;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 6px;
+  padding: 4px 8px;
 }
 
 .comparisonLedgerCard h2 {
@@ -2107,6 +2245,21 @@ button:disabled {
     max-height: calc(100dvh - 20px);
     padding: 16px;
     width: 100%;
+  }
+
+  .rankingPanelWrap {
+    grid-template-columns: 1fr;
+  }
+
+  .rankingRow {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .rankingMetric,
+  .rankingBudget,
+  .rankingFlags {
+    grid-column: 2;
+    justify-self: start;
   }
 
   .queue-deck { grid-template-columns: 1fr; }

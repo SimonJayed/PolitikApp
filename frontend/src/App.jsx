@@ -3,6 +3,8 @@ import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
 import TrustScoreMeter from './components/TrustScoreMeter'
+import ConfirmActionModal from './components/ConfirmActionModal'
+import PoliticianRankingPanel from './components/PoliticianRankingPanel'
 import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
@@ -97,6 +99,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
+  const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -255,6 +258,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       <TopNav
         activeView={activeView}
         isCompareModalOpen={isCompareModalOpen}
+        isModalOpen={isCompareModalOpen || isAppealModalOpen}
         onLogout={onLogout}
         onSelectView={setActiveView}
         title="PolitikApp"
@@ -315,6 +319,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onReload={openPoliticianProfile}
             onUserUpdate={onUserUpdate}
+            onAppealModalOpenChange={setIsAppealModalOpen}
             politicianId={selectedPoliticianId}
             politicians={politiciansState.data}
             state={dashboardState}
@@ -326,6 +331,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         {activeView === 'dashboard' && (
           <DashboardPanel
             onNavigate={setActiveView}
+            onOpenProfile={openPoliticianProfile}
             politicians={politiciansState.data}
             user={activeUser}
           />
@@ -399,7 +405,7 @@ function App() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Dashboard                                                                  */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function DashboardPanel({ politicians, onNavigate, user }) {
+function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
   const totalProfiles = politicians.length
   const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0)
   const averageEfficiency = totalProfiles > 0
@@ -585,6 +591,11 @@ function DashboardPanel({ politicians, onNavigate, user }) {
             </button>
           ))}
         </div>
+      </section>
+
+      <section>
+        <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Performance Ranking</h2>
+        <PoliticianRankingPanel onSelectPolitician={onOpenProfile} politicians={politicians} />
       </section>
 
       {/* Info row */}
@@ -1101,11 +1112,12 @@ function PoliticianDirectoryLoaderPanel({
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, onReload, onUserUpdate, politicianId, politicians, state, token, user }) {
+function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [appealTarget, setAppealTarget] = useState(null)
   const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({ biography: '', fullName: '', jurisdiction: '', partyAffiliation: '', position: '', profileImageUrl: '' })
@@ -1173,31 +1185,35 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
     } catch { alert('Network error: Could not save updates.') }
   }
 
-  async function handleAppeal(entry) {
+  function handleAppeal(entry) {
     if (!entry?.submissionId) {
       setAppealState({ status: 'error', message: 'This timeline record cannot be appealed because it is missing source submission linkage.' })
       return
     }
+    onAppealModalOpenChange?.(true)
+    setAppealTarget(entry)
+  }
 
-    const confirmed = window.confirm(
-      'File a post-publish appeal for this record?\n\nThis immediately deducts 10.00 trust points. If the appeal fails, an additional 20.00 points will be deducted.'
-    )
-    if (!confirmed) return
-
+  async function confirmAppeal() {
+    if (!appealTarget?.submissionId) return
     setAppealState({ status: 'loading', message: 'Filing appeal and routing record to admin adjudication...' })
     try {
       const data = await fetch(`${API_BASE_URL}/api/moderation/appeal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ submissionId: entry.submissionId }),
+        body: JSON.stringify({ submissionId: appealTarget.submissionId }),
       }).then(readApiResponse)
 
       if (onUserUpdate) {
         onUserUpdate({ trustScore: data.trustScore })
       }
       setAppealState({ status: 'success', message: data.message || 'Appeal filed.' })
+      setAppealTarget(null)
+      onAppealModalOpenChange?.(false)
     } catch (error) {
       setAppealState({ status: 'error', message: error.message })
+      setAppealTarget(null)
+      onAppealModalOpenChange?.(false)
     }
   }
 
@@ -1263,6 +1279,20 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
           </section>
         </div>
       )}
+      <ConfirmActionModal
+        cancelLabel="Cancel"
+        confirmLabel="File Appeal"
+        description="This will immediately deduct 10.00 trust points. If the appeal fails, an additional 20.00 points will be deducted."
+        isOpen={Boolean(appealTarget)}
+        isSubmitting={appealState.status === 'loading'}
+        onCancel={() => {
+          setAppealTarget(null)
+          onAppealModalOpenChange?.(false)
+        }}
+        onConfirm={confirmAppeal}
+        severity="warning"
+        title="File Post-Publish Appeal?"
+      />
     </section>
   )
 }
