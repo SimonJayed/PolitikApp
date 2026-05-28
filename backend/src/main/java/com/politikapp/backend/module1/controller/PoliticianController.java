@@ -32,7 +32,7 @@ public class PoliticianController {
 
     @GetMapping
     public ResponseEntity<List<PoliticianResponse>> getPoliticians() {
-        return ResponseEntity.ok(politicianService.getActivePoliticians());
+        return ResponseEntity.ok(politicianService.getPoliticians());
     }
 
     @GetMapping("/{id}")

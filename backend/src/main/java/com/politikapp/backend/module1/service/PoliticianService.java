@@ -13,8 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @SuppressWarnings("null")
 public class PoliticianService {
-    private static final String ACTIVE_STATUS = "ACTIVE";
-
     private final PoliticianRepository politicianRepository;
     private final PoliticianMapper politicianMapper;
 
@@ -24,8 +22,8 @@ public class PoliticianService {
     }
 
     @Transactional(readOnly = true)
-    public List<PoliticianResponse> getActivePoliticians() {
-        return politicianRepository.findByStatusOrderByFullNameAsc(ACTIVE_STATUS)
+    public List<PoliticianResponse> getPoliticians() {
+        return politicianRepository.findAllByOrderByFullNameAsc()
                 .stream()
                 .map(politicianMapper::toResponse)
                 .toList();
@@ -41,11 +39,11 @@ public class PoliticianService {
     @Transactional(readOnly = true)
     public List<PoliticianResponse> searchPoliticians(String name) {
         if (name == null || name.isBlank()) {
-            return getActivePoliticians();
+            return getPoliticians();
         }
 
         return politicianRepository
-                .findByFullNameContainingIgnoreCaseAndStatusOrderByFullNameAsc(name.trim(), ACTIVE_STATUS)
+                .findByFullNameContainingIgnoreCaseOrderByFullNameAsc(name.trim())
                 .stream()
                 .map(politicianMapper::toResponse)
                 .toList();

@@ -6,6 +6,7 @@ import com.politikapp.backend.module1.entity.ProfileEditSubmission;
 import com.politikapp.backend.module1.repository.ProfileEditSubmissionRepository;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.stereotype.Component;
 
@@ -43,15 +44,15 @@ public class PoliticianMapper {
 
         return new PoliticianResponse(
                 politician.getPoliticianId(),
-                politician.getFullName(),
-                politician.getPosition(),
-                politician.getJurisdiction(),
-                politician.getPartyAffiliation(),
+                clean(politician.getFullName()),
+                clean(politician.getPosition()),
+                canonicalCode(politician.getJurisdiction()),
+                clean(politician.getPartyAffiliation()),
                 politician.getTermStart(),
                 politician.getTermEnd(),
-                politician.getProfileImageUrl(),
-                politician.getBiography(),
-                politician.getStatus(),
+                clean(politician.getProfileImageUrl()),
+                clean(politician.getBiography()),
+                canonicalCode(politician.getStatus()),
                 efficiencyRatio,
                 coaDiscrepancies,
                 totalBudget
@@ -78,5 +79,20 @@ public class PoliticianMapper {
         } catch (NumberFormatException exception) {
             return BigDecimal.ZERO;
         }
+    }
+
+    private String clean(String value) {
+        return value == null ? null : value.trim();
+    }
+
+    private String canonicalCode(String value) {
+        String cleaned = clean(value);
+        if (cleaned == null || cleaned.isBlank()) {
+            return cleaned;
+        }
+        return cleaned
+                .toUpperCase(Locale.ROOT)
+                .replaceAll("[^A-Z0-9]+", "_")
+                .replaceAll("^_+|_+$", "");
     }
 }
