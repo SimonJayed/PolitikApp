@@ -36,6 +36,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/moderation/appeal").authenticated()
                         .requestMatchers("/api/moderation/override", "/api/moderation/escalate/trigger").hasRole("ADMIN")
                         .requestMatchers("/api/moderation/**").hasAnyRole("PEER", "ADMIN")
+                        .requestMatchers("/api/peer-applications/submit", "/api/peer-applications/my").hasAnyRole("CONTRIBUTOR", "PEER")
+                        .requestMatchers("/api/peer-applications/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/submissions/**", "/users/**").authenticated()
                         .requestMatchers("/api/**").permitAll()
                         .anyRequest().authenticated()

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
 import TrustScoreMeter from './TrustScoreMeter';
 import { clampTrustScore } from './trustScore';
@@ -187,6 +187,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
           metrics={profileMetrics}
           updateProfileMetric={updateProfileMetric}
           isSandboxMode={isDevModeActive}
+          token={token}
         />
       )}
     </section>
@@ -205,6 +206,26 @@ function ContributorMatrix({
 }) {
   const [ledgerEntries, setLedgerEntries] = useState([]);
   const [ledgerState, setLedgerState] = useState({ status: 'loading', message: 'Loading ledger entries...' });
+  const [applications, setApplications] = useState([]);
+  const [appForm, setAppForm] = useState({
+    organizationType: 'FACULTY',
+    institutionalEmail: '',
+    verificationProofUrl: '',
+    justificationStatement: '',
+  });
+  const [appState, setAppState] = useState({ status: 'idle', message: '' });
+
+  const fetchApplications = useCallback(() => {
+    if (!user?.userId) return;
+    fetch(`${API_BASE_URL}/api/peer-applications/my`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        setApplications(Array.isArray(data) ? data : []);
+      })
+      .catch((err) => console.error('Failed to load peer applications:', err));
+  }, [token, user?.userId]);
 
   useEffect(() => {
     let ignore = false;
@@ -237,10 +258,12 @@ function ContributorMatrix({
         setLedgerState({ status: 'error', message: error.message || 'Could not load database ledger records.' });
       });
 
+    fetchApplications();
+
     return () => {
       ignore = true;
     };
-  }, [token, user?.userId]);
+  }, [token, user?.userId, fetchApplications]);
 
   const realMetrics = useMemo(() => {
     const submissions = ledgerEntries.length;
@@ -264,6 +287,34 @@ function ContributorMatrix({
       }
     : realMetrics;
 
+  const pendingApp = applications.find(app => app.status === 'PENDING');
+  const hasPending = !!pendingApp;
+
+  const handleAppSubmit = async (e) => {
+    e.preventDefault();
+    setAppState({ status: 'loading', message: 'Submitting verification application...' });
+    try {
+      const data = await fetch(`${API_BASE_URL}/api/peer-applications/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(appForm),
+      }).then(readApiResponse);
+      setAppState({ status: 'success', message: 'Application submitted successfully! It is now pending administrative review.' });
+      setAppForm({
+        organizationType: 'FACULTY',
+        institutionalEmail: '',
+        verificationProofUrl: '',
+        justificationStatement: '',
+      });
+      fetchApplications();
+    } catch (err) {
+      setAppState({ status: 'error', message: err.message || 'Submission failed.' });
+    }
+  };
+
   return (
     <>
       {rejectionLocked && (
@@ -281,6 +332,124 @@ function ContributorMatrix({
       </section>
 
       <LedgerFilterTabs entries={ledgerEntries} state={ledgerState} />
+
+      {/* Peer Application Console */}
+      <section className="matrixActionPanel" style={{ marginTop: '24px', background: 'var(--bg-surface)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-lg)', padding: '24px' }}>
+        <header style={{ borderBottom: '1px solid var(--line-hairline)', paddingBottom: '12px', marginBottom: '20px' }}>
+          <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>🎓 Peer Reviewer Application</h3>
+          <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>
+            Are you a university faculty, campus journalist, researcher, or civic volunteer? Elevate your role to PEER to review other submissions.
+          </p>
+        </header>
+
+        {hasPending ? (
+          <div style={{
+            padding: '16px 20px',
+            background: 'rgba(217, 119, 6, 0.08)',
+            border: '1px solid rgba(217, 119, 6, 0.25)',
+            borderLeft: '4px solid #d97706',
+            borderRadius: 'var(--radius-md)',
+            color: '#b45309',
+            fontSize: '14px',
+            lineHeight: '1.6',
+            marginBottom: '20px'
+          }}>
+            <strong>Application Under Review</strong>
+            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#9a3412' }}>
+              Your verification application is currently under review by administration. You will be automatically elevated to a Peer Reviewer with a trust baseline of 150.00 points upon approval.
+            </p>
+          </div>
+        ) : (
+          <form onSubmit={handleAppSubmit} className="editorPanel" style={{ display: 'grid', gap: '16px', maxWidth: '640px', background: 'transparent', border: 'none', padding: 0, boxShadow: 'none' }}>
+            <div className="fieldRow" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                Organization / Role Type
+                <select 
+                  value={appForm.organizationType} 
+                  onChange={e => setAppForm({ ...appForm, organizationType: e.target.value })}
+                  required
+                >
+                  <option value="FACULTY">FACULTY (Professor / Instructor)</option>
+                  <option value="RESEARCHER">RESEARCHER (Academic Analyst)</option>
+                  <option value="CAMPUS_JOURNALIST">CAMPUS_JOURNALIST (Student Editor / Writer)</option>
+                  <option value="CIVIC_VOLUNTEER">CIVIC_VOLUNTEER (Public Advocate)</option>
+                </select>
+              </label>
+              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                Institutional Email
+                <input 
+                  type="email" 
+                  placeholder="e.g. professor@cit.edu" 
+                  value={appForm.institutionalEmail}
+                  onChange={e => setAppForm({ ...appForm, institutionalEmail: e.target.value })}
+                  required 
+                />
+              </label>
+            </div>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              Verification Proof URL (ID Card / Reference Letter Link)
+              <input 
+                type="url" 
+                placeholder="https://drive.google.com/file/... or official portfolio link"
+                value={appForm.verificationProofUrl}
+                onChange={e => setAppForm({ ...appForm, verificationProofUrl: e.target.value })}
+                required 
+              />
+            </label>
+            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              Justification & Background Statement
+              <textarea 
+                rows="4" 
+                placeholder="Outline your background, academic affiliations, and motivation to serve as a Peer Reviewer..."
+                value={appForm.justificationStatement}
+                onChange={e => setAppForm({ ...appForm, justificationStatement: e.target.value })}
+                required 
+              />
+            </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
+              <button type="submit" disabled={appState.status === 'loading'} style={{ width: 'auto', padding: '10px 24px' }}>
+                {appState.status === 'loading' ? 'Submitting...' : 'Submit Peer Application'}
+              </button>
+              {appState.message && (
+                <span className={`ty-meta ${appState.status === 'success' ? 'successText' : 'errorText'}`} style={{ color: appState.status === 'success' ? 'var(--success)' : 'var(--danger)', fontWeight: '600' }}>
+                  {appState.message}
+                </span>
+              )}
+            </div>
+          </form>
+        )}
+
+        {/* Previous Applications list */}
+        {applications.length > 0 && (
+          <div style={{ marginTop: '30px', borderTop: '1px solid var(--line-hairline)', paddingTop: '20px' }}>
+            <h4 className="ty-card-title" style={{ fontSize: '14px', marginBottom: '12px' }}>My Applications History</h4>
+            <div style={{ display: 'grid', gap: '10px' }}>
+              {applications.map((app) => (
+                <div key={app.applicationId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line-soft)' }}>
+                  <div>
+                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{app.organizationType} Application</strong>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      <span>Email: {app.institutionalEmail}</span> | <span>Submitted: {new Date(app.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <span style={{
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    background: app.status === 'APPROVED' ? 'rgba(16, 185, 129, 0.08)' : app.status === 'REJECTED' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+                    color: app.status === 'APPROVED' ? 'var(--success)' : app.status === 'REJECTED' ? 'var(--danger)' : '#b45309',
+                    border: `1px solid ${app.status === 'APPROVED' ? 'rgba(16,185,129,0.2)' : app.status === 'REJECTED' ? 'rgba(239,68,68,0.2)' : 'rgba(217,119,6,0.2)'}`
+                  }}>
+                    {app.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </section>
 
       {isSandboxMode && (
         <section className="matrixActionPanel">
@@ -439,7 +608,52 @@ function ReviewerMatrix({
   );
 }
 
-function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric, isSandboxMode = false }) {
+function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric, isSandboxMode = false, token }) {
+  const [pendingApps, setPendingApps] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchPending = useCallback(() => {
+    setLoading(true);
+    fetch(`${API_BASE_URL}/api/peer-applications/admin/pending`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        setPendingApps(Array.isArray(data) ? data : []);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message || 'Failed to load applications.');
+        setLoading(false);
+      });
+  }, [token]);
+
+  useEffect(() => {
+    fetchPending();
+  }, [fetchPending]);
+
+  const handleAction = async (applicationId, action) => {
+    // Snappy UI state mutation: instantly filter out this app locally
+    const originalPending = [...pendingApps];
+    setPendingApps(pendingApps.filter(app => app.applicationId !== applicationId));
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/peer-applications/admin/${applicationId}/${action}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        throw new Error('Action failed.');
+      }
+      fetchPending();
+    } catch (err) {
+      console.error(err);
+      setPendingApps(originalPending);
+      alert('Failed to process administrative action: ' + err.message);
+    }
+  };
+
   return (
     <>
       <section className="matrixCardGrid">
@@ -447,6 +661,89 @@ function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric, i
         <MetricCard label="Intervention Count" value={metrics.adminInterventions} />
         <MetricCard label="50-50 Tie Breaker" value={metrics.adminTieBreakerActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTieBreakerActive ? 'success' : 'danger'} />
         <MetricCard label="24-Hour Timeout Override" value={metrics.adminTimeoutOverrideActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTimeoutOverrideActive ? 'success' : 'danger'} />
+      </section>
+
+      {/* Admin Verification Desk */}
+      <section className="matrixActionPanel" style={{ marginTop: '24px', background: 'var(--bg-surface)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-lg)', padding: '24px' }}>
+        <header style={{ borderBottom: '1px solid var(--line-hairline)', paddingBottom: '12px', marginBottom: '20px' }}>
+          <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>💼 Peer Verification Desk</h3>
+          <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>
+            Review pending applications from trusted community members applying for Peer Reviewer credentials.
+          </p>
+        </header>
+
+        {loading && pendingApps.length === 0 ? (
+          <div className="ledgerEmptyState">Loading verification queue...</div>
+        ) : error ? (
+          <div className="ledgerEmptyState" style={{ color: 'var(--danger)' }}>{error}</div>
+        ) : pendingApps.length === 0 ? (
+          <div className="ledgerEmptyState">No pending peer verification applications at this time.</div>
+        ) : (
+          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+            {pendingApps.map((app) => (
+              <article key={app.applicationId} style={{
+                background: 'rgba(255,255,255,0.01)',
+                border: '1px solid var(--line-soft)',
+                borderRadius: 'var(--radius-md)',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                boxShadow: 'var(--shadow-sm)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--ph-gold)', background: 'rgba(217,119,6,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.15)' }}>
+                      {app.organizationType}
+                    </span>
+                    <h4 style={{ margin: '8px 0 2px', fontSize: '14px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                      Contributor Applicant
+                    </h4>
+                    <span style={{ fontSize: '11px', color: 'var(--text-subtle)', fontFamily: 'var(--mono, monospace)' }}>
+                      {app.contributorId.slice(0, 8)}...
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'grid', gap: '4px' }}>
+                  <div><strong>Institutional Email:</strong> {app.institutionalEmail}</div>
+                  <div><strong>Verification Proof:</strong> <a href={app.verificationProofUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--info)', textDecoration: 'underline' }}>View Proof Document ↗</a></div>
+                </div>
+
+                <div style={{
+                  padding: '10px 12px',
+                  background: 'rgba(0,0,0,0.015)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px dashed var(--line-soft)',
+                  fontSize: '12px',
+                  color: 'var(--text-subtle)',
+                  fontStyle: 'italic',
+                  lineHeight: '1.5'
+                }}>
+                  &ldquo;{app.justificationStatement}&rdquo;
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
+                  <button
+                    onClick={() => handleAction(app.applicationId, 'approve')}
+                    type="button"
+                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    ✓ Approve
+                  </button>
+                  <button
+                    onClick={() => handleAction(app.applicationId, 'reject')}
+                    className="dangerButton"
+                    type="button"
+                    style={{ border: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    ✕ Reject
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       {isSandboxMode && (
