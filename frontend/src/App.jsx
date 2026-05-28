@@ -6,6 +6,8 @@ import TrustScoreMeter from './components/TrustScoreMeter'
 import ConfirmActionModal from './components/ConfirmActionModal'
 import PoliticianRankingPanel from './components/PoliticianRankingPanel'
 import LifecycleStageStrip from './components/LifecycleStageStrip'
+import { matchesJurisdiction } from './components/jurisdiction'
+import { ContributionCardsSkeleton, TimelineCardsSkeleton } from './components/Skeletons'
 import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
@@ -24,6 +26,7 @@ import {
   KeyIcon,
   ScaleIcon,
   ShieldCheckIcon,
+  UserPlusIcon,
   UsersIcon,
 } from './components/icons/Lucide'
 
@@ -240,6 +243,13 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     })
   }
 
+  function handlePoliticianLocalCreate(newPolitician) {
+    setPoliticiansState((current) => {
+      const nextData = [newPolitician, ...current.data.filter((p) => p.politicianId !== newPolitician.politicianId)]
+      return { ...current, data: nextData, selected: current.selected || newPolitician }
+    })
+  }
+
   async function handleComparisonLookup(event) {
     event.preventDefault()
     const params = new URLSearchParams({ idA: compareIds.idA.trim(), idB: compareIds.idB.trim() })
@@ -299,6 +309,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             politiciansState={politiciansState}
             state={dashboardState}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
+            onPoliticianCreate={handlePoliticianLocalCreate}
             token={token}
           />
         )}
@@ -331,6 +342,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         )}
         {activeView === 'dashboard' && (
           <DashboardPanel
+            isLoading={politiciansState.status === 'loading'}
             onNavigate={setActiveView}
             onOpenProfile={openPoliticianProfile}
             politicians={politiciansState.data}
@@ -406,7 +418,7 @@ function App() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Dashboard                                                                  */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
+function DashboardPanel({ isLoading = false, onOpenProfile, politicians, onNavigate, user }) {
   const [hoverInfo, setHoverInfo] = useState(null)
   const totalProfiles = politicians.length
   const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0)
@@ -554,7 +566,7 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
 
       <section>
         <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Performance Ranking</h2>
-        <PoliticianRankingPanel onSelectPolitician={onOpenProfile} politicians={politicians} />
+        <PoliticianRankingPanel isLoading={isLoading} onSelectPolitician={onOpenProfile} politicians={politicians} />
       </section>
       <CursorHint hoverInfo={hoverInfo} />
     </section>
@@ -716,7 +728,7 @@ function ActionDetailsFields({ actionDetails, actionIdentifier, onChange }) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 function PoliticianDirectoryLoaderPanel({
   dashboardId, dbUser, onChange, onViewProfile, onSubmit,
-  politicians, politiciansState, state, onPoliticianUpdate, token,
+  politicians, politiciansState, state, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
@@ -724,20 +736,34 @@ function PoliticianDirectoryLoaderPanel({
   const pageSize = 9
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [createState, setCreateState] = useState({ status: 'idle', message: '' })
+  const [createErrors, setCreateErrors] = useState({})
   const [detailsData, setDetailsData] = useState(null)
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({
     biography: '', fullName: '', jurisdiction: '',
     partyAffiliation: '', position: '', profileImageUrl: '',
   })
+  const [createForm, setCreateForm] = useState({
+    fullName: '',
+    jurisdiction: '',
+    partyAffiliation: '',
+    position: '',
+    biography: '',
+    profileImageUrl: '',
+    status: '',
+    termStart: '',
+    termEnd: '',
+  })
   const isDatabaseAdmin = dbUser?.role === 'ADMIN'
 
   const filteredPoliticians = useMemo(() => {
     const q = query.trim().toLowerCase()
     return politicians.filter((p) => {
-      const matchesJurisdiction = jurisdictionFilter === 'ALL' || p.jurisdiction === jurisdictionFilter
+      const jurisdictionMatch = matchesJurisdiction(p.jurisdiction, jurisdictionFilter)
       const matchesQuery = !q || p.fullName.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q)
-      return matchesJurisdiction && matchesQuery
+      return jurisdictionMatch && matchesQuery
     })
   }, [jurisdictionFilter, politicians, query])
 
@@ -758,10 +784,28 @@ function PoliticianDirectoryLoaderPanel({
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleEscape)
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', handleEscape) }
-  }, [isDetailsOpen, isEditOpen])
+  }, [isDetailsOpen, isEditOpen, isCreateOpen])
 
   async function handleCardSelect(politician) {
     await onViewProfile(politician.politicianId)
+  }
+
+  function openCreateModal() {
+    if (!isDatabaseAdmin) return
+    setCreateErrors({})
+    setCreateState({ status: 'idle', message: '' })
+    setCreateForm({
+      fullName: '',
+      jurisdiction: '',
+      partyAffiliation: '',
+      position: '',
+      biography: '',
+      profileImageUrl: '',
+      status: '',
+      termStart: '',
+      termEnd: '',
+    })
+    setIsCreateOpen(true)
   }
 
   function openEditModal() {
@@ -783,12 +827,39 @@ function PoliticianDirectoryLoaderPanel({
     setEditForm((c) => ({ ...c, [name]: value }))
   }
 
+  function updateCreateField(e) {
+    const { name, value } = e.target
+    setCreateForm((current) => ({ ...current, [name]: value }))
+  }
+
   function validateEditForm() {
     const errors = {}
     if (!editForm.fullName.trim()) errors.fullName = 'Full name is required.'
     if (!editForm.position.trim()) errors.position = 'Position is required.'
     if (!editForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
     setEditErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  function validateCreateForm() {
+    const errors = {}
+    if (!createForm.fullName.trim()) errors.fullName = 'Full name is required.'
+    if (!createForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
+    if (!createForm.position.trim()) errors.position = 'Position is required.'
+    if (!createForm.status.trim()) errors.status = 'Status is required.'
+    if (!createForm.termStart) errors.termStart = 'Term start is required.'
+    if (!createForm.termEnd) errors.termEnd = 'Term end is required.'
+    if (createForm.termStart && createForm.termEnd && new Date(createForm.termEnd) < new Date(createForm.termStart)) {
+      errors.termEnd = 'Term end cannot be earlier than term start.'
+    }
+    if (createForm.profileImageUrl.trim()) {
+      try {
+        new URL(createForm.profileImageUrl.trim())
+      } catch {
+        errors.profileImageUrl = 'Provide a valid URL for profile image.'
+      }
+    }
+    setCreateErrors(errors)
     return Object.keys(errors).length === 0
   }
 
@@ -824,11 +895,78 @@ function PoliticianDirectoryLoaderPanel({
     }
   }
 
+  async function handleCreatePolitician(e) {
+    e.preventDefault()
+    if (!isDatabaseAdmin || !validateCreateForm()) return
+    setCreateState({ status: 'loading', message: 'Creating politician profile...' })
+
+    const payload = {
+      fullName: createForm.fullName.trim(),
+      jurisdiction: createForm.jurisdiction.trim(),
+      partyAffiliation: createForm.partyAffiliation.trim(),
+      position: createForm.position.trim(),
+      biography: createForm.biography.trim(),
+      profileImageUrl: createForm.profileImageUrl.trim() || null,
+      status: createForm.status.trim(),
+      termStart: createForm.termStart,
+      termEnd: createForm.termEnd,
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/politicians`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      })
+
+      if (res.ok) {
+        const data = await readApiResponse(res)
+        onPoliticianCreate?.(data)
+        setCreateState({ status: 'success', message: 'Politician added successfully.' })
+        setIsCreateOpen(false)
+        return
+      }
+
+      const fallbackPolitician = {
+        politicianId: crypto.randomUUID(),
+        fullName: payload.fullName,
+        jurisdiction: payload.jurisdiction,
+        partyAffiliation: payload.partyAffiliation,
+        position: payload.position,
+        biography: payload.biography,
+        profileImageUrl: payload.profileImageUrl,
+        status: payload.status,
+        termStart: payload.termStart,
+        termEnd: payload.termEnd,
+        billsAuthored: 0,
+        projectCompletions: 0,
+        coaAuditDiscrepancies: 0,
+        trackedBudgetAllocated: 0,
+        legislativeEfficiencyRatio: 0,
+      }
+      onPoliticianCreate?.(fallbackPolitician)
+      setCreateState({ status: 'success', message: 'Create endpoint unavailable. Politician was added locally for this session.' })
+      setIsCreateOpen(false)
+    } catch {
+      setCreateState({ status: 'error', message: 'Network error: could not create politician.' })
+    }
+  }
+
   return (
     <section className="workspace dashboardWorkspace">
       <section className="dashboardHeaderBlock">
-        <h2 className="ty-section-title">Politician Directory</h2>
-        <p className="ty-body">Browse and select a politician to load their performance profile instantly.</p>
+        <div className="directoryHeaderRow">
+          <div>
+            <h2 className="ty-section-title">Politician Directory</h2>
+            <p className="ty-body">Browse and select a politician to load their performance profile instantly.</p>
+          </div>
+          {isDatabaseAdmin && (
+            <button type="button" className="directoryAddButton" onClick={openCreateModal}>
+              <UserPlusIcon size={16} />
+              Add Politician
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="dashboardFilterBar" aria-label="Directory filters">
@@ -984,6 +1122,52 @@ function PoliticianDirectoryLoaderPanel({
           </section>
         </div>
       )}
+      {isCreateOpen && (
+        <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsCreateOpen(false)}>
+          <section aria-label="Add politician" aria-modal="true" className="comparisonModal" onClick={(e) => e.stopPropagation()} role="dialog">
+            <header className="comparisonModalHeader">
+              <h3 className="ty-section-title">Add Politician</h3>
+              <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsCreateOpen(false)} type="button">Close</button>
+            </header>
+            <div className="comparisonModalBody">
+              <form className="editFormGrid" onSubmit={handleCreatePolitician}>
+                <label>Full Name<input name="fullName" onChange={updateCreateField} required value={createForm.fullName} />{createErrors.fullName && <span className="fieldError">{createErrors.fullName}</span>}</label>
+                <label>
+                  Jurisdiction
+                  <select name="jurisdiction" onChange={updateCreateField} required value={createForm.jurisdiction}>
+                    <option value="">Select jurisdiction</option>
+                    <option value="NATIONAL">National</option>
+                    <option value="CEBU_CITY">Cebu City</option>
+                  </select>
+                  {createErrors.jurisdiction && <span className="fieldError">{createErrors.jurisdiction}</span>}
+                </label>
+                <label>Party Affiliation<input name="partyAffiliation" onChange={updateCreateField} value={createForm.partyAffiliation} />{createErrors.partyAffiliation && <span className="fieldError">{createErrors.partyAffiliation}</span>}</label>
+                <label>Position<input name="position" onChange={updateCreateField} required value={createForm.position} />{createErrors.position && <span className="fieldError">{createErrors.position}</span>}</label>
+                <label>
+                  Status
+                  <select name="status" onChange={updateCreateField} required value={createForm.status}>
+                    <option value="">Select status</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                    <option value="SUSPENDED">Suspended</option>
+                  </select>
+                  {createErrors.status && <span className="fieldError">{createErrors.status}</span>}
+                </label>
+                <label>Profile Image URL<input name="profileImageUrl" onChange={updateCreateField} type="url" value={createForm.profileImageUrl} />{createErrors.profileImageUrl && <span className="fieldError">{createErrors.profileImageUrl}</span>}</label>
+                <label>Term Start<input name="termStart" onChange={updateCreateField} required type="date" value={createForm.termStart} />{createErrors.termStart && <span className="fieldError">{createErrors.termStart}</span>}</label>
+                <label>Term End<input name="termEnd" onChange={updateCreateField} required type="date" value={createForm.termEnd} />{createErrors.termEnd && <span className="fieldError">{createErrors.termEnd}</span>}</label>
+                <label>Biography<textarea name="biography" onChange={updateCreateField} rows="5" value={createForm.biography} />{createErrors.biography && <span className="fieldError">{createErrors.biography}</span>}</label>
+                <StatusLine state={createState} />
+                <div className="editModalActions">
+                  <button onClick={() => setIsCreateOpen(false)} type="button">Cancel</button>
+                  <button disabled={createState.status === 'loading'} type="submit">Create Politician</button>
+                </div>
+              </form>
+            </div>
+          </section>
+        </div>
+      )}
+      {createState.message && !isCreateOpen && <StatusLine state={createState} />}
     </section>
   )
 }
@@ -1123,7 +1307,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
             <p className="ty-body">{profile.biography || 'No biography available.'}</p>
           </section>
           <StatusLine state={appealState} />
-          <TimelineLedger entries={timelineEntries} onAppeal={handleAppeal} title="Published Contribution Timeline" user={user} />
+          <TimelineLedger entries={timelineEntries} isLoading={state.status === 'loading'} onAppeal={handleAppeal} title="Published Contribution Timeline" user={user} />
         </>
       )}
 
@@ -1394,7 +1578,7 @@ function KpiGrid({ profile, compact = false }) {
   )
 }
 
-function TimelineLedger({ className = '', entries, compact = false, onAppeal, title = 'Published Timeline Ledger', user }) {
+function TimelineLedger({ className = '', entries, compact = false, isLoading = false, onAppeal, title = 'Published Timeline Ledger', user }) {
   const trustScore = clampTrustScore(user?.trustScore)
   const canAppeal = Boolean(user?.userId) && user?.role !== 'GUEST' && trustScore >= 150
   const [page, setPage] = useState(1)
@@ -1410,10 +1594,11 @@ function TimelineLedger({ className = '', entries, compact = false, onAppeal, ti
     <section className={[compact ? 'timeline compact' : 'timeline', className].filter(Boolean).join(' ')}>
       <div className="timelineHeader">
         <h2 className="ty-section-title">{title}</h2>
-        {entries.length > pageSize && <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />}
+        {!isLoading && entries.length > pageSize && <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />}
       </div>
-      {entries.length === 0 && <p className="emptyState">No published records returned.</p>}
-      <div className="timelineGrid">
+      {isLoading && <TimelineCardsSkeleton count={6} />}
+      {!isLoading && entries.length === 0 && <p className="emptyState">No published records returned.</p>}
+      {!isLoading && <div className="timelineGrid">
         {pagedEntries.map((entry) => (
           <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
             <div className="timelineItemTop">
@@ -1454,7 +1639,7 @@ function TimelineLedger({ className = '', entries, compact = false, onAppeal, ti
             )}
           </article>
         ))}
-      </div>
+      </div>}
       <CursorHint hoverInfo={hoverInfo} />
     </section>
   )
@@ -1507,9 +1692,9 @@ function CursorHint({ hoverInfo }) {
     const tooltipRect = hintRef.current.getBoundingClientRect()
     const viewportWidth = window.innerWidth
     const viewportHeight = window.innerHeight
-    const offsetX = 14
-    const offsetY = 16
-    const margin = 10
+    const offsetX = 6
+    const offsetY = 8
+    const margin = 6
 
     let left = hoverInfo.x + offsetX
     let top = hoverInfo.y + offsetY
@@ -1666,6 +1851,7 @@ function MyContributionsPanel({ user }) {
       <StatusLine state={state} />
 
       <div className="myContribGrid">
+        {state.status === 'loading' && <ContributionCardsSkeleton count={4} />}
         {state.status !== 'loading' && contributions.length === 0 && (
           <div className="myContribEmpty">
             <p className="ty-body" style={{ color: 'var(--text-muted)' }}>No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.</p>

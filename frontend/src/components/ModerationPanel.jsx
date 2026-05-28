@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
 import { clampTrustScore } from './trustScore';
 import LifecycleStageStrip, { getLifecycleStageIndex } from './LifecycleStageStrip';
+import { ModerationCardsSkeleton } from './Skeletons';
 import {
   AlertTriangleIcon,
   ArrowLeftIcon,
@@ -23,8 +24,11 @@ export default function ModerationPanel({ token, user }) {
   const [traceLogs, setTraceLogs] = useState([]);
   const [formByCard, setFormByCard] = useState({});
   const [queuePage, setQueuePage] = useState(1);
+  const [queueLoading, setQueueLoading] = useState(true);
+  const [escalatedLoading, setEscalatedLoading] = useState(true);
   const [showTraceMonitor, setShowTraceMonitor] = useState(true);
   const [openDrawerByCard, setOpenDrawerByCard] = useState({});
+  const [openDetailsByCard, setOpenDetailsByCard] = useState({});
   const [isArchiveOpen, setIsArchiveOpen] = useState(false);
   const [ballotArchive, setBallotArchive] = useState([]);
   const previousQueueRef = useRef([]);
@@ -73,6 +77,7 @@ export default function ModerationPanel({ token, user }) {
   }, []);
 
   async function fetchQueue() {
+    setQueueLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/moderation/pending`, {
         headers: getSandboxHeaders()
@@ -89,10 +94,13 @@ export default function ModerationPanel({ token, user }) {
     } catch (err) {
       console.error('Failed to update review queue:', err);
       setTraceLogs((prev) => [`[ERROR FETCH QUEUE] ${err.message}`, ...prev]);
+    } finally {
+      setQueueLoading(false);
     }
   }
 
   async function fetchEscalatedQueue() {
+    setEscalatedLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/moderation/escalated`, {
         headers: getSandboxHeaders()
@@ -109,6 +117,8 @@ export default function ModerationPanel({ token, user }) {
     } catch (err) {
       console.error('Failed to update admin arbitration queue:', err);
       setTraceLogs((prev) => [`[ERROR FETCH ESCALATED] ${err.message}`, ...prev]);
+    } finally {
+      setEscalatedLoading(false);
     }
   }
 
@@ -188,6 +198,21 @@ export default function ModerationPanel({ token, user }) {
 
   function getForm(queueId) {
     return formByCard[queueId] || { voteSelection: 'AGREE', voteReason: '' };
+  }
+
+  function parseActionDetails(card) {
+    if (card?.actionDetails && typeof card.actionDetails === 'object') return card.actionDetails;
+    if (!card?.actionDetailsJson) return {};
+    try {
+      return JSON.parse(card.actionDetailsJson);
+    } catch {
+      return {};
+    }
+  }
+
+  function metricValue(details, key, fallback = 'Not provided') {
+    const value = details?.[key];
+    return value === undefined || value === null || value === '' ? fallback : value;
   }
 
   function updateForm(queueId, updates) {
@@ -388,6 +413,9 @@ export default function ModerationPanel({ token, user }) {
         </div>
       </div>
 
+      {queueLoading ? (
+        <ModerationCardsSkeleton count={2} />
+      ) : (
       <div className="queue-deck">
         {queueDeck.length === 0 && (
           <div className="review-card">
@@ -397,6 +425,8 @@ export default function ModerationPanel({ token, user }) {
         {queueDeck.map((card) => {
           const form = getForm(card.queueId);
           const isDrawerOpen = openDrawerByCard[card.queueId] || false;
+          const isDetailsOpen = openDetailsByCard[card.queueId] || false;
+          const details = parseActionDetails(card);
           
           const hashCharSum = String(card.queueId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
           const agreeCount = (hashCharSum % 7) + 1;
@@ -431,8 +461,8 @@ export default function ModerationPanel({ token, user }) {
                 <div className="review-cardIdentity">
                   <span className="review-cardIcon"><UserCircleIcon size={18} /></span>
                   <div>
-                    <p className="review-cardLabel">Contributor</p>
-                    <p className="review-cardValue"><span className="anonymized-tag">Anonymized Peer</span></p>
+                    <p className="review-cardLabel">Submitted By</p>
+                    <p className="review-cardValue">{card.contributorName || 'Not provided'}</p>
                   </div>
                 </div>
                 <div className="review-cardMetaPill">Queue #{String(card.queueId).slice(0, 8)}</div>
@@ -440,12 +470,12 @@ export default function ModerationPanel({ token, user }) {
 
               <div className="review-cardFacts">
                 <div className="review-cardFact">
-                  <span className="review-cardFactLabel">Queue ID</span>
-                  <strong>{card.queueId}</strong>
+                  <span className="review-cardFactLabel">Contribution Name</span>
+                  <strong>{card.actionIdentifier || card.categoryTag || 'Not provided'}</strong>
                 </div>
                 <div className="review-cardFact">
-                  <span className="review-cardFactLabel">Target Reference</span>
-                  <strong>{card.politicianId || 'SYSTEM-MAIN-TRACK'}</strong>
+                  <span className="review-cardFactLabel">Politician</span>
+                  <strong>{card.politicianName || card.politicianId || 'Not provided'}</strong>
                 </div>
                 <div className="review-cardFact review-cardFactLink">
                   <span className="review-cardFactLabel">Source Link</span>
@@ -456,9 +486,51 @@ export default function ModerationPanel({ token, user }) {
                 </div>
               </div>
 
-              {card.impactSummary && <div className="summary-box">"{card.impactSummary}"</div>}
+              <div className="review-cardFacts">
+                <div className="review-cardFact">
+                  <span className="review-cardFactLabel">Category</span>
+                  <strong>{card.categoryTag || 'Not provided'}</strong>
+                </div>
+                <div className="review-cardFact">
+                  <span className="review-cardFactLabel">Jurisdiction</span>
+                  <strong>{card.jurisdiction || 'Not provided'}</strong>
+                </div>
+                <div className="review-cardFact">
+                  <span className="review-cardFactLabel">Submitted Date</span>
+                  <strong>{card.createdAt ? new Date(card.createdAt).toLocaleString('en-PH') : 'Not provided'}</strong>
+                </div>
+              </div>
 
-              <LifecycleStageStrip status={card.queueStatus} title="Lifecycle Stage" />
+              <div className="summary-box">"{card.impactSummary || 'Not provided'}"</div>
+
+              <LifecycleStageStrip status={card.queueStatus} title="Current Lifecycle Stage" />
+
+              <div className="detailsBlock detailsBlock--moderation">
+                <h5 className="ty-label" style={{ margin: 0 }}>Submitted Metrics</h5>
+                <div className="review-cardFacts">
+                  <div className="review-cardFact"><span className="review-cardFactLabel">Bills Authored</span><strong>{metricValue(details, 'billsAuthored')}</strong></div>
+                  <div className="review-cardFact"><span className="review-cardFactLabel">Projects Completed</span><strong>{metricValue(details, 'projectsCompleted')}</strong></div>
+                  <div className="review-cardFact"><span className="review-cardFactLabel">COA Findings</span><strong>{metricValue(details, 'coaFindings')}</strong></div>
+                  <div className="review-cardFact"><span className="review-cardFactLabel">Efficiency</span><strong>{metricValue(details, 'efficiency')}</strong></div>
+                  <div className="review-cardFact"><span className="review-cardFactLabel">Term Start</span><strong>{card.termStart || 'Not provided'}</strong></div>
+                  <div className="review-cardFact"><span className="review-cardFactLabel">Term End</span><strong>{card.termEnd || 'Not provided'}</strong></div>
+                  <div className="review-cardFact"><span className="review-cardFactLabel">Status</span><strong>{card.politicianStatus || 'Not provided'}</strong></div>
+                </div>
+                <button
+                  type="button"
+                  className="paginationButton"
+                  onClick={() => setOpenDetailsByCard((prev) => ({ ...prev, [card.queueId]: !isDetailsOpen }))}
+                  style={{ marginTop: '10px', width: 'auto', minWidth: '140px', borderRadius: '12px', padding: '0 12px' }}
+                >
+                  {isDetailsOpen ? 'Hide full details' : 'View full details'}
+                </button>
+                {isDetailsOpen && (
+                  <div className="summary-box" style={{ marginTop: '10px' }}>
+                    <p style={{ margin: 0 }}><strong>Contributor Notes:</strong> {card.impactSummary || 'Not provided'}</p>
+                    <p style={{ margin: '8px 0 0' }}><strong>Action Details:</strong> {Object.keys(details).length ? JSON.stringify(details) : 'Not provided'}</p>
+                  </div>
+                )}
+              </div>
 
               <div className="ballot-console">
                 <div className="ballot-consoleHeader">
@@ -596,6 +668,7 @@ export default function ModerationPanel({ token, user }) {
           );
         })}
       </div>
+      )}
 
       {queue.length > queuePageSize && (
         <div className="moderation-paginationRow">
@@ -733,6 +806,9 @@ export default function ModerationPanel({ token, user }) {
             </div>
           </div>
 
+          {escalatedLoading ? (
+            <ModerationCardsSkeleton count={1} />
+          ) : (
           <div className="queue-deck" style={{ marginTop: '20px' }}>
             {escalatedQueue.length === 0 && (
               <div className="review-card" style={{ background: '#ffffff', border: '1px dashed #dbe5ea', width: '100%' }}>
@@ -842,6 +918,7 @@ export default function ModerationPanel({ token, user }) {
               );
             })}
           </div>
+          )}
         </div>
       )}
     </div>

@@ -551,15 +551,53 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.appSkeleton {
+  display: block;
+  border-radius: 10px;
+  background: linear-gradient(90deg, #e8edf5 25%, #f2f6fb 50%, #e8edf5 75%);
+  background-size: 220% 100%;
+  animation: appSkeletonShimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes appSkeletonShimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+.rankingFilterBar {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rankingPagination {
+  align-self: center;
+  margin-top: 4px;
+}
+
 .rankingPanel {
   background: var(--bg-surface);
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xs);
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 10px;
   min-height: 320px;
   padding: 16px;
+}
+
+.directoryHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.directoryAddButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .rankingPanelHeader {
@@ -572,6 +610,8 @@
 .rankingPanelTable {
   display: grid;
   gap: 8px;
+  flex: 1;
+  align-content: start;
 }
 
 .rankingRow {
@@ -582,7 +622,7 @@
   cursor: pointer;
   display: grid;
   gap: 10px;
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
+  grid-template-columns: 52px minmax(0, 1fr) minmax(74px, auto) minmax(120px, auto) minmax(126px, auto);
   padding: 10px 12px;
   text-align: left;
 }
@@ -609,6 +649,8 @@
   font-family: var(--mono, monospace);
   font-size: 0.82rem;
   font-weight: 700;
+  justify-self: end;
+  text-align: right;
 }
 
 .rankingBudget {
@@ -616,6 +658,13 @@
   font-family: var(--mono, monospace);
   font-size: 0.78rem;
   font-weight: 600;
+  justify-self: end;
+  text-align: right;
+}
+
+.rankingFlags {
+  justify-self: end;
+  text-align: right;
 }
 
 .rankingFlags {
@@ -2491,6 +2540,19 @@ button:disabled {
 
   .rankingPanelWrap {
     grid-template-columns: 1fr;
+  }
+
+  .rankingFilterBar {
+    justify-content: stretch;
+  }
+
+  .rankingFilterBar label {
+    width: 100%;
+  }
+
+  .directoryHeaderRow {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .rankingRow {

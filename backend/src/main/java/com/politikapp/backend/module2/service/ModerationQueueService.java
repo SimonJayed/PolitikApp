@@ -63,10 +63,12 @@ public class ModerationQueueService {
 
         @SuppressWarnings("unchecked")
         List<Object[]> rawRows = entityManager.createNativeQuery(
-            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, pes.source_url, pes.category_tag, pes.action_identifier, " +
-            "pes.impact_summary, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at " +
+            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, p.full_name, c.full_name, pes.source_url, pes.category_tag, pes.action_identifier, " +
+            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at " +
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
+            "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
+            "LEFT JOIN public.contributors c ON c.contributor_id = pes.contributor_id " +
             "WHERE mq.queue_status IN ('PENDING', 'JURY_REVIEW') " +
             "ORDER BY mq.created_at ASC"
         ).getResultList();
@@ -80,9 +82,16 @@ public class ModerationQueueService {
             (String) row[5],
             (String) row[6],
             (String) row[7],
-            convertToBoolean(row[8]),
-            convertToInstant(row[9]),
-            convertToInstant(row[10])
+            row[8] != null ? row[8].toString() : null,
+            (String) row[9],
+            (String) row[10],
+            (String) row[11],
+            convertToLocalDate(row[12]),
+            convertToLocalDate(row[13]),
+            (String) row[14],
+            convertToBoolean(row[15]),
+            convertToInstant(row[16]),
+            convertToInstant(row[17])
         )).toList();
     }
 
@@ -95,12 +104,14 @@ public class ModerationQueueService {
 
         @SuppressWarnings("unchecked")
         List<Object[]> rawRows = entityManager.createNativeQuery(
-            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, pes.source_url, pes.category_tag, pes.action_identifier, " +
-            "pes.impact_summary, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at, " +
+            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, p.full_name, c.full_name, pes.source_url, pes.category_tag, pes.action_identifier, " +
+            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at, " +
             "(SELECT COALESCE(SUM(jv1.vote_weight), 0) FROM public.jury_votes jv1 WHERE jv1.queue_id = mq.queue_id AND jv1.vote_type = 'AGREE') as agree_sum, " +
             "(SELECT COALESCE(SUM(jv2.vote_weight), 0) FROM public.jury_votes jv2 WHERE jv2.queue_id = mq.queue_id AND jv2.vote_type = 'DISAGREE') as disagree_sum " +
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
+            "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
+            "LEFT JOIN public.contributors c ON c.contributor_id = pes.contributor_id " +
             "WHERE mq.queue_status IN ('ESCALATED', 'APPEALED_PENDING') " +
             "ORDER BY mq.created_at ASC"
         ).getResultList();
@@ -114,11 +125,18 @@ public class ModerationQueueService {
             (String) row[5],
             (String) row[6],
             (String) row[7],
-            convertToBoolean(row[8]),
-            row[11] != null ? ((Number) row[11]).longValue() : 0L,
-            row[12] != null ? ((Number) row[12]).longValue() : 0L,
-            convertToInstant(row[9]),
-            convertToInstant(row[10])
+            row[8] != null ? row[8].toString() : null,
+            (String) row[9],
+            (String) row[10],
+            (String) row[11],
+            convertToLocalDate(row[12]),
+            convertToLocalDate(row[13]),
+            (String) row[14],
+            convertToBoolean(row[15]),
+            row[18] != null ? ((Number) row[18]).longValue() : 0L,
+            row[19] != null ? ((Number) row[19]).longValue() : 0L,
+            convertToInstant(row[16]),
+            convertToInstant(row[17])
         )).toList();
     }
 
@@ -224,6 +242,20 @@ public class ModerationQueueService {
         }
         try {
             return java.time.Instant.parse(obj.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private java.time.LocalDate convertToLocalDate(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.time.LocalDate) {
+            return (java.time.LocalDate) obj;
+        } else if (obj instanceof java.sql.Date) {
+            return ((java.sql.Date) obj).toLocalDate();
+        }
+        try {
+            return java.time.LocalDate.parse(obj.toString());
         } catch (Exception e) {
             return null;
         }
