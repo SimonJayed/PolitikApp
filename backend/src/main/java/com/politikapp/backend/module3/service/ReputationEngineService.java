@@ -104,6 +104,130 @@ public class ReputationEngineService {
             } catch (Exception e) {
                 log.error("Failed to insert reputation log for peerId={} queueId={}: {}", peerId, queueId, e.getMessage());
             }
+
+            // Enforce automatic progression/demotion loop
+            evaluateAndPromoteUserRole(peerId, BigDecimal.valueOf(newScore), queueId);
+        }
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void adjustTrustScore(UUID contributorId, UUID queueId, BigDecimal scoreChange, String reason) {
+        BigDecimal previousScore = BigDecimal.valueOf(100.00);
+        try {
+            BigDecimal scoreData = (BigDecimal) entityManager.createNativeQuery(
+                "SELECT trust_score FROM public.contributors WHERE contributor_id = :peerId"
+            ).setParameter("peerId", contributorId).getSingleResult();
+
+            if (scoreData != null) {
+                previousScore = scoreData;
+            }
+        } catch (Exception e) {
+            log.warn("Could not retrieve current trust score for contributorId={}, defaulting to 100.0: {}", contributorId, e.getMessage());
+        }
+
+        BigDecimal newScore = previousScore.add(scoreChange).max(BigDecimal.ZERO).min(BigDecimal.valueOf(MAX_TRUST_SCORE));
+
+        try {
+            entityManager.createNativeQuery(
+                "UPDATE public.contributors SET trust_score = :newScore WHERE contributor_id = :peerId"
+            )
+            .setParameter("newScore", newScore)
+            .setParameter("peerId", contributorId)
+            .executeUpdate();
+        } catch (Exception e) {
+            log.error("Failed to update trust score in contributors table for contributorId={}: {}", contributorId, e.getMessage());
+        }
+
+        try {
+            entityManager.createNativeQuery(
+                "INSERT INTO public.reputation_audit_logs (log_id, peer_id, queue_id, score_change, previous_score, new_score, reason, created_at) " +
+                "VALUES (:logId, :peerId, :queueId, :scoreChange, :prevScore, :newScore, :reason, CURRENT_TIMESTAMP)"
+            )
+            .setParameter("logId", UUID.randomUUID())
+            .setParameter("peerId", contributorId)
+            .setParameter("queueId", queueId)
+            .setParameter("scoreChange", scoreChange)
+            .setParameter("prevScore", previousScore)
+            .setParameter("newScore", newScore)
+            .setParameter("reason", reason)
+            .executeUpdate();
+        } catch (Exception e) {
+            log.error("Failed to insert reputation log for contributorId={} queueId={}: {}", contributorId, queueId, e.getMessage());
+        }
+
+        // Check for automatic promotion/demotion
+        evaluateAndPromoteUserRole(contributorId, newScore, queueId);
+    }
+
+    public void evaluateAndPromoteUserRole(UUID contributorId, BigDecimal currentTrustScore, UUID queueId) {
+        BigDecimal promotionThreshold = BigDecimal.valueOf(150.00);
+        String currentRole = fetchUserRole(contributorId); 
+
+        if (currentRole == null) {
+            return;
+        }
+
+        if ("CONTRIBUTOR".equals(currentRole) && currentTrustScore.compareTo(promotionThreshold) >= 0) {
+            log.info("Trust score threshold met ({})! Automatically promoting contributor {} to PEER role.", currentTrustScore, contributorId);
+            try {
+                entityManager.createNativeQuery(
+                    "UPDATE public.contributors SET role = 'PEER' WHERE contributor_id = :contributorId"
+                )
+                .setParameter("contributorId", contributorId)
+                .executeUpdate();
+                
+                entityManager.createNativeQuery(
+                    "INSERT INTO public.reputation_audit_logs (log_id, peer_id, queue_id, score_change, previous_score, new_score, reason, created_at) " +
+                    "VALUES (:logId, :peerId, :queueId, :scoreChange, :prevScore, :newScore, :reason, CURRENT_TIMESTAMP)"
+                )
+                .setParameter("logId", UUID.randomUUID())
+                .setParameter("peerId", contributorId)
+                .setParameter("queueId", queueId)
+                .setParameter("scoreChange", BigDecimal.ZERO)
+                .setParameter("prevScore", currentTrustScore)
+                .setParameter("newScore", currentTrustScore)
+                .setParameter("reason", "Automatic promotion: Contributor role upgraded to PEER (reputation threshold of 150.00 met).")
+                .executeUpdate();
+            } catch (Exception e) {
+                log.error("Failed to execute automatic promotion native queries for user {}: {}", contributorId, e.getMessage());
+            }
+        } else if ("PEER".equals(currentRole) && currentTrustScore.compareTo(promotionThreshold) < 0) {
+            log.info("Trust score below threshold ({})! Automatically demoting peer {} to CONTRIBUTOR role.", currentTrustScore, contributorId);
+            try {
+                entityManager.createNativeQuery(
+                    "UPDATE public.contributors SET role = 'CONTRIBUTOR' WHERE contributor_id = :contributorId"
+                )
+                .setParameter("contributorId", contributorId)
+                .executeUpdate();
+                
+                entityManager.createNativeQuery(
+                    "INSERT INTO public.reputation_audit_logs (log_id, peer_id, queue_id, score_change, previous_score, new_score, reason, created_at) " +
+                    "VALUES (:logId, :peerId, :queueId, :scoreChange, :prevScore, :newScore, :reason, CURRENT_TIMESTAMP)"
+                )
+                .setParameter("logId", UUID.randomUUID())
+                .setParameter("peerId", contributorId)
+                .setParameter("queueId", queueId)
+                .setParameter("scoreChange", BigDecimal.ZERO)
+                .setParameter("prevScore", currentTrustScore)
+                .setParameter("newScore", currentTrustScore)
+                .setParameter("reason", "Automatic demotion: Peer role downgraded to CONTRIBUTOR (reputation dropped below 150.00).")
+                .executeUpdate();
+            } catch (Exception e) {
+                log.error("Failed to execute automatic demotion native queries for user {}: {}", contributorId, e.getMessage());
+            }
+        }
+    }
+
+    private String fetchUserRole(UUID contributorId) {
+        try {
+            return (String) entityManager.createNativeQuery(
+                "SELECT role FROM public.contributors WHERE contributor_id = :contributorId"
+            )
+            .setParameter("contributorId", contributorId)
+            .getSingleResult();
+        } catch (Exception e) {
+            log.warn("Failed to fetch role for user {}: {}", contributorId, e.getMessage());
+            return null;
         }
     }
 }

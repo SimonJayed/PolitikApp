@@ -397,7 +397,7 @@ function App() {
   return (
     <DeveloperSandboxProvider currentUser={user} token={token}>
       <AppInner currentUser={user} onLogout={logout} onUserUpdate={updateSession} token={token} />
-      <DeveloperOptionsPanel />
+      {/* <DeveloperOptionsPanel /> */}
     </DeveloperSandboxProvider>
   )
 }
