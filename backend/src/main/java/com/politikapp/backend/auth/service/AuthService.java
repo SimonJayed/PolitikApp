@@ -13,6 +13,7 @@ import com.politikapp.backend.common.HttpResponseException;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
+import java.math.BigDecimal;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -23,6 +24,9 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class AuthService {
+    private static final BigDecimal MIN_TRUST_SCORE = BigDecimal.ZERO;
+    private static final BigDecimal MAX_TRUST_SCORE = BigDecimal.valueOf(500.00);
+
     private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -99,6 +103,26 @@ public class AuthService {
             }
             user.setRole(targetRole);
         }
+        if (request.trustScore() != null) {
+            user.setTrustScore(clampTrustScore(request.trustScore()));
+        }
+        if (StringUtils.hasText(request.accountStatus())) {
+            String accountStatus = request.accountStatus().trim().toUpperCase(Locale.ROOT);
+            if (!"ACTIVE".equals(accountStatus) && !"LOCKED".equals(accountStatus) && !"SUSPENDED".equals(accountStatus)) {
+                throw new HttpResponseException(400, "Invalid account status: " + request.accountStatus());
+            }
+            user.setAccountStatus(accountStatus);
+        }
+        if (StringUtils.hasText(request.writingTokenStatus())) {
+            String tokenStatus = request.writingTokenStatus().trim().toUpperCase(Locale.ROOT);
+            if (!"ACTIVE".equals(tokenStatus) && !"INVALIDATED".equals(tokenStatus) && !"EXPIRED".equals(tokenStatus)) {
+                throw new HttpResponseException(400, "Invalid writing token status: " + request.writingTokenStatus());
+            }
+            user.setWritingTokenStatus(tokenStatus);
+        }
+        if (request.sandboxProfileMetrics() != null) {
+            user.setSandboxProfileMetrics(request.sandboxProfileMetrics());
+        }
         
         AuthUser saved = authUserRepository.save(user);
 
@@ -130,7 +154,15 @@ public class AuthService {
                 user.getEmail(),
                 user.getUsername(),
                 user.getRole(),
+                user.getAccountStatus(),
+                user.getWritingTokenStatus(),
+                user.getTrustScore(),
+                user.getSandboxProfileMetrics(),
                 user.getCreatedAt()
         );
+    }
+
+    private BigDecimal clampTrustScore(BigDecimal trustScore) {
+        return trustScore.max(MIN_TRUST_SCORE).min(MAX_TRUST_SCORE);
     }
 }

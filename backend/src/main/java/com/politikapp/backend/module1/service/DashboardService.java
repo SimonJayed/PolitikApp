@@ -37,7 +37,7 @@ public class DashboardService {
 
         SymmetricalKpiPayload kpis = dashboardMetricsService.buildKpiPayload(politician);
         List<TimelineEntryResponse> timeline = timelineEntryRepository
-                .findByPoliticianIdAndPublicationStatusOrderByCreatedAtDesc(politicianId, "PUBLISHED")
+                .findActiveEntries(politicianId, "PUBLISHED")
                 .stream()
                 .map(timelineMapper::toResponse)
                 .toList();

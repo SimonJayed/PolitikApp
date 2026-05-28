@@ -20,6 +20,9 @@ public class TimelineEntry {
     @Column(name = "politician_id", nullable = false)
     private UUID politicianId;
 
+    @Column(name = "submission_id")
+    private UUID submissionId;
+
     @Column(name = "category_tag", nullable = false, length = 100)
     private String categoryTag;
 
@@ -39,6 +42,9 @@ public class TimelineEntry {
     @Column(name = "publication_status", length = 50)
     private String publicationStatus = "PUBLISHED";
 
+    @Column(name = "is_hidden", nullable = false)
+    private boolean isHidden = false;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -50,6 +56,7 @@ public class TimelineEntry {
     public static TimelineEntry publishedFrom(ProfileEditSubmission submission) {
         TimelineEntry entry = new TimelineEntry();
         entry.setPoliticianId(submission.getPoliticianId());
+        entry.setSubmissionId(submission.getSubmissionId());
         entry.setCategoryTag(submission.getCategoryTag());
         entry.setActionIdentifier(submission.getActionIdentifier());
         entry.setActionDetails(submission.getActionDetails());
@@ -73,6 +80,14 @@ public class TimelineEntry {
 
     public void setPoliticianId(UUID politicianId) {
         this.politicianId = politicianId;
+    }
+
+    public UUID getSubmissionId() {
+        return submissionId;
+    }
+
+    public void setSubmissionId(UUID submissionId) {
+        this.submissionId = submissionId;
     }
 
     public String getCategoryTag() {
@@ -121,6 +136,14 @@ public class TimelineEntry {
 
     public void setPublicationStatus(String publicationStatus) {
         this.publicationStatus = publicationStatus;
+    }
+
+    public boolean getIsHidden() {
+        return isHidden;
+    }
+
+    public void setIsHidden(boolean hidden) {
+        isHidden = hidden;
     }
 
     public Instant getCreatedAt() {

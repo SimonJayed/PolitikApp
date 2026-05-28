@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DeveloperSandboxContext } from './DeveloperSandboxContext';
+import { clampTrustScore, getTrustVoteWeight } from '../components/trustScore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -43,6 +44,30 @@ const ROLE_DEFAULT_METRICS = {
   }
 };
 
+function mapRoleForSandbox(role) {
+  if (role === "PEER") {
+    return "JUDICIAL_REVIEWER";
+  }
+  if (role === "ADMINISTRATOR") {
+    return "ADMIN";
+  }
+  return role || "JUDICIAL_REVIEWER";
+}
+
+function normalizeSandboxMetrics(metrics) {
+  if (!metrics || typeof metrics !== 'object') {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(metrics).map(([key, value]) => {
+      if (typeof DEFAULT_PROFILE_METRICS[key] === 'boolean') {
+        return [key, Boolean(value)];
+      }
+      return [key, clampNumber(value)];
+    })
+  );
+}
+
 function clampNumber(value, min = 0, max = Number.POSITIVE_INFINITY) {
   const numberValue = Number(value);
   if (!Number.isFinite(numberValue)) {
@@ -55,26 +80,48 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
   const [isDevModeActive, setIsDevModeActive] = useState(false);
   const [injectedQueue, setInjectedQueue] = useState([]); 
   const [profileMetrics, setProfileMetrics] = useState(DEFAULT_PROFILE_METRICS);
+  const [manipulatedUser, setManipulatedUser] = useState({
+    name: "Pedro Penduko",
+    biography: "Verified Capstone Contributor Profile tracking municipal budget items.",
+    trustScore: 100.0,
+    status: "ACTIVE",
+    role: "JUDICIAL_REVIEWER"
+  });
+
+  function applyPersistedSandboxProfile(userProfile) {
+    if (!userProfile) return;
+    setManipulatedUser({
+      name: userProfile.fullName || userProfile.name || "Pedro Penduko",
+      biography: userProfile.biography || "Verified Capstone Contributor Profile tracking municipal budget items.",
+      trustScore: userProfile.trustScore !== undefined ? userProfile.trustScore : 100.0,
+      status: userProfile.accountStatus || userProfile.status || "ACTIVE",
+      role: mapRoleForSandbox(userProfile.role)
+    });
+
+    const savedMetrics = normalizeSandboxMetrics(userProfile.sandboxProfileMetrics);
+    if (Object.keys(savedMetrics).length > 0) {
+      setProfileMetrics((current) => ({
+        ...current,
+        ...savedMetrics,
+      }));
+    }
+  }
 
   // Sync actual user and metrics dynamically when sandbox is enabled
   useEffect(() => {
     if (isDevModeActive && currentUser) {
-      let mappedRole = currentUser.role || "JUDICIAL_REVIEWER";
-      if (mappedRole === "PEER") {
-        mappedRole = "JUDICIAL_REVIEWER";
-      } else if (mappedRole === "ADMINISTRATOR") {
-        mappedRole = "ADMIN";
+      applyPersistedSandboxProfile(currentUser);
+
+      const savedMetrics = normalizeSandboxMetrics(currentUser.sandboxProfileMetrics);
+      const hasSavedMetrics = Object.keys(savedMetrics).length > 0;
+      if (hasSavedMetrics) {
+        setProfileMetrics(current => ({
+          ...current,
+          ...savedMetrics,
+        }));
       }
 
-      setManipulatedUser({
-        name: currentUser.fullName || currentUser.name || "Pedro Penduko",
-        biography: currentUser.biography || "Verified Capstone Contributor Profile tracking municipal budget items.",
-        trustScore: currentUser.trustScore !== undefined ? currentUser.trustScore : 95.0,
-        status: currentUser.accountStatus || currentUser.status || "ACTIVE",
-        role: mappedRole
-      });
-
-      if (currentUser.userId) {
+      if (currentUser.userId && !hasSavedMetrics) {
         fetch(`${API_BASE_URL}/api/submissions/contributor/${currentUser.userId}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         })
@@ -100,42 +147,27 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
     }
   }, [isDevModeActive, currentUser, token]);
 
-  // Track changeable mock user attributes for Module 3 simulations
-  const [manipulatedUser, setManipulatedUser] = useState({
-    name: "Pedro Penduko",
-    biography: "Verified Capstone Contributor Profile tracking municipal budget items.",
-    trustScore: 95.0,
-    status: "ACTIVE",
-    role: "JUDICIAL_REVIEWER"
-  });
-
   // Sync profile metrics preset when the spoofed role changes
   useEffect(() => {
     const roleKey = manipulatedUser.role;
     if (roleKey && ROLE_DEFAULT_METRICS[roleKey]) {
       setProfileMetrics((current) => ({
-        ...current,
-        ...ROLE_DEFAULT_METRICS[roleKey]
+        ...ROLE_DEFAULT_METRICS[roleKey],
+        ...current
       }));
     }
   }, [manipulatedUser.role]);
 
   // 🧮 Compute voting weight dynamically based on SRS trust thresholds
   const getSimulatedVoteWeight = () => {
-    if (manipulatedUser.trustScore >= 90) return 5;
-    if (manipulatedUser.trustScore >= 70) return 3;
-    return 1;
+    return getTrustVoteWeight(manipulatedUser.trustScore);
   };
 
   const contributorRejectionRate = profileMetrics.contributorSubmissions > 0
     ? (profileMetrics.contributorRejected / profileMetrics.contributorSubmissions) * 100
     : 0;
 
-  const effectiveManipulatedUser = useMemo(() => (
-    contributorRejectionRate > 15
-      ? { ...manipulatedUser, status: 'SUSPENDED' }
-      : manipulatedUser
-  ), [contributorRejectionRate, manipulatedUser]);
+  const effectiveManipulatedUser = manipulatedUser;
   const voteWeight = getSimulatedVoteWeight();
 
   function updateProfileMetric(key, value) {
@@ -169,7 +201,7 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
     }));
     setManipulatedUser((current) => ({
       ...current,
-      trustScore: clampNumber((current.trustScore || 0) + 5, 0, 100),
+      trustScore: clampTrustScore((current.trustScore || 0) + 5),
     }));
   }
 
@@ -181,7 +213,7 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
     }));
     setManipulatedUser((current) => ({
       ...current,
-      trustScore: clampNumber((current.trustScore || 0) - 5, 0, 100),
+      trustScore: clampTrustScore((current.trustScore || 0) - 5),
     }));
   }
 
@@ -221,6 +253,7 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
       voteWeight,
       profileMetrics,
       setProfileMetrics,
+      applyPersistedSandboxProfile,
       updateProfileMetric,
       contributorRejectionRate,
       simulateApprovedSubmission,

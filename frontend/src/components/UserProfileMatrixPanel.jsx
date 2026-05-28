@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
+import TrustScoreMeter from './TrustScoreMeter';
+import { clampTrustScore } from './trustScore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -11,13 +13,9 @@ function formatLedgerDate(value) {
   if (!value) return '';
   try {
     return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value));
-  } catch (e) {
+  } catch {
     return String(value);
   }
-}
-
-function clampPercent(value) {
-  return Math.min(100, Math.max(0, Number(value || 0)));
 }
 
 function formatPercent(value, digits = 1) {
@@ -25,13 +23,16 @@ function formatPercent(value, digits = 1) {
 }
 
 function resolveAuditorTier(trustScore) {
-  if (trustScore >= 90) {
-    return { label: 'Elite Auditor', weight: 5, tone: 'elite' };
+  if (trustScore >= 400) {
+    return { label: 'Civic Prime Auditor', weight: 5, tone: 'elite' };
   }
-  if (trustScore >= 70) {
+  if (trustScore >= 250) {
     return { label: 'Senior Auditor', weight: 3, tone: 'senior' };
   }
-  return { label: 'Standard Auditor', weight: 1, tone: 'standard' };
+  if (trustScore >= 150) {
+    return { label: 'Trusted Auditor', weight: 2, tone: 'senior' };
+  }
+  return { label: 'Baseline Auditor', weight: 1, tone: 'standard' };
 }
 
 function roleDescriptor(role) {
@@ -116,7 +117,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
 
   const actor = isDevModeActive && manipulatedUser ? manipulatedUser : user;
   const activeRole = actor?.role || 'JUDICIAL_REVIEWER';
-  const trustScore = clampPercent(actor?.trustScore ?? 95);
+  const trustScore = clampTrustScore(actor?.trustScore ?? 100);
   const descriptor = roleDescriptor(activeRole);
   const auditorTier = resolveAuditorTier(trustScore);
   const rejectionLocked = isDevModeActive && contributorRejectionRate > 15;
@@ -143,8 +144,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
           <p className="ty-body">{actor?.name || actor?.fullName || 'Sandbox Actor'} is mapped to a live role metrics matrix.</p>
         </div>
         <div className="matrixHeroScore">
-          <span>Trust Balance</span>
-          <strong>{formatPercent(trustScore, 1)}</strong>
+          <TrustScoreMeter score={trustScore} showEligibility={activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN'} variant="compact" />
           <small>{actor?.status || 'ACTIVE'}</small>
         </div>
       </header>
@@ -413,7 +413,7 @@ function ReviewerMatrix({
       <section className="matrixCardGrid">
         <MetricCard label="Audit Tier" value={tier.label} tone={tier.tone} />
         <MetricCard label="Active Voting Weight" value={`x${tier.weight}`} tone={tier.tone} />
-        <MetricCard label="Trust Balance" value={formatPercent(trustScore, 1)} />
+        <MetricCard label="Trust Balance" value={<TrustScoreMeter score={trustScore} variant="compact" />} />
         <MetricCard label="Consensus-Aligned Ballots" value={metrics.reviewerConsensusVotes} tone="success" />
         <MetricCard label="Dissenting Ballots" value={metrics.reviewerDissentVotes} tone="danger" />
         <MetricCard label="Participation Rate" value={formatPercent(consensusRate)} />

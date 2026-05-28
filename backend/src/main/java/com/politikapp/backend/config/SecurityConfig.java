@@ -29,9 +29,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/politicians/**").authenticated()
                         .requestMatchers("/api/politicians/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/submissions").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/submissions/contributor/*").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/moderation/appeal").authenticated()
                         .requestMatchers("/api/moderation/override", "/api/moderation/escalate/trigger").hasRole("ADMIN")
                         .requestMatchers("/api/moderation/**").hasAnyRole("PEER", "ADMIN")
                         .requestMatchers("/api/submissions/**", "/users/**").authenticated()

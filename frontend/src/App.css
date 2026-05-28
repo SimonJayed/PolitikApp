@@ -880,6 +880,61 @@
   border-color: var(--accent);
 }
 
+.appealActionArea {
+  border-top: 1px dashed var(--line-soft);
+  display: inline-flex;
+  margin-top: 12px;
+  padding-top: 12px;
+  position: relative;
+}
+
+.appealRecordButton {
+  align-items: center;
+  background: var(--danger);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 800;
+  gap: 7px;
+  min-height: 34px;
+  padding: 8px 12px;
+}
+
+.appealRecordButton:disabled {
+  background: var(--bg-inset);
+  border-color: var(--line-soft);
+  color: var(--text-subtle);
+  cursor: not-allowed;
+}
+
+.appealInfoTooltip {
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.18);
+  left: 0;
+  min-width: 250px;
+  opacity: 0;
+  padding: 12px;
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  transform: translateY(-4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  visibility: hidden;
+  z-index: 20;
+}
+
+.appealActionArea:hover .appealInfoTooltip,
+.appealActionArea:focus-within .appealInfoTooltip {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+
 /* ── Editor panel ──────────────────────────────────────────────────── */
 .editorPanel {
   gap: 24px;

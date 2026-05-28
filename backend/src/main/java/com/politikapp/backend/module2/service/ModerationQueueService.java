@@ -101,7 +101,7 @@ public class ModerationQueueService {
             "(SELECT COALESCE(SUM(jv2.vote_weight), 0) FROM public.jury_votes jv2 WHERE jv2.queue_id = mq.queue_id AND jv2.vote_type = 'DISAGREE') as disagree_sum " +
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
-            "WHERE mq.queue_status = 'ESCALATED' " +
+            "WHERE mq.queue_status IN ('ESCALATED', 'APPEALED_PENDING') " +
             "ORDER BY mq.created_at ASC"
         ).getResultList();
 
@@ -171,16 +171,15 @@ public class ModerationQueueService {
     private void cascadeToTimelineNative(com.politikapp.backend.module1.entity.ProfileEditSubmission submission) {
         try {
             Long count = entityManager.createQuery(
-                "SELECT COUNT(t) FROM TimelineEntry t WHERE t.politicianId = :polId AND t.categoryTag = :cat AND t.summary = :sum", Long.class
+                "SELECT COUNT(t) FROM TimelineEntry t WHERE t.submissionId = :submissionId", Long.class
             )
-            .setParameter("polId", submission.getPoliticianId())
-            .setParameter("cat", submission.getCategoryTag())
-            .setParameter("sum", submission.getImpactSummary())
+            .setParameter("submissionId", submission.getSubmissionId())
             .getSingleResult();
 
             if (count == null || count == 0) {
                 com.politikapp.backend.module1.entity.TimelineEntry entry = new com.politikapp.backend.module1.entity.TimelineEntry();
                 entry.setPoliticianId(submission.getPoliticianId());
+                entry.setSubmissionId(submission.getSubmissionId());
                 entry.setCategoryTag(submission.getCategoryTag());
                 entry.setActionIdentifier(submission.getActionIdentifier());
                 entry.setActionDetails(submission.getActionDetails());

@@ -19,6 +19,9 @@ public class ModerationQueue {
     @Column(name = "politician_id", nullable = false)
     private UUID politicianId;
 
+    @Column(name = "appealer_id")
+    private UUID appealerId;
+
     @Column(name = "queue_status", length = 50)
     private String queueStatus = "PENDING";
 
@@ -68,6 +71,14 @@ public class ModerationQueue {
 
     public void setPoliticianId(UUID politicianId) {
         this.politicianId = politicianId;
+    }
+
+    public UUID getAppealerId() {
+        return appealerId;
+    }
+
+    public void setAppealerId(UUID appealerId) {
+        this.appealerId = appealerId;
     }
 
     public String getQueueStatus() {

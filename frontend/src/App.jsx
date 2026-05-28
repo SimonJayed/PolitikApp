@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
+import TrustScoreMeter from './components/TrustScoreMeter'
+import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
@@ -73,7 +75,7 @@ async function readApiResponse(response) {
   return body
 }
 
-function AppInner({ currentUser, onLogout, token }) {
+function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
@@ -284,6 +286,7 @@ function AppInner({ currentUser, onLogout, token }) {
         {activeView === 'directory' && (
           <PoliticianDirectoryLoaderPanel
             dashboardId={dashboardId}
+            dbUser={currentUser}
             onChange={setDashboardId}
             onViewProfile={openPoliticianProfile}
             onSubmit={handleDashboardLookup}
@@ -291,6 +294,7 @@ function AppInner({ currentUser, onLogout, token }) {
             politiciansState={politiciansState}
             state={dashboardState}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
+            token={token}
           />
         )}
         {activeView === 'submit' && (
@@ -310,9 +314,13 @@ function AppInner({ currentUser, onLogout, token }) {
             onAddContribution={openSubmitContributionForPolitician}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onReload={openPoliticianProfile}
+            onUserUpdate={onUserUpdate}
             politicianId={selectedPoliticianId}
             politicians={politiciansState.data}
             state={dashboardState}
+            dbUser={currentUser}
+            token={token}
+            user={activeUser}
           />
         )}
         {activeView === 'dashboard' && (
@@ -378,11 +386,11 @@ function AppInner({ currentUser, onLogout, token }) {
 }
 
 function App() {
-  const { isAuthenticated, logout, token, user } = useAuth()
+  const { isAuthenticated, logout, token, updateSession, user } = useAuth()
   if (!isAuthenticated) return <AuthPages />
   return (
     <DeveloperSandboxProvider currentUser={user} token={token}>
-      <AppInner currentUser={user} onLogout={logout} token={token} />
+      <AppInner currentUser={user} onLogout={logout} onUserUpdate={updateSession} token={token} />
       <DeveloperOptionsPanel />
     </DeveloperSandboxProvider>
   )
@@ -702,6 +710,9 @@ function UserAccountPage({ token, user }) {
         <h2 className="ty-section-title">{profile?.fullName}</h2>
         <p className="ty-body">{profile?.email}</p>
         <p className="ty-body">Role: {profile?.role}</p>
+        <div style={{ marginTop: '16px', maxWidth: '420px' }}>
+          <TrustScoreMeter score={profile?.trustScore} />
+        </div>
       </section>
       <form className="editorPanel" onSubmit={onSave}>
         <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
@@ -814,8 +825,8 @@ function ActionDetailsFields({ actionDetails, actionIdentifier, onChange }) {
 /*  Politician Directory                                                        */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function PoliticianDirectoryLoaderPanel({
-  dashboardId, onChange, onViewProfile, onSubmit,
-  politicians, politiciansState, state, onPoliticianUpdate,
+  dashboardId, dbUser, onChange, onViewProfile, onSubmit,
+  politicians, politiciansState, state, onPoliticianUpdate, token,
 }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
@@ -829,6 +840,7 @@ function PoliticianDirectoryLoaderPanel({
     biography: '', fullName: '', jurisdiction: '',
     partyAffiliation: '', position: '', profileImageUrl: '',
   })
+  const isDatabaseAdmin = dbUser?.role === 'ADMIN'
 
   const filteredPoliticians = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -863,7 +875,7 @@ function PoliticianDirectoryLoaderPanel({
   }
 
   function openEditModal() {
-    if (!detailsData) return
+    if (!detailsData || !isDatabaseAdmin) return
     setEditErrors({})
     setEditForm({
       biography: detailsData.biography || '',
@@ -892,7 +904,7 @@ function PoliticianDirectoryLoaderPanel({
 
   async function handleSaveEdit(e) {
     e.preventDefault()
-    if (!detailsData || !validateEditForm()) return
+    if (!detailsData || !isDatabaseAdmin || !validateEditForm()) return
     const updates = {
       politicianId: detailsData.politicianId,
       fullName: editForm.fullName.trim(),
@@ -905,7 +917,7 @@ function PoliticianDirectoryLoaderPanel({
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${detailsData.politicianId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(updates),
       })
       if (res.ok) {
@@ -917,7 +929,7 @@ function PoliticianDirectoryLoaderPanel({
         const err = await res.json().catch(() => ({}))
         alert(err.message || 'Failed to persist profile updates.')
       }
-    } catch (err) {
+    } catch {
       alert('Network error: Could not save profile updates.')
     }
   }
@@ -1042,39 +1054,43 @@ function PoliticianDirectoryLoaderPanel({
                 <p className="ty-body">{detailsData.biography || 'No biography available.'}</p>
               </section>
             </div>
-            <footer className="detailsModalFooter">
-              <button onClick={openEditModal} type="button">Edit Profile</button>
-            </footer>
+            {isDatabaseAdmin && (
+              <footer className="detailsModalFooter">
+                <button onClick={openEditModal} type="button">Edit Profile</button>
+              </footer>
+            )}
           </section>
         </div>
       )}
 
       {isEditOpen && (
-        <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section aria-label="Edit politician" aria-modal="true" className="editModal" onClick={(e) => e.stopPropagation()} role="dialog">
-            <header className="detailsModalHeader">
+        <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsEditOpen(false)}>
+          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal" onClick={(e) => e.stopPropagation()} role="dialog">
+            <header className="comparisonModalHeader">
               <h3 className="ty-section-title">Edit Politician</h3>
-              <button onClick={() => setIsEditOpen(false)} type="button">Close</button>
+              <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsEditOpen(false)} type="button">Close</button>
             </header>
-            <form className="editFormGrid" onSubmit={handleSaveEdit}>
-              <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-              <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
-              <label>
-                Jurisdiction
-                <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                  <option value="NATIONAL">NATIONAL</option>
-                  <option value="CEBU_CITY">CEBU_CITY</option>
-                </select>
-                {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
-              </label>
-              <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
-              <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
-              <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
-              <div className="editModalActions">
-                <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
-                <button type="submit">Save Update</button>
-              </div>
-            </form>
+            <div className="comparisonModalBody">
+              <form className="editFormGrid" onSubmit={handleSaveEdit}>
+                <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
+                <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
+                <label>
+                  Jurisdiction
+                  <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
+                    <option value="NATIONAL">NATIONAL</option>
+                    <option value="CEBU_CITY">CEBU_CITY</option>
+                  </select>
+                  {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
+                </label>
+                <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
+                <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
+                <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
+                <div className="editModalActions">
+                  <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
+                  <button type="submit">Save Update</button>
+                </div>
+              </form>
+            </div>
           </section>
         </div>
       )}
@@ -1085,16 +1101,32 @@ function PoliticianDirectoryLoaderPanel({
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload, politicianId, politicians, state }) {
+function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, onReload, onUserUpdate, politicianId, politicians, state, token, user }) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({ biography: '', fullName: '', jurisdiction: '', partyAffiliation: '', position: '', profileImageUrl: '' })
+  const isDatabaseAdmin = dbUser?.role === 'ADMIN'
+
+  useEffect(() => {
+    if (!isEditOpen) return undefined
+    function handleEscape(e) {
+      if (e.key === 'Escape') setIsEditOpen(false)
+    }
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleEscape)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isEditOpen])
 
   function openEditModal() {
-    if (!profile) return
+    if (!profile || !isDatabaseAdmin) return
     setEditErrors({})
     setEditForm({
       biography: profile.biography || '', fullName: profile.fullName || '',
@@ -1117,7 +1149,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
 
   async function handleSaveEdit(e) {
     e.preventDefault()
-    if (!profile || !validateEditForm()) return
+    if (!profile || !isDatabaseAdmin || !validateEditForm()) return
     const updates = {
       politicianId: profile.politicianId,
       fullName: editForm.fullName.trim(),
@@ -1130,7 +1162,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${profile.politicianId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(updates),
       })
       if (!res.ok) { const err = await res.json().catch(() => ({})); alert(err.message || 'Failed to save updates.'); return }
@@ -1138,7 +1170,35 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
       onPoliticianUpdate(profile.politicianId, savedData)
       setIsEditOpen(false)
       await onReload(profile.politicianId)
-    } catch (err) { alert('Network error: Could not save updates.') }
+    } catch { alert('Network error: Could not save updates.') }
+  }
+
+  async function handleAppeal(entry) {
+    if (!entry?.submissionId) {
+      setAppealState({ status: 'error', message: 'This timeline record cannot be appealed because it is missing source submission linkage.' })
+      return
+    }
+
+    const confirmed = window.confirm(
+      'File a post-publish appeal for this record?\n\nThis immediately deducts 10.00 trust points. If the appeal fails, an additional 20.00 points will be deducted.'
+    )
+    if (!confirmed) return
+
+    setAppealState({ status: 'loading', message: 'Filing appeal and routing record to admin adjudication...' })
+    try {
+      const data = await fetch(`${API_BASE_URL}/api/moderation/appeal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ submissionId: entry.submissionId }),
+      }).then(readApiResponse)
+
+      if (onUserUpdate) {
+        onUserUpdate({ trustScore: data.trustScore })
+      }
+      setAppealState({ status: 'success', message: data.message || 'Appeal filed.' })
+    } catch (error) {
+      setAppealState({ status: 'error', message: error.message })
+    }
   }
 
   if (!politicianId) {
@@ -1159,7 +1219,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
             <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={openEditModal} type="button">Edit Profile</button>
+            {isDatabaseAdmin && <button onClick={openEditModal} type="button">Edit Profile</button>}
             <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
           </div>
           <KpiGrid profile={profile} />
@@ -1167,36 +1227,39 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
             <h2 className="ty-section-title">Biography</h2>
             <p className="ty-body">{profile.biography || 'No biography available.'}</p>
           </section>
-          <TimelineLedger entries={timelineEntries} title="Published Contribution Timeline" />
+          <StatusLine state={appealState} />
+          <TimelineLedger entries={timelineEntries} onAppeal={handleAppeal} title="Published Contribution Timeline" user={user} />
         </>
       )}
 
       {isEditOpen && (
-        <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section aria-label="Edit politician" aria-modal="true" className="editModal" onClick={(e) => e.stopPropagation()} role="dialog">
-            <header className="detailsModalHeader">
+        <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsEditOpen(false)}>
+          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal" onClick={(e) => e.stopPropagation()} role="dialog">
+            <header className="comparisonModalHeader">
               <h3 className="ty-section-title">Edit Politician</h3>
-              <button onClick={() => setIsEditOpen(false)} type="button">Close</button>
+              <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsEditOpen(false)} type="button">Close</button>
             </header>
-            <form className="editFormGrid" onSubmit={handleSaveEdit}>
-              <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-              <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
-              <label>
-                Jurisdiction
-                <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                  <option value="NATIONAL">NATIONAL</option>
-                  <option value="CEBU_CITY">CEBU_CITY</option>
-                </select>
-                {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
-              </label>
-              <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
-              <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
-              <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
-              <div className="editModalActions">
-                <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
-                <button type="submit">Save Update</button>
-              </div>
-            </form>
+            <div className="comparisonModalBody">
+              <form className="editFormGrid" onSubmit={handleSaveEdit}>
+                <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
+                <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
+                <label>
+                  Jurisdiction
+                  <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
+                    <option value="NATIONAL">NATIONAL</option>
+                    <option value="CEBU_CITY">CEBU_CITY</option>
+                  </select>
+                  {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
+                </label>
+                <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
+                <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
+                <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
+                <div className="editModalActions">
+                  <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
+                  <button type="submit">Save Update</button>
+                </div>
+              </form>
+            </div>
           </section>
         </div>
       )}
@@ -1422,7 +1485,10 @@ function KpiGrid({ profile, compact = false }) {
   )
 }
 
-function TimelineLedger({ className = '', entries, compact = false, title = 'Published Timeline Ledger' }) {
+function TimelineLedger({ className = '', entries, compact = false, onAppeal, title = 'Published Timeline Ledger', user }) {
+  const trustScore = clampTrustScore(user?.trustScore)
+  const canAppeal = Boolean(user?.userId) && user?.role !== 'GUEST' && trustScore >= 150
+
   return (
     <section className={[compact ? 'timeline compact' : 'timeline', className].filter(Boolean).join(' ')}>
       <h2 className="ty-section-title">{title}</h2>
@@ -1449,6 +1515,35 @@ function TimelineLedger({ className = '', entries, compact = false, title = 'Pub
               View Source <ExternalLinkIcon size={14} />
             </span>
           </a>
+          {onAppeal && (
+            <div className="appealActionArea">
+              <button
+                className="appealRecordButton"
+                disabled={!canAppeal || !entry.submissionId}
+                onClick={() => onAppeal(entry)}
+                title={
+                  !entry.submissionId
+                    ? 'This legacy record is missing submission linkage.'
+                    : !canAppeal
+                      ? 'Appeals require an authenticated user with at least 150.00 trust points.'
+                      : 'File a high-stakes post-publish appeal.'
+                }
+                type="button"
+              >
+                <ScaleIcon size={15} />
+                Appeal this Record
+              </button>
+              <div className="appealInfoTooltip" role="tooltip">
+                {entry.submissionId ? (
+                  <TrustScoreMeter score={trustScore} variant="inline" />
+                ) : (
+                  <p className="ty-meta" style={{ color: 'var(--danger)', margin: 0 }}>
+                    Record cannot be appealed: missing submission linkage.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </article>
       ))}
     </section>

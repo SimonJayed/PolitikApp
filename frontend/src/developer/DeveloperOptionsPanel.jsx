@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useDeveloperSandbox } from './DeveloperSandboxContext';
 import { useAuth } from '../auth/AuthContext';
+import TrustScoreMeter from '../components/TrustScoreMeter';
+import { clampTrustScore } from '../components/trustScore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -14,6 +16,7 @@ export default function DeveloperOptionsPanel() {
     clearInjectedQueue,
     voteWeight,
     profileMetrics,
+    applyPersistedSandboxProfile,
     updateProfileMetric
   } = useDeveloperSandbox();
   
@@ -31,15 +34,22 @@ export default function DeveloperOptionsPanel() {
         },
         body: JSON.stringify({
           fullName: manipulatedUser.name,
-          role: manipulatedUser.role
+          role: manipulatedUser.role,
+          trustScore: clampTrustScore(manipulatedUser.trustScore),
+          accountStatus: manipulatedUser.status,
+          sandboxProfileMetrics: profileMetrics
         })
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to update permanent role.');
+        throw new Error(data.message || 'Failed to update sandbox profile.');
+      }
+      if (!data.user?.accountStatus || !data.user?.sandboxProfileMetrics || Object.keys(data.user.sandboxProfileMetrics).length === 0) {
+        throw new Error('Backend did not persist sandbox fields yet. Restart the backend so migration V10 and the updated /users/me API are active.');
       }
       updateSession(data);
-      setSaveStatus({ status: 'success', message: 'Role saved permanently!' });
+      applyPersistedSandboxProfile(data.user);
+      setSaveStatus({ status: 'success', message: 'Sandbox profile saved permanently!' });
       setTimeout(() => setSaveStatus({ status: 'idle', message: '' }), 4000);
     } catch (err) {
       setSaveStatus({ status: 'error', message: err.message });
@@ -158,11 +168,12 @@ export default function DeveloperOptionsPanel() {
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
-              <label>Trust Balance Score: <strong style={{ color: '#34d399' }}>{manipulatedUser.trustScore}%</strong></label>
+              <label>Trust Score: <strong style={{ color: '#34d399' }}>{Math.round(clampTrustScore(manipulatedUser.trustScore))} / 500</strong></label>
               <span>Vote Weight: <strong style={{ color: '#38bdf8' }}>x{voteWeight}</strong></span>
             </div>
+            <TrustScoreMeter score={manipulatedUser.trustScore} theme="dark" variant="inline" />
             <input 
-              type="range" min="0" max="100" value={manipulatedUser.trustScore} 
+              type="range" min="0" max="500" value={manipulatedUser.trustScore} 
               onChange={(e) => setManipulatedUser({ ...manipulatedUser, trustScore: parseFloat(e.target.value) })}
               style={{ width: '100%', cursor: 'pointer' }}
             />

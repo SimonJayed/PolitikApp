@@ -46,9 +46,9 @@ public class ComparisonService {
                 .orElseThrow(() -> missingProfileException());
 
         List<TimelineEntry> streamA = timelineEntryRepository
-                .findByPoliticianIdAndPublicationStatusOrderByCreatedAtDesc(idA, "PUBLISHED");
+                .findActiveEntries(idA, "PUBLISHED");
         List<TimelineEntry> streamB = timelineEntryRepository
-                .findByPoliticianIdAndPublicationStatusOrderByCreatedAtDesc(idB, "PUBLISHED");
+                .findActiveEntries(idB, "PUBLISHED");
 
         return new ComparisonMatrixResponse(
                 mapToSymmetricalKpiPayload(politicianA),

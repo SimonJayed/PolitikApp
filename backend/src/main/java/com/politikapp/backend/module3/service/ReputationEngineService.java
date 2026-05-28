@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ReputationEngineService {
     private static final Logger log = LoggerFactory.getLogger(ReputationEngineService.class);
+    private static final double MAX_TRUST_SCORE = 500.0;
 
     private final JuryVoteTrustRecordRepository voteRepository;
 
@@ -60,8 +61,8 @@ public class ReputationEngineService {
 
             double scoreChange = isAligned ? 5.00 : -5.00;
             double newScore = previousScore + scoreChange;
-            if (newScore > 100.0) {
-                newScore = 100.0;
+            if (newScore > MAX_TRUST_SCORE) {
+                newScore = MAX_TRUST_SCORE;
             }
             if (newScore < 0.0) {
                 newScore = 0.0;

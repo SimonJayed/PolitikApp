@@ -20,12 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.lang.NonNull;
 
 @Service
 public class VoteService {
     private static final Logger log = LoggerFactory.getLogger(VoteService.class);
+    private static final BigDecimal APPEAL_WIN_REWARD = BigDecimal.valueOf(25.00);
+    private static final BigDecimal APPEAL_LOSS_PENALTY = BigDecimal.valueOf(-20.00);
+    private static final BigDecimal FAULTY_AGREE_JUROR_PENALTY = BigDecimal.valueOf(-10.00);
+    private static final BigDecimal MAX_TRUST_SCORE = BigDecimal.valueOf(500.00);
 
     private final ModerationQueueRepository moderationQueueRepository;
     private final JuryVoteRepository juryVoteRepository;
@@ -99,7 +104,7 @@ public class VoteService {
         }
 
         // 3. Scale vote weight based on trust score (accelerated weight threshold >= 90)
-        int derivedWeight = (trustScore >= 90.0) ? 5 : 1;
+        int derivedWeight = deriveVoteWeight(trustScore);
 
         // 4. Save JuryVote ballot
         JuryVote vote = new JuryVote(
@@ -248,25 +253,30 @@ public class VoteService {
 
         String finalOutcomeStatus = normalizedAction;
         String databaseActionTaken = "ADMIN_OVERRIDE_" + normalizedAction;
+        boolean isAppealResolution = "APPEALED_PENDING".equals(queueRow.getQueueStatus());
 
         queueRow.setQueueStatus(normalizedAction);
         queueRow.setEscalationFlag(true); // Ensure flag remains marked for override tracing
         submission.setStatus(normalizedAction);
 
-        if ("PUBLISHED".equals(normalizedAction)) {
+        if (isAppealResolution) {
+            databaseActionTaken = resolveAppeal(queueRow, normalizedAction, submission.getSubmissionId());
+        } else if ("PUBLISHED".equals(normalizedAction)) {
             cascadeToTimeline(submission);
         }
 
         moderationQueueRepository.save(queueRow);
         entityManager.merge(submission);
 
-        // Publish dynamic consensus event to decouple Module 3 reputation updates
-        eventPublisher.publishEvent(new ConsensusReachedEvent(
-            queueId,
-            submission.getSubmissionId(),
-            submission.getContributorId(),
-            normalizedAction
-        ));
+        if (!isAppealResolution) {
+            // Publish dynamic consensus event to decouple Module 3 reputation updates.
+            eventPublisher.publishEvent(new ConsensusReachedEvent(
+                queueId,
+                submission.getSubmissionId(),
+                submission.getContributorId(),
+                normalizedAction
+            ));
+        }
 
         // Fetch current sums for tracing details
         long agreeSum = fetchWeightedVoteSum(queueId, "AGREE");
@@ -287,5 +297,92 @@ public class VoteService {
             databaseActionTaken,
             Instant.now().toString()
         );
+    }
+
+    private String resolveAppeal(ModerationQueue queue, String normalizedAction, UUID submissionId) {
+        UUID appealerId = queue.getAppealerId();
+        if (appealerId == null) {
+            throw new HttpResponseException(500, "Appeal resolution failed: missing appealer mapping.");
+        }
+
+        if ("REJECTED".equals(normalizedAction)) {
+            timelineEntryRepository.softDeleteBySubmissionId(submissionId);
+            adjustTrustScore(
+                    appealerId,
+                    queue.getQueueId(),
+                    APPEAL_WIN_REWARD,
+                    "Appeal sustained: deposit refunded and civic accuracy bonus awarded for submission " + submissionId
+            );
+
+            List<UUID> faultyJurorIds = juryVoteRepository.findByQueueIdAndVoteType(queue.getQueueId(), "AGREE")
+                    .stream()
+                    .map(JuryVote::getPeerId)
+                    .distinct()
+                    .toList();
+            for (UUID jurorId : faultyJurorIds) {
+                adjustTrustScore(
+                        jurorId,
+                        queue.getQueueId(),
+                        FAULTY_AGREE_JUROR_PENALTY,
+                        "Appeal sustained: prior AGREE vote supported a record later rejected by admin"
+                );
+            }
+            return "APPEAL_SUSTAINED_SOFT_DELETED";
+        }
+
+        adjustTrustScore(
+                appealerId,
+                queue.getQueueId(),
+                APPEAL_LOSS_PENALTY,
+                "Appeal denied: published record retained after admin adjudication for submission " + submissionId
+        );
+        return "APPEAL_DENIED_RECORD_RETAINED";
+    }
+
+    private void adjustTrustScore(UUID peerId, UUID queueId, BigDecimal scoreChange, String reason) {
+        BigDecimal previousScore = fetchTrustScore(peerId);
+        BigDecimal newScore = previousScore.add(scoreChange).max(BigDecimal.ZERO).min(MAX_TRUST_SCORE);
+
+        entityManager.createNativeQuery(
+                "UPDATE public.contributors SET trust_score = :newScore WHERE contributor_id = :peerId"
+        )
+        .setParameter("newScore", newScore)
+        .setParameter("peerId", peerId)
+        .executeUpdate();
+
+        entityManager.createNativeQuery(
+                "INSERT INTO public.reputation_audit_logs (log_id, peer_id, queue_id, score_change, previous_score, new_score, reason, created_at) " +
+                "VALUES (:logId, :peerId, :queueId, :scoreChange, :previousScore, :newScore, :reason, CURRENT_TIMESTAMP)"
+        )
+        .setParameter("logId", UUID.randomUUID())
+        .setParameter("peerId", peerId)
+        .setParameter("queueId", queueId)
+        .setParameter("scoreChange", scoreChange)
+        .setParameter("previousScore", previousScore)
+        .setParameter("newScore", newScore)
+        .setParameter("reason", reason)
+        .executeUpdate();
+    }
+
+    private BigDecimal fetchTrustScore(UUID peerId) {
+        Object score = entityManager.createNativeQuery(
+                "SELECT trust_score FROM public.contributors WHERE contributor_id = :peerId"
+        )
+        .setParameter("peerId", peerId)
+        .getSingleResult();
+        return score instanceof BigDecimal decimal ? decimal : BigDecimal.valueOf(100.00);
+    }
+
+    private int deriveVoteWeight(double trustScore) {
+        if (trustScore >= 400.0) {
+            return 5;
+        }
+        if (trustScore >= 250.0) {
+            return 3;
+        }
+        if (trustScore >= 150.0) {
+            return 2;
+        }
+        return 1;
     }
 }

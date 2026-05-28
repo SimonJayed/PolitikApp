@@ -3,7 +3,9 @@ package com.politikapp.backend.auth.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 
 public class AuthDtos {
@@ -23,7 +25,11 @@ public class AuthDtos {
     public record UpdateMeRequest(
             @Size(max = 150) String fullName,
             @Size(max = 80) String username,
-            @Size(max = 50) String role
+            @Size(max = 50) String role,
+            BigDecimal trustScore,
+            @Size(max = 50) String accountStatus,
+            @Size(max = 50) String writingTokenStatus,
+            Map<String, Object> sandboxProfileMetrics
     ) {}
 
     public record UserResponse(
@@ -32,6 +38,10 @@ public class AuthDtos {
             String email,
             String username,
             String role,
+            String accountStatus,
+            String writingTokenStatus,
+            BigDecimal trustScore,
+            Map<String, Object> sandboxProfileMetrics,
             Instant createdAt
     ) {}
 

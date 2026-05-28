@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
+import { clampTrustScore } from './trustScore';
 import {
   AlertTriangleIcon,
   ArrowLeftIcon,
@@ -24,6 +25,7 @@ function stageIndexFor(queueStatus) {
     case 'JURY_REVIEW':
       return 1;
     case 'ESCALATED':
+    case 'APPEALED_PENDING':
     case 'REVISION_REQUIRED':
       return 2;
     case 'REJECTED':
@@ -74,6 +76,7 @@ export default function ModerationPanel({ token, user }) {
   };
 
   const isReadOnlyMode = isDevModeActive && manipulatedUser && manipulatedUser.role === 'CONTRIBUTOR';
+  const isAdminMode = (isDevModeActive && manipulatedUser?.role === 'ADMIN') || (!isDevModeActive && user?.role === 'ADMIN');
 
   const [escalatedQueue, setEscalatedQueue] = useState([]);
   const queuePageSize = 2;
@@ -354,8 +357,8 @@ export default function ModerationPanel({ token, user }) {
           const quorumTarget = (hashCharSum % 4) + 4;
           const currentConsensus = totalVotes > 0 ? (agreeCount / totalVotes) * 100 : 0;
           
-          const currentTrust = manipulatedUser?.trustScore !== undefined ? manipulatedUser.trustScore : 95;
-          const trustIfPublished = Math.min(100, currentTrust + 3.5).toFixed(2);
+          const currentTrust = clampTrustScore(manipulatedUser?.trustScore ?? 100);
+          const trustIfPublished = Math.min(500, currentTrust + 3.5).toFixed(2);
           const trustIfRejected = Math.max(0, currentTrust - 12.0).toFixed(2);
 
           return (
@@ -539,11 +542,11 @@ export default function ModerationPanel({ token, user }) {
                         <span style={{ color: '#a5b4fc', fontSize: '9px', fontWeight: 'bold' }}>USER REPUTATION IMPACT PREDICTOR</span>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Published</span>
-                          <strong style={{ color: '#22c55e' }}>{currentTrust}% ➔ {trustIfPublished}%</strong>
+                          <strong style={{ color: '#22c55e' }}>{currentTrust} -&gt; {trustIfPublished}</strong>
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                           <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Rejected</span>
-                          <strong style={{ color: '#ef4444' }}>{currentTrust}% ➔ {trustIfRejected}%</strong>
+                          <strong style={{ color: '#ef4444' }}>{currentTrust} -&gt; {trustIfRejected}</strong>
                         </div>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155', color: '#fca5a5' }}>
@@ -618,7 +621,7 @@ export default function ModerationPanel({ token, user }) {
         </div>
       )}
 
-      {isDevModeActive && manipulatedUser && manipulatedUser.role === 'ADMIN' && (
+      {isAdminMode && (
         <div style={{ marginTop: '40px', paddingTop: '30px', borderTop: '2px dashed var(--line-strong)' }}>
           <div className="mod-header mod-header--admin">
             <div className="mod-header-copy">
@@ -646,6 +649,24 @@ export default function ModerationPanel({ token, user }) {
               return (
                 <div className="review-card" key={card.queueId} style={{ borderLeft: '4px solid var(--ph-gold)', width: '100%', boxSizing: 'border-box' }}>
                   <p><strong>Contributor:</strong> <span className="anonymized-tag">Anonymized Peer</span></p>
+                  {card.queueStatus === 'APPEALED_PENDING' && (
+                    <p style={{ margin: '0 0 10px' }}>
+                      <span style={{
+                        background: '#fee2e2',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '999px',
+                        color: '#991b1b',
+                        display: 'inline-flex',
+                        fontFamily: 'var(--mono, monospace)',
+                        fontSize: '11px',
+                        fontWeight: 800,
+                        letterSpacing: '0.04em',
+                        padding: '5px 10px',
+                      }}>
+                        APPEALED PENDING
+                      </span>
+                    </p>
+                  )}
                   <p><strong>Queue ID:</strong> {card.queueId}</p>
                   <p><strong>Target Reference:</strong> {card.politicianId || 'SYSTEM-MAIN-TRACK'}</p>
                   <p>
@@ -678,7 +699,7 @@ export default function ModerationPanel({ token, user }) {
                         ))}
                       </div>
                       <p className="ty-meta" style={{ margin: 0, color: 'var(--ph-gold)' }}>
-                        Current status: <strong>{card.queueStatus}</strong> (Escalated to Administrator override)
+                        Current status: <strong>{card.queueStatus}</strong> ({card.queueStatus === 'APPEALED_PENDING' ? 'Post-publish appeal awaiting administrator adjudication' : 'Escalated to Administrator override'})
                       </p>
                     </div>
                   </div>
