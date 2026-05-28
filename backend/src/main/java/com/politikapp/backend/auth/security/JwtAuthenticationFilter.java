@@ -17,9 +17,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
+    private final com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository;
 
-    public JwtAuthenticationFilter(JwtService jwtService) {
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository
+    ) {
         this.jwtService = jwtService;
+        this.authUserRepository = authUserRepository;
     }
 
     @Override
@@ -33,6 +38,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
             try {
                 Claims claims = jwtService.parseToken(token);
+                UUID userId = UUID.fromString(claims.get("uid", String.class));
+
+                // Real-time JWT invalidation / lockout check
+                com.politikapp.backend.auth.entity.AuthUser user = authUserRepository.findById(userId).orElse(null);
+                if (user == null || "LOCKED".equals(user.getAccountStatus()) || "INVALIDATED".equals(user.getWritingTokenStatus())) {
+                    jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
+                    res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                    res.setContentType("application/json");
+                    res.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Token has been invalidated or user account is locked.\"}");
+                    return; // Halt filter execution path cleanly
+                }
+
                 String role = claims.get("role", String.class);
                 String sandboxRoleOverride = request.getHeader("X-Sandbox-Role-Override");
                 if (org.springframework.util.StringUtils.hasText(sandboxRoleOverride)) {
@@ -46,7 +63,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 AuthPrincipal principal = new AuthPrincipal(
-                        UUID.fromString(claims.get("uid", String.class)),
+                        userId,
                         claims.getSubject(),
                         role
                 );

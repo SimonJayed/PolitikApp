@@ -71,6 +71,29 @@ public class VoteService {
             throw new HttpResponseException(422, "Unprocessable Entity: Target record is not available for moderation.");
         }
 
+        // Fetch the corresponding ProfileEditSubmission to check self-voting
+        ProfileEditSubmission submission = entityManager.find(ProfileEditSubmission.class, queueRow.getSubmissionId());
+        if (submission == null) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR,
+                "Internal Server Error: Associated profile submission not found."
+            );
+        }
+        if (peerId.equals(submission.getContributorId())) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.FORBIDDEN, 
+                "Forbidden: Reviewers are restricted from casting ballots on their own submissions."
+            );
+        }
+
+        // Check duplicate voting
+        if (juryVoteRepository.existsByQueueIdAndPeerId(queueId, peerId)) {
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.CONFLICT, 
+                "Conflict: Reviewer has already cast a ballot for this queue item."
+            );
+        }
+
         // 2. Fetch the peer's details dynamically from the contributors database table
         double trustScore = 100.0;
         String peerName = "Anonymous Peer";
@@ -103,8 +126,8 @@ public class VoteService {
             throw new HttpResponseException(403, "Forbidden: Reviewer profile could not be validated.");
         }
 
-        // 3. Scale vote weight based on trust score (accelerated weight threshold >= 90)
-        int derivedWeight = deriveVoteWeight(trustScore);
+        // 3. Scale vote weight dynamically based on historical consensus alignment precision
+        int derivedWeight = deriveVoteWeight(peerId);
 
         // 4. Save JuryVote ballot
         JuryVote vote = new JuryVote(
@@ -373,15 +396,32 @@ public class VoteService {
         return score instanceof BigDecimal decimal ? decimal : BigDecimal.valueOf(100.00);
     }
 
-    private int deriveVoteWeight(double trustScore) {
-        if (trustScore >= 400.0) {
-            return 5;
+    private int deriveVoteWeight(UUID peerId) {
+        long totalValidationBallotsCast = 0;
+        long totalConsensusAlignedVotes = 0;
+        try {
+            Object[] stats = (Object[]) entityManager.createNativeQuery(
+                "SELECT count(*), " +
+                "coalesce(sum(case when (j.vote_type = 'AGREE' and mq.queue_status = 'PUBLISHED') " +
+                "or (j.vote_type = 'DISAGREE' and mq.queue_status = 'REJECTED') then 1 else 0 end), 0) " +
+                "FROM public.jury_votes j " +
+                "JOIN public.moderation_queue mq ON j.queue_id = mq.queue_id " +
+                "WHERE j.peer_id = :peerId AND mq.queue_status IN ('PUBLISHED', 'REJECTED')"
+            ).setParameter("peerId", peerId).getSingleResult();
+
+            if (stats != null && stats.length > 0) {
+                totalValidationBallotsCast = ((Number) stats[0]).longValue();
+                totalConsensusAlignedVotes = ((Number) stats[1]).longValue();
+            }
+        } catch (Exception e) {
+            log.warn("Could not calculate dynamic voting weight for peerId={}, default weight of 1 will be used: {}", peerId, e.getMessage());
         }
-        if (trustScore >= 250.0) {
-            return 3;
-        }
-        if (trustScore >= 150.0) {
-            return 2;
+
+        if (totalValidationBallotsCast > 0) {
+            double precisionRatingCoefficient = ((double) totalConsensusAlignedVotes / totalValidationBallotsCast) * 100.0;
+            if (precisionRatingCoefficient >= 90.0) {
+                return 5;
+            }
         }
         return 1;
     }

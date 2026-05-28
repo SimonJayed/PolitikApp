@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface JuryVoteRepository extends JpaRepository<JuryVote, UUID> {
     List<JuryVote> findByQueueIdAndVoteType(UUID queueId, String voteType);
+    boolean existsByQueueIdAndPeerId(UUID queueId, UUID peerId);
 }
