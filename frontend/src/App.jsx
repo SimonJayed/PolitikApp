@@ -104,6 +104,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
+  const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -264,20 +265,22 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     }
   }
 
+  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isDirectoryModalOpen
+
   return (
     <main className="appShell">
       <TopNav
         activeView={activeView}
         isCompareModalOpen={isCompareModalOpen}
-        isModalOpen={isCompareModalOpen || isAppealModalOpen}
+        isModalOpen={isAnyModalOpen}
         onLogout={onLogout}
         onSelectView={setActiveView}
         title="PolitikApp"
         user={activeUser}
       />
 
-      <section className={isCompareModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'}>
-        {!isCompareModalOpen && (
+      <section className={isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'}>
+        {!isAnyModalOpen && (
           <header className="topBar">
               <div className="flex items-center gap-3">
                 {showHeaderTitles && (
@@ -310,6 +313,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             state={dashboardState}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onPoliticianCreate={handlePoliticianLocalCreate}
+            onModalOpenChange={setIsDirectoryModalOpen}
             token={token}
           />
         )}
@@ -360,7 +364,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             state={comparisonState}
           />
         )}
-        {activeView === 'contributions' && <MyContributionsPanel user={activeUser} />}
+        {activeView === 'contributions' && <MyContributionsPanel onNavigateToSubmit={() => setActiveView('submit')} user={activeUser} />}
         {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={activeUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
@@ -728,7 +732,7 @@ function ActionDetailsFields({ actionDetails, actionIdentifier, onChange }) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 function PoliticianDirectoryLoaderPanel({
   dashboardId, dbUser, onChange, onViewProfile, onSubmit,
-  politicians, politiciansState, state, onPoliticianUpdate, onPoliticianCreate, token,
+  politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
@@ -776,15 +780,20 @@ function PoliticianDirectoryLoaderPanel({
   const pagedPoliticians = filteredPoliticians.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   useEffect(() => {
-    if (!isDetailsOpen && !isEditOpen) return undefined
+    if (!isDetailsOpen && !isEditOpen && !isCreateOpen) return undefined
     function handleEscape(e) {
-      if (e.key === 'Escape') { setIsEditOpen(false); setIsDetailsOpen(false) }
+      if (e.key === 'Escape') { setIsCreateOpen(false); setIsEditOpen(false); setIsDetailsOpen(false) }
     }
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleEscape)
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', handleEscape) }
   }, [isDetailsOpen, isEditOpen, isCreateOpen])
+
+  useEffect(() => {
+    onModalOpenChange?.(isDetailsOpen || isEditOpen || isCreateOpen)
+    return () => onModalOpenChange?.(false)
+  }, [isDetailsOpen, isEditOpen, isCreateOpen, onModalOpenChange])
 
   async function handleCardSelect(politician) {
     await onViewProfile(politician.politicianId)
@@ -1603,7 +1612,10 @@ function TimelineLedger({ className = '', entries, compact = false, isLoading = 
           <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
             <div className="timelineItemTop">
               <strong>{entry.actionIdentifier}</strong>
-              <span style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em', padding: '2px 8px', color: 'var(--text-muted)' }}>{entry.categoryTag}</span>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em', padding: '2px 8px', color: 'var(--text-muted)' }}>{entry.categoryTag}</span>
+                <TrustDeltaBadge entry={entry} />
+              </div>
             </div>
             <p className="ty-body">{entry.summary}</p>
             <a
@@ -1642,6 +1654,31 @@ function TimelineLedger({ className = '', entries, compact = false, isLoading = 
       </div>}
       <CursorHint hoverInfo={hoverInfo} />
     </section>
+  )
+}
+
+function TrustDeltaBadge({ entry }) {
+  const status = String(entry.publicationStatus || entry.status || '').toUpperCase()
+  const delta = status === 'PUBLISHED' ? 15 : status === 'REJECTED' ? -15 : 0
+  if (!delta) return null
+  const isPositive = delta > 0
+  return (
+    <span
+      title="Trust score impact indicator"
+      style={{
+        background: isPositive ? 'var(--success-soft)' : 'var(--danger-soft)',
+        border: `1px solid ${isPositive ? 'var(--success-border)' : 'var(--danger-border)'}`,
+        borderRadius: 'var(--radius-full)',
+        fontFamily: 'var(--mono, monospace)',
+        fontSize: '11px',
+        fontWeight: '700',
+        letterSpacing: '0.02em',
+        padding: '2px 8px',
+        color: isPositive ? 'var(--success)' : 'var(--danger)',
+      }}
+    >
+      {isPositive ? `+${delta}` : `${delta}`} Trust
+    </span>
   )
 }
 function Field({ label, name, onChange, required = true, type = 'text', value }) {
@@ -1810,7 +1847,7 @@ function PageSectionLoader() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  My Contributions Panel                                                      */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function MyContributionsPanel({ user }) {
+function MyContributionsPanel({ onNavigateToSubmit, user }) {
   const [contributions, setContributions] = useState([])
   const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
   const [page, setPage] = useState(1)
@@ -1846,6 +1883,11 @@ function MyContributionsPanel({ user }) {
       <section className="dashboardHeaderBlock">
         <h2 className="ty-section-title">My Contributions</h2>
         <p className="ty-body">Track the verification lifecycle of your submitted political records.</p>
+        <div>
+          <button type="button" onClick={() => onNavigateToSubmit?.()}>
+            Submit Official Audit Record
+          </button>
+        </div>
       </section>
 
       <StatusLine state={state} />
@@ -1940,6 +1982,3 @@ function formatDate(value) {
 }
 
 export default App
-
-
-

@@ -331,13 +331,13 @@
 .detailsModalBackdrop,
 .comparisonModalBackdrop {
   --modal-padding: clamp(14px, 3vw, 32px);
-  background: rgba(5, 12, 28, 0.62);
+  background: rgba(5, 12, 28, 0.72);
   display: grid;
   place-items: center;
   inset: 0; /* cover full viewport including behind top nav */
   position: fixed;
   padding: var(--modal-padding);
-  z-index: 9999; /* above top nav (z-50) */
+  z-index: 9999; /* above all page chrome */
   backdrop-filter: blur(6px) saturate(0.8);
   -webkit-backdrop-filter: blur(6px) saturate(0.8);
   overflow: hidden;
@@ -350,7 +350,7 @@
   --modal-padding: clamp(14px, 3vw, 32px);
   inset: 0;
   padding: var(--modal-padding);
-  z-index: 5000;
+  z-index: 9999;
 }
 
 .detailsModal,
@@ -379,8 +379,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(1180px, calc(100vw - calc(var(--modal-padding) * 2)));
-  max-width: 1180px;
+  width: min(1320px, calc(100vw - calc(var(--modal-padding) * 2)));
+  max-width: 1320px;
   height: min(90dvh, calc(100dvh - calc(var(--modal-padding) * 2)));
   max-height: calc(100dvh - calc(var(--modal-padding) * 2));
   z-index: 10000; /* above backdrop and top nav */
@@ -534,6 +534,7 @@
   gap: 20px;
   grid-column: 1 / -1;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
 }
 
 .comparisonLedgerCard {
@@ -549,6 +550,12 @@
   display: grid;
   gap: 14px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.appShell:has(.comparisonModalBackdrop) .topBar,
+.appShell:has(.detailsModalBackdrop) .topBar {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .appSkeleton {
@@ -1448,6 +1455,16 @@ button:disabled {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.comparisonLedgerCard .timelineGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+}
+
+.comparisonLedgerCard .emptyState {
+  margin: 0;
+  padding-top: 4px;
+}
+
 .matrix { grid-column: 1 / -1; }
 .timeline.compact { border: 0; box-shadow: none; padding: 0; }
 
@@ -1484,6 +1501,10 @@ button:disabled {
 
 .compareLedgerPair > .timeline {
   min-width: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
 }
 
 @media (max-width: 900px) {
@@ -1554,6 +1575,12 @@ button:disabled {
   line-height: 1.35;
   margin: 0;
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.timelineItem {
+  min-width: 0;
 }
 
 /* ── Modal close / edit buttons ────────────────────────────────────── */
