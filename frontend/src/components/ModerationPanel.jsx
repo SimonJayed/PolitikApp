@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
 import { clampTrustScore } from './trustScore';
+import LifecycleStageStrip, { getLifecycleStageIndex } from './LifecycleStageStrip';
 import {
   AlertTriangleIcon,
   ArrowLeftIcon,
@@ -17,26 +18,6 @@ import {
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 const STAGES = ['SUBMITTED', 'JURY_REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED'];
 
-function stageIndexFor(queueStatus) {
-  switch ((queueStatus || '').toUpperCase()) {
-    case 'SUBMITTED':
-    case 'PENDING':
-      return 0;
-    case 'JURY_REVIEW':
-      return 1;
-    case 'ESCALATED':
-    case 'APPEALED_PENDING':
-    case 'REVISION_REQUIRED':
-      return 2;
-    case 'REJECTED':
-      return 3;
-    case 'PUBLISHED':
-      return 4;
-    default:
-      return 0;
-  }
-}
-
 export default function ModerationPanel({ token, user }) {
   const [queue, setQueue] = useState([]);
   const [traceLogs, setTraceLogs] = useState([]);
@@ -44,6 +25,9 @@ export default function ModerationPanel({ token, user }) {
   const [queuePage, setQueuePage] = useState(1);
   const [showTraceMonitor, setShowTraceMonitor] = useState(true);
   const [openDrawerByCard, setOpenDrawerByCard] = useState({});
+  const [isArchiveOpen, setIsArchiveOpen] = useState(false);
+  const [ballotArchive, setBallotArchive] = useState([]);
+  const previousQueueRef = useRef([]);
   // persist preference
   useEffect(() => {
     try {
@@ -66,6 +50,7 @@ export default function ModerationPanel({ token, user }) {
   const isDevModeActive = sandboxContext.isDevModeActive || false;
   const manipulatedUser = sandboxContext.manipulatedUser || null;
   const voteWeight = sandboxContext.voteWeight || 1;
+  const archiveStorageKey = `moderation:archive:${user?.userId || manipulatedUser?.userId || 'anonymous'}`;
 
   const getSandboxHeaders = () => {
     const headers = { Authorization: token ? `Bearer ${token}` : '' };
@@ -140,6 +125,33 @@ export default function ModerationPanel({ token, user }) {
     return queue;
   }, [queue, sandboxContext.injectedQueue, isDevModeActive]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(archiveStorageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setBallotArchive(parsed);
+      }
+    } catch {
+      // ignore
+    }
+  }, [archiveStorageKey]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(archiveStorageKey, JSON.stringify(ballotArchive));
+    } catch {
+      // ignore
+    }
+  }, [archiveStorageKey, ballotArchive]);
+
+  function upsertArchiveEntry(entry) {
+    setBallotArchive((current) => {
+      const next = [entry, ...current.filter((item) => item.queueId !== entry.queueId)];
+      return next.slice(0, 100);
+    });
+  }
+
   const totalQueuePages = Math.max(1, Math.ceil(combinedQueue.length / queuePageSize));
   const safeQueuePage = Math.min(queuePage, totalQueuePages);
   const queueDeck = useMemo(
@@ -152,6 +164,27 @@ export default function ModerationPanel({ token, user }) {
       setQueuePage(safeQueuePage);
     }
   }, [queuePage, safeQueuePage]);
+
+  useEffect(() => {
+    const previousQueue = previousQueueRef.current;
+    if (previousQueue.length > 0) {
+      const activeIds = new Set(combinedQueue.map((card) => card.queueId));
+      previousQueue.forEach((card) => {
+        if (!activeIds.has(card.queueId)) {
+          upsertArchiveEntry({
+            queueId: card.queueId,
+            title: card.impactSummary || card.actionIdentifier || card.queueId,
+            userVote: '—',
+            status: 'NO_LONGER_ACTIVE',
+            votedAt: new Date().toISOString(),
+            reviewer: 'System',
+            sourceUrl: card.sourceUrl || '',
+          });
+        }
+      });
+    }
+    previousQueueRef.current = combinedQueue;
+  }, [combinedQueue]);
 
   function getForm(queueId) {
     return formByCard[queueId] || { voteSelection: 'AGREE', voteReason: '' };
@@ -188,6 +221,15 @@ export default function ModerationPanel({ token, user }) {
     const form = getForm(card.queueId);
 
     if (card.isInjected) {
+      upsertArchiveEntry({
+        queueId: card.queueId,
+        title: card.impactSummary || card.actionIdentifier || card.queueId,
+        userVote: form.voteSelection,
+        status: 'PUBLISHED',
+        votedAt: new Date().toISOString(),
+        reviewer: (isDevModeActive ? manipulatedUser?.name : user?.fullName) || 'Reviewer',
+        sourceUrl: card.sourceUrl || '',
+      });
       setTraceLogs((prev) => [
         `[CALC TRACE] [MOCK OVERRIDE] ${(isDevModeActive ? manipulatedUser?.name : 'Reviewer')} voted ${form.voteSelection} on INJECTED sandbox card. Weight: ${voteWeight}. Local outcome adjusted to published.`,
         ...prev,
@@ -223,6 +265,15 @@ export default function ModerationPanel({ token, user }) {
       }
 
       const trace = await res.json();
+      upsertArchiveEntry({
+        queueId: card.queueId,
+        title: card.impactSummary || card.actionIdentifier || card.queueId,
+        userVote: form.voteSelection,
+        status: trace.finalOutcomeStatus || card.queueStatus || 'FINALIZED',
+        votedAt: new Date().toISOString(),
+        reviewer: (isDevModeActive ? manipulatedUser?.name : trace.peerName) || user?.fullName || 'Reviewer',
+        sourceUrl: card.sourceUrl || '',
+      });
       setTraceLogs((prev) => [
         `[CALC TRACE] ${(isDevModeActive ? manipulatedUser?.name : trace.peerName) || 'Reviewer'} voted ${form.voteSelection}. Weight: ${isDevModeActive ? voteWeight : trace.derivedWeight}. Outcome: ${trace.finalOutcomeStatus}`,
         ...prev,
@@ -238,7 +289,7 @@ export default function ModerationPanel({ token, user }) {
   async function handleSandboxShiftStage(queueId, direction) {
     const card = combinedQueue.find(c => c.queueId === queueId);
     if (card && card.isInjected) {
-      const currentStage = stageIndexFor(card.queueStatus);
+      const currentStage = getLifecycleStageIndex(card.queueStatus);
       const nextStageIndex = direction === 'next' ? Math.min(STAGES.length - 1, currentStage + 1) : Math.max(0, currentStage - 1);
       const newStatus = STAGES[nextStageIndex];
 
@@ -345,7 +396,6 @@ export default function ModerationPanel({ token, user }) {
         )}
         {queueDeck.map((card) => {
           const form = getForm(card.queueId);
-          const activeStage = stageIndexFor(card.queueStatus);
           const isDrawerOpen = openDrawerByCard[card.queueId] || false;
           
           const hashCharSum = String(card.queueId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -408,25 +458,7 @@ export default function ModerationPanel({ token, user }) {
 
               {card.impactSummary && <div className="summary-box">"{card.impactSummary}"</div>}
 
-              <div className="detailsBlock detailsBlock--moderation">
-                <h5 className="ty-label" style={{ margin: 0 }}>Edit Lifecycle</h5>
-                <div className="lifecycle-grid">
-                  <div className="lifecycle-track">
-                    {STAGES.map((stage, index) => (
-                      <span
-                        key={`${card.queueId}-${stage}`}
-                        className={index <= activeStage ? 'lifecycle-step active' : 'lifecycle-step'}
-                      >
-                        {stage.replace('_', ' ')}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="lifecycle-status">
-                    Current status: <strong>{card.queueStatus}</strong>
-                    {card.escalationFlag ? ' (Escalated to admin review)' : ''}
-                  </p>
-                </div>
-              </div>
+              <LifecycleStageStrip status={card.queueStatus} title="Lifecycle Stage" />
 
               <div className="ballot-console">
                 <div className="ballot-consoleHeader">
@@ -593,9 +625,76 @@ export default function ModerationPanel({ token, user }) {
         </div>
       )}
 
+      <section className={isArchiveOpen ? 'mod-archive is-open' : 'mod-archive'}>
+        <button
+          type="button"
+          className="mod-archiveToggle"
+          onClick={() => setIsArchiveOpen((current) => !current)}
+          aria-expanded={isArchiveOpen}
+          aria-controls="moderation-archive-panel"
+        >
+          <span className="mod-archiveToggleTitle">Ballot Archive</span>
+          <span className="mod-archiveToggleMeta">{ballotArchive.length} records</span>
+          <span className={isArchiveOpen ? 'mod-archiveChevron is-open' : 'mod-archiveChevron'}><ArrowRightIcon size={16} /></span>
+        </button>
+        <div id="moderation-archive-panel" className={isArchiveOpen ? 'mod-archivePanel is-open' : 'mod-archivePanel'}>
+          {ballotArchive.length === 0 ? (
+            <p className="emptyState">No moderation history yet.</p>
+          ) : (
+            <>
+              <div className="mod-archiveTableWrap">
+                <table className="mod-archiveTable">
+                  <thead>
+                    <tr>
+                      <th>Ballot</th>
+                      <th>Your Vote</th>
+                      <th>Status</th>
+                      <th>Date Voted</th>
+                      <th>Reviewer</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ballotArchive.map((entry) => (
+                      <tr key={entry.queueId}>
+                        <td>{entry.title}</td>
+                        <td>{entry.userVote}</td>
+                        <td>{entry.status}</td>
+                        <td>{new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(entry.votedAt))}</td>
+                        <td>{entry.reviewer}</td>
+                        <td>
+                          {entry.sourceUrl ? (
+                            <a className="mod-archiveAction" href={entry.sourceUrl} rel="noreferrer" target="_blank">View</a>
+                          ) : (
+                            <span className="mod-archiveAction is-disabled">N/A</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="mod-archiveCards">
+                {ballotArchive.map((entry) => (
+                  <article className="mod-archiveCard" key={`card-${entry.queueId}`}>
+                    <h4>{entry.title}</h4>
+                    <p><strong>Vote:</strong> {entry.userVote}</p>
+                    <p><strong>Status:</strong> {entry.status}</p>
+                    <p><strong>Date:</strong> {new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(entry.votedAt))}</p>
+                    <p><strong>Reviewer:</strong> {entry.reviewer}</p>
+                    {entry.sourceUrl ? <a className="mod-archiveAction" href={entry.sourceUrl} rel="noreferrer" target="_blank">View Details</a> : null}
+                  </article>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </section>
+
       {traceLogs.length > 0 && (
         <div className="moderation-toggleRow">
           <label className="toggle-switch" aria-hidden="false">
+            <span className="toggle-label">Show Moderation Trace Monitor</span>
             <input
               type="checkbox"
               checked={showTraceMonitor}
@@ -605,7 +704,6 @@ export default function ModerationPanel({ token, user }) {
             <span className="switch-track">
               <span className="switch-thumb" />
             </span>
-            <span className="toggle-label">Show Moderation Trace Monitor</span>
           </label>
         </div>
       )}
@@ -644,7 +742,7 @@ export default function ModerationPanel({ token, user }) {
 
             {escalatedQueue.map((card) => {
               const form = getForm(card.queueId);
-              const activeStage = stageIndexFor(card.queueStatus);
+              const activeStage = getLifecycleStageIndex(card.queueStatus);
 
               return (
                 <div className="review-card" key={card.queueId} style={{ borderLeft: '4px solid var(--ph-gold)', width: '100%', boxSizing: 'border-box' }}>

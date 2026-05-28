@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
 import TrustScoreMeter from './components/TrustScoreMeter'
 import ConfirmActionModal from './components/ConfirmActionModal'
 import PoliticianRankingPanel from './components/PoliticianRankingPanel'
+import LifecycleStageStrip from './components/LifecycleStageStrip'
 import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
@@ -406,6 +407,7 @@ function App() {
 /*  Dashboard                                                                  */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
+  const [hoverInfo, setHoverInfo] = useState(null)
   const totalProfiles = politicians.length
   const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0)
   const averageEfficiency = totalProfiles > 0
@@ -417,6 +419,8 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
       label: 'Politician Profiles',
       value: totalProfiles,
       sub: 'Active database profiles',
+      description: 'Total number of profile records available for review and comparison. Higher counts indicate broader platform coverage across offices and jurisdictions.',
+      hint: 'Open Directory to inspect each profile.',
       accent: 'var(--ph-blue)',
       icon: FolderIcon,
     },
@@ -424,13 +428,17 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
       label: 'COA Flags Tracked',
       value: totalCoaDiscrepancies,
       sub: 'Audit discrepancies logged',
+      description: 'Combined count of Commission on Audit discrepancy entries linked to tracked officials. This helps surface governance risk signals quickly.',
+      hint: 'Use Compare to cross-check flags side by side.',
       accent: 'var(--ph-gold)',
-      icon: AlertTriangleIcon,
+      icon: BarChart3Icon,
     },
     {
       label: 'Avg. Legislative Eff.',
       value: `${averageEfficiency.toFixed(1)}%`,
       sub: 'Sustained profile average',
+      description: 'Average legislative efficiency across all indexed profiles based on published activity data and profile metrics.',
+      hint: 'Select a profile to see per-candidate KPI detail.',
       accent: 'var(--info)',
       icon: BarChart3Icon,
     },
@@ -438,6 +446,8 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
       label: 'My Clearance Role',
       value: user?.role || 'CONTRIBUTOR',
       sub: 'Authorized session role',
+      description: 'Your current permission level for this signed-in session. Role determines what you can submit, review, or administratively override.',
+      hint: 'Role-based access is enforced across all modules.',
       accent: 'var(--ph-red)',
       icon: KeyIcon,
     },
@@ -449,6 +459,8 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
       icon: UsersIcon,
       title: 'Explore Directory',
       sub: 'Browse all politician profiles',
+      description: 'Open the searchable profile list to inspect biography, jurisdiction, party details, and audit-linked records before taking action.',
+      hint: 'Best starting point for profile discovery.',
       color: '#e8f0fe',
       iconBg: '#c7d7fc',
     },
@@ -457,6 +469,8 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
       icon: FileTextIcon,
       title: 'File Evidence',
       sub: 'Submit an official audit record',
+      description: 'Create a structured contribution using approved source domains and categorized action details so it can enter moderation.',
+      hint: 'Prepare source URL + impact summary first.',
       color: '#fef9e8',
       iconBg: '#faedb4',
     },
@@ -465,6 +479,8 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
       icon: ScaleIcon,
       title: 'Compare Profiles',
       sub: 'Side-by-side candidate analysis',
+      description: 'Review two candidates in parallel with aligned records and metrics to identify policy, budget, and audit differences faster.',
+      hint: 'Use filters to narrow by jurisdiction.',
       color: '#eef6ff',
       iconBg: '#c3ddf9',
     },
@@ -473,6 +489,8 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
       icon: ShieldCheckIcon,
       title: 'Moderation Jury',
       sub: 'Cast a double-blind ballot',
+      description: 'Enter the adjudication queue where reviewers vote on evidence quality and outcome before records are finalized or published.',
+      hint: 'Your vote impacts consensus and trust outcomes.',
       color: '#f3f0ff',
       iconBg: '#dbd5fd',
     },
@@ -480,110 +498,51 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
 
   return (
     <section className="workspace dashboardWorkspace" style={{ gap: '20px' }}>
-
-      {/* Hero banner */}
-      <div style={{
-        background: 'linear-gradient(148deg, var(--ph-blue) 0%, #0c1e4a 55%, #06102a 100%)',
-        borderRadius: 'var(--radius-xl)',
-        padding: 'clamp(24px, 4vw, 36px)',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 16px 48px rgba(8, 20, 50, 0.28)',
-      }}>
-        {/* Decorative circles */}
+      <div style={{ background: 'linear-gradient(148deg, var(--ph-blue) 0%, #0c1e4a 55%, #06102a 100%)', borderRadius: 'var(--radius-xl)', padding: 'clamp(24px, 4vw, 36px)', position: 'relative', overflow: 'hidden', boxShadow: '0 16px 48px rgba(8, 20, 50, 0.28)' }}>
         <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: '-40px', left: '5%', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '20px', right: '18%', width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(184, 150, 42, 0.6)' }} />
-        <div style={{ position: 'absolute', bottom: '30px', right: '35%', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(184, 150, 42, 0.35)' }} />
-
         <div style={{ position: 'relative' }}>
-          <span
-            className="ty-label"
-            style={{ color: 'rgba(153, 132, 44, 0.95)', marginBottom: '10px', display: 'inline-block' }}
-          >
-            Live: Civic Transparency Platform
-          </span>
-          <h2 className="ty-section-title" style={{
-            color: '#ffffff',
-            margin: '0 0 10px',
-            letterSpacing: '-0.02em',
-            lineHeight: '1.15',
-            fontSize: 'clamp(1.25rem, 2.2vw, 1.6rem)',
-          }}>
+          <span className="ty-label" style={{ color: 'rgba(153, 132, 44, 0.95)', marginBottom: '10px', display: 'inline-block' }}>Live: Civic Transparency Platform</span>
+          <h2 className="ty-section-title" style={{ color: '#ffffff', margin: '0 0 10px', letterSpacing: '-0.02em', lineHeight: '1.15', fontSize: 'clamp(1.25rem, 2.2vw, 1.6rem)' }}>
             Mabuhay, {user?.fullName?.split(' ')[0] || 'Contributor'}.
           </h2>
-          <p style={{ color: 'rgba(220, 228, 245, 0.82)', fontSize: '14px', lineHeight: '1.7', margin: 0, maxWidth: '560px' }}>
-            Track, analyze, and verify official legislative and audit records across local and national Philippine jurisdictions.
-          </p>
+          <p style={{ color: 'rgba(220, 228, 245, 0.82)', fontSize: '14px', lineHeight: '1.7', margin: 0, maxWidth: '560px' }}>Track, analyze, and verify official legislative and audit records across local and national Philippine jurisdictions.</p>
         </div>
       </div>
 
-      {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px' }}>
-        {kpis.map(({ label, value, sub, accent, icon: Icon }) => (
-          <article key={label} style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--line-soft)',
-            borderLeft: `3px solid ${accent}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '18px 20px',
-            boxShadow: 'var(--shadow-xs)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-          }}>
-            <span aria-hidden="true" className="inline-flex items-center justify-center" style={{ width: '22px', height: '22px', color: accent }}>
-              <Icon size={18} />
-            </span>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
+        {kpis.map(({ label, value, sub, description, hint, accent, icon: Icon }) => (
+          <article
+            key={label}
+            className="hoverLiftCard"
+            onMouseEnter={() => setHoverInfo({ title: label, description, hint })}
+            onMouseLeave={() => setHoverInfo(null)}
+            onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--line-soft)', borderLeft: `3px solid ${accent}`, borderRadius: 'var(--radius-md)', padding: '18px 20px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', gap: '6px' }}
+          >
+            <span aria-hidden="true" className="inline-flex items-center justify-center" style={{ width: '22px', height: '22px', color: accent }}><Icon size={18} /></span>
             <span className="ty-label" style={{ marginTop: '4px' }}>{label}</span>
-            <strong style={{
-              fontFamily: 'var(--display)',
-              fontSize: 'clamp(1.3rem, 2vw, 1.8rem)',
-              fontWeight: '800',
-              color: 'var(--text-primary)',
-              lineHeight: '1.1',
-              letterSpacing: '-0.03em',
-            }}>{value}</strong>
+            <strong style={{ fontFamily: 'var(--display)', fontSize: 'clamp(1.3rem, 2vw, 1.8rem)', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.1', letterSpacing: '-0.03em' }}>{value}</strong>
             <small className="ty-meta">{sub}</small>
           </article>
         ))}
       </div>
 
-      {/* Quick actions */}
       <section>
         <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Quick Actions</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px' }}>
-          {actions.map(({ key, icon: Icon, title, sub, color, iconBg }) => (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
+          {actions.map(({ key, icon: Icon, title, sub, description, hint, color, iconBg }) => (
             <button
               key={key}
               onClick={() => onNavigate(key)}
+              onMouseEnter={() => setHoverInfo({ title, description, hint })}
+              onMouseLeave={() => setHoverInfo(null)}
+              onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
               type="button"
               className="dashboardCard"
-              style={{
-                minHeight: '120px',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: '10px',
-                cursor: 'pointer',
-                gridTemplateColumns: 'none',
-                background: 'var(--bg-surface)',
-              }}
+              style={{ minHeight: '120px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', gridTemplateColumns: 'none', background: 'var(--bg-surface)' }}
             >
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-sm)',
-                background: color,
-                border: `1px solid ${iconBg}`,
-                color: 'var(--ph-blue)',
-              }}>
-                <Icon size={18} />
-              </span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px', borderRadius: 'var(--radius-sm)', background: color, border: `1px solid ${iconBg}`, color: 'var(--ph-blue)' }}><Icon size={18} /></span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                 <strong className="ty-card-title">{title}</strong>
                 <small className="ty-meta">{sub}</small>
@@ -597,90 +556,10 @@ function DashboardPanel({ onOpenProfile, politicians, onNavigate, user }) {
         <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Performance Ranking</h2>
         <PoliticianRankingPanel onSelectPolitician={onOpenProfile} politicians={politicians} />
       </section>
-
-      {/* Info row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.65fr 1fr', gap: '16px', alignItems: 'start' }}>
-        <article style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--line-soft)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '24px',
-          boxShadow: 'var(--shadow-xs)',
-          display: 'grid',
-          gap: '16px',
-        }}>
-          <h3 className="ty-card-title" style={{ margin: 0 }}>Platform Accountability Rules</h3>
-          <p className="ty-body" style={{ margin: 0 }}>
-            All crowdsourced submissions require whitelisted Philippine domains (<strong>.gov.ph</strong> or <strong>.edu.ph</strong>). 
-            After consensus, voters aligned with the final ruling receive a <strong>+5.0 reputation bump</strong>; opposing voters receive a <strong>−5.0 penalty</strong>.
-          </p>
-          <div style={{
-            padding: '13px 16px',
-            background: '#fffbeb',
-            border: '1px solid var(--warning-border)',
-            borderLeft: '3px solid var(--ph-gold)',
-            borderRadius: 'var(--radius-sm)',
-            color: '#7a5500',
-            fontFamily: 'var(--mono, monospace)',
-            fontSize: '12px',
-            fontWeight: '500',
-            letterSpacing: '0.02em',
-            lineHeight: '1.6',
-          }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangleIcon size={16} />
-              <span>INTERCEPTOR ACTIVE: Contributors exceeding a 15% lifetime rejection rate will have write tokens automatically revoked.</span>
-            </span>
-          </div>
-        </article>
-
-        <article style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--line-soft)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '24px',
-          boxShadow: 'var(--shadow-xs)',
-          display: 'grid',
-          gap: '14px',
-        }}>
-          <h3 className="ty-card-title" style={{ margin: 0 }}>Sandbox Status</h3>
-          <div style={{ display: 'grid', gap: '0' }}>
-            {[
-              ['Host', 'Development'],
-              ['API Host', API_BASE_URL],
-              ['Auth Session', 'ACTIVE'],
-            ].map(([key, val], i, arr) => (
-              <div key={key} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '10px 0',
-                borderBottom: i < arr.length - 1 ? '1px solid var(--line-hairline)' : 'none',
-              }}>
-                <span className="ty-meta" style={{ color: 'var(--text-muted)' }}>{key}</span>
-                <strong style={{
-                  fontFamily: 'var(--mono, monospace)',
-                  fontSize: '12px',
-                  color: key === 'Auth Session' ? 'var(--success)' : key === 'API Host' ? 'var(--info)' : 'var(--text-primary)',
-                  fontWeight: '600',
-                  maxWidth: '180px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  textAlign: 'right',
-                }}>{val}</strong>
-              </div>
-            ))}
-          </div>
-        </article>
-      </div>
+      <CursorHint hoverInfo={hoverInfo} />
     </section>
   )
 }
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  User Account Page                                                          */
-/* ─────────────────────────────────────────────────────────────────────────── */
 function UserAccountPage({ token, user }) {
   const { updateSession } = useAuth()
   const [profile, setProfile] = useState(user)
@@ -1518,71 +1397,68 @@ function KpiGrid({ profile, compact = false }) {
 function TimelineLedger({ className = '', entries, compact = false, onAppeal, title = 'Published Timeline Ledger', user }) {
   const trustScore = clampTrustScore(user?.trustScore)
   const canAppeal = Boolean(user?.userId) && user?.role !== 'GUEST' && trustScore >= 150
+  const [page, setPage] = useState(1)
+  const [hoverInfo, setHoverInfo] = useState(null)
+  const pageSize = 15
+  const totalPages = Math.max(1, Math.ceil(entries.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const pagedEntries = entries.slice((safePage - 1) * pageSize, safePage * pageSize)
+
+  useEffect(() => { setPage(1) }, [entries.length])
 
   return (
     <section className={[compact ? 'timeline compact' : 'timeline', className].filter(Boolean).join(' ')}>
-      <h2 className="ty-section-title">{title}</h2>
+      <div className="timelineHeader">
+        <h2 className="ty-section-title">{title}</h2>
+        {entries.length > pageSize && <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />}
+      </div>
       {entries.length === 0 && <p className="emptyState">No published records returned.</p>}
-      {entries.map((entry) => (
-        <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
-          <div>
-            <strong>{entry.actionIdentifier}</strong>
-            <span style={{
-              background: 'var(--bg-inset)',
-              border: '1px solid var(--line-soft)',
-              borderRadius: 'var(--radius-full)',
-              fontFamily: 'var(--mono, monospace)',
-              fontSize: '11px',
-              fontWeight: '500',
-              letterSpacing: '0.04em',
-              padding: '2px 8px',
-              color: 'var(--text-muted)',
-            }}>{entry.categoryTag}</span>
-          </div>
-          <p className="ty-body">{entry.summary}</p>
-          <a href={entry.sourceUrl} rel="noreferrer" target="_blank">
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              View Source <ExternalLinkIcon size={14} />
-            </span>
-          </a>
-          {onAppeal && (
-            <div className="appealActionArea">
-              <button
-                className="appealRecordButton"
-                disabled={!canAppeal || !entry.submissionId}
-                onClick={() => onAppeal(entry)}
-                title={
-                  !entry.submissionId
-                    ? 'This legacy record is missing submission linkage.'
-                    : !canAppeal
-                      ? 'Appeals require an authenticated user with at least 150.00 trust points.'
-                      : 'File a high-stakes post-publish appeal.'
-                }
-                type="button"
-              >
-                <ScaleIcon size={15} />
-                Appeal this Record
-              </button>
-              <div className="appealInfoTooltip" role="tooltip">
-                {entry.submissionId ? (
-                  <TrustScoreMeter score={trustScore} variant="inline" />
-                ) : (
-                  <p className="ty-meta" style={{ color: 'var(--danger)', margin: 0 }}>
-                    Record cannot be appealed: missing submission linkage.
-                  </p>
-                )}
-              </div>
+      <div className="timelineGrid">
+        {pagedEntries.map((entry) => (
+          <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
+            <div className="timelineItemTop">
+              <strong>{entry.actionIdentifier}</strong>
+              <span style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em', padding: '2px 8px', color: 'var(--text-muted)' }}>{entry.categoryTag}</span>
             </div>
-          )}
-        </article>
-      ))}
+            <p className="ty-body">{entry.summary}</p>
+            <a
+              href={entry.sourceUrl}
+              rel="noreferrer"
+              target="_blank"
+              onMouseEnter={() => setHoverInfo({
+                title: 'Source Evidence Link',
+                description: 'Opens the cited source document in a separate tab so you can validate authenticity, context, and completeness.',
+                hint: 'Tip: verify domain and publication date before citing.',
+              })}
+              onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
+              onMouseLeave={() => setHoverInfo(null)}
+            >
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>View Source <ExternalLinkIcon size={14} /></span>
+            </a>
+            {onAppeal && (
+              <div className="appealActionArea">
+                <button
+                  className="appealRecordButton"
+                  disabled={!canAppeal || !entry.submissionId}
+                  onClick={() => onAppeal(entry)}
+                  title={!entry.submissionId ? 'This legacy record is missing submission linkage.' : !canAppeal ? 'Appeals require an authenticated user with at least 150.00 trust points.' : 'File a high-stakes post-publish appeal.'}
+                  type="button"
+                >
+                  <ScaleIcon size={15} />
+                  Appeal this Record
+                </button>
+                <div className="appealInfoTooltip" role="tooltip">
+                  {entry.submissionId ? <TrustScoreMeter score={trustScore} variant="inline" /> : <p className="ty-meta" style={{ color: 'var(--danger)', margin: 0 }}>Record cannot be appealed: missing submission linkage.</p>}
+                </div>
+              </div>
+            )}
+          </article>
+        ))}
+      </div>
+      <CursorHint hoverInfo={hoverInfo} />
     </section>
   )
 }
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Shared primitives                                                           */
-/* ─────────────────────────────────────────────────────────────────────────── */
 function Field({ label, name, onChange, required = true, type = 'text', value }) {
   return (
     <label>
@@ -1619,6 +1495,44 @@ function PaginationMini({ page, totalPages, onChange }) {
         <ArrowRightIcon size={17} strokeWidth={2.4} />
       </button>
     </nav>
+  )
+}
+
+function CursorHint({ hoverInfo }) {
+  const hintRef = useRef(null)
+  const [position, setPosition] = useState({ left: -9999, top: -9999 })
+
+  useEffect(() => {
+    if (!hoverInfo?.x || !hoverInfo?.y || !hintRef.current) return
+    const tooltipRect = hintRef.current.getBoundingClientRect()
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const offsetX = 14
+    const offsetY = 16
+    const margin = 10
+
+    let left = hoverInfo.x + offsetX
+    let top = hoverInfo.y + offsetY
+
+    if (left + tooltipRect.width > viewportWidth - margin) {
+      left = hoverInfo.x - tooltipRect.width - offsetX
+    }
+    if (top + tooltipRect.height > viewportHeight - margin) {
+      top = hoverInfo.y - tooltipRect.height - offsetY
+    }
+
+    left = Math.max(margin, Math.min(left, viewportWidth - tooltipRect.width - margin))
+    top = Math.max(margin, Math.min(top, viewportHeight - tooltipRect.height - margin))
+    setPosition({ left, top })
+  }, [hoverInfo])
+
+  if (!hoverInfo?.x || !hoverInfo?.y) return null
+  return (
+    <div ref={hintRef} aria-hidden="true" className="cursorHint" style={{ left: `${position.left}px`, top: `${position.top}px` }}>
+      <strong>{hoverInfo.title}</strong>
+      <span>{hoverInfo.description}</span>
+      {hoverInfo.hint ? <small>{hoverInfo.hint}</small> : null}
+    </div>
   )
 }
 
@@ -1714,6 +1628,7 @@ function PageSectionLoader() {
 function MyContributionsPanel({ user }) {
   const [contributions, setContributions] = useState([])
   const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     if (!user?.userId) {
@@ -1734,18 +1649,12 @@ function MyContributionsPanel({ user }) {
       })
   }, [user?.userId])
 
-  const STAGES = ['SUBMITTED', 'JURY REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED']
+  const pageSize = 6
+  const totalPages = Math.max(1, Math.ceil(contributions.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = contributions.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-  function stageIndexFor(status) {
-    switch ((status || '').toUpperCase()) {
-      case 'SUBMITTED': case 'PENDING': return 0
-      case 'JURY_REVIEW': return 1
-      case 'ESCALATED': case 'REVISION_REQUIRED': return 2
-      case 'REJECTED': return 3
-      case 'PUBLISHED': return 4
-      default: return 0
-    }
-  }
+  useEffect(() => { setPage(1) }, [contributions.length])
 
   return (
     <section className="workspace">
@@ -1756,51 +1665,23 @@ function MyContributionsPanel({ user }) {
 
       <StatusLine state={state} />
 
-      <div style={{ display: 'grid', gap: '16px' }}>
+      <div className="myContribGrid">
         {state.status !== 'loading' && contributions.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '48px 32px',
-            background: 'var(--bg-surface)',
-            border: '1px dashed var(--line-strong)',
-            borderRadius: 'var(--radius-lg)',
-          }}>
-            <p className="ty-body" style={{ color: 'var(--text-muted)' }}>
-              No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.
-            </p>
+          <div className="myContribEmpty">
+            <p className="ty-body" style={{ color: 'var(--text-muted)' }}>No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.</p>
           </div>
         )}
 
-        {contributions.map((item) => {
-          const activeStage = stageIndexFor(item.status)
-          const isRejected = item.status === 'REJECTED'
+        {pageItems.map((item) => {
           return (
             <article key={item.submissionId} className="review-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{
-                  background: 'var(--info-soft)',
-                  color: 'var(--info)',
-                  border: '1px solid var(--info-border)',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  fontFamily: 'var(--mono, monospace)',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  letterSpacing: '0.04em',
-                }}>
-                  #{item.submissionId.substring(0, 8).toUpperCase()}
-                </span>
-                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>
-                  {formatDate(item.createdAt)}
-                </span>
+                <span style={{ background: 'var(--info-soft)', color: 'var(--info)', border: '1px solid var(--info-border)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em' }}>#{item.submissionId.substring(0, 8).toUpperCase()}</span>
+                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
-                {[
-                  ['Category', item.categoryTag],
-                  ['Action Tag', item.actionIdentifier],
-                  ['Metric', formatActionMetric(item.actionDetails, item.actionIdentifier)],
-                ].map(([k, v]) => (
+                {[[ 'Category', item.categoryTag ], [ 'Action Tag', item.actionIdentifier ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
                   <div key={k}>
                     <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
                     <strong style={{ fontFamily: 'var(--display)', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{v}</strong>
@@ -1808,74 +1689,24 @@ function MyContributionsPanel({ user }) {
                 ))}
               </div>
 
-              <div style={{
-                background: 'var(--bg-inset)',
-                border: '1px solid var(--line-hairline)',
-                borderLeft: '3px solid var(--line-strong)',
-                padding: '12px 16px',
-                borderRadius: '0 var(--radius-xs) var(--radius-xs) 0',
-                fontStyle: 'italic',
-                fontSize: '13px',
-                color: 'var(--text-secondary)',
-                lineHeight: '1.65',
-              }}>
+              <div style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-hairline)', borderLeft: '3px solid var(--line-strong)', padding: '12px 16px', borderRadius: '0 var(--radius-xs) var(--radius-xs) 0', fontStyle: 'italic', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.65' }}>
                 "{item.impactSummary}"
               </div>
 
               <div>
                 <span className="ty-label" style={{ display: 'inline', marginRight: '6px' }}>Source</span>
-                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{
-                  fontFamily: 'var(--mono, monospace)',
-                  fontSize: '12px',
-                  color: 'var(--info)',
-                  fontWeight: '500',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid var(--info-border)',
-                }}>
-                  {item.sourceUrl}
-                </a>
+                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--mono, monospace)', fontSize: '12px', color: 'var(--info)', fontWeight: '500', textDecoration: 'none', borderBottom: '1px solid var(--info-border)' }}>{item.sourceUrl}</a>
               </div>
 
-              <div style={{ marginTop: '4px', paddingTop: '16px', borderTop: '1px dashed var(--line-soft)' }}>
-                <span className="ty-label" style={{ display: 'block', marginBottom: '10px' }}>Lifecycle Stage</span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '6px' }}>
-                  {STAGES.map((stage, index) => {
-                    const isPast = index <= activeStage
-                    const isActive = index === activeStage
-                    const stageLabel = stage === 'FINALIZED' && isRejected ? 'REJECTED' : stage
-                    return (
-                      <span key={stage} style={{
-                        textAlign: 'center',
-                        padding: '6px 4px',
-                        borderRadius: 'var(--radius-full)',
-                        fontFamily: 'var(--mono, monospace)',
-                        fontSize: '10px',
-                        fontWeight: '600',
-                        letterSpacing: '0.04em',
-                        border: `1px solid ${isPast ? (isRejected && index === 3 ? 'var(--danger-border)' : 'var(--ph-blue)') : 'var(--line-soft)'}`,
-                        background: isPast
-                          ? (isRejected && index === 3 ? 'var(--danger)' : 'var(--ph-blue)')
-                          : 'var(--bg-inset)',
-                        color: isPast ? '#ffffff' : 'var(--text-subtle)',
-                        opacity: isPast ? 1 : 0.6,
-                        boxShadow: isActive ? '0 0 0 2px rgba(10,29,66,0.15)' : 'none',
-                        transition: 'all 200ms ease',
-                      }}>
-                        {stageLabel}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
+              <LifecycleStageStrip status={item.status} title="Lifecycle Stage" />
             </article>
           )
         })}
       </div>
+      {contributions.length > pageSize && <div className="myContribPagination"><PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} /></div>}
     </section>
   )
 }
-
-/* ─────────────────────────────────────────────────────────────────────────── */
 /*  Utilities                                                                   */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function initialsFor(name) {
@@ -1923,3 +1754,6 @@ function formatDate(value) {
 }
 
 export default App
+
+
+
