@@ -40,6 +40,16 @@ public class ModerationQueueController {
         return ResponseEntity.ok(anonymizedQueue);
     }
 
+    @GetMapping("/archive")
+    public ResponseEntity<List<com.politikapp.backend.module2.dto.BallotArchiveEntryResponse>> getBallotArchive(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal
+    ) {
+        if (principal == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(401, "Unauthorized: Authentication required.");
+        }
+        return ResponseEntity.ok(moderationQueueService.getBallotArchive(principal.getUserId()));
+    }
+
     @PostMapping("/vote")
     public ResponseEntity<com.politikapp.backend.module2.dto.VoteCalculationTrace> processVote(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal,

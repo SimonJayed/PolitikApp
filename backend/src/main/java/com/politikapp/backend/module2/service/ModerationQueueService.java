@@ -1,6 +1,7 @@
 package com.politikapp.backend.module2.service;
 
 import com.politikapp.backend.common.event.SubmissionCreatedEvent;
+import com.politikapp.backend.module2.dto.BallotArchiveEntryResponse;
 import com.politikapp.backend.module2.dto.PendingQueueCardResponse;
 import com.politikapp.backend.module2.entity.ModerationQueue;
 import com.politikapp.backend.module2.repository.ModerationQueueRepository;
@@ -245,6 +246,36 @@ public class ModerationQueueService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<BallotArchiveEntryResponse> getBallotArchive(UUID peerId) {
+        log.info("Fetching ballot archive for peerId={}", peerId);
+        @SuppressWarnings("unchecked")
+        List<Object[]> rawRows = entityManager.createNativeQuery(
+            "SELECT jv.queue_id, " +
+            "COALESCE(NULLIF(pes.impact_summary, ''), NULLIF(pes.action_identifier, ''), CAST(jv.queue_id AS TEXT)) AS title, " +
+            "jv.vote_type, mq.queue_status, jv.created_at, pes.source_url " +
+            "FROM public.jury_votes jv " +
+            "LEFT JOIN public.moderation_queue mq ON mq.queue_id = jv.queue_id " +
+            "LEFT JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
+            "WHERE jv.peer_id = :peerId " +
+            "ORDER BY jv.created_at DESC " +
+            "LIMIT 100"
+        )
+            .setParameter("peerId", peerId)
+            .getResultList();
+
+        return rawRows.stream()
+            .map(row -> new BallotArchiveEntryResponse(
+                convertToUUID(row[0]),
+                row[1] == null ? null : row[1].toString(),
+                row[2] == null ? null : row[2].toString(),
+                row[3] == null ? "FINALIZED" : row[3].toString(),
+                convertToInstant(row[4]),
+                row[5] == null ? null : row[5].toString()
+            ))
+            .toList();
     }
 
     private java.time.LocalDate convertToLocalDate(Object obj) {

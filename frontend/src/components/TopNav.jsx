@@ -195,6 +195,15 @@ function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, o
                         <SettingsIcon size={24} />
                         <span>Settings</span>
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => navigate('history')}
+                        className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                      >
+                        <HistoryIcon size={21} />
+                        <span>History</span>
+                      </button>
                     </div>
                   </div>
                 )}
@@ -236,6 +245,13 @@ function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, o
                   icon={SettingsIcon}
                   label="Settings"
                   onClick={() => navigate('account')}
+                />
+
+                <MobileMenuItem
+                  active={activeView === 'history'}
+                  icon={HistoryIcon}
+                  label="History"
+                  onClick={() => navigate('history')}
                 />
               </div>
             </div>

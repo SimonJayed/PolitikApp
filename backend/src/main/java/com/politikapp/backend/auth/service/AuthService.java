@@ -3,6 +3,7 @@ package com.politikapp.backend.auth.service;
 import com.politikapp.backend.auth.dto.AuthDtos.AuthResponse;
 import com.politikapp.backend.auth.dto.AuthDtos.LoginRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.RegisterRequest;
+import com.politikapp.backend.auth.dto.AuthDtos.ReputationHistoryEntry;
 import com.politikapp.backend.auth.dto.AuthDtos.UpdateMeRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.UserResponse;
 import com.politikapp.backend.auth.entity.AuthUser;
@@ -14,6 +15,9 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
+import jakarta.persistence.EntityManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -30,11 +34,18 @@ public class AuthService {
     private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final EntityManager entityManager;
 
-    public AuthService(AuthUserRepository authUserRepository, PasswordEncoder passwordEncoder, JwtService jwtService) {
+    public AuthService(
+            AuthUserRepository authUserRepository,
+            PasswordEncoder passwordEncoder,
+            JwtService jwtService,
+            EntityManager entityManager
+    ) {
         this.authUserRepository = authUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
+        this.entityManager = entityManager;
     }
 
     @Transactional
@@ -142,6 +153,23 @@ public class AuthService {
         return toAuthResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public List<ReputationHistoryEntry> getReputationHistory(AuthPrincipal principal) {
+        @SuppressWarnings("unchecked")
+        List<Object[]> rows = entityManager.createNativeQuery(
+                "SELECT log_id, queue_id, score_change, previous_score, new_score, reason, created_at " +
+                "FROM public.reputation_audit_logs " +
+                "WHERE peer_id = :userId " +
+                "ORDER BY created_at DESC"
+        )
+                .setParameter("userId", principal.getUserId())
+                .getResultList();
+
+        return rows.stream()
+                .map(this::toHistoryEntry)
+                .toList();
+    }
+
     private AuthResponse toAuthResponse(AuthUser user) {
         String token = jwtService.generateToken(user.getUserId(), user.getEmail(), user.getRole());
         return new AuthResponse(token, toSafeUser(user));
@@ -164,5 +192,25 @@ public class AuthService {
 
     private BigDecimal clampTrustScore(BigDecimal trustScore) {
         return trustScore.max(MIN_TRUST_SCORE).min(MAX_TRUST_SCORE);
+    }
+
+    private ReputationHistoryEntry toHistoryEntry(Object[] row) {
+        UUID logId = row[0] != null ? UUID.fromString(row[0].toString()) : null;
+        UUID queueId = row[1] != null ? UUID.fromString(row[1].toString()) : null;
+        BigDecimal scoreChange = (BigDecimal) row[2];
+        BigDecimal previousScore = (BigDecimal) row[3];
+        BigDecimal newScore = (BigDecimal) row[4];
+        String reason = row[5] != null ? row[5].toString() : null;
+        Instant createdAt = row[6] instanceof Timestamp ts ? ts.toInstant() : null;
+
+        return new ReputationHistoryEntry(
+                logId,
+                queueId,
+                scoreChange,
+                previousScore,
+                newScore,
+                reason,
+                createdAt
+        );
     }
 }

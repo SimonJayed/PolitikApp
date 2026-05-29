@@ -2635,3 +2635,192 @@ button:disabled {
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-subtle); }
+
+/* History page */
+.historyWorkspace {
+  align-items: start;
+}
+
+.historyShell {
+  background:
+    linear-gradient(165deg, rgba(10, 29, 66, 0.02) 0%, rgba(26, 71, 184, 0.02) 100%),
+    var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  display: grid;
+  gap: 20px;
+  overflow: hidden;
+  padding: 24px 28px;
+}
+
+.historyHeader p {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.historyHeader h2 {
+  margin: 0 0 4px;
+}
+
+.historyStats {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.historyStatCard {
+  background: linear-gradient(180deg, var(--bg-inset) 0%, #f9fbff 100%);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 6px;
+  min-height: 92px;
+  padding: 14px 16px;
+}
+
+.historyStatCard .ty-meta,
+.historyStatCard .ty-metric {
+  margin: 0;
+}
+
+.historyFilterBar {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 220px;
+}
+
+.historySearch,
+.historySelect {
+  width: 100%;
+}
+
+.historySkeleton {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.historySkeletonRow {
+  animation: appSkeletonShimmer 1.2s ease-in-out infinite;
+  background: linear-gradient(90deg, #e8edf5 25%, #f2f6fb 50%, #e8edf5 75%);
+  background-size: 220% 100%;
+  border-radius: 8px;
+  height: 40px;
+}
+
+.historyEmpty {
+  background: linear-gradient(180deg, var(--bg-inset) 0%, #f9fbff 100%);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: 40px 24px;
+  text-align: center;
+}
+
+.historyEmpty .ty-card-title {
+  margin: 0;
+}
+
+.historyEmptyIcon {
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  display: inline-flex;
+  height: 40px;
+  justify-content: center;
+  margin-bottom: 10px;
+  width: 40px;
+}
+
+.historyTableShell {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.historyDesktopTable {
+  overflow-x: auto;
+}
+
+.historyTh {
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--text-muted);
+  font-weight: 600;
+  padding: 10px 16px;
+  white-space: nowrap;
+}
+
+.historyTone {
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.historyMobileCards {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+}
+
+.historyMobileCard {
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--bg-inset) 100%);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.historyMobileCard .ty-body,
+.historyMobileCard .ty-meta {
+  margin: 0;
+}
+
+.historyScoreDelta {
+  font-family: var(--mono, monospace);
+}
+
+.historyPagination {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.historyPageButton {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.82rem;
+  gap: 4px;
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.historyPageMeta {
+  color: var(--text-muted);
+  padding: 0 4px;
+}
+
+@media (max-width: 900px) {
+  .historyShell {
+    padding: 18px;
+  }
+
+  .historyStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .historyFilterBar {
+    grid-template-columns: 1fr;
+  }
+
+  .historyPagination {
+    justify-content: space-between;
+  }
+}

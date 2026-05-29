@@ -136,16 +136,49 @@ export default function ModerationPanel({ token, user }) {
   }, [queue, sandboxContext.injectedQueue, isDevModeActive]);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(archiveStorageKey);
-      if (saved) {
+    let cancelled = false;
+    async function loadArchive() {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/moderation/archive`, {
+          headers: getSandboxHeaders(),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.message || `HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        if (Array.isArray(data)) {
+          const mapped = data.map((entry) => ({
+            queueId: entry.queueId,
+            title: entry.title,
+            userVote: entry.userVote,
+            status: entry.status,
+            votedAt: entry.votedAt,
+            reviewer: (isDevModeActive ? manipulatedUser?.name : user?.fullName) || 'Reviewer',
+            sourceUrl: entry.sourceUrl || '',
+          }));
+          setBallotArchive(mapped);
+          return;
+        }
+      } catch {
+        // fallback to local cache
+      }
+
+      try {
+        const saved = localStorage.getItem(archiveStorageKey);
+        if (!saved || cancelled) return;
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed)) setBallotArchive(parsed);
+      } catch {
+        // ignore localStorage errors
       }
-    } catch {
-      // ignore
     }
-  }, [archiveStorageKey]);
+    loadArchive();
+    return () => {
+      cancelled = true;
+    };
+  }, [archiveStorageKey, isDevModeActive, manipulatedUser?.name, token, user?.fullName]);
 
   useEffect(() => {
     try {
@@ -162,11 +195,21 @@ export default function ModerationPanel({ token, user }) {
     });
   }
 
-  const totalQueuePages = Math.max(1, Math.ceil(combinedQueue.length / queuePageSize));
+  const votedQueueIds = useMemo(
+    () => new Set(ballotArchive.map((entry) => String(entry.queueId))),
+    [ballotArchive],
+  );
+
+  const visibleQueue = useMemo(
+    () => combinedQueue.filter((card) => !votedQueueIds.has(String(card.queueId))),
+    [combinedQueue, votedQueueIds],
+  );
+
+  const totalQueuePages = Math.max(1, Math.ceil(visibleQueue.length / queuePageSize));
   const safeQueuePage = Math.min(queuePage, totalQueuePages);
   const queueDeck = useMemo(
-    () => combinedQueue.slice((safeQueuePage - 1) * queuePageSize, safeQueuePage * queuePageSize),
-    [combinedQueue, safeQueuePage],
+    () => visibleQueue.slice((safeQueuePage - 1) * queuePageSize, safeQueuePage * queuePageSize),
+    [visibleQueue, safeQueuePage],
   );
 
   useEffect(() => {
@@ -176,7 +219,7 @@ export default function ModerationPanel({ token, user }) {
   }, [queuePage, safeQueuePage]);
 
   useEffect(() => {
-    const previousQueue = previousQueueRef.current;
+      const previousQueue = previousQueueRef.current;
     if (previousQueue.length > 0) {
       const activeIds = new Set(combinedQueue.map((card) => card.queueId));
       previousQueue.forEach((card) => {
@@ -267,9 +310,14 @@ export default function ModerationPanel({ token, user }) {
       return;
     }
 
+    if (!user?.userId && !isDevModeActive) {
+      setTraceLogs((prev) => [`[ERROR] Unable to submit ballot: missing authenticated user ID.`, ...prev]);
+      return;
+    }
+
     const payload = {
       queueId: card.queueId,
-      peerId: user?.userId || '88bc8912-43ba-4abc-882a-ef92481aa323',
+      peerId: user?.userId,
       voteSelection: form.voteSelection,
       voteReason: form.voteReason,
     };
@@ -305,6 +353,7 @@ export default function ModerationPanel({ token, user }) {
       ]);
 
       updateForm(card.queueId, { voteReason: '' });
+      setQueue((current) => current.filter((item) => item.queueId !== card.queueId));
       fetchQueue();
     } catch (err) {
       setTraceLogs((prev) => [`[ERROR] ${err.message}`, ...prev]);
@@ -670,7 +719,7 @@ export default function ModerationPanel({ token, user }) {
       </div>
       )}
 
-      {queue.length > queuePageSize && (
+      {visibleQueue.length > queuePageSize && (
         <div className="moderation-paginationRow">
           <nav className="paginationMini" aria-label="Moderation queue pagination">
             <button

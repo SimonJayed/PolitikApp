@@ -15,6 +15,7 @@ import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
 import { useAuth } from './auth/AuthContext'
 import AuthPages from './auth/AuthPages'
 import TopNav from './components/TopNav'
+import UserHistoryPage from './components/UserHistoryPage'
 import {
   AlertTriangleIcon,
   BarChart3Icon,
@@ -85,7 +86,8 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const activeUser = isDevModeActive && manipulatedUser ? manipulatedUser : currentUser;
+  const [resolvedUser, setResolvedUser] = useState(currentUser || null)
+  const activeUser = isDevModeActive && manipulatedUser ? manipulatedUser : resolvedUser
   const currentRole = activeUser?.role || 'CONTRIBUTOR';
 
   const [activeView, setActiveView] = useState('dashboard')
@@ -112,6 +114,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     contributions: ['Submissions', 'My Contribution Ledger'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     directory: ['Directory', 'Politician Directory'],
+    history: ['History', 'Reputation Change Ledger'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
     profileMatrix: isDevModeActive
@@ -141,6 +144,20 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   useEffect(() => {
     loadPoliticians()
   }, [loadPoliticians])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!token) return () => { cancelled = true }
+    fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(readApiResponse)
+      .then((data) => {
+        if (cancelled || !data) return
+        setResolvedUser(data)
+        onUserUpdate?.(data)
+      })
+      .catch(() => null)
+    return () => { cancelled = true }
+  }, [token, onUserUpdate])
 
   function updateFormField(event) {
     const { name, value } = event.target
@@ -403,6 +420,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
           )
         )}
         {activeView === 'account' && <UserAccountPage token={token} user={activeUser} />}
+        {activeView === 'history' && <UserHistoryPage token={token} />}
       </section>
     </main>
   )
@@ -578,18 +596,26 @@ function DashboardPanel({ isLoading = false, onOpenProfile, politicians, onNavig
 }
 function UserAccountPage({ token, user }) {
   const { updateSession } = useAuth()
-  const [profile, setProfile] = useState(user)
-  const [state, setState] = useState({ status: 'idle', message: '' })
-  const [form, setForm] = useState({ fullName: user.fullName || '', username: user.username || '' })
+  const [profile, setProfile] = useState(null)
+  const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
+  const [form, setForm] = useState({ fullName: '', username: '' })
 
   useEffect(() => {
+    let cancelled = false
+    setState({ status: 'loading', message: 'Loading profile...' })
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(readApiResponse)
       .then((data) => {
+        if (cancelled) return
         setProfile(data)
         setForm({ fullName: data.fullName || '', username: data.username || '' })
+        setState({ status: 'success', message: '' })
       })
-      .catch(() => null)
+      .catch((error) => {
+        if (cancelled) return
+        setState({ status: 'error', message: error.message || 'Failed to load profile.' })
+      })
+    return () => { cancelled = true }
   }, [token])
 
   async function onSave(event) {
@@ -601,7 +627,7 @@ function UserAccountPage({ token, user }) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
       }).then(readApiResponse)
-      setProfile(data.user)
+      setProfile(data.user || data)
       updateSession(data)
       setState({ status: 'success', message: 'Profile updated.' })
     } catch (error) {
@@ -613,11 +639,11 @@ function UserAccountPage({ token, user }) {
     <section className="workspace">
       <section className="profileSummary">
         <p className="eyebrow ty-page-kicker">Account</p>
-        <h2 className="ty-section-title">{profile?.fullName}</h2>
-        <p className="ty-body">{profile?.email}</p>
-        <p className="ty-body">Role: {profile?.role}</p>
+        <h2 className="ty-section-title">{profile?.fullName || user?.fullName || '—'}</h2>
+        <p className="ty-body">{profile?.email || user?.email || '—'}</p>
+        <p className="ty-body">Role: {profile?.role || user?.role || '—'}</p>
         <div style={{ marginTop: '16px', maxWidth: '420px' }}>
-          <TrustScoreMeter score={profile?.trustScore} />
+          <TrustScoreMeter score={profile?.trustScore ?? user?.trustScore ?? 0} />
         </div>
       </section>
       <form className="editorPanel" onSubmit={onSave}>
@@ -1612,10 +1638,7 @@ function TimelineLedger({ className = '', entries, compact = false, isLoading = 
           <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
             <div className="timelineItemTop">
               <strong>{entry.actionIdentifier}</strong>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em', padding: '2px 8px', color: 'var(--text-muted)' }}>{entry.categoryTag}</span>
-                <TrustDeltaBadge entry={entry} />
-              </div>
+              <span style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em', padding: '2px 8px', color: 'var(--text-muted)' }}>{entry.categoryTag}</span>
             </div>
             <p className="ty-body">{entry.summary}</p>
             <a
@@ -1905,7 +1928,10 @@ function MyContributionsPanel({ onNavigateToSubmit, user }) {
             <article key={item.submissionId} className="review-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ background: 'var(--info-soft)', color: 'var(--info)', border: '1px solid var(--info-border)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em' }}>#{item.submissionId.substring(0, 8).toUpperCase()}</span>
-                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <TrustDeltaBadge entry={item} />
+                  <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
