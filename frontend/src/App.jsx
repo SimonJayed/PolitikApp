@@ -6,7 +6,6 @@ import TrustScoreMeter from './components/TrustScoreMeter'
 import ConfirmActionModal from './components/ConfirmActionModal'
 import PoliticianRankingPanel from './components/PoliticianRankingPanel'
 import LifecycleStageStrip from './components/LifecycleStageStrip'
-import { matchesJurisdiction } from './components/jurisdiction'
 import { ContributionCardsSkeleton, TimelineCardsSkeleton } from './components/Skeletons'
 import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
@@ -51,6 +50,102 @@ const actionOptions = [
 ]
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
+
+const POSITION_GROUPS = {
+  Executive: ['President', 'Vice President', 'Cabinet Secretary', 'Undersecretary', 'Assistant Secretary'],
+  Legislative: ['Senator', 'Senate President', 'House Representative', 'Party-list Representative', 'Speaker of the House'],
+  Judicial: ['Chief Justice', 'Associate Justice', 'Judge'],
+  'Local Government': ['Governor', 'Vice Governor', 'Provincial Board Member', 'Mayor', 'Vice Mayor', 'Councilor'],
+}
+const POSITION_CATEGORIES = Object.keys(POSITION_GROUPS)
+const PROVINCE_LEVEL_POSITIONS = new Set(['Governor', 'Vice Governor', 'Provincial Board Member'])
+const CITY_LEVEL_POSITIONS = new Set(['Mayor', 'Vice Mayor', 'Councilor'])
+const STATUS_OPTIONS = ['ACTIVE', 'INACTIVE', 'ARCHIVED']
+
+const emptyPoliticianForm = {
+  biography: '',
+  cityMunicipalityId: '',
+  fullName: '',
+  jurisdiction: '',
+  jurisdictionType: 'NATIONAL',
+  partyAffiliation: '',
+  position: '',
+  positionCategory: '',
+  profileImageUrl: '',
+  provinceId: '',
+  regionId: '',
+  status: 'ACTIVE',
+  termEnd: '',
+  termStart: '',
+}
+
+function politicianMatchesLocation(p, filters) {
+  if (filters.jurisdictionType !== 'ALL' && (p.jurisdictionType || '') !== filters.jurisdictionType) return false
+  if (filters.positionCategory !== 'ALL' && (p.positionCategory || '') !== filters.positionCategory) return false
+  if (filters.position !== 'ALL' && (p.position || '') !== filters.position) return false
+  if (filters.regionId !== 'ALL' && (p.regionId || '') !== filters.regionId) return false
+  if (filters.provinceId !== 'ALL' && (p.provinceId || '') !== filters.provinceId) return false
+  if (filters.cityMunicipalityId !== 'ALL' && (p.cityMunicipalityId || '') !== filters.cityMunicipalityId) return false
+  if (filters.partyAffiliation !== 'ALL' && (p.partyAffiliation || '') !== filters.partyAffiliation) return false
+  if (filters.status !== 'ALL' && (p.status || '') !== filters.status) return false
+  return true
+}
+
+function displayJurisdiction(profile) {
+  return profile?.jurisdictionDisplay || profile?.jurisdiction || 'Unspecified jurisdiction'
+}
+
+function toPoliticianPayload(form) {
+  const isNational = form.jurisdictionType === 'NATIONAL'
+  const isProvinceLevel = PROVINCE_LEVEL_POSITIONS.has(form.position)
+  return {
+    biography: form.biography.trim(),
+    cityMunicipalityId: isNational || isProvinceLevel ? null : form.cityMunicipalityId || null,
+    fullName: form.fullName.trim(),
+    jurisdiction: isNational ? 'NATIONAL' : form.jurisdiction.trim(),
+    jurisdictionType: form.jurisdictionType,
+    partyAffiliation: form.partyAffiliation.trim(),
+    position: form.position,
+    positionCategory: form.positionCategory,
+    profileImageUrl: form.profileImageUrl.trim() || null,
+    provinceId: isNational ? null : form.provinceId || null,
+    regionId: isNational ? null : form.regionId || null,
+    status: form.status || 'ACTIVE',
+    termEnd: form.termEnd || null,
+    termStart: form.termStart || null,
+  }
+}
+
+function nextPoliticianForm(current, name, value) {
+  const next = { ...current, [name]: value }
+  if (name === 'jurisdictionType' && value === 'NATIONAL') {
+    next.regionId = ''
+    next.provinceId = ''
+    next.cityMunicipalityId = ''
+    if (next.positionCategory === 'Local Government') {
+      next.positionCategory = ''
+      next.position = ''
+    }
+    next.jurisdiction = 'NATIONAL'
+  }
+  if (name === 'jurisdictionType' && value === 'LOCAL') {
+    next.jurisdiction = ''
+  }
+  if (name === 'positionCategory') {
+    next.position = ''
+  }
+  if (name === 'regionId') {
+    next.provinceId = ''
+    next.cityMunicipalityId = ''
+  }
+  if (name === 'provinceId') {
+    next.cityMunicipalityId = ''
+  }
+  if (name === 'position' && PROVINCE_LEVEL_POSITIONS.has(value)) {
+    next.cityMunicipalityId = ''
+  }
+  return next
+}
 
 const actionDetailFields = {
   COA_FINDING: [
@@ -107,6 +202,13 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
+  const [locationLookups, setLocationLookups] = useState({
+    citiesByProvince: {},
+    errors: {},
+    loading: {},
+    provincesByRegion: {},
+    regions: [],
+  })
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -144,6 +246,69 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   useEffect(() => {
     loadPoliticians()
   }, [loadPoliticians])
+
+  const loadRegions = useCallback(async () => {
+    setLocationLookups((current) => ({ ...current, loading: { ...current.loading, regions: true } }))
+    try {
+      const regions = await fetch(`${API_BASE_URL}/api/regions`).then(readApiResponse)
+      setLocationLookups((current) => ({
+        ...current,
+        errors: { ...current.errors, regions: '' },
+        loading: { ...current.loading, regions: false },
+        regions,
+      }))
+    } catch (error) {
+      setLocationLookups((current) => ({
+        ...current,
+        errors: { ...current.errors, regions: error.message },
+        loading: { ...current.loading, regions: false },
+      }))
+    }
+  }, [])
+
+  const loadProvinces = useCallback(async (regionId) => {
+    if (!regionId) return
+    if (locationLookups.provincesByRegion[regionId]) return
+    setLocationLookups((current) => ({ ...current, loading: { ...current.loading, [`province:${regionId}`]: true } }))
+    try {
+      const provinces = await fetch(`${API_BASE_URL}/api/provinces?regionId=${regionId}`).then(readApiResponse)
+      setLocationLookups((current) => ({
+        ...current,
+        provincesByRegion: { ...current.provincesByRegion, [regionId]: provinces },
+        loading: { ...current.loading, [`province:${regionId}`]: false },
+      }))
+    } catch (error) {
+      setLocationLookups((current) => ({
+        ...current,
+        errors: { ...current.errors, [`province:${regionId}`]: error.message },
+        loading: { ...current.loading, [`province:${regionId}`]: false },
+      }))
+    }
+  }, [locationLookups.provincesByRegion])
+
+  const loadCities = useCallback(async (provinceId) => {
+    if (!provinceId) return
+    if (locationLookups.citiesByProvince[provinceId]) return
+    setLocationLookups((current) => ({ ...current, loading: { ...current.loading, [`city:${provinceId}`]: true } }))
+    try {
+      const cities = await fetch(`${API_BASE_URL}/api/cities-municipalities?provinceId=${provinceId}`).then(readApiResponse)
+      setLocationLookups((current) => ({
+        ...current,
+        citiesByProvince: { ...current.citiesByProvince, [provinceId]: cities },
+        loading: { ...current.loading, [`city:${provinceId}`]: false },
+      }))
+    } catch (error) {
+      setLocationLookups((current) => ({
+        ...current,
+        errors: { ...current.errors, [`city:${provinceId}`]: error.message },
+        loading: { ...current.loading, [`city:${provinceId}`]: false },
+      }))
+    }
+  }, [locationLookups.citiesByProvince])
+
+  useEffect(() => {
+    loadRegions()
+  }, [loadRegions])
 
   useEffect(() => {
     let cancelled = false
@@ -322,6 +487,9 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
           <PoliticianDirectoryLoaderPanel
             dashboardId={dashboardId}
             dbUser={currentUser}
+            locationLookups={locationLookups}
+            onLoadCities={loadCities}
+            onLoadProvinces={loadProvinces}
             onChange={setDashboardId}
             onViewProfile={openPoliticianProfile}
             onSubmit={handleDashboardLookup}
@@ -349,6 +517,9 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         {activeView === 'profile' && (
           <PoliticianProfilePage
             onAddContribution={openSubmitContributionForPolitician}
+            locationLookups={locationLookups}
+            onLoadCities={loadCities}
+            onLoadProvinces={loadProvinces}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onReload={openPoliticianProfile}
             onUserUpdate={onUserUpdate}
@@ -373,6 +544,9 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         {activeView === 'compare' && (
           <ComparisonPanel
             compareIds={compareIds}
+            locationLookups={locationLookups}
+            onLoadCities={loadCities}
+            onLoadProvinces={loadProvinces}
             onChange={setCompareIds}
             onModalOpenChange={setIsCompareModalOpen}
             onSubmit={handleComparisonLookup}
@@ -756,12 +930,100 @@ function ActionDetailsFields({ actionDetails, actionIdentifier, onChange }) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Directory                                                        */
 /* ─────────────────────────────────────────────────────────────────────────── */
+function PoliticianFormFields({ errors, form, locationLookups, onChange }) {
+  const provinces = form.regionId ? (locationLookups.provincesByRegion[form.regionId] || []) : []
+  const cities = form.provinceId ? (locationLookups.citiesByProvince[form.provinceId] || []) : []
+  const positions = form.positionCategory ? (POSITION_GROUPS[form.positionCategory] || []) : []
+  const showLocalFields = form.jurisdictionType === 'LOCAL'
+  const showCity = showLocalFields && !PROVINCE_LEVEL_POSITIONS.has(form.position)
+
+  return (
+    <>
+      <label>Full Name<input name="fullName" onChange={onChange} required value={form.fullName} />{errors.fullName && <span className="fieldError">{errors.fullName}</span>}</label>
+      <label>
+        Jurisdiction Type
+        <select name="jurisdictionType" onChange={onChange} required value={form.jurisdictionType}>
+          <option value="NATIONAL">National</option>
+          <option value="LOCAL">Local</option>
+        </select>
+        {errors.jurisdictionType && <span className="fieldError">{errors.jurisdictionType}</span>}
+      </label>
+      <label>
+        Position Category
+        <select name="positionCategory" onChange={onChange} required value={form.positionCategory}>
+          <option value="">Select category</option>
+          {POSITION_CATEGORIES
+            .filter((category) => form.jurisdictionType === 'LOCAL' || category !== 'Local Government')
+            .map((category) => <option key={category} value={category}>{category}</option>)}
+        </select>
+        {errors.positionCategory && <span className="fieldError">{errors.positionCategory}</span>}
+      </label>
+      <label>
+        Position
+        <select name="position" onChange={onChange} required value={form.position}>
+          <option value="">Select position</option>
+          {positions.map((position) => <option key={position} value={position}>{position}</option>)}
+        </select>
+        {errors.position && <span className="fieldError">{errors.position}</span>}
+      </label>
+      {showLocalFields && (
+        <>
+          <label>
+            Region
+            <select name="regionId" onChange={onChange} required value={form.regionId}>
+              <option value="">Select region</option>
+              {locationLookups.loading.regions && <option value="">Loading...</option>}
+              {locationLookups.regions.map((region) => <option key={region.regionId} value={region.regionId}>{region.regionName}</option>)}
+            </select>
+            {errors.regionId && <span className="fieldError">{errors.regionId}</span>}
+          </label>
+          <label>
+            Province
+            <select disabled={!form.regionId} name="provinceId" onChange={onChange} required value={form.provinceId}>
+              <option value="">{form.regionId ? 'Select province' : 'Select region first'}</option>
+              {locationLookups.loading[`province:${form.regionId}`] && <option value="">Loading...</option>}
+              {form.regionId && provinces.length === 0 && !locationLookups.loading[`province:${form.regionId}`] && <option value="">No provinces available</option>}
+              {provinces.map((province) => <option key={province.provinceId} value={province.provinceId}>{province.provinceName}</option>)}
+            </select>
+            {errors.provinceId && <span className="fieldError">{errors.provinceId}</span>}
+          </label>
+          {showCity && (
+            <label>
+              City/Municipality
+              <select disabled={!form.provinceId} name="cityMunicipalityId" onChange={onChange} required={CITY_LEVEL_POSITIONS.has(form.position)} value={form.cityMunicipalityId}>
+                <option value="">{form.provinceId ? 'Select city/municipality' : 'Select province first'}</option>
+                {locationLookups.loading[`city:${form.provinceId}`] && <option value="">Loading...</option>}
+                {form.provinceId && cities.length === 0 && !locationLookups.loading[`city:${form.provinceId}`] && <option value="">No cities or municipalities available</option>}
+                {cities.map((city) => <option key={city.cityMunicipalityId} value={city.cityMunicipalityId}>{city.name}</option>)}
+              </select>
+              {errors.cityMunicipalityId && <span className="fieldError">{errors.cityMunicipalityId}</span>}
+            </label>
+          )}
+        </>
+      )}
+      <label>Party / Affiliation<input name="partyAffiliation" onChange={onChange} value={form.partyAffiliation} />{errors.partyAffiliation && <span className="fieldError">{errors.partyAffiliation}</span>}</label>
+      <label>Profile Image URL<input name="profileImageUrl" onChange={onChange} type="url" value={form.profileImageUrl} />{errors.profileImageUrl && <span className="fieldError">{errors.profileImageUrl}</span>}</label>
+      <label>Biography<textarea name="biography" onChange={onChange} rows="5" value={form.biography} />{errors.biography && <span className="fieldError">{errors.biography}</span>}</label>
+    </>
+  )
+}
+
 function PoliticianDirectoryLoaderPanel({
   dashboardId, dbUser, onChange, onViewProfile, onSubmit,
+  locationLookups, onLoadCities, onLoadProvinces,
   politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
   const [query, setQuery] = useState('')
-  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [filters, setFilters] = useState({
+    cityMunicipalityId: 'ALL',
+    jurisdictionType: 'ALL',
+    partyAffiliation: 'ALL',
+    position: 'ALL',
+    positionCategory: 'ALL',
+    provinceId: 'ALL',
+    regionId: 'ALL',
+    status: 'ALL',
+  })
   const [page, setPage] = useState(1)
   const pageSize = 9
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
@@ -772,34 +1034,29 @@ function PoliticianDirectoryLoaderPanel({
   const [detailsData, setDetailsData] = useState(null)
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({
-    biography: '', fullName: '', jurisdiction: '',
-    partyAffiliation: '', position: '', profileImageUrl: '',
+    ...emptyPoliticianForm,
   })
   const [createForm, setCreateForm] = useState({
-    fullName: '',
-    jurisdiction: '',
-    partyAffiliation: '',
-    position: '',
-    biography: '',
-    profileImageUrl: '',
-    status: '',
-    termStart: '',
-    termEnd: '',
+    ...emptyPoliticianForm,
   })
   const isDatabaseAdmin = dbUser?.role === 'ADMIN'
+  const partyOptions = useMemo(() => (
+    Array.from(new Set(politicians.map((p) => p.partyAffiliation).filter(Boolean))).sort()
+  ), [politicians])
+  const provincesForFilter = filters.regionId === 'ALL' ? [] : (locationLookups.provincesByRegion[filters.regionId] || [])
+  const citiesForFilter = filters.provinceId === 'ALL' ? [] : (locationLookups.citiesByProvince[filters.provinceId] || [])
 
   const filteredPoliticians = useMemo(() => {
     const q = query.trim().toLowerCase()
     return politicians.filter((p) => {
-      const jurisdictionMatch = matchesJurisdiction(p.jurisdiction, jurisdictionFilter)
       const matchesQuery = !q || p.fullName.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q)
-      return jurisdictionMatch && matchesQuery
+      return matchesQuery && politicianMatchesLocation(p, filters)
     })
-  }, [jurisdictionFilter, politicians, query])
+  }, [filters, politicians, query])
 
   useEffect(() => {
     setPage(1)
-  }, [query, jurisdictionFilter])
+  }, [query, filters])
 
   const totalPages = Math.max(1, Math.ceil(filteredPoliticians.length / pageSize))
   const safePage = Math.min(page, totalPages)
@@ -830,15 +1087,7 @@ function PoliticianDirectoryLoaderPanel({
     setCreateErrors({})
     setCreateState({ status: 'idle', message: '' })
     setCreateForm({
-      fullName: '',
-      jurisdiction: '',
-      partyAffiliation: '',
-      position: '',
-      biography: '',
-      profileImageUrl: '',
-      status: '',
-      termStart: '',
-      termEnd: '',
+      ...emptyPoliticianForm,
     })
     setIsCreateOpen(true)
   }
@@ -847,31 +1096,75 @@ function PoliticianDirectoryLoaderPanel({
     if (!detailsData || !isDatabaseAdmin) return
     setEditErrors({})
     setEditForm({
+      ...emptyPoliticianForm,
       biography: detailsData.biography || '',
       fullName: detailsData.fullName || '',
       jurisdiction: detailsData.jurisdiction || '',
+      jurisdictionType: detailsData.jurisdictionType || 'NATIONAL',
       partyAffiliation: detailsData.partyAffiliation || '',
       position: detailsData.position || '',
+      positionCategory: detailsData.positionCategory || '',
       profileImageUrl: detailsData.profileImageUrl || '',
+      regionId: detailsData.regionId || '',
+      provinceId: detailsData.provinceId || '',
+      cityMunicipalityId: detailsData.cityMunicipalityId || '',
+      status: detailsData.status || 'ACTIVE',
+      termStart: detailsData.termStart || '',
+      termEnd: detailsData.termEnd || '',
     })
+    if (detailsData.regionId) onLoadProvinces(detailsData.regionId)
+    if (detailsData.provinceId) onLoadCities(detailsData.provinceId)
     setIsEditOpen(true)
   }
 
   function updateEditField(e) {
     const { name, value } = e.target
-    setEditForm((c) => ({ ...c, [name]: value }))
+    setEditForm((current) => nextPoliticianForm(current, name, value))
+    if (name === 'regionId') onLoadProvinces(value)
+    if (name === 'provinceId') onLoadCities(value)
   }
 
   function updateCreateField(e) {
     const { name, value } = e.target
-    setCreateForm((current) => ({ ...current, [name]: value }))
+    setCreateForm((current) => nextPoliticianForm(current, name, value))
+    if (name === 'regionId') onLoadProvinces(value)
+    if (name === 'provinceId') onLoadCities(value)
+  }
+
+  function updateFilterField(e) {
+    const { name, value } = e.target
+    setFilters((current) => {
+      const next = { ...current, [name]: value }
+      if (name === 'jurisdictionType' && value === 'NATIONAL') {
+        next.regionId = 'ALL'
+        next.provinceId = 'ALL'
+        next.cityMunicipalityId = 'ALL'
+      }
+      if (name === 'positionCategory') next.position = 'ALL'
+      if (name === 'regionId') {
+        next.provinceId = 'ALL'
+        next.cityMunicipalityId = 'ALL'
+      }
+      if (name === 'provinceId') next.cityMunicipalityId = 'ALL'
+      return next
+    })
+    if (name === 'regionId' && value !== 'ALL') onLoadProvinces(value)
+    if (name === 'provinceId' && value !== 'ALL') onLoadCities(value)
   }
 
   function validateEditForm() {
     const errors = {}
     if (!editForm.fullName.trim()) errors.fullName = 'Full name is required.'
     if (!editForm.position.trim()) errors.position = 'Position is required.'
-    if (!editForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
+    if (!editForm.jurisdictionType) errors.jurisdictionType = 'Jurisdiction type is required.'
+    if (!editForm.positionCategory) errors.positionCategory = 'Position category is required.'
+    if (editForm.jurisdictionType === 'LOCAL') {
+      if (!editForm.regionId) errors.regionId = 'Region is required.'
+      if (!editForm.provinceId) errors.provinceId = 'Province is required.'
+      if (CITY_LEVEL_POSITIONS.has(editForm.position) && !editForm.cityMunicipalityId) {
+        errors.cityMunicipalityId = 'City/Municipality is required.'
+      }
+    }
     setEditErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -879,9 +1172,17 @@ function PoliticianDirectoryLoaderPanel({
   function validateCreateForm() {
     const errors = {}
     if (!createForm.fullName.trim()) errors.fullName = 'Full name is required.'
-    if (!createForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
+    if (!createForm.jurisdictionType) errors.jurisdictionType = 'Jurisdiction type is required.'
+    if (!createForm.positionCategory) errors.positionCategory = 'Position category is required.'
     if (!createForm.position.trim()) errors.position = 'Position is required.'
     if (!createForm.status.trim()) errors.status = 'Status is required.'
+    if (createForm.jurisdictionType === 'LOCAL') {
+      if (!createForm.regionId) errors.regionId = 'Region is required.'
+      if (!createForm.provinceId) errors.provinceId = 'Province is required.'
+      if (CITY_LEVEL_POSITIONS.has(createForm.position) && !createForm.cityMunicipalityId) {
+        errors.cityMunicipalityId = 'City/Municipality is required.'
+      }
+    }
     if (!createForm.termStart) errors.termStart = 'Term start is required.'
     if (!createForm.termEnd) errors.termEnd = 'Term end is required.'
     if (createForm.termStart && createForm.termEnd && new Date(createForm.termEnd) < new Date(createForm.termStart)) {
@@ -902,13 +1203,8 @@ function PoliticianDirectoryLoaderPanel({
     e.preventDefault()
     if (!detailsData || !isDatabaseAdmin || !validateEditForm()) return
     const updates = {
+      ...toPoliticianPayload(editForm),
       politicianId: detailsData.politicianId,
-      fullName: editForm.fullName.trim(),
-      position: editForm.position.trim(),
-      jurisdiction: editForm.jurisdiction.trim(),
-      partyAffiliation: editForm.partyAffiliation.trim(),
-      profileImageUrl: editForm.profileImageUrl.trim(),
-      biography: editForm.biography.trim(),
     }
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${detailsData.politicianId}`, {
@@ -935,17 +1231,7 @@ function PoliticianDirectoryLoaderPanel({
     if (!isDatabaseAdmin || !validateCreateForm()) return
     setCreateState({ status: 'loading', message: 'Creating politician profile...' })
 
-    const payload = {
-      fullName: createForm.fullName.trim(),
-      jurisdiction: createForm.jurisdiction.trim(),
-      partyAffiliation: createForm.partyAffiliation.trim(),
-      position: createForm.position.trim(),
-      biography: createForm.biography.trim(),
-      profileImageUrl: createForm.profileImageUrl.trim() || null,
-      status: createForm.status.trim(),
-      termStart: createForm.termStart,
-      termEnd: createForm.termEnd,
-    }
+    const payload = toPoliticianPayload(createForm)
 
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians`, {
@@ -1016,11 +1302,76 @@ function PoliticianDirectoryLoaderPanel({
           />
         </label>
         <label>
-          Jurisdiction
-          <select name="dashboardJurisdiction" onChange={(e) => setJurisdictionFilter(e.target.value)} value={jurisdictionFilter}>
+          Jurisdiction Type
+          <select name="jurisdictionType" onChange={updateFilterField} value={filters.jurisdictionType}>
             <option value="ALL">All</option>
             <option value="NATIONAL">National</option>
-            <option value="CEBU_CITY">Cebu City</option>
+            <option value="LOCAL">Local</option>
+          </select>
+        </label>
+        <label>
+          Position Category
+          <select name="positionCategory" onChange={updateFilterField} value={filters.positionCategory}>
+            <option value="ALL">All</option>
+            {POSITION_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+          </select>
+        </label>
+        <label>
+          Position
+          <select name="position" onChange={updateFilterField} value={filters.position}>
+            <option value="ALL">All</option>
+            {(filters.positionCategory === 'ALL'
+              ? Object.values(POSITION_GROUPS).flat()
+              : POSITION_GROUPS[filters.positionCategory] || []
+            ).map((position) => <option key={position} value={position}>{position}</option>)}
+          </select>
+        </label>
+        {filters.jurisdictionType !== 'NATIONAL' && (
+          <>
+            <label>
+              Region
+              <select name="regionId" onChange={updateFilterField} value={filters.regionId}>
+                <option value="ALL">All</option>
+                {locationLookups.loading.regions && <option value="ALL">Loading...</option>}
+                {locationLookups.regions.map((region) => (
+                  <option key={region.regionId} value={region.regionId}>{region.regionName}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Province
+              <select disabled={filters.regionId === 'ALL'} name="provinceId" onChange={updateFilterField} value={filters.provinceId}>
+                <option value="ALL">{filters.regionId === 'ALL' ? 'Select region first' : 'All'}</option>
+                {locationLookups.loading[`province:${filters.regionId}`] && <option value="ALL">Loading...</option>}
+                {provincesForFilter.map((province) => (
+                  <option key={province.provinceId} value={province.provinceId}>{province.provinceName}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              City/Municipality
+              <select disabled={filters.provinceId === 'ALL'} name="cityMunicipalityId" onChange={updateFilterField} value={filters.cityMunicipalityId}>
+                <option value="ALL">{filters.provinceId === 'ALL' ? 'Select province first' : 'All'}</option>
+                {locationLookups.loading[`city:${filters.provinceId}`] && <option value="ALL">Loading...</option>}
+                {citiesForFilter.map((city) => (
+                  <option key={city.cityMunicipalityId} value={city.cityMunicipalityId}>{city.name}</option>
+                ))}
+              </select>
+            </label>
+          </>
+        )}
+        <label>
+          Party
+          <select name="partyAffiliation" onChange={updateFilterField} value={filters.partyAffiliation}>
+            <option value="ALL">All</option>
+            {partyOptions.map((party) => <option key={party} value={party}>{party}</option>)}
+          </select>
+        </label>
+        <label>
+          Status
+          <select name="status" onChange={updateFilterField} value={filters.status}>
+            <option value="ALL">All</option>
+            {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
           </select>
         </label>
         <form className="dashboardQuickLoad" onSubmit={onSubmit}>
@@ -1061,7 +1412,7 @@ function PoliticianDirectoryLoaderPanel({
             <span className="dashboardCardBody">
               <strong className="ty-card-title">{politician.fullName}</strong>
               <small className="ty-meta">{politician.position || 'UNKNOWN'}</small>
-              <small className="ty-meta">{politician.jurisdiction || 'Unspecified'}</small>
+              <small className="ty-meta">{displayJurisdiction(politician)}</small>
               <small className="ty-meta">{politician.partyAffiliation || 'Party not disclosed'}</small>
               {politician.coaAuditDiscrepancies > 0 && (
                 <span style={{
@@ -1108,7 +1459,7 @@ function PoliticianDirectoryLoaderPanel({
                 <div className="detailsIdentity">
                   <h4 className="ty-section-title">{detailsData.fullName}</h4>
                   <p className="ty-body">{detailsData.position || 'UNKNOWN'}</p>
-                  <p className="ty-body">{detailsData.jurisdiction || 'Unspecified'}</p>
+                  <p className="ty-body">{displayJurisdiction(detailsData)}</p>
                   <p className="ty-body">{detailsData.partyAffiliation || 'Party not disclosed'}</p>
                 </div>
               </div>
@@ -1135,19 +1486,7 @@ function PoliticianDirectoryLoaderPanel({
             </header>
             <div className="comparisonModalBody">
               <form className="editFormGrid" onSubmit={handleSaveEdit}>
-                <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-                <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
-                <label>
-                  Jurisdiction
-                  <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
-                  </select>
-                  {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
-                </label>
-                <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
-                <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
-                <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
+                <PoliticianFormFields errors={editErrors} form={editForm} locationLookups={locationLookups} onChange={updateEditField} />
                 <div className="editModalActions">
                   <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
                   <button type="submit">Save Update</button>
@@ -1166,25 +1505,12 @@ function PoliticianDirectoryLoaderPanel({
             </header>
             <div className="comparisonModalBody">
               <form className="editFormGrid" onSubmit={handleCreatePolitician}>
-                <label>Full Name<input name="fullName" onChange={updateCreateField} required value={createForm.fullName} />{createErrors.fullName && <span className="fieldError">{createErrors.fullName}</span>}</label>
-                <label>
-                  Jurisdiction
-                  <select name="jurisdiction" onChange={updateCreateField} required value={createForm.jurisdiction}>
-                    <option value="">Select jurisdiction</option>
-                    <option value="NATIONAL">National</option>
-                    <option value="CEBU_CITY">Cebu City</option>
-                  </select>
-                  {createErrors.jurisdiction && <span className="fieldError">{createErrors.jurisdiction}</span>}
-                </label>
-                <label>Party Affiliation<input name="partyAffiliation" onChange={updateCreateField} value={createForm.partyAffiliation} />{createErrors.partyAffiliation && <span className="fieldError">{createErrors.partyAffiliation}</span>}</label>
-                <label>Position<input name="position" onChange={updateCreateField} required value={createForm.position} />{createErrors.position && <span className="fieldError">{createErrors.position}</span>}</label>
+                <PoliticianFormFields errors={createErrors} form={createForm} locationLookups={locationLookups} onChange={updateCreateField} />
                 <label>
                   Status
                   <select name="status" onChange={updateCreateField} required value={createForm.status}>
                     <option value="">Select status</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="SUSPENDED">Suspended</option>
+                    {STATUS_OPTIONS.map((status) => <option key={status} value={status}>{status}</option>)}
                   </select>
                   {createErrors.status && <span className="fieldError">{createErrors.status}</span>}
                 </label>
@@ -1210,7 +1536,7 @@ function PoliticianDirectoryLoaderPanel({
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
+function PoliticianProfilePage({ dbUser, locationLookups, onAddContribution, onLoadCities, onLoadProvinces, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
@@ -1218,7 +1544,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
   const [appealTarget, setAppealTarget] = useState(null)
   const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
   const [editErrors, setEditErrors] = useState({})
-  const [editForm, setEditForm] = useState({ biography: '', fullName: '', jurisdiction: '', partyAffiliation: '', position: '', profileImageUrl: '' })
+  const [editForm, setEditForm] = useState({ ...emptyPoliticianForm })
   const isDatabaseAdmin = dbUser?.role === 'ADMIN'
 
   useEffect(() => {
@@ -1239,20 +1565,37 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
     if (!profile || !isDatabaseAdmin) return
     setEditErrors({})
     setEditForm({
+      ...emptyPoliticianForm,
       biography: profile.biography || '', fullName: profile.fullName || '',
       jurisdiction: profile.jurisdiction || '', partyAffiliation: profile.partyAffiliation || '',
-      position: profile.position || '', profileImageUrl: profile.profileImageUrl || '',
+      jurisdictionType: profile.jurisdictionType || 'NATIONAL',
+      position: profile.position || '', positionCategory: profile.positionCategory || '', profileImageUrl: profile.profileImageUrl || '',
+      regionId: profile.regionId || '', provinceId: profile.provinceId || '', cityMunicipalityId: profile.cityMunicipalityId || '',
+      status: profile.status || 'ACTIVE', termStart: profile.termStart || '', termEnd: profile.termEnd || '',
     })
+    if (profile.regionId) onLoadProvinces(profile.regionId)
+    if (profile.provinceId) onLoadCities(profile.provinceId)
     setIsEditOpen(true)
   }
 
-  function updateEditField(e) { const { name, value } = e.target; setEditForm((c) => ({ ...c, [name]: value })) }
+  function updateEditField(e) {
+    const { name, value } = e.target
+    setEditForm((current) => nextPoliticianForm(current, name, value))
+    if (name === 'regionId') onLoadProvinces(value)
+    if (name === 'provinceId') onLoadCities(value)
+  }
 
   function validateEditForm() {
     const errors = {}
     if (!editForm.fullName.trim()) errors.fullName = 'Full name is required.'
     if (!editForm.position.trim()) errors.position = 'Position is required.'
-    if (!editForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
+    if (!editForm.jurisdictionType) errors.jurisdictionType = 'Jurisdiction type is required.'
+    if (!editForm.positionCategory) errors.positionCategory = 'Position category is required.'
+    if (editForm.jurisdictionType === 'LOCAL') {
+      if (!editForm.regionId) errors.regionId = 'Region is required.'
+      if (!editForm.provinceId) errors.provinceId = 'Province is required.'
+      if (CITY_LEVEL_POSITIONS.has(editForm.position) && !editForm.cityMunicipalityId) errors.cityMunicipalityId = 'City/Municipality is required.'
+    }
     setEditErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -1261,13 +1604,8 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
     e.preventDefault()
     if (!profile || !isDatabaseAdmin || !validateEditForm()) return
     const updates = {
+      ...toPoliticianPayload(editForm),
       politicianId: profile.politicianId,
-      fullName: editForm.fullName.trim(),
-      position: editForm.position.trim(),
-      jurisdiction: editForm.jurisdiction.trim(),
-      partyAffiliation: editForm.partyAffiliation.trim(),
-      profileImageUrl: editForm.profileImageUrl.trim(),
-      biography: editForm.biography.trim(),
     }
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${profile.politicianId}`, {
@@ -1329,7 +1667,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
           <section className="profileSummary">
             <p className="eyebrow ty-page-kicker">{profile.position || 'UNKNOWN'}</p>
             <h2 className="ty-section-title">{profile.fullName}</h2>
-            <p className="ty-body">{profile.jurisdiction || 'Unspecified jurisdiction'}</p>
+            <p className="ty-body">{displayJurisdiction(profile)}</p>
             <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -1355,19 +1693,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
             </header>
             <div className="comparisonModalBody">
               <form className="editFormGrid" onSubmit={handleSaveEdit}>
-                <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-                <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
-                <label>
-                  Jurisdiction
-                  <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
-                  </select>
-                  {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
-                </label>
-                <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
-                <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
-                <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
+                <PoliticianFormFields errors={editErrors} form={editForm} locationLookups={locationLookups} onChange={updateEditField} />
                 <div className="editModalActions">
                   <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
                   <button type="submit">Save Update</button>
@@ -1398,9 +1724,18 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Comparison Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
+function ComparisonPanel({ compareIds, locationLookups, onChange, onLoadCities, onLoadProvinces, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
   const [query, setQuery] = useState('')
-  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [filters, setFilters] = useState({
+    cityMunicipalityId: 'ALL',
+    jurisdictionType: 'ALL',
+    partyAffiliation: 'ALL',
+    position: 'ALL',
+    positionCategory: 'ALL',
+    provinceId: 'ALL',
+    regionId: 'ALL',
+    status: 'ALL',
+  })
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pageLeft, setPageLeft] = useState(1)
   const [pageRight, setPageRight] = useState(1)
@@ -1409,16 +1744,36 @@ function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, po
   const filteredPoliticians = useMemo(() => {
     const q = query.trim().toLowerCase()
     return politicians.filter((p) => {
-      const matchesJ = jurisdictionFilter === 'ALL' || p.jurisdiction === jurisdictionFilter
       const matchesQ = !q || p.fullName.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q)
-      return matchesJ && matchesQ
+      return matchesQ && politicianMatchesLocation(p, filters)
     })
-  }, [jurisdictionFilter, politicians, query])
+  }, [filters, politicians, query])
 
   useEffect(() => {
     setPageLeft(1)
     setPageRight(1)
-  }, [query, jurisdictionFilter])
+  }, [query, filters])
+
+  function updateFilterField(e) {
+    const { name, value } = e.target
+    setFilters((current) => {
+      const next = { ...current, [name]: value }
+      if (name === 'jurisdictionType' && value === 'NATIONAL') {
+        next.regionId = 'ALL'; next.provinceId = 'ALL'; next.cityMunicipalityId = 'ALL'
+      }
+      if (name === 'positionCategory') next.position = 'ALL'
+      if (name === 'regionId') {
+        next.provinceId = 'ALL'; next.cityMunicipalityId = 'ALL'
+      }
+      if (name === 'provinceId') next.cityMunicipalityId = 'ALL'
+      return next
+    })
+    if (name === 'regionId' && value !== 'ALL') onLoadProvinces(value)
+    if (name === 'provinceId' && value !== 'ALL') onLoadCities(value)
+  }
+
+  const provincesForFilter = filters.regionId === 'ALL' ? [] : (locationLookups.provincesByRegion[filters.regionId] || [])
+  const citiesForFilter = filters.provinceId === 'ALL' ? [] : (locationLookups.citiesByProvince[filters.provinceId] || [])
 
   const totalPages = Math.max(1, Math.ceil(filteredPoliticians.length / pageSize))
   const safeLeft = Math.min(pageLeft, totalPages)
@@ -1463,13 +1818,53 @@ function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, po
           <input name="candidateSearch" onChange={(e) => setQuery(e.target.value)} placeholder="Search by name or position" type="text" value={query} />
         </label>
         <label>
-          Jurisdiction
-          <select name="jurisdiction" onChange={(e) => setJurisdictionFilter(e.target.value)} value={jurisdictionFilter}>
+          Jurisdiction Type
+          <select name="jurisdictionType" onChange={updateFilterField} value={filters.jurisdictionType}>
             <option value="ALL">All</option>
             <option value="NATIONAL">National</option>
-            <option value="CEBU_CITY">Cebu City</option>
+            <option value="LOCAL">Local</option>
           </select>
         </label>
+        <label>
+          Position Category
+          <select name="positionCategory" onChange={updateFilterField} value={filters.positionCategory}>
+            <option value="ALL">All</option>
+            {POSITION_CATEGORIES.map((category) => <option key={category} value={category}>{category}</option>)}
+          </select>
+        </label>
+        <label>
+          Position
+          <select name="position" onChange={updateFilterField} value={filters.position}>
+            <option value="ALL">All</option>
+            {(filters.positionCategory === 'ALL' ? Object.values(POSITION_GROUPS).flat() : POSITION_GROUPS[filters.positionCategory] || [])
+              .map((position) => <option key={position} value={position}>{position}</option>)}
+          </select>
+        </label>
+        {filters.jurisdictionType !== 'NATIONAL' && (
+          <>
+            <label>
+              Region
+              <select name="regionId" onChange={updateFilterField} value={filters.regionId}>
+                <option value="ALL">All</option>
+                {locationLookups.regions.map((region) => <option key={region.regionId} value={region.regionId}>{region.regionName}</option>)}
+              </select>
+            </label>
+            <label>
+              Province
+              <select disabled={filters.regionId === 'ALL'} name="provinceId" onChange={updateFilterField} value={filters.provinceId}>
+                <option value="ALL">{filters.regionId === 'ALL' ? 'Select region first' : 'All'}</option>
+                {provincesForFilter.map((province) => <option key={province.provinceId} value={province.provinceId}>{province.provinceName}</option>)}
+              </select>
+            </label>
+            <label>
+              City/Municipality
+              <select disabled={filters.provinceId === 'ALL'} name="cityMunicipalityId" onChange={updateFilterField} value={filters.cityMunicipalityId}>
+                <option value="ALL">{filters.provinceId === 'ALL' ? 'Select province first' : 'All'}</option>
+                {citiesForFilter.map((city) => <option key={city.cityMunicipalityId} value={city.cityMunicipalityId}>{city.name}</option>)}
+              </select>
+            </label>
+          </>
+        )}
       </section>
 
       <StatusLine state={state} />

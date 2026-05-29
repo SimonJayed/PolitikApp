@@ -5,6 +5,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -34,6 +36,24 @@ public class Politician {
 
     @Column(name = "jurisdiction", nullable = false, length = 100)
     private String jurisdiction;
+
+    @Column(name = "jurisdiction_type", length = 20)
+    private String jurisdictionType;
+
+    @Column(name = "position_category", length = 50)
+    private String positionCategory;
+
+    @ManyToOne
+    @JoinColumn(name = "region_id")
+    private Region region;
+
+    @ManyToOne
+    @JoinColumn(name = "province_id")
+    private Province province;
+
+    @ManyToOne
+    @JoinColumn(name = "city_municipality_id")
+    private CityMunicipality cityMunicipality;
 
     @Column(name = "party_affiliation", length = 100)
     private String partyAffiliation;

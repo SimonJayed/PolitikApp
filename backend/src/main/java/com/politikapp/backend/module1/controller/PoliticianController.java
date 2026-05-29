@@ -4,15 +4,18 @@ import com.politikapp.backend.auth.entity.AuthUser;
 import com.politikapp.backend.auth.repository.AuthUserRepository;
 import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.common.HttpResponseException;
+import com.politikapp.backend.module1.dto.PoliticianFilterRequest;
 import com.politikapp.backend.module1.dto.PoliticianResponse;
 import com.politikapp.backend.module1.dto.UpdatePoliticianRequest;
 import com.politikapp.backend.module1.service.PoliticianService;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -31,8 +34,28 @@ public class PoliticianController {
     }
 
     @GetMapping
-    public ResponseEntity<List<PoliticianResponse>> getPoliticians() {
-        return ResponseEntity.ok(politicianService.getPoliticians());
+    public ResponseEntity<List<PoliticianResponse>> getPoliticians(
+            @RequestParam(required = false) String query,
+            @RequestParam(required = false) String jurisdictionType,
+            @RequestParam(required = false) String positionCategory,
+            @RequestParam(required = false) String position,
+            @RequestParam(required = false) UUID regionId,
+            @RequestParam(required = false) UUID provinceId,
+            @RequestParam(required = false) UUID cityMunicipalityId,
+            @RequestParam(required = false) String partyAffiliation,
+            @RequestParam(required = false) String status
+    ) {
+        return ResponseEntity.ok(politicianService.getPoliticians(new PoliticianFilterRequest(
+                query,
+                jurisdictionType,
+                positionCategory,
+                position,
+                regionId,
+                provinceId,
+                cityMunicipalityId,
+                partyAffiliation,
+                status
+        )));
     }
 
     @GetMapping("/{id}")
@@ -43,6 +66,15 @@ public class PoliticianController {
     @GetMapping("/search")
     public ResponseEntity<List<PoliticianResponse>> searchPoliticians(@RequestParam String name) {
         return ResponseEntity.ok(politicianService.searchPoliticians(name));
+    }
+
+    @PostMapping
+    public ResponseEntity<PoliticianResponse> createPolitician(
+            @RequestBody UpdatePoliticianRequest request,
+            Authentication authentication
+    ) {
+        assertDatabaseAdmin(authentication);
+        return ResponseEntity.status(HttpStatus.CREATED).body(politicianService.createPolitician(request));
     }
 
     @PutMapping("/{id}")
