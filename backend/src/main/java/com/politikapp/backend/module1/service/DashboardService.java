@@ -55,6 +55,7 @@ public class DashboardService {
                 kpis.legislativeEfficiencyRatio(),
                 kpis.coaAuditDiscrepancies(),
                 kpis.trackedBudgetAllocated(),
+                kpis.wgiCompositeScore(),
                 timeline
         );
     }

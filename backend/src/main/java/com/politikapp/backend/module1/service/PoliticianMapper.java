@@ -13,9 +13,14 @@ import org.springframework.stereotype.Component;
 @Component
 public class PoliticianMapper {
     private final ProfileEditSubmissionRepository submissionRepository;
+    private final DashboardMetricsService dashboardMetricsService;
 
-    public PoliticianMapper(ProfileEditSubmissionRepository submissionRepository) {
+    public PoliticianMapper(
+            ProfileEditSubmissionRepository submissionRepository,
+            DashboardMetricsService dashboardMetricsService
+    ) {
         this.submissionRepository = submissionRepository;
+        this.dashboardMetricsService = dashboardMetricsService;
     }
 
     public PoliticianResponse toResponse(Politician politician) {
@@ -25,22 +30,30 @@ public class PoliticianMapper {
         long billsAuthored = countByAction(submissions, "SPONSORED_LEGISLATION");
         long projectCompletions = countByAction(submissions, "PROJECT_COMPLETION");
         int coaDiscrepancies = Math.toIntExact(countByAction(submissions, "COA_FINDING"));
-        
+
         BigDecimal totalBudget = submissions.stream()
                 .filter(submission -> "BUDGET_ALLOCATION".equals(submission.getActionIdentifier()))
                 .map(this::allocationAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        // Legacy ratio (retained for backward compatibility)
         double efficiencyRatio = 0.0;
         try {
             if (billsAuthored > 0) {
                 efficiencyRatio = ((double) projectCompletions / billsAuthored) * 100.0;
-            } else {
-                efficiencyRatio = 0.0;
             }
         } catch (ArithmeticException | NullPointerException e) {
             efficiencyRatio = 0.0;
         }
+
+        // Position-aware WGI Composite Score
+        double wgiScore = dashboardMetricsService.computeWgiCompositeScore(
+                politician.getPosition(),
+                billsAuthored,
+                projectCompletions,
+                totalBudget,
+                coaDiscrepancies
+        );
 
         return new PoliticianResponse(
                 politician.getPoliticianId(),
@@ -55,7 +68,10 @@ public class PoliticianMapper {
                 canonicalCode(politician.getStatus()),
                 efficiencyRatio,
                 coaDiscrepancies,
-                totalBudget
+                totalBudget,
+                billsAuthored,
+                projectCompletions,
+                wgiScore
         );
     }
 

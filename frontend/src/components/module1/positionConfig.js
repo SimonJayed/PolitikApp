@@ -269,6 +269,88 @@ export function getKpisForPosition(position, profile) {
  * @returns {string}
  */
 export function getPositionGroupLabel(position) {
-  const group = resolvePositionGroup(position);
-  return POSITION_KPI_CONFIG[group]?.groupLabel ?? 'Politician';
+  const group = resolvePositionGroup(position)
+  return POSITION_KPI_CONFIG[group]?.groupLabel ?? 'Politician'
 }
+
+// ─── WGI Composite Score Engine ───────────────────────────────────────────────
+
+/**
+ * WGI normalization reference ceilings.
+ * Mirror the constants in DashboardMetricsService.java.
+ */
+const WGI_CEILING_BILLS    = 50     // Bills / ordinances reference ceiling
+const WGI_CEILING_PROJECTS = 30     // Project completions reference ceiling
+const WGI_CEILING_BUDGET   = 500_000_000  // PHP 500M budget reference ceiling
+const WGI_COA_PENALTY      = 5      // Score deducted per COA finding
+const WGI_COA_MAX_PENALTY  = 40     // Maximum total COA deduction
+
+/** Clamps a value to [0, 100] */
+function clamp100(v) {
+  return Math.max(0, Math.min(100, v))
+}
+
+/** Normalizes raw to [0, 100] relative to ceiling. */
+function normalize(raw, ceiling) {
+  if (!ceiling) return 0
+  return clamp100((raw / ceiling) * 100)
+}
+
+/**
+ * Computes the position-aware WGI Composite Score [0–100] for a politician
+ * profile object, mirroring the backend DashboardMetricsService logic.
+ *
+ * WGI Methodology (Kaufmann, Kraay & Mastruzzi):
+ *   - Multiple observed indicators per governance dimension
+ *   - Weighted linear aggregation of normalized [0–100] indicator values
+ *   - Penalization for negative governance signals (COA findings)
+ *
+ * @param {string} position              - Politician position value
+ * @param {number} billsAuthored         - Count of sponsored legislation
+ * @param {number} projectCompletions    - Count of completed projects
+ * @param {number} trackedBudgetAllocated - Tracked budget in PHP
+ * @param {number} coaAuditDiscrepancies - Number of COA findings
+ * @returns {number} WGI composite score clamped to [0, 100]
+ */
+export function computeWgiCompositeScore(
+  position,
+  billsAuthored = 0,
+  projectCompletions = 0,
+  trackedBudgetAllocated = 0,
+  coaAuditDiscrepancies = 0,
+) {
+  const normBills    = normalize(billsAuthored, WGI_CEILING_BILLS)
+  const normProjects = normalize(projectCompletions, WGI_CEILING_PROJECTS)
+  const normBudget   = normalize(trackedBudgetAllocated, WGI_CEILING_BUDGET)
+
+  const legEfficiency = clamp100(
+    billsAuthored > 0
+      ? normProjects * 0.5 + normBills * 0.5
+      : normProjects,
+  )
+
+  const group = resolvePositionGroup(position)
+  let rawScore = 0
+
+  switch (group) {
+    case 'LEGISLATIVE':
+      // billsAuthored(0.35) + budget(0.25) + legislativeEfficiency(0.30)
+      rawScore = normBills * 0.35 + normBudget * 0.25 + legEfficiency * 0.30
+      break
+    case 'EXECUTIVE':
+      // projectCompletions(0.45) + budget(0.30) + deliveryEfficiency(0.20)
+      rawScore = normProjects * 0.45 + normBudget * 0.30 + legEfficiency * 0.20
+      break
+    case 'COUNCIL':
+      // ordinancesFiled(0.40) + budget(0.35)
+      rawScore = normBills * 0.40 + normBudget * 0.35
+      break
+    default:
+      rawScore = normBills * 0.25 + normProjects * 0.25 + normBudget * 0.20 + legEfficiency * 0.20
+      break
+  }
+
+  const coaPenalty = Math.min(coaAuditDiscrepancies * WGI_COA_PENALTY, WGI_COA_MAX_PENALTY)
+  return clamp100(rawScore - coaPenalty)
+}
+

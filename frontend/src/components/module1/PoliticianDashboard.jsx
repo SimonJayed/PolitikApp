@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PoliticianRankingPanel from '../PoliticianRankingPanel';
+import { computeWgiCompositeScore } from './positionConfig';
 import {
   FolderIcon,
   BarChart3Icon,
@@ -10,17 +11,21 @@ import {
   ShieldCheckIcon,
 } from '../icons/Lucide';
 
-function getEfficiencyMetric(politician) {
-  if (Number.isFinite(Number(politician.legislativeEfficiencyRatio))) {
-    return Number(politician.legislativeEfficiencyRatio)
+/**
+ * Resolves the WGI composite score for a politician entry.
+ * Prefers the server-computed value; falls back to client-side calculation.
+ */
+function resolveWgiScore(politician) {
+  if (Number.isFinite(Number(politician.wgiCompositeScore)) && Number(politician.wgiCompositeScore) > 0) {
+    return Number(politician.wgiCompositeScore)
   }
-  if (Number.isFinite(Number(politician.efficiencyRatio))) {
-    return Number(politician.efficiencyRatio)
-  }
-  const authored = Number(politician.billsAuthored || 0)
-  const completed = Number(politician.projectCompletions || 0)
-  if (authored <= 0) return 0
-  return (completed / authored) * 100
+  return computeWgiCompositeScore(
+    politician.position,
+    Number(politician.billsAuthored || 0),
+    Number(politician.projectCompletions || 0),
+    Number(politician.trackedBudgetAllocated || 0),
+    Number(politician.coaAuditDiscrepancies || 0),
+  )
 }
 
 function CursorHint({ hoverInfo }) {
@@ -71,8 +76,8 @@ export default function PoliticianDashboard({
   const [hoverInfo, setHoverInfo] = useState(null);
   const totalProfiles = politicians.length;
   const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0);
-  const averageEfficiency = totalProfiles > 0
-    ? politicians.reduce((acc, curr) => acc + getEfficiencyMetric(curr), 0) / totalProfiles
+  const averageWgiScore = totalProfiles > 0
+    ? politicians.reduce((acc, curr) => acc + resolveWgiScore(curr), 0) / totalProfiles
     : 0;
 
   const kpis = [
@@ -95,11 +100,11 @@ export default function PoliticianDashboard({
       icon: BarChart3Icon,
     },
     {
-      label: 'Avg. Legislative Eff.',
-      value: `${averageEfficiency.toFixed(1)}%`,
-      sub: 'Sustained profile average',
-      description: 'Average legislative efficiency across all indexed profiles based on published activity data and profile metrics.',
-      hint: 'Select a profile to see per-candidate KPI detail.',
+      label: 'Avg. WGI Score',
+      value: `${averageWgiScore.toFixed(1)} / 100`,
+      sub: 'Position-aware governance index',
+      description: 'Average WGI Composite Score across all profiles. Computed per the World Bank WGI methodology — weighted by position group (Legislative, Executive, Council) and penalized for COA audit discrepancies.',
+      hint: 'Select a profile to see position-specific WGI KPI detail.',
       accent: 'var(--info)',
       icon: BarChart3Icon,
     },
