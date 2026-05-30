@@ -17,12 +17,14 @@ export default function PeerVotingWeightDetail({
   trustScore,
   consensusVotes,
   dissentVotes,
-  consensusRate
+  consensusRate,
+  weight
 }) {
+  const displayWeight = weight !== undefined ? weight : tier.weight;
   return (
     <section className="matrixCardGrid">
       <MetricCard label="Audit Tier" value={tier.label} tone={tier.tone} />
-      <VoteWeightIndicator weight={tier.weight} tierLabel={tier.label} tone={tier.tone} />
+      <VoteWeightIndicator weight={displayWeight} tierLabel={tier.label} tone={tier.tone} />
       <MetricCard label="Trust Balance" value={<TrustScoreMeter score={trustScore} variant="compact" />} />
       <MetricCard label="Consensus-Aligned Ballots" value={consensusVotes} tone="success" />
       <MetricCard label="Dissenting Ballots" value={dissentVotes} tone="danger" />

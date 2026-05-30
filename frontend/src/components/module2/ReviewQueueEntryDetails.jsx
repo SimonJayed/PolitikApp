@@ -17,11 +17,26 @@ function metricValue(details, key, fallback = 'Not provided') {
   return value === undefined || value === null || value === '' ? fallback : value;
 }
 
+function formatCurrency(value) {
+  if (value === 'Not provided' || isNaN(value)) return value;
+  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value));
+}
+
+function formatDate(value) {
+  if (!value || value === 'Not provided') return value;
+  try {
+    return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value));
+  } catch {
+    return String(value);
+  }
+}
+
 export default function ReviewQueueEntryDetails({ card }) {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   if (!card) return null;
 
   const details = parseActionDetails(card);
+  const actionId = card.actionIdentifier || '';
 
   return (
     <div className="review-queue-entry-details">
@@ -38,8 +53,8 @@ export default function ReviewQueueEntryDetails({ card }) {
 
       <div className="review-cardFacts">
         <div className="review-cardFact">
-          <span className="review-cardFactLabel">Contribution Name</span>
-          <strong>{card.actionIdentifier || card.categoryTag || 'Not provided'}</strong>
+          <span className="review-cardFactLabel">Action</span>
+          <strong>{String(card.actionIdentifier || card.categoryTag || 'Not provided').replaceAll('_', ' ')}</strong>
         </div>
         <div className="review-cardFact">
           <span className="review-cardFactLabel">Politician</span>
@@ -69,57 +84,50 @@ export default function ReviewQueueEntryDetails({ card }) {
         </div>
       </div>
 
+      {/* Dynamic Action Metrics Row */}
+      {actionId && (
+        <div className="review-cardFacts" style={{ borderTop: '1px dashed rgba(148, 163, 184, 0.15)', paddingTop: '16px', marginTop: '8px' }}>
+          {actionId === 'COA_FINDING' && (
+            <div className="review-cardFact">
+              <span className="review-cardFactLabel">Audit Flagged Amount (PHP)</span>
+              <strong>{formatCurrency(metricValue(details, 'flaggedAmount'))}</strong>
+            </div>
+          )}
+          {actionId === 'BUDGET_ALLOCATION' && (
+            <div className="review-cardFact">
+              <span className="review-cardFactLabel">Budget Allocation Amount (PHP)</span>
+              <strong>{formatCurrency(metricValue(details, 'allocationAmount'))}</strong>
+            </div>
+          )}
+          {actionId === 'PROJECT_COMPLETION' && (
+            <div className="review-cardFact">
+              <span className="review-cardFactLabel">Project Completion Percentage (%)</span>
+              <strong>{metricValue(details, 'completionPercentage') !== 'Not provided' ? `${metricValue(details, 'completionPercentage')}%` : 'Not provided'}</strong>
+            </div>
+          )}
+          {actionId === 'SPONSORED_LEGISLATION' && (
+            <>
+              <div className="review-cardFact">
+                <span className="review-cardFactLabel">Legislation Title</span>
+                <strong>{metricValue(details, 'legislationTitle')}</strong>
+              </div>
+              <div className="review-cardFact">
+                <span className="review-cardFactLabel">Date Filed</span>
+                <strong>{formatDate(metricValue(details, 'dateFiled'))}</strong>
+              </div>
+              <div className="review-cardFact">
+                <span className="review-cardFactLabel">Legislative Status</span>
+                <strong>{metricValue(details, 'legislativeStatus')}</strong>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="summary-box">"{card.impactSummary || 'Not provided'}"</div>
 
       <LifecycleStageStrip status={card.queueStatus} title="Current Lifecycle Stage" />
 
-      <div className="detailsBlock detailsBlock--moderation">
-        <h5 className="ty-label" style={{ margin: 0 }}>Submitted Metrics</h5>
-        <div className="review-cardFacts">
-          <div className="review-cardFact">
-            <span className="review-cardFactLabel">Bills Authored</span>
-            <strong>{metricValue(details, 'billsAuthored')}</strong>
-          </div>
-          <div className="review-cardFact">
-            <span className="review-cardFactLabel">Projects Completed</span>
-            <strong>{metricValue(details, 'projectsCompleted')}</strong>
-          </div>
-          <div className="review-cardFact">
-            <span className="review-cardFactLabel">COA Findings</span>
-            <strong>{metricValue(details, 'coaFindings')}</strong>
-          </div>
-          <div className="review-cardFact">
-            <span className="review-cardFactLabel">Efficiency</span>
-            <strong>{metricValue(details, 'efficiency')}</strong>
-          </div>
-          <div className="review-cardFact">
-            <span className="review-cardFactLabel">Term Start</span>
-            <strong>{card.termStart || 'Not provided'}</strong>
-          </div>
-          <div className="review-cardFact">
-            <span className="review-cardFactLabel">Term End</span>
-            <strong>{card.termEnd || 'Not provided'}</strong>
-          </div>
-          <div className="review-cardFact">
-            <span className="review-cardFactLabel">Status</span>
-            <strong>{card.politicianStatus || 'Not provided'}</strong>
-          </div>
-        </div>
-        <button
-          type="button"
-          className="paginationButton"
-          onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-          style={{ marginTop: '10px', width: 'auto', minWidth: '140px', borderRadius: '12px', padding: '0 12px' }}
-        >
-          {isDetailsOpen ? 'Hide full details' : 'View full details'}
-        </button>
-        {isDetailsOpen && (
-          <div className="summary-box" style={{ marginTop: '10px' }}>
-            <p style={{ margin: 0 }}><strong>Contributor Notes:</strong> {card.impactSummary || 'Not provided'}</p>
-            <p style={{ margin: '8px 0 0' }}><strong>Action Details:</strong> {Object.keys(details).length ? JSON.stringify(details) : 'Not provided'}</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

@@ -51,8 +51,6 @@ export default function UserProfileMatrixPanel({ token, user }) {
     simulateRejectedSubmission,
     simulateConsensusVote,
     simulateDissentVote,
-    updateProfileMetric,
-    adjustAdminInterventions,
   } = sandbox;
 
   const actor = isDevModeActive && manipulatedUser ? manipulatedUser : user;
@@ -60,10 +58,121 @@ export default function UserProfileMatrixPanel({ token, user }) {
   const trustScore = clampTrustScore(actor?.trustScore ?? 100);
   const descriptor = roleDescriptor(activeRole);
   const auditorTier = resolveAuditorTier(trustScore);
-  const rejectionLocked = isDevModeActive && contributorRejectionRate > 15;
-  const consensusRate = profileMetrics?.reviewerTotalBallots > 0
-    ? (profileMetrics.reviewerConsensusVotes / profileMetrics.reviewerTotalBallots) * 100
+
+  // Dynamic profile metrics state for standard (non-sandbox) mode
+  const [dynamicMetrics, setDynamicMetrics] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isDevModeActive) {
+      setDynamicMetrics(null);
+      return;
+    }
+
+    if (!actor?.userId) return;
+
+    let ignore = false;
+    setLoading(true);
+
+    const loadData = async () => {
+      try {
+        if (activeRole === 'CONTRIBUTOR') {
+          const resSub = await fetch(`${API_BASE_URL}/api/submissions/contributor/${actor.userId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const submissionsData = await readApiResponse(resSub);
+          if (ignore) return;
+
+          const entries = Array.isArray(submissionsData) ? submissionsData : [];
+          const submissions = entries.length;
+          const approved = entries.filter((e) => e.status === 'PUBLISHED').length;
+          const rejected = entries.filter((e) => e.status === 'REJECTED').length;
+
+          setDynamicMetrics({
+            contributorSubmissions: submissions,
+            contributorApproved: approved,
+            contributorRejected: rejected,
+          });
+        } else if (activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') {
+          const adminMetrics = actor?.sandboxProfileMetrics || {};
+          setDynamicMetrics({
+            adminInterventions: adminMetrics.adminInterventions ?? 7,
+            adminTieBreakerActive: adminMetrics.adminTieBreakerActive ?? true,
+            adminTimeoutOverrideActive: adminMetrics.adminTimeoutOverrideActive ?? true,
+          });
+        } else {
+          // Reviewer / Peer role
+          const resWeight = await fetch(`${API_BASE_URL}/api/module3/peers/${actor.userId}/vote-weight`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const weightData = await readApiResponse(resWeight);
+
+          const resArchive = await fetch(`${API_BASE_URL}/api/moderation/archive`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const archiveData = await readApiResponse(resArchive);
+          if (ignore) return;
+
+          const ballotEntries = Array.isArray(archiveData) ? archiveData : [];
+          const totalBallots = ballotEntries.length;
+          const consensusVotes = ballotEntries.filter((e) => {
+            const isTerminal = e.status === 'PUBLISHED' || e.status === 'REJECTED';
+            const isAligned = (e.userVote === 'AGREE' && e.status === 'PUBLISHED') ||
+              (e.userVote === 'DISAGREE' && e.status === 'REJECTED');
+            return isTerminal && isAligned;
+          }).length;
+          const dissentVotes = ballotEntries.filter((e) => {
+            const isTerminal = e.status === 'PUBLISHED' || e.status === 'REJECTED';
+            const isAligned = (e.userVote === 'AGREE' && e.status === 'PUBLISHED') ||
+              (e.userVote === 'DISAGREE' && e.status === 'REJECTED');
+            return isTerminal && !isAligned;
+          }).length;
+
+          setDynamicMetrics({
+            reviewerTotalBallots: totalBallots,
+            reviewerConsensusVotes: consensusVotes,
+            reviewerDissentVotes: dissentVotes,
+            voteWeight: weightData.voteWeight ?? 1,
+            historicalPrecision: weightData.historicalPrecision ?? 0,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch live profile metrics:", err);
+        if (!ignore) {
+          setError(err.message || "Failed to fetch live profile metrics.");
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [isDevModeActive, actor?.userId, activeRole, token]);
+
+  const activeMetrics = isDevModeActive ? profileMetrics : dynamicMetrics;
+
+  const dynamicRejectionRate = activeMetrics?.contributorSubmissions > 0
+    ? (activeMetrics.contributorRejected / activeMetrics.contributorSubmissions) * 100
     : 0;
+
+  const rejectionRate = isDevModeActive ? contributorRejectionRate : dynamicRejectionRate;
+
+  const rejectionLocked = isDevModeActive
+    ? (contributorRejectionRate > 15)
+    : (actor?.status === 'LOCKED' || actor?.accountStatus === 'LOCKED' || (activeMetrics?.contributorSubmissions >= 5 && rejectionRate > 15));
+
+  const consensusRate = isDevModeActive
+    ? (profileMetrics?.reviewerTotalBallots > 0
+      ? (profileMetrics.reviewerConsensusVotes / profileMetrics.reviewerTotalBallots) * 100
+      : 0)
+    : (activeMetrics?.historicalPrecision ?? 0);
 
   const headerTone = useMemo(() => {
     if (activeRole === 'CONTRIBUTOR') return 'matrixHero contributor';
@@ -71,7 +180,14 @@ export default function UserProfileMatrixPanel({ token, user }) {
     return 'matrixHero reviewer';
   }, [activeRole]);
 
-  if (!profileMetrics) {
+  if (!activeMetrics) {
+    if (loading) {
+      return (
+        <section className="workspace profileMatrixWorkspace" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="ledgerEmptyState">Loading dynamic profile metrics...</div>
+        </section>
+      );
+    }
     return null;
   }
 
@@ -87,7 +203,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
           {activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
             <TrustScoreMeter score={trustScore} showEligibility={true} variant="compact" />
           )}
-          <small>{actor?.status || 'ACTIVE'}</small>
+          <small>{actor?.status || actor?.accountStatus || 'ACTIVE'}</small>
         </div>
       </header>
 
@@ -95,9 +211,9 @@ export default function UserProfileMatrixPanel({ token, user }) {
       {activeRole === 'CONTRIBUTOR' && (
         <ContributorPenaltyDashboard
           isSandboxMode={isDevModeActive}
-          metrics={profileMetrics}
-          rejectionLocked={isDevModeActive && rejectionLocked}
-          rejectionRate={isDevModeActive ? contributorRejectionRate : 0}
+          metrics={activeMetrics}
+          rejectionLocked={rejectionLocked}
+          rejectionRate={rejectionRate}
           simulateApprovedSubmission={simulateApprovedSubmission}
           simulateRejectedSubmission={simulateRejectedSubmission}
           token={token}
@@ -109,7 +225,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
       {activeRole !== 'CONTRIBUTOR' && activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
         <PeerVotingWeightDashboard
           consensusRate={consensusRate}
-          metrics={profileMetrics}
+          metrics={activeMetrics}
           simulateConsensusVote={simulateConsensusVote}
           simulateDissentVote={simulateDissentVote}
           tier={auditorTier}
@@ -123,10 +239,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
       {/* Admin Matrix Layout */}
       {(activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') && (
         <AdminMatrix
-          adjustAdminInterventions={adjustAdminInterventions}
-          metrics={profileMetrics}
-          updateProfileMetric={updateProfileMetric}
-          isSandboxMode={isDevModeActive}
+          metrics={activeMetrics}
           token={token}
         />
       )}
@@ -134,7 +247,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
   );
 }
 
-function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric, isSandboxMode = false, token }) {
+function AdminMatrix({ metrics, token }) {
   const [pendingApps, setPendingApps] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -182,7 +295,7 @@ function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric, i
   return (
     <>
       <section className="matrixCardGrid">
-        <MetricCard label="Credential" value="ROLE_ADMIN" tone="admin" />
+        <MetricCard label="Credential" value="ADMINISTRATOR" tone="admin" />
         <MetricCard label="Intervention Count" value={metrics.adminInterventions} />
         <MetricCard label="50-50 Tie Breaker" value={metrics.adminTieBreakerActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTieBreakerActive ? 'success' : 'danger'} />
         <MetricCard label="24-Hour Timeout Override" value={metrics.adminTimeoutOverrideActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTimeoutOverrideActive ? 'success' : 'danger'} />
@@ -270,38 +383,6 @@ function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric, i
           </div>
         )}
       </section>
-
-      {isSandboxMode && (
-        <section className="matrixActionPanel adminPanel">
-          <div>
-            <h3 className="ty-card-title">Accountability Bypass Keys</h3>
-            <p className="ty-body">Toggle administrative override capabilities in the shared sandbox state.</p>
-          </div>
-          <div className="adminControlGrid">
-            <div className="stepperControl">
-              <button onClick={() => adjustAdminInterventions(-1)} type="button">-</button>
-              <span>{metrics.adminInterventions}</span>
-              <button onClick={() => adjustAdminInterventions(1)} type="button">+</button>
-            </div>
-            <label className="matrixToggle">
-              <input
-                checked={metrics.adminTieBreakerActive}
-                onChange={(event) => updateProfileMetric('adminTieBreakerActive', event.target.checked)}
-                type="checkbox"
-              />
-              <span>50-50 Tie Breaker</span>
-            </label>
-            <label className="matrixToggle">
-              <input
-                checked={metrics.adminTimeoutOverrideActive}
-                onChange={(event) => updateProfileMetric('adminTimeoutOverrideActive', event.target.checked)}
-                type="checkbox"
-              />
-              <span>24-Hour Timeout Override</span>
-            </label>
-          </div>
-        </section>
-      )}
     </>
   );
 }
