@@ -10,12 +10,14 @@ public class TimelineMapper {
         return new TimelineEntryResponse(
                 entry.getTimelineId(),
                 entry.getPoliticianId(),
+                entry.getSubmissionId(),
                 entry.getCategoryTag(),
                 entry.getActionIdentifier(),
-                entry.getQuantitativeMetric(),
+                entry.getActionDetails(),
                 entry.getSummary(),
                 entry.getSourceUrl(),
                 entry.getPublicationStatus(),
+                entry.getIsHidden(),
                 entry.getCreatedAt()
         );
     }

@@ -80,16 +80,12 @@ It maps out what has already been delivered, and clearly flags the new Module 3 
 
 ---
 
-## 🛠️ Phase 4: Developer Sandboxes & Calculation Tracing
+## 🛠️ Phase 4: Calculation Tracing
 * [x] **4.1 System Calculation Trace Console (Module 2)**
   * **Status:** Completed.
   * **Details:** `/api/moderation/vote` is fully equipped to return comprehensive `VoteCalculationTrace` DTO audits (with voter weights, current agree/disagree weighted sums, target thresholds, and action flags). Results are rendered in real-time inside the moderation visual terminal console.
   * **Code Reference:** [VoteService.java](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/ProjectsActual/PolitikApp/backend/src/main/java/com/politikapp/backend/module2/service/VoteService.java), [ModerationPanel.jsx](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/ProjectsActual/PolitikApp/frontend/src/components/ModerationPanel.jsx).
-* [x] **4.2 Interactive Consensus Sandbox Widget**
-  * **Status:** Completed.
-  * **Details:** Integrated an advanced interactive developer sandboxing dock at the bottom of the client screen. Enables live session/role spoofing (Admin, Judicial Reviewer, Contributor), voter trust tuning (affecting multipliers x1/x3/x5 dynamically), and local mock consensus vectors simulation with instant trace calculations.
-  * **Code Reference:** [DeveloperSandboxContext.jsx](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/ProjectsActual/PolitikApp/frontend/src/developer/DeveloperSandboxContext.jsx), [DeveloperOptionsPanel.jsx](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/ProjectsActual/PolitikApp/frontend/src/developer/DeveloperOptionsPanel.jsx), [ModerationPanel.jsx](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/ProjectsActual/PolitikApp/frontend/src/components/ModerationPanel.jsx).
-* [x] **4.3 Verification Guides & Manuals**
+* [x] **4.2 Verification Guides & Manuals**
   * **Status:** Completed.
   * **Details:** Role-testing instructions and local Wi-Fi microservice running parameters fully published.
   * **Code Reference:** [MODULE_2_ROLE_TESTING_GUIDE.md](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/ProjectsActual/PolitikApp/docs/MODULE_2_ROLE_TESTING_GUIDE.md), [MODULE_USE_GUIDE.md](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/ProjectsActual/PolitikApp/docs/MODULE_USE_GUIDE.md).

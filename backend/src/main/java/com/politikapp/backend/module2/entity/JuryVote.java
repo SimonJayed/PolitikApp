@@ -6,7 +6,9 @@ import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "jury_votes")
+@Table(name = "jury_votes", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"queue_id", "peer_id"})
+})
 public class JuryVote {
     @Id
     @Column(name = "vote_id", nullable = false)

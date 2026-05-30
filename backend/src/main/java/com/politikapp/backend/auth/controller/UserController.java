@@ -1,10 +1,13 @@
 package com.politikapp.backend.auth.controller;
 
+import com.politikapp.backend.auth.dto.AuthDtos.AuthResponse;
+import com.politikapp.backend.auth.dto.AuthDtos.ReputationHistoryEntry;
 import com.politikapp.backend.auth.dto.AuthDtos.UpdateMeRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.UserResponse;
 import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,10 +31,15 @@ public class UserController {
     }
 
     @PutMapping("/me")
-    public ResponseEntity<UserResponse> updateMe(
+    public ResponseEntity<AuthResponse> updateMe(
             @AuthenticationPrincipal AuthPrincipal principal,
             @Valid @RequestBody UpdateMeRequest request
     ) {
         return ResponseEntity.ok(authService.updateMe(principal, request));
+    }
+
+    @GetMapping("/me/history")
+    public ResponseEntity<List<ReputationHistoryEntry>> myHistory(@AuthenticationPrincipal AuthPrincipal principal) {
+        return ResponseEntity.ok(authService.getReputationHistory(principal));
     }
 }

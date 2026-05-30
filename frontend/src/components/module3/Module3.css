@@ -1,0 +1,583 @@
+/* ── Reputation-Based Trust Matrix Scoped Styles ───────────────────── */
+
+.profileMatrixWorkspace {
+  background:
+    linear-gradient(155deg, rgba(8, 15, 36, 0.97) 0%, rgba(12, 24, 52, 0.95) 100%),
+    radial-gradient(circle at 75% 5%, rgba(26, 71, 184, 0.18) 0%, transparent 40%),
+    radial-gradient(circle at 10% 90%, rgba(168, 0, 32, 0.12) 0%, transparent 40%);
+  min-height: calc(100vh - 102px);
+}
+
+.matrixHero,
+.matrixActionPanel,
+.matrixMetricCard,
+.matrixLockoutCard {
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: 0 24px 64px rgba(2, 6, 23, 0.3);
+}
+
+.matrixHero {
+  align-items: center;
+  border-radius: var(--radius-xl);
+  color: #f8fafc;
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 36px);
+  position: relative;
+}
+
+.matrixHero::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  right: -10%;
+  width: 400px;
+  height: 400px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.04);
+  pointer-events: none;
+}
+
+.matrixHero.contributor {
+  background: linear-gradient(140deg, #0b5e55 0%, #0a3a6e 60%, #0d1b42 100%);
+}
+
+.matrixHero.reviewer {
+  background: linear-gradient(140deg, #312e81 0%, #0369a1 60%, #0d1b42 100%);
+}
+
+.matrixHero.admin {
+  background: linear-gradient(140deg, #5b21b6 0%, #9a3412 60%, #0d1b42 100%);
+}
+
+.matrixHero h2 {
+  color: #ffffff;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: clamp(1.8rem, 4vw, 3.4rem);
+  line-height: 1;
+  margin: 10px 0;
+  letter-spacing: -0.03em;
+}
+
+.matrixHero p,
+.matrixActionPanel p,
+.matrixLockoutCard span {
+  color: rgba(226, 232, 240, 0.8);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.matrixRoleBadge {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full);
+  color: #ffffff;
+  display: inline-flex;
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  padding: 7px 13px;
+}
+
+.matrixHeroScore {
+  background: rgba(8, 15, 36, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  display: grid;
+  min-width: 180px;
+  padding: 18px 20px;
+  text-align: right;
+}
+
+.matrixHeroScore span,
+.matrixHeroScore small,
+.matrixMetricCard span {
+  color: rgba(203, 213, 225, 0.7);
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.matrixHeroScore strong {
+  color: #ffffff;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: 2.6rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.matrixCardGrid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.matrixMetricCard {
+  background: rgba(12, 22, 50, 0.72);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 8px;
+  min-height: 92px;
+  padding: 16px 18px;
+  backdrop-filter: blur(4px);
+}
+
+.matrixMetricCard strong {
+  color: #ffffff;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: clamp(1.25rem, 2vw, 1.85rem);
+  line-height: 1;
+  overflow-wrap: anywhere;
+  letter-spacing: 0;
+}
+
+.matrixMetricCard.success { border-color: rgba(74, 222, 128, 0.4); }
+.matrixMetricCard.danger { border-color: rgba(248, 113, 113, 0.45); }
+.matrixMetricCard.elite,
+.matrixMetricCard.admin { border-color: rgba(251, 191, 36, 0.45); }
+.matrixMetricCard.senior { border-color: rgba(96, 165, 250, 0.45); }
+.matrixMetricCard.standard { border-color: rgba(100, 116, 139, 0.35); }
+
+.ledgerPanel {
+  background: rgba(2, 6, 23, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  border-radius: var(--radius-md);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+
+.ledgerFilterSection {
+  align-items: center;
+  background: rgba(12, 22, 50, 0.48);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: var(--radius-sm);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+
+.ledgerFilterLabel {
+  color: rgba(226, 232, 240, 0.78);
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ledgerFilterTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.ledgerFilterTabs button {
+  background: rgba(12, 22, 50, 0.56);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: var(--radius-full);
+  color: rgba(226, 232, 240, 0.76);
+  font-family: var(--mono, monospace);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  min-height: 34px;
+  padding: 0 13px;
+}
+
+.ledgerFilterTabs button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #ffffff;
+}
+
+.ledgerFilterTabs button.active,
+.ledgerFilterTabs button[aria-selected='true'] {
+  background: rgba(74, 222, 128, 0.14);
+  border-color: rgba(74, 222, 128, 0.42);
+  color: #bbf7d0;
+}
+
+.ledgerEntryList {
+  display: grid;
+  gap: 10px;
+}
+
+.ledgerEmptyState {
+  border: 1px dashed rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-sm);
+  color: rgba(203, 213, 225, 0.68);
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  padding: 18px;
+  text-align: center;
+}
+
+.ledgerEntry {
+  background: rgba(12, 22, 50, 0.58);
+  border: 1px solid rgba(148, 163, 184, 0.13);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.ledgerEntryTopline,
+.ledgerEntryMeta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ledgerEntryTopline {
+  justify-content: space-between;
+}
+
+.ledgerEntryTopline span:not(.ledgerTypeBadge),
+.ledgerEntryMeta span {
+  color: rgba(203, 213, 225, 0.66);
+  font-family: var(--mono, monospace);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.ledgerEntry strong {
+  color: #ffffff;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.35;
+}
+
+.ledgerEntry a {
+  color: #93c5fd;
+  font-family: var(--mono, monospace);
+  font-size: 0.72rem;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.ledgerEntry a:hover { color: #bfdbfe; }
+
+.ledgerTypeBadge {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: var(--radius-full);
+  color: rgba(226, 232, 240, 0.82);
+  font-family: var(--mono, monospace);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 4px 9px;
+}
+
+.ledgerTypeBadge.audit {
+  background: rgba(96, 165, 250, 0.12);
+  border-color: rgba(96, 165, 250, 0.32);
+  color: #bfdbfe;
+}
+
+.ledgerTypeBadge.legislation {
+  background: rgba(251, 191, 36, 0.12);
+  border-color: rgba(251, 191, 36, 0.32);
+  color: #fde68a;
+}
+
+.ledgerTypeBadge.project {
+  background: rgba(74, 222, 128, 0.12);
+  border-color: rgba(74, 222, 128, 0.32);
+  color: #bbf7d0;
+}
+
+.matrixActionPanel {
+  align-items: center;
+  background: rgba(12, 22, 50, 0.72);
+  border-radius: var(--radius-lg);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+
+.matrixActionPanel h3 {
+  color: #ffffff;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: 1rem;
+  margin: 0 0 5px;
+  letter-spacing: -0.01em;
+}
+
+.peerAppPanel {
+  align-items: stretch;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.peerAppHeader {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line-hairline);
+  display: flex;
+  gap: 10px;
+  margin-bottom: 2px;
+  padding-bottom: 12px;
+}
+
+.peerAppHeaderIcon {
+  align-items: center;
+  background: var(--info-soft);
+  border: 1px solid var(--info-border);
+  border-radius: var(--radius-sm);
+  color: var(--info);
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.peerAppHeader h3 {
+  color: var(--text-primary);
+  font-size: 16px;
+  margin: 0;
+}
+
+.peerAppHeader p {
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.peerAppPending {
+  background: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-left: 4px solid #d97706;
+  border-radius: var(--radius-md);
+  color: #b45309;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 4px;
+  padding: 16px 20px;
+}
+
+.peerAppPending p {
+  color: #9a3412;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.peerAppForm {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: grid;
+  gap: 16px;
+  max-width: 100%;
+  width: 100%;
+  padding: 0;
+}
+
+.peerAppTwoCol {
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.peerAppFormColumns {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.peerAppLeftCol {
+  display: grid;
+  gap: 16px;
+}
+
+.peerAppForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.peerAppDetailGrid {
+  align-items: start;
+}
+
+.peerAppJustificationField textarea {
+  min-height: 258px;
+}
+
+.peerAppActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.peerAppStatus {
+  font-weight: 600;
+}
+
+.peerAppStatus.successText {
+  color: var(--success);
+}
+
+.peerAppStatus.errorText {
+  color: var(--danger);
+}
+
+.peerAppHistory {
+  border-top: 1px solid var(--line-hairline);
+  margin-top: 10px;
+  padding-top: 20px;
+}
+
+.peerAppHistory h4 {
+  color: var(--text-primary);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.peerAppHistoryList {
+  display: grid;
+  gap: 10px;
+}
+
+.peerAppHistoryRow {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.peerAppHistoryRow strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.peerAppHistoryMeta {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .peerAppFormColumns,
+  .peerAppTwoCol {
+    grid-template-columns: 1fr;
+  }
+
+  .peerAppHistoryRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+.matrixActionRow,
+.adminControlGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.matrixActionRow button,
+.adminControlGrid button {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  color: #ffffff;
+}
+
+.matrixActionRow button:hover,
+.adminControlGrid button:hover {
+  background: rgba(255,255,255,0.14);
+  border-color: rgba(255,255,255,0.22);
+}
+
+.matrixActionRow .dangerButton {
+  background: rgba(168, 0, 32, 0.3);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+.matrixActionRow .dangerButton:hover {
+  background: rgba(168, 0, 32, 0.45);
+}
+
+.matrixLockoutCard {
+  animation: lockPulse 2s ease-in-out infinite;
+  background: linear-gradient(140deg, rgba(89, 0, 10, 0.96), rgba(60, 0, 10, 0.88));
+  border-color: rgba(184, 150, 42, 0.3);
+  border-radius: var(--radius-lg);
+  color: #ffffff;
+  display: grid;
+  gap: 6px;
+  padding: 20px;
+}
+
+.matrixLockoutCard strong {
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.stepperControl {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.38);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-full);
+  display: flex;
+  gap: 8px;
+  padding: 5px;
+}
+
+.stepperControl button {
+  border-radius: var(--radius-full);
+  min-height: 34px;
+  min-width: 40px;
+  padding: 0 12px;
+}
+
+.stepperControl span {
+  color: #ffffff;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-weight: 800;
+  min-width: 40px;
+  text-align: center;
+}
+
+.matrixToggle {
+  align-items: center;
+  background: rgba(2, 6, 23, 0.38);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: var(--radius-full);
+  color: #e2e8f0;
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  padding: 8px 14px;
+}
+
+.matrixToggle input { min-height: auto; width: auto; }
+
+@keyframes lockPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(248, 113, 113, 0.15), 0 24px 64px rgba(120, 0, 20, 0.2); }
+  50% { box-shadow: 0 0 36px rgba(248, 113, 113, 0.3), 0 24px 64px rgba(120, 0, 20, 0.3); }
+}

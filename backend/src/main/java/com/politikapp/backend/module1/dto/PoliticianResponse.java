@@ -19,6 +19,9 @@ public record PoliticianResponse(
         String status,
         double efficiencyRatio,
         int coaAuditDiscrepancies,
-        BigDecimal trackedBudgetAllocated
+        BigDecimal trackedBudgetAllocated,
+        long billsAuthored,
+        long projectCompletions,
+        double wgiCompositeScore
 ) {
 }

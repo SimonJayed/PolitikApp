@@ -23,10 +23,13 @@ public class ContributorReputationService {
             "Token invalidation service unavailable. Account lock state was saved.";
     public static final String EVALUATED_MESSAGE = "Reputation check completed.";
     public static final String LOCKED_MESSAGE = "Contributor account locked after reputation check.";
+    public static final String INSUFFICIENT_SAMPLE_MESSAGE =
+            "Reputation check completed. Lockout threshold requires a larger terminal submission sample.";
 
     private static final Logger log = LoggerFactory.getLogger(ContributorReputationService.class);
     private static final List<String> TERMINAL_STATUSES = List.of("PUBLISHED", "REJECTED");
     private static final double LOCK_THRESHOLD = 15.0;
+    private static final int MIN_TERMINAL_SUBMISSIONS_FOR_LOCK = 5;
 
     private final ContributorTrustProfileRepository contributorRepository;
     private final ReputationSubmissionRecordRepository submissionRepository;
@@ -69,6 +72,18 @@ public class ContributorReputationService {
             double rejectionMetric = ((double) rejectedCount / terminalSubmissions.size()) * 100;
 
             ContributorTrustProfile profile = contributor.get();
+            if (terminalSubmissions.size() < MIN_TERMINAL_SUBMISSIONS_FOR_LOCK) {
+                return new ContributorReputationResponse(
+                        contributorId,
+                        rejectionMetric,
+                        profile.getAccountStatus(),
+                        profile.getWritingTokenStatus(),
+                        false,
+                        false,
+                        INSUFFICIENT_SAMPLE_MESSAGE
+                );
+            }
+
             if (rejectionMetric > LOCK_THRESHOLD) {
                 profile.setAccountStatus("LOCKED");
                 profile.setWritingTokenStatus("INVALIDATED");

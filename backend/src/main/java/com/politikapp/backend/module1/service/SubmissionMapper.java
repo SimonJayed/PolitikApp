@@ -14,7 +14,7 @@ public class SubmissionMapper {
                 submission.getSourceUrl(),
                 submission.getCategoryTag(),
                 submission.getActionIdentifier(),
-                submission.getQuantitativeMetric(),
+                submission.getActionDetails(),
                 submission.getImpactSummary(),
                 submission.getStatus(),
                 message,

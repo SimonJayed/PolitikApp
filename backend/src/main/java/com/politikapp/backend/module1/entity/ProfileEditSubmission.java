@@ -4,8 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Map;
 import java.util.UUID;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -32,8 +32,9 @@ public class ProfileEditSubmission {
     @Column(name = "action_identifier", nullable = false, length = 150)
     private String actionIdentifier;
 
-    @Column(name = "quantitative_metric", nullable = false, precision = 10, scale = 2)
-    private BigDecimal quantitativeMetric;
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Column(name = "action_details", columnDefinition = "jsonb")
+    private Map<String, Object> actionDetails;
 
     @Column(name = "impact_summary", nullable = false, columnDefinition = "TEXT")
     private String impactSummary;
@@ -58,7 +59,7 @@ public class ProfileEditSubmission {
             String sourceUrl,
             String categoryTag,
             String actionIdentifier,
-            BigDecimal quantitativeMetric,
+            Map<String, Object> actionDetails,
             String impactSummary
     ) {
         ProfileEditSubmission submission = new ProfileEditSubmission();
@@ -67,7 +68,7 @@ public class ProfileEditSubmission {
         submission.sourceUrl = sourceUrl;
         submission.categoryTag = categoryTag;
         submission.actionIdentifier = actionIdentifier;
-        submission.quantitativeMetric = quantitativeMetric;
+        submission.actionDetails = actionDetails;
         submission.impactSummary = impactSummary;
         return submission;
     }
@@ -96,8 +97,8 @@ public class ProfileEditSubmission {
         return actionIdentifier;
     }
 
-    public BigDecimal getQuantitativeMetric() {
-        return quantitativeMetric;
+    public Map<String, Object> getActionDetails() {
+        return actionDetails;
     }
 
     public String getImpactSummary() {

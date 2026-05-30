@@ -40,12 +40,28 @@ public class ModerationQueueController {
         return ResponseEntity.ok(anonymizedQueue);
     }
 
+    @GetMapping("/archive")
+    public ResponseEntity<List<com.politikapp.backend.module2.dto.BallotArchiveEntryResponse>> getBallotArchive(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal
+    ) {
+        if (principal == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(401, "Unauthorized: Authentication required.");
+        }
+        return ResponseEntity.ok(moderationQueueService.getBallotArchive(principal.getUserId()));
+    }
+
     @PostMapping("/vote")
-    public ResponseEntity<com.politikapp.backend.module2.dto.VoteCalculationTrace> processVote(@RequestBody BallotSubmissionPayload payload) {
+    public ResponseEntity<com.politikapp.backend.module2.dto.VoteCalculationTrace> processVote(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal,
+            @RequestBody BallotSubmissionPayload payload
+    ) {
         log.info("Received peer review vote for queue ID: {}", payload.queueId());
+        if (principal == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(401, "Unauthorized: Authentication required.");
+        }
         com.politikapp.backend.module2.dto.VoteCalculationTrace trace = voteService.processPeerBallot(
             payload.queueId(),
-            payload.peerId(),
+            principal.getUserId(),
             payload.voteSelection(),
             payload.voteReason()
         );
@@ -74,14 +90,36 @@ public class ModerationQueueController {
 
     @PostMapping("/override")
     public ResponseEntity<com.politikapp.backend.module2.dto.VoteCalculationTrace> processOverride(
+            @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal,
             @RequestBody com.politikapp.backend.module2.dto.AdminOverridePayload payload
     ) {
         log.info("Received administrative override action for queue ID: {}", payload.queueId());
+        if (principal == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(401, "Unauthorized: Authentication required.");
+        }
+        if (!"ADMIN".equals(principal.getRole()) && !"ADMINISTRATOR".equals(principal.getRole())) {
+            throw new com.politikapp.backend.common.HttpResponseException(403, "Forbidden: Only administrators are authorized to execute administrative overrides.");
+        }
         com.politikapp.backend.module2.dto.VoteCalculationTrace trace = voteService.processAdminOverride(
             payload.queueId(),
             payload.action(),
             payload.reason()
         );
         return ResponseEntity.ok(trace);
+    }
+
+    @PostMapping("/sandbox/shift-stage")
+    public ResponseEntity<Map<String, Object>> sandboxShiftStage(
+            @RequestBody Map<String, String> payload
+    ) {
+        log.info("Sandbox stage override shift requested");
+        String queueId = payload.get("queueId");
+        String direction = payload.get("direction");
+        String newStatus = moderationQueueService.shiftSandboxStage(java.util.UUID.fromString(queueId), direction);
+        return ResponseEntity.ok(Map.of(
+            "message", "Sandbox stage successfully shifted.",
+            "queueId", queueId,
+            "newStatus", newStatus
+        ));
     }
 }

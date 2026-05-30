@@ -13,6 +13,7 @@ public record SymmetricalKpiPayload(
         long projectCompletions,
         int coaAuditDiscrepancies,
         BigDecimal trackedBudgetAllocated,
-        double legislativeEfficiencyRatio
+        double legislativeEfficiencyRatio,
+        double wgiCompositeScore
 ) {
 }

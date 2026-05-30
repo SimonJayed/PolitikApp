@@ -1,13 +1,29 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
+import TrustScoreMeter from './components/TrustScoreMeter'
+import ConfirmActionModal from './components/ConfirmActionModal'
+import PoliticianRankingPanel from './components/PoliticianRankingPanel'
+import LifecycleStageStrip from './components/LifecycleStageStrip'
+import { matchesJurisdiction } from './components/jurisdiction'
+import { ContributionCardsSkeleton, TimelineCardsSkeleton } from './components/Skeletons'
+import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
 import { useAuth } from './auth/AuthContext'
 import AuthPages from './auth/AuthPages'
 import TopNav from './components/TopNav'
+import UserHistoryPage from './components/UserHistoryPage'
+
+// Decoupled Module 1 Components
+import EditSubmissionForm from './components/module1/EditSubmissionForm'
+import PoliticianDashboard from './components/module1/PoliticianDashboard'
+import TimelineLedgerDecoupled from './components/module1/TimelineLedger'
+import KPIWidget from './components/module1/KPIWidget'
+import { POSITION_OPTIONS } from './components/module1/positionConfig'
+import './components/module1/Module1.css'
 import {
   AlertTriangleIcon,
   BarChart3Icon,
@@ -19,18 +35,18 @@ import {
   KeyIcon,
   ScaleIcon,
   ShieldCheckIcon,
+  UserPlusIcon,
   UsersIcon,
 } from './components/icons/Lucide'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-const SOURCE_URL_PATTERN = /^https?:\/\/([a-zA-Z0-9-]+\.)*(gov\.ph|edu\.ph)(\/.*)?$/
 
 const emptySubmission = {
   politicianId: '',
   sourceUrl: '',
   categoryTag: 'Audit',
   actionIdentifier: 'COA_FINDING',
-  quantitativeMetric: '',
+  actionDetails: {},
   impactSummary: '',
 }
 
@@ -43,6 +59,28 @@ const actionOptions = [
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
 
+const actionDetailFields = {
+  COA_FINDING: [
+    { key: 'flaggedAmount', label: 'Audit Flagged Amount (PHP)', type: 'number' },
+  ],
+  BUDGET_ALLOCATION: [
+    { key: 'allocationAmount', label: 'Budget Allocation Amount (PHP)', type: 'number' },
+  ],
+  PROJECT_COMPLETION: [
+    { key: 'completionPercentage', label: 'Project Completion Percentage (%)', max: 100, type: 'number' },
+  ],
+  SPONSORED_LEGISLATION: [
+    { key: 'legislationTitle', label: 'Legislation Title', type: 'text' },
+    { key: 'dateFiled', label: 'Date Filed', type: 'date' },
+    {
+      key: 'legislativeStatus',
+      label: 'Legislative Status',
+      options: ['Filed', 'In Committee', 'Approved', 'Rejected', 'Withdrawn'],
+      type: 'select',
+    },
+  ],
+}
+
 async function readApiResponse(response) {
   const body = await response.json().catch(() => ({}))
   if (!response.ok) {
@@ -51,11 +89,13 @@ async function readApiResponse(response) {
   return body
 }
 
-function AppInner({ currentUser, onLogout, token }) {
+function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : 'JUDICIAL_REVIEWER'
+  const [resolvedUser, setResolvedUser] = useState(currentUser || null)
+  const activeUser = isDevModeActive && manipulatedUser ? manipulatedUser : resolvedUser
+  const currentRole = activeUser?.role || 'CONTRIBUTOR';
 
   const [activeView, setActiveView] = useState('dashboard')
   const [politiciansState, setPoliticiansState] = useState({
@@ -71,6 +111,11 @@ function AppInner({ currentUser, onLogout, token }) {
   const [selectedPoliticianId, setSelectedPoliticianId] = useState('')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
+  const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
+  const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [isApprovedDomain, setIsApprovedDomain] = useState(false)
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -78,16 +123,17 @@ function AppInner({ currentUser, onLogout, token }) {
     contributions: ['Submissions', 'My Contribution Ledger'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     directory: ['Directory', 'Politician Directory'],
+    history: ['History', 'Reputation Change Ledger'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
-    profileMatrix: ['Developer Sandbox', 'Core Profile Metrics Matrix'],
+    profileMatrix: isDevModeActive
+      ? ['Developer Sandbox', 'Core Profile Metrics Matrix']
+      : ['My Profile', 'Contribution Metrics'],
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const isSourceAllowed = useMemo(
-    () => SOURCE_URL_PATTERN.test(formData.sourceUrl.trim()),
-    [formData.sourceUrl],
-  )
+  const headerTitleHiddenFor = new Set(['dashboard', 'directory', 'compare', 'contributions', 'submit', 'moderation'])
+  const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const loadPoliticians = useCallback(async () => {
     setPoliticiansState((current) => ({ ...current, message: 'Loading politicians...', status: 'loading' }))
@@ -103,9 +149,37 @@ function AppInner({ currentUser, onLogout, token }) {
     loadPoliticians()
   }, [loadPoliticians])
 
+  useEffect(() => {
+    let cancelled = false
+    if (!token) return () => { cancelled = true }
+    fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(readApiResponse)
+      .then((data) => {
+        if (cancelled || !data) return
+        setResolvedUser(data)
+        onUserUpdate?.(data)
+      })
+      .catch(() => null)
+    return () => { cancelled = true }
+  }, [token, onUserUpdate])
+
   function updateFormField(event) {
     const { name, value } = event.target
-    setFormData((current) => ({ ...current, [name]: value }))
+    setFormData((current) => ({
+      ...current,
+      [name]: value,
+      ...(name === 'actionIdentifier' ? { actionDetails: {} } : {}),
+    }))
+  }
+
+  function updateActionDetail(key, value) {
+    setFormData((current) => ({
+      ...current,
+      actionDetails: {
+        ...(current.actionDetails || {}),
+        [key]: value,
+      },
+    }))
   }
 
   async function handleSubmission(event) {
@@ -114,17 +188,13 @@ function AppInner({ currentUser, onLogout, token }) {
       setSubmissionState({ status: 'error', message: 'Please select a politician from the dropdown list.' })
       return
     }
-    if (!isSourceAllowed) {
-      setSubmissionState({ status: 'error', message: 'Source URL must resolve to an approved .gov.ph or .edu.ph domain.' })
-      return
-    }
     setSubmissionState({ status: 'loading', message: 'Submitting evidence record...' })
     try {
       const payload = {
         ...formData,
         contributorId: currentUser?.userId,
+        actionDetails: normalizeActionDetails(formData.actionDetails),
         sourceUrl: formData.sourceUrl.trim(),
-        quantitativeMetric: Number(formData.quantitativeMetric),
       }
       const data = await fetch(`${API_BASE_URL}/api/submissions`, {
         body: JSON.stringify(payload),
@@ -132,15 +202,11 @@ function AppInner({ currentUser, onLogout, token }) {
         method: 'POST',
       }).then(readApiResponse)
       setFormData(emptySubmission)
+      setIsApprovedDomain(false)
       setSubmissionState({ status: 'success', message: data.message || 'Submission queued.' })
     } catch (error) {
       setSubmissionState({ status: 'error', message: error.message })
     }
-  }
-
-  async function handleDashboardLookup(event) {
-    event.preventDefault()
-    await loadDashboardById(dashboardId.trim())
   }
 
   async function loadDashboardById(politicianId) {
@@ -191,6 +257,13 @@ function AppInner({ currentUser, onLogout, token }) {
     })
   }
 
+  function handlePoliticianLocalCreate(newPolitician) {
+    setPoliticiansState((current) => {
+      const nextData = [newPolitician, ...current.data.filter((p) => p.politicianId !== newPolitician.politicianId)]
+      return { ...current, data: nextData, selected: current.selected || newPolitician }
+    })
+  }
+
   async function handleComparisonLookup(event) {
     event.preventDefault()
     const params = new URLSearchParams({ idA: compareIds.idA.trim(), idB: compareIds.idB.trim() })
@@ -205,48 +278,69 @@ function AppInner({ currentUser, onLogout, token }) {
     }
   }
 
+  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isDirectoryModalOpen || isProfileModalOpen
+
   return (
     <main className="appShell">
       <TopNav
         activeView={activeView}
+        isCompareModalOpen={isCompareModalOpen}
+        isModalOpen={isAnyModalOpen}
         onLogout={onLogout}
         onSelectView={setActiveView}
         title="PolitikApp"
-        user={currentUser}
+        user={activeUser}
       />
 
-      <section className="pageContent pt-32 sm:pt-36">
-        <header className="topBar">
-          <div className="flex items-center gap-3">
-            <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
-              <span className="ty-nav font-extrabold" aria-hidden="true">
-                {activeHeader[0]?.slice(0, 1) || 'P'}
-              </span>
+      <section className={isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'}>
+        {!isAnyModalOpen && (
+          <header className="topBar">
+              <div className="flex items-center gap-3">
+                {showHeaderTitles && (
+                  <>
+                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
+                      <span className="ty-nav font-extrabold" aria-hidden="true">
+                        {activeHeader[0]?.slice(0, 1) || 'P'}
+                      </span>
+                    </div>
+
+                    <div className="min-w-0">
+                      <p className="ty-label">{activeHeader[0]}</p>
+                      <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
+                    </div>
+                  </>
+                )}
             </div>
-            <div className="min-w-0">
-              <p className="ty-label">{activeHeader[0]}</p>
-              <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
-            </div>
+          </header>
+        )}
+        {!isAnyModalOpen && activeView !== 'dashboard' && (
+          <div className="backNavRow">
+            <button aria-label="Back to Dashboard" className="appBackButton" onClick={() => setActiveView('dashboard')} type="button">
+              <ArrowLeftIcon size={16} />
+              Back
+            </button>
           </div>
-        </header>
+        )}
 
         {activeView === 'directory' && (
           <PoliticianDirectoryLoaderPanel
-            dashboardId={dashboardId}
-            onChange={setDashboardId}
+            dbUser={currentUser}
             onViewProfile={openPoliticianProfile}
-            onSubmit={handleDashboardLookup}
             politicians={politiciansState.data}
             politiciansState={politiciansState}
             state={dashboardState}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
+            onPoliticianCreate={handlePoliticianLocalCreate}
+            onModalOpenChange={setIsDirectoryModalOpen}
+            token={token}
           />
         )}
         {activeView === 'submit' && (
           <SubmissionPanel
             formData={formData}
-            isSourceAllowed={isSourceAllowed}
             onChange={updateFormField}
+            onDetailChange={updateActionDetail}
+            onDomainCheck={setIsApprovedDomain}
             onSubmit={handleSubmission}
             selectedPoliticianId={selectedPoliticianId}
             state={submissionState}
@@ -258,30 +352,39 @@ function AppInner({ currentUser, onLogout, token }) {
             onAddContribution={openSubmitContributionForPolitician}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onReload={openPoliticianProfile}
+            onUserUpdate={onUserUpdate}
+            onAppealModalOpenChange={setIsAppealModalOpen}
+            onModalOpenChange={setIsProfileModalOpen}
             politicianId={selectedPoliticianId}
             politicians={politiciansState.data}
             state={dashboardState}
+            dbUser={currentUser}
+            token={token}
+            user={activeUser}
           />
         )}
         {activeView === 'dashboard' && (
           <DashboardPanel
+            isLoading={politiciansState.status === 'loading'}
             onNavigate={setActiveView}
+            onOpenProfile={openPoliticianProfile}
             politicians={politiciansState.data}
-            user={currentUser}
+            user={activeUser}
           />
         )}
         {activeView === 'compare' && (
           <ComparisonPanel
             compareIds={compareIds}
             onChange={setCompareIds}
+            onModalOpenChange={setIsCompareModalOpen}
             onSubmit={handleComparisonLookup}
             politicians={politiciansState.data}
             politiciansState={politiciansState}
             state={comparisonState}
           />
         )}
-        {activeView === 'contributions' && <MyContributionsPanel user={currentUser} />}
-        {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={currentUser} />}
+        {activeView === 'contributions' && <MyContributionsPanel onNavigateToSubmit={() => setActiveView('submit')} user={activeUser} />}
+        {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={activeUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
             <section className="workspace">
@@ -315,22 +418,23 @@ function AppInner({ currentUser, onLogout, token }) {
               </div>
             </section>
           ) : (
-            <ModerationPanel token={token} user={currentUser} />
+            <ModerationPanel token={token} user={activeUser} />
           )
         )}
-        {activeView === 'account' && <UserAccountPage token={token} user={currentUser} />}
+        {activeView === 'account' && <UserAccountPage token={token} user={activeUser} />}
+        {activeView === 'history' && <UserHistoryPage token={token} />}
       </section>
     </main>
   )
 }
 
 function App() {
-  const { isAuthenticated, logout, token, user } = useAuth()
+  const { isAuthenticated, logout, token, updateSession, user } = useAuth()
   if (!isAuthenticated) return <AuthPages />
   return (
-    <DeveloperSandboxProvider>
-      <AppInner currentUser={user} onLogout={logout} token={token} />
-      <DeveloperOptionsPanel />
+    <DeveloperSandboxProvider currentUser={user} token={token}>
+      <AppInner currentUser={user} onLogout={logout} onUserUpdate={updateSession} token={token} />
+      {/* <DeveloperOptionsPanel /> */}
     </DeveloperSandboxProvider>
   )
 }
@@ -338,290 +442,31 @@ function App() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Dashboard                                                                  */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function DashboardPanel({ politicians, onNavigate, user }) {
-  const totalProfiles = politicians.length
-  const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0)
-  const averageEfficiency = totalProfiles > 0
-    ? politicians.reduce((acc, curr) => acc + (curr.efficiencyRatio || 0), 0) / totalProfiles
-    : 0
-
-  const kpis = [
-    {
-      label: 'Politician Profiles',
-      value: totalProfiles,
-      sub: 'Active database profiles',
-      accent: 'var(--ph-blue)',
-      icon: FolderIcon,
-    },
-    {
-      label: 'COA Flags Tracked',
-      value: totalCoaDiscrepancies,
-      sub: 'Audit discrepancies logged',
-      accent: 'var(--ph-gold)',
-      icon: AlertTriangleIcon,
-    },
-    {
-      label: 'Avg. Legislative Eff.',
-      value: `${averageEfficiency.toFixed(1)}%`,
-      sub: 'Sustained profile average',
-      accent: 'var(--info)',
-      icon: BarChart3Icon,
-    },
-    {
-      label: 'My Clearance Role',
-      value: user?.role || 'CONTRIBUTOR',
-      sub: 'Authorized session role',
-      accent: 'var(--ph-red)',
-      icon: KeyIcon,
-    },
-  ]
-
-  const actions = [
-    {
-      key: 'directory',
-      icon: UsersIcon,
-      title: 'Explore Directory',
-      sub: 'Browse all politician profiles',
-      color: '#e8f0fe',
-      iconBg: '#c7d7fc',
-    },
-    {
-      key: 'submit',
-      icon: FileTextIcon,
-      title: 'File Evidence',
-      sub: 'Submit an official audit record',
-      color: '#fef9e8',
-      iconBg: '#faedb4',
-    },
-    {
-      key: 'compare',
-      icon: ScaleIcon,
-      title: 'Compare Profiles',
-      sub: 'Side-by-side candidate analysis',
-      color: '#eef6ff',
-      iconBg: '#c3ddf9',
-    },
-    {
-      key: 'moderation',
-      icon: ShieldCheckIcon,
-      title: 'Moderation Jury',
-      sub: 'Cast a double-blind ballot',
-      color: '#f3f0ff',
-      iconBg: '#dbd5fd',
-    },
-  ]
-
-  return (
-    <section className="workspace dashboardWorkspace" style={{ gap: '20px' }}>
-
-      {/* Hero banner */}
-      <div style={{
-        background: 'linear-gradient(148deg, var(--ph-blue) 0%, #0c1e4a 55%, #06102a 100%)',
-        borderRadius: 'var(--radius-xl)',
-        padding: 'clamp(24px, 4vw, 36px)',
-        position: 'relative',
-        overflow: 'hidden',
-        boxShadow: '0 16px 48px rgba(8, 20, 50, 0.28)',
-      }}>
-        {/* Decorative circles */}
-        <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-40px', left: '5%', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: '20px', right: '18%', width: '4px', height: '4px', borderRadius: '50%', background: 'rgba(184, 150, 42, 0.6)' }} />
-        <div style={{ position: 'absolute', bottom: '30px', right: '35%', width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(184, 150, 42, 0.35)' }} />
-
-        <div style={{ position: 'relative' }}>
-          <span
-            className="ty-label"
-            style={{ color: 'rgba(153, 132, 44, 0.95)', marginBottom: '10px', display: 'inline-block' }}
-          >
-            Live: Civic Transparency Platform
-          </span>
-          <h2 className="ty-section-title" style={{
-            color: '#ffffff',
-            margin: '0 0 10px',
-            letterSpacing: '-0.02em',
-            lineHeight: '1.15',
-            fontSize: 'clamp(1.25rem, 2.2vw, 1.6rem)',
-          }}>
-            Mabuhay, {user?.fullName?.split(' ')[0] || 'Contributor'}.
-          </h2>
-          <p style={{ color: 'rgba(220, 228, 245, 0.82)', fontSize: '14px', lineHeight: '1.7', margin: 0, maxWidth: '560px' }}>
-            Track, analyze, and verify official legislative and audit records across local and national Philippine jurisdictions.
-          </p>
-        </div>
-      </div>
-
-      {/* KPI row */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px' }}>
-        {kpis.map(({ label, value, sub, accent, icon: Icon }) => (
-          <article key={label} style={{
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--line-soft)',
-            borderLeft: `3px solid ${accent}`,
-            borderRadius: 'var(--radius-md)',
-            padding: '18px 20px',
-            boxShadow: 'var(--shadow-xs)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '6px',
-          }}>
-            <span aria-hidden="true" className="inline-flex items-center justify-center" style={{ width: '22px', height: '22px', color: accent }}>
-              <Icon size={18} />
-            </span>
-            <span className="ty-label" style={{ marginTop: '4px' }}>{label}</span>
-            <strong style={{
-              fontFamily: 'var(--display)',
-              fontSize: 'clamp(1.3rem, 2vw, 1.8rem)',
-              fontWeight: '800',
-              color: 'var(--text-primary)',
-              lineHeight: '1.1',
-              letterSpacing: '-0.03em',
-            }}>{value}</strong>
-            <small className="ty-meta">{sub}</small>
-          </article>
-        ))}
-      </div>
-
-      {/* Quick actions */}
-      <section>
-        <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Quick Actions</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: '14px' }}>
-          {actions.map(({ key, icon: Icon, title, sub, color, iconBg }) => (
-            <button
-              key={key}
-              onClick={() => onNavigate(key)}
-              type="button"
-              className="dashboardCard"
-              style={{
-                minHeight: '120px',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-start',
-                gap: '10px',
-                cursor: 'pointer',
-                gridTemplateColumns: 'none',
-                background: 'var(--bg-surface)',
-              }}
-            >
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-sm)',
-                background: color,
-                border: `1px solid ${iconBg}`,
-                color: 'var(--ph-blue)',
-              }}>
-                <Icon size={18} />
-              </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <strong className="ty-card-title">{title}</strong>
-                <small className="ty-meta">{sub}</small>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* Info row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.65fr 1fr', gap: '16px', alignItems: 'start' }}>
-        <article style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--line-soft)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '24px',
-          boxShadow: 'var(--shadow-xs)',
-          display: 'grid',
-          gap: '16px',
-        }}>
-          <h3 className="ty-card-title" style={{ margin: 0 }}>Platform Accountability Rules</h3>
-          <p className="ty-body" style={{ margin: 0 }}>
-            All crowdsourced submissions require whitelisted Philippine domains (<strong>.gov.ph</strong> or <strong>.edu.ph</strong>). 
-            After consensus, voters aligned with the final ruling receive a <strong>+5.0 reputation bump</strong>; opposing voters receive a <strong>−5.0 penalty</strong>.
-          </p>
-          <div style={{
-            padding: '13px 16px',
-            background: '#fffbeb',
-            border: '1px solid var(--warning-border)',
-            borderLeft: '3px solid var(--ph-gold)',
-            borderRadius: 'var(--radius-sm)',
-            color: '#7a5500',
-            fontFamily: 'var(--mono, monospace)',
-            fontSize: '12px',
-            fontWeight: '500',
-            letterSpacing: '0.02em',
-            lineHeight: '1.6',
-          }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <AlertTriangleIcon size={16} />
-              <span>INTERCEPTOR ACTIVE: Contributors exceeding a 15% lifetime rejection rate will have write tokens automatically revoked.</span>
-            </span>
-          </div>
-        </article>
-
-        <article style={{
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--line-soft)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '24px',
-          boxShadow: 'var(--shadow-xs)',
-          display: 'grid',
-          gap: '14px',
-        }}>
-          <h3 className="ty-card-title" style={{ margin: 0 }}>Sandbox Status</h3>
-          <div style={{ display: 'grid', gap: '0' }}>
-            {[
-              ['Host', 'Development'],
-              ['API Host', API_BASE_URL],
-              ['Auth Session', 'ACTIVE'],
-            ].map(([key, val], i, arr) => (
-              <div key={key} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '10px 0',
-                borderBottom: i < arr.length - 1 ? '1px solid var(--line-hairline)' : 'none',
-              }}>
-                <span className="ty-meta" style={{ color: 'var(--text-muted)' }}>{key}</span>
-                <strong style={{
-                  fontFamily: 'var(--mono, monospace)',
-                  fontSize: '12px',
-                  color: key === 'Auth Session' ? 'var(--success)' : key === 'API Host' ? 'var(--info)' : 'var(--text-primary)',
-                  fontWeight: '600',
-                  maxWidth: '180px',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  textAlign: 'right',
-                }}>{val}</strong>
-              </div>
-            ))}
-          </div>
-        </article>
-      </div>
-    </section>
-  )
+function DashboardPanel(props) {
+  return <PoliticianDashboard {...props} />
 }
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  User Account Page                                                          */
-/* ─────────────────────────────────────────────────────────────────────────── */
 function UserAccountPage({ token, user }) {
-  const [profile, setProfile] = useState(user)
-  const [state, setState] = useState({ status: 'idle', message: '' })
-  const [form, setForm] = useState({ fullName: user.fullName || '', username: user.username || '' })
+  const { updateSession } = useAuth()
+  const [profile, setProfile] = useState(null)
+  const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
+  const [form, setForm] = useState({ fullName: '', username: '' })
 
   useEffect(() => {
+    let cancelled = false
+    setState({ status: 'loading', message: 'Loading profile...' })
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then(readApiResponse)
       .then((data) => {
+        if (cancelled) return
         setProfile(data)
         setForm({ fullName: data.fullName || '', username: data.username || '' })
+        setState({ status: 'success', message: '' })
       })
-      .catch(() => null)
+      .catch((error) => {
+        if (cancelled) return
+        setState({ status: 'error', message: error.message || 'Failed to load profile.' })
+      })
+    return () => { cancelled = true }
   }, [token])
 
   async function onSave(event) {
@@ -633,7 +478,8 @@ function UserAccountPage({ token, user }) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(form),
       }).then(readApiResponse)
-      setProfile(data)
+      setProfile(data.user || data)
+      updateSession(data)
       setState({ status: 'success', message: 'Profile updated.' })
     } catch (error) {
       setState({ status: 'error', message: error.message })
@@ -644,9 +490,12 @@ function UserAccountPage({ token, user }) {
     <section className="workspace">
       <section className="profileSummary">
         <p className="eyebrow ty-page-kicker">Account</p>
-        <h2 className="ty-section-title">{profile?.fullName}</h2>
-        <p className="ty-body">{profile?.email}</p>
-        <p className="ty-body">Role: {profile?.role}</p>
+        <h2 className="ty-section-title">{profile?.fullName || user?.fullName || '—'}</h2>
+        <p className="ty-body">{profile?.email || user?.email || '—'}</p>
+        <p className="ty-body">Role: {profile?.role || user?.role || '—'}</p>
+        <div style={{ marginTop: '16px', maxWidth: '420px' }}>
+          <TrustScoreMeter score={profile?.trustScore ?? user?.trustScore ?? 0} />
+        </div>
       </section>
       <form className="editorPanel" onSubmit={onSave}>
         <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
@@ -661,113 +510,108 @@ function UserAccountPage({ token, user }) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Submission Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function SubmissionPanel({ formData, isSourceAllowed, onChange, onSubmit, selectedPoliticianId, state, politicians = [] }) {
-  const selectedPolitician = politicians.find((p) => p.politicianId === (formData.politicianId || selectedPoliticianId))
-  return (
-    <section className="workspace">
-      <form className="editorPanel" onSubmit={onSubmit}>
-        {selectedPolitician && (
-          <p className="statusLine success">
-            Adding contribution for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
-          </p>
-        )}
-        <label>
-          Select Politician Profile
-          <select name="politicianId" value={formData.politicianId} onChange={onChange} required>
-            <option value="">— Choose a Politician Profile —</option>
-            {politicians.map((p) => (
-              <option key={p.politicianId} value={p.politicianId}>
-                {p.fullName} ({p.position || 'UNSPECIFIED'})
-              </option>
-            ))}
-          </select>
-        </label>
-        <Field label="Source URL" name="sourceUrl" value={formData.sourceUrl} onChange={onChange} />
-        <div className="fieldRow">
-          <label>
-            Category
-            <select name="categoryTag" value={formData.categoryTag} onChange={onChange}>
-              {categoryOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </label>
-          <label>
-            Action
-            <select name="actionIdentifier" value={formData.actionIdentifier} onChange={onChange}>
-              {actionOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </label>
-        </div>
-        <Field label="Quantitative Metric" name="quantitativeMetric" onChange={onChange} type="number" value={formData.quantitativeMetric} />
-        <label>
-          Impact Summary
-          <textarea name="impactSummary" required rows="5" value={formData.impactSummary} onChange={onChange} />
-        </label>
-        <div className="formFooter">
-          <span className={isSourceAllowed ? 'sourceBadge approved' : 'sourceBadge'}>
-            {isSourceAllowed ? '✓ Approved source' : '○ Awaiting approved source'}
-          </span>
-          <button disabled={state.status === 'loading'} type="submit">Submit Evidence</button>
-        </div>
-        <StatusLine state={state} />
-      </form>
-    </section>
-  )
+function SubmissionPanel(props) {
+  return <EditSubmissionForm {...props} />
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Directory                                                        */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function PoliticianDirectoryLoaderPanel({
-  dashboardId, onChange, onViewProfile, onSubmit,
-  politicians, politiciansState, state, onPoliticianUpdate,
+  dbUser, onViewProfile,
+  politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [positionFilter, setPositionFilter] = useState('ALL')
   const [page, setPage] = useState(1)
   const pageSize = 9
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [createState, setCreateState] = useState({ status: 'idle', message: '' })
+  const [createErrors, setCreateErrors] = useState({})
   const [detailsData, setDetailsData] = useState(null)
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({
     biography: '', fullName: '', jurisdiction: '',
     partyAffiliation: '', position: '', profileImageUrl: '',
   })
+  const [createForm, setCreateForm] = useState({
+    fullName: '',
+    jurisdiction: '',
+    partyAffiliation: '',
+    position: '',
+    biography: '',
+    profileImageUrl: '',
+    status: '',
+    termStart: '',
+    termEnd: '',
+  })
+  const isDatabaseAdmin = dbUser?.role === 'ADMIN'
 
   const filteredPoliticians = useMemo(() => {
     const q = query.trim().toLowerCase()
     return politicians.filter((p) => {
-      const matchesJurisdiction = jurisdictionFilter === 'ALL' || p.jurisdiction === jurisdictionFilter
+      const jurisdictionMatch = matchesJurisdiction(p.jurisdiction, jurisdictionFilter)
+      const positionMatch = positionFilter === 'ALL' || (p.position || '') === positionFilter
       const matchesQuery = !q || p.fullName.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q)
-      return matchesJurisdiction && matchesQuery
+      return jurisdictionMatch && positionMatch && matchesQuery
     })
-  }, [jurisdictionFilter, politicians, query])
+  }, [jurisdictionFilter, politicians, positionFilter, query])
+
+  const positionOptions = useMemo(() => {
+    return Array.from(new Set(politicians.map((p) => p.position).filter(Boolean))).sort((a, b) => a.localeCompare(b))
+  }, [politicians])
 
   useEffect(() => {
     setPage(1)
-  }, [query, jurisdictionFilter])
+  }, [query, jurisdictionFilter, positionFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredPoliticians.length / pageSize))
   const safePage = Math.min(page, totalPages)
   const pagedPoliticians = filteredPoliticians.slice((safePage - 1) * pageSize, safePage * pageSize)
 
   useEffect(() => {
-    if (!isDetailsOpen && !isEditOpen) return undefined
+    if (!isDetailsOpen && !isEditOpen && !isCreateOpen) return undefined
     function handleEscape(e) {
-      if (e.key === 'Escape') { setIsEditOpen(false); setIsDetailsOpen(false) }
+      if (e.key === 'Escape') { setIsCreateOpen(false); setIsEditOpen(false); setIsDetailsOpen(false) }
     }
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', handleEscape)
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', handleEscape) }
-  }, [isDetailsOpen, isEditOpen])
+  }, [isDetailsOpen, isEditOpen, isCreateOpen])
+
+  useEffect(() => {
+    onModalOpenChange?.(isDetailsOpen || isEditOpen || isCreateOpen)
+    return () => onModalOpenChange?.(false)
+  }, [isDetailsOpen, isEditOpen, isCreateOpen, onModalOpenChange])
 
   async function handleCardSelect(politician) {
     await onViewProfile(politician.politicianId)
   }
 
+  function openCreateModal() {
+    if (!isDatabaseAdmin) return
+    setCreateErrors({})
+    setCreateState({ status: 'idle', message: '' })
+    setCreateForm({
+      fullName: '',
+      jurisdiction: '',
+      partyAffiliation: '',
+      position: '',
+      biography: '',
+      profileImageUrl: '',
+      status: '',
+      termStart: '',
+      termEnd: '',
+    })
+    setIsCreateOpen(true)
+  }
+
   function openEditModal() {
-    if (!detailsData) return
+    if (!detailsData || !isDatabaseAdmin) return
     setEditErrors({})
     setEditForm({
       biography: detailsData.biography || '',
@@ -785,6 +629,11 @@ function PoliticianDirectoryLoaderPanel({
     setEditForm((c) => ({ ...c, [name]: value }))
   }
 
+  function updateCreateField(e) {
+    const { name, value } = e.target
+    setCreateForm((current) => ({ ...current, [name]: value }))
+  }
+
   function validateEditForm() {
     const errors = {}
     if (!editForm.fullName.trim()) errors.fullName = 'Full name is required.'
@@ -794,9 +643,31 @@ function PoliticianDirectoryLoaderPanel({
     return Object.keys(errors).length === 0
   }
 
+  function validateCreateForm() {
+    const errors = {}
+    if (!createForm.fullName.trim()) errors.fullName = 'Full name is required.'
+    if (!createForm.jurisdiction.trim()) errors.jurisdiction = 'Jurisdiction is required.'
+    if (!createForm.position.trim()) errors.position = 'Position is required.'
+    if (!createForm.status.trim()) errors.status = 'Status is required.'
+    if (!createForm.termStart) errors.termStart = 'Term start is required.'
+    if (!createForm.termEnd) errors.termEnd = 'Term end is required.'
+    if (createForm.termStart && createForm.termEnd && new Date(createForm.termEnd) < new Date(createForm.termStart)) {
+      errors.termEnd = 'Term end cannot be earlier than term start.'
+    }
+    if (createForm.profileImageUrl.trim()) {
+      try {
+        new URL(createForm.profileImageUrl.trim())
+      } catch {
+        errors.profileImageUrl = 'Provide a valid URL for profile image.'
+      }
+    }
+    setCreateErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   async function handleSaveEdit(e) {
     e.preventDefault()
-    if (!detailsData || !validateEditForm()) return
+    if (!detailsData || !isDatabaseAdmin || !validateEditForm()) return
     const updates = {
       politicianId: detailsData.politicianId,
       fullName: editForm.fullName.trim(),
@@ -809,7 +680,7 @@ function PoliticianDirectoryLoaderPanel({
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${detailsData.politicianId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(updates),
       })
       if (res.ok) {
@@ -821,16 +692,83 @@ function PoliticianDirectoryLoaderPanel({
         const err = await res.json().catch(() => ({}))
         alert(err.message || 'Failed to persist profile updates.')
       }
-    } catch (err) {
+    } catch {
       alert('Network error: Could not save profile updates.')
+    }
+  }
+
+  async function handleCreatePolitician(e) {
+    e.preventDefault()
+    if (!isDatabaseAdmin || !validateCreateForm()) return
+    setCreateState({ status: 'loading', message: 'Creating politician profile...' })
+
+    const payload = {
+      fullName: createForm.fullName.trim(),
+      jurisdiction: createForm.jurisdiction.trim(),
+      partyAffiliation: createForm.partyAffiliation.trim(),
+      position: createForm.position.trim(),
+      biography: createForm.biography.trim(),
+      profileImageUrl: createForm.profileImageUrl.trim() || null,
+      status: createForm.status.trim(),
+      termStart: createForm.termStart,
+      termEnd: createForm.termEnd,
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/politicians`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      })
+
+      if (res.ok) {
+        const data = await readApiResponse(res)
+        onPoliticianCreate?.(data)
+        setCreateState({ status: 'success', message: 'Politician added successfully.' })
+        setIsCreateOpen(false)
+        return
+      }
+
+      const fallbackPolitician = {
+        politicianId: crypto.randomUUID(),
+        fullName: payload.fullName,
+        jurisdiction: payload.jurisdiction,
+        partyAffiliation: payload.partyAffiliation,
+        position: payload.position,
+        biography: payload.biography,
+        profileImageUrl: payload.profileImageUrl,
+        status: payload.status,
+        termStart: payload.termStart,
+        termEnd: payload.termEnd,
+        billsAuthored: 0,
+        projectCompletions: 0,
+        coaAuditDiscrepancies: 0,
+        trackedBudgetAllocated: 0,
+        legislativeEfficiencyRatio: 0,
+      }
+      onPoliticianCreate?.(fallbackPolitician)
+      setCreateState({ status: 'success', message: 'Create endpoint unavailable. Politician was added locally for this session.' })
+      setIsCreateOpen(false)
+    } catch {
+      setCreateState({ status: 'error', message: 'Network error: could not create politician.' })
     }
   }
 
   return (
     <section className="workspace dashboardWorkspace">
       <section className="dashboardHeaderBlock">
-        <h2 className="ty-section-title">Politician Directory</h2>
-        <p className="ty-body">Browse and select a politician to load their performance profile instantly.</p>
+        <div className="directoryHeaderRow">
+          <div>
+            <h2 className="ty-section-title">Politician Directory</h2>
+            <p className="ty-body">Browse and select a politician to load their performance profile instantly.</p>
+          </div>
+          {isDatabaseAdmin && (
+            <button type="button" className="directoryAddButton" onClick={openCreateModal}>
+              <UserPlusIcon size={16} />
+              Add Politician
+            </button>
+          )}
+        </div>
       </section>
 
       <section className="dashboardFilterBar" aria-label="Directory filters">
@@ -845,6 +783,15 @@ function PoliticianDirectoryLoaderPanel({
           />
         </label>
         <label>
+          Position
+          <select name="dashboardPosition" onChange={(e) => setPositionFilter(e.target.value)} value={positionFilter}>
+            <option value="ALL">All Positions</option>
+            {positionOptions.map((position) => (
+              <option key={position} value={position}>{position}</option>
+            ))}
+          </select>
+        </label>
+        <label>
           Jurisdiction
           <select name="dashboardJurisdiction" onChange={(e) => setJurisdictionFilter(e.target.value)} value={jurisdictionFilter}>
             <option value="ALL">All</option>
@@ -852,10 +799,6 @@ function PoliticianDirectoryLoaderPanel({
             <option value="CEBU_CITY">Cebu City</option>
           </select>
         </label>
-        <form className="dashboardQuickLoad" onSubmit={onSubmit}>
-          <Field label="Manual ID" name="dashboardId" onChange={(e) => onChange(e.target.value)} value={dashboardId} />
-          <button disabled={state.status === 'loading'} type="submit">Load</button>
-        </form>
       </section>
 
       <div className="dashboardDivider" aria-hidden="true" />
@@ -946,42 +889,111 @@ function PoliticianDirectoryLoaderPanel({
                 <p className="ty-body">{detailsData.biography || 'No biography available.'}</p>
               </section>
             </div>
-            <footer className="detailsModalFooter">
-              <button onClick={openEditModal} type="button">Edit Profile</button>
-            </footer>
+            {isDatabaseAdmin && (
+              <footer className="detailsModalFooter">
+                <button onClick={openEditModal} type="button">Edit Profile</button>
+              </footer>
+            )}
           </section>
         </div>
       )}
 
       {isEditOpen && (
-        <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section aria-label="Edit politician" aria-modal="true" className="editModal" onClick={(e) => e.stopPropagation()} role="dialog">
-            <header className="detailsModalHeader">
+        <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsEditOpen(false)}>
+          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal editPoliticianModal" onClick={(e) => e.stopPropagation()} role="dialog">
+            <header className="comparisonModalHeader">
               <h3 className="ty-section-title">Edit Politician</h3>
-              <button onClick={() => setIsEditOpen(false)} type="button">Close</button>
+              <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsEditOpen(false)} type="button">Close</button>
             </header>
-            <form className="editFormGrid" onSubmit={handleSaveEdit}>
-              <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-              <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
-              <label>
-                Jurisdiction
-                <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                  <option value="NATIONAL">NATIONAL</option>
-                  <option value="CEBU_CITY">CEBU_CITY</option>
-                </select>
-                {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
-              </label>
-              <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
-              <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
-              <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
-              <div className="editModalActions">
-                <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
-                <button type="submit">Save Update</button>
-              </div>
-            </form>
+            <div className="comparisonModalBody">
+              <form className="editFormGrid" onSubmit={handleSaveEdit}>
+                <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
+                <label>
+                  Position
+                  <select name="position" onChange={updateEditField} required value={editForm.position}>
+                    <option value="">Select a position</option>
+                    {POSITION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                    ))}
+                  </select>
+                  {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
+                </label>
+                <label>
+                  Jurisdiction
+                  <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
+                    <option value="NATIONAL">NATIONAL</option>
+                    <option value="CEBU_CITY">CEBU_CITY</option>
+                  </select>
+                  {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
+                </label>
+                <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
+                <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
+                <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
+                <div className="editModalActions">
+                  <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
+                  <button type="submit">Save Update</button>
+                </div>
+              </form>
+            </div>
           </section>
         </div>
       )}
+      {isCreateOpen && (
+        <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsCreateOpen(false)}>
+          <section aria-label="Add politician" aria-modal="true" className="comparisonModal" onClick={(e) => e.stopPropagation()} role="dialog">
+            <header className="comparisonModalHeader">
+              <h3 className="ty-section-title">Add Politician</h3>
+              <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsCreateOpen(false)} type="button">Close</button>
+            </header>
+            <div className="comparisonModalBody">
+              <form className="editFormGrid" onSubmit={handleCreatePolitician}>
+                <label>Full Name<input name="fullName" onChange={updateCreateField} required value={createForm.fullName} />{createErrors.fullName && <span className="fieldError">{createErrors.fullName}</span>}</label>
+                <label>
+                  Position
+                  <select name="position" onChange={(e) => {
+                    const opt = POSITION_OPTIONS.find((o) => o.value === e.target.value)
+                    updateCreateField(e)
+                    if (opt) setCreateForm((c) => ({ ...c, position: e.target.value, jurisdiction: opt.jurisdiction }))
+                  }} required value={createForm.position}>
+                    <option value="">Select a position</option>
+                    {POSITION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                    ))}
+                  </select>
+                  {createErrors.position && <span className="fieldError">{createErrors.position}</span>}
+                </label>
+                <label>
+                  Jurisdiction
+                  <input name="jurisdiction" readOnly value={createForm.jurisdiction || (POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdictionLabel ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Auto-derived from position</small>
+                  {createErrors.jurisdiction && <span className="fieldError">{createErrors.jurisdiction}</span>}
+                </label>
+                <label>Party Affiliation<input name="partyAffiliation" onChange={updateCreateField} value={createForm.partyAffiliation} />{createErrors.partyAffiliation && <span className="fieldError">{createErrors.partyAffiliation}</span>}</label>
+                <label>
+                  Status
+                  <select name="status" onChange={updateCreateField} required value={createForm.status}>
+                    <option value="">Select status</option>
+                    <option value="ACTIVE">Active</option>
+                    <option value="INACTIVE">Inactive</option>
+                    <option value="SUSPENDED">Suspended</option>
+                  </select>
+                  {createErrors.status && <span className="fieldError">{createErrors.status}</span>}
+                </label>
+                <label>Profile Image URL<input name="profileImageUrl" onChange={updateCreateField} type="url" value={createForm.profileImageUrl} />{createErrors.profileImageUrl && <span className="fieldError">{createErrors.profileImageUrl}</span>}</label>
+                <label>Term Start<input name="termStart" onChange={updateCreateField} required type="date" value={createForm.termStart} />{createErrors.termStart && <span className="fieldError">{createErrors.termStart}</span>}</label>
+                <label>Term End<input name="termEnd" onChange={updateCreateField} required type="date" value={createForm.termEnd} />{createErrors.termEnd && <span className="fieldError">{createErrors.termEnd}</span>}</label>
+                <label>Biography<textarea name="biography" onChange={updateCreateField} rows="5" value={createForm.biography} />{createErrors.biography && <span className="fieldError">{createErrors.biography}</span>}</label>
+                <StatusLine state={createState} />
+                <div className="editModalActions">
+                  <button onClick={() => setIsCreateOpen(false)} type="button">Cancel</button>
+                  <button disabled={createState.status === 'loading'} type="submit">Create Politician</button>
+                </div>
+              </form>
+            </div>
+          </section>
+        </div>
+      )}
+      {createState.message && !isCreateOpen && <StatusLine state={createState} />}
     </section>
   )
 }
@@ -989,16 +1001,39 @@ function PoliticianDirectoryLoaderPanel({
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload, politicianId, politicians, state }) {
+function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [appealTarget, setAppealTarget] = useState(null)
+  const [appealDetails, setAppealDetails] = useState('')
+  const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({ biography: '', fullName: '', jurisdiction: '', partyAffiliation: '', position: '', profileImageUrl: '' })
+  const isDatabaseAdmin = dbUser?.role === 'ADMIN'
+
+  useEffect(() => {
+    if (!isEditOpen) return undefined
+    function handleEscape(e) {
+      if (e.key === 'Escape') setIsEditOpen(false)
+    }
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleEscape)
+    return () => {
+      document.body.style.overflow = prev
+      window.removeEventListener('keydown', handleEscape)
+    }
+  }, [isEditOpen])
+
+  useEffect(() => {
+    onModalOpenChange?.(isEditOpen)
+    return () => onModalOpenChange?.(false)
+  }, [isEditOpen, onModalOpenChange])
 
   function openEditModal() {
-    if (!profile) return
+    if (!profile || !isDatabaseAdmin) return
     setEditErrors({})
     setEditForm({
       biography: profile.biography || '', fullName: profile.fullName || '',
@@ -1021,7 +1056,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
 
   async function handleSaveEdit(e) {
     e.preventDefault()
-    if (!profile || !validateEditForm()) return
+    if (!profile || !isDatabaseAdmin || !validateEditForm()) return
     const updates = {
       politicianId: profile.politicianId,
       fullName: editForm.fullName.trim(),
@@ -1034,7 +1069,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
     try {
       const res = await fetch(`${API_BASE_URL}/api/politicians/${profile.politicianId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify(updates),
       })
       if (!res.ok) { const err = await res.json().catch(() => ({})); alert(err.message || 'Failed to save updates.'); return }
@@ -1042,7 +1077,40 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
       onPoliticianUpdate(profile.politicianId, savedData)
       setIsEditOpen(false)
       await onReload(profile.politicianId)
-    } catch (err) { alert('Network error: Could not save updates.') }
+    } catch { alert('Network error: Could not save updates.') }
+  }
+
+  function handleAppeal(entry) {
+    if (!entry?.submissionId) {
+      setAppealState({ status: 'error', message: 'This timeline record cannot be appealed because it is missing source submission linkage.' })
+      return
+    }
+    onAppealModalOpenChange?.(true)
+    setAppealDetails('')
+    setAppealTarget(entry)
+  }
+
+  async function confirmAppeal() {
+    if (!appealTarget?.submissionId) return
+    setAppealState({ status: 'loading', message: 'Filing appeal and routing record to admin adjudication...' })
+    try {
+      const data = await fetch(`${API_BASE_URL}/api/moderation/appeal`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ submissionId: appealTarget.submissionId, details: appealDetails.trim() }),
+      }).then(readApiResponse)
+
+      if (onUserUpdate) {
+        onUserUpdate({ trustScore: data.trustScore })
+      }
+      setAppealState({ status: 'success', message: data.message || 'Appeal filed.' })
+      setAppealTarget(null)
+      onAppealModalOpenChange?.(false)
+    } catch (error) {
+      setAppealState({ status: 'error', message: error.message })
+      setAppealTarget(null)
+      onAppealModalOpenChange?.(false)
+    }
   }
 
   if (!politicianId) {
@@ -1063,7 +1131,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
             <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button onClick={openEditModal} type="button">Edit Profile</button>
+            {isDatabaseAdmin && <button onClick={openEditModal} type="button">Edit Profile</button>}
             <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
           </div>
           <KpiGrid profile={profile} />
@@ -1071,39 +1139,69 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
             <h2 className="ty-section-title">Biography</h2>
             <p className="ty-body">{profile.biography || 'No biography available.'}</p>
           </section>
-          <TimelineLedger entries={timelineEntries} title="Published Contribution Timeline" />
+          <StatusLine state={appealState} />
+          <TimelineLedger entries={timelineEntries} isLoading={state.status === 'loading'} onAppeal={handleAppeal} title="Published Contribution Timeline" user={user} />
         </>
       )}
 
       {isEditOpen && (
-        <div aria-hidden="true" className="detailsModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section aria-label="Edit politician" aria-modal="true" className="editModal" onClick={(e) => e.stopPropagation()} role="dialog">
-            <header className="detailsModalHeader">
+        <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsEditOpen(false)}>
+          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal editPoliticianModal" onClick={(e) => e.stopPropagation()} role="dialog">
+            <header className="comparisonModalHeader">
               <h3 className="ty-section-title">Edit Politician</h3>
-              <button onClick={() => setIsEditOpen(false)} type="button">Close</button>
+              <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsEditOpen(false)} type="button">Close</button>
             </header>
-            <form className="editFormGrid" onSubmit={handleSaveEdit}>
-              <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-              <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
-              <label>
-                Jurisdiction
-                <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                  <option value="NATIONAL">NATIONAL</option>
-                  <option value="CEBU_CITY">CEBU_CITY</option>
-                </select>
-                {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
-              </label>
-              <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
-              <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
-              <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
-              <div className="editModalActions">
-                <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
-                <button type="submit">Save Update</button>
-              </div>
-            </form>
+            <div className="comparisonModalBody">
+              <form className="editFormGrid" onSubmit={handleSaveEdit}>
+                <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
+                <label>
+                  Position
+                  <select name="position" onChange={updateEditField} required value={editForm.position}>
+                    <option value="">Select a position</option>
+                    {POSITION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                    ))}
+                  </select>
+                  {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
+                </label>
+                <label>
+                  Jurisdiction
+                  <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
+                    <option value="NATIONAL">NATIONAL</option>
+                    <option value="CEBU_CITY">CEBU_CITY</option>
+                  </select>
+                  {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
+                </label>
+                <label>Party / Affiliation<input name="partyAffiliation" onChange={updateEditField} value={editForm.partyAffiliation} /></label>
+                <label>Profile Image URL<input name="profileImageUrl" onChange={updateEditField} type="url" value={editForm.profileImageUrl} /></label>
+                <label>Biography<textarea name="biography" onChange={updateEditField} rows="5" value={editForm.biography} /></label>
+                <div className="editModalActions">
+                  <button onClick={() => setIsEditOpen(false)} type="button">Cancel</button>
+                  <button type="submit">Save Update</button>
+                </div>
+              </form>
+            </div>
           </section>
         </div>
       )}
+      <ConfirmActionModal
+        cancelLabel="Cancel"
+        confirmLabel="File Appeal"
+        description="This will immediately deduct 10.00 trust points. If the appeal fails, an additional 20.00 points will be deducted."
+        isOpen={Boolean(appealTarget)}
+        isSubmitting={appealState.status === 'loading'}
+        onCancel={() => {
+          setAppealTarget(null)
+          onAppealModalOpenChange?.(false)
+        }}
+        onConfirm={confirmAppeal}
+        severity="warning"
+        title="File Post-Publish Appeal?"
+        detailsLabel="Appeal Details"
+        detailsPlaceholder="Provide concise context for why this published record should be re-adjudicated."
+        detailsValue={appealDetails}
+        onDetailsChange={setAppealDetails}
+      />
     </section>
   )
 }
@@ -1111,7 +1209,7 @@ function PoliticianProfilePage({ onAddContribution, onPoliticianUpdate, onReload
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Comparison Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politiciansState, state }) {
+function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -1151,6 +1249,11 @@ function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politici
     window.addEventListener('keydown', handleEscape)
     return () => { document.body.style.overflow = prev; window.removeEventListener('keydown', handleEscape) }
   }, [isModalOpen])
+
+  useEffect(() => {
+    onModalOpenChange?.(isModalOpen)
+    return () => onModalOpenChange?.(false)
+  }, [isModalOpen, onModalOpenChange])
 
   function selectCandidate(side, id) {
     if (side === 'left') onChange((c) => ({ ...c, idA: id }))
@@ -1259,7 +1362,9 @@ function ComparisonPanel({ compareIds, onChange, onSubmit, politicians, politici
               <h2 className="ty-section-title">Comparison Result</h2>
               <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsModalOpen(false)} type="button">Close</button>
             </header>
-            <ComparisonGrid comparison={state.data} />
+            <div className="comparisonModalBody">
+              <ComparisonGrid comparison={state.data} />
+            </div>
           </section>
         </div>
       )}
@@ -1278,8 +1383,10 @@ function ComparisonGrid({ comparison }) {
         {rows.map((row) => (
           <div className="matrixRow" key={row.categoryTag}>
             <h3>{row.categoryTag}</h3>
-            <TimelineLedger entries={row.recordsA || []} compact title="Candidate A" />
-            <TimelineLedger entries={row.recordsB || []} compact title="Candidate B" />
+            <div className="compareLedgerPair">
+              <TimelineLedger className="comparisonLedgerCard" entries={row.recordsA || []} title="Candidate A" />
+              <TimelineLedger className="comparisonLedgerCard" entries={row.recordsB || []} title="Candidate B" />
+            </div>
           </div>
         ))}
       </section>
@@ -1297,62 +1404,38 @@ function CandidateColumn({ profile }) {
   )
 }
 
-function KpiGrid({ profile, compact = false }) {
-  const metrics = [
-    ['Bills Authored', profile.billsAuthored],
-    ['Projects Completed', profile.projectCompletions],
-    ['COA Findings', profile.coaAuditDiscrepancies],
-    ['Budget Tracked', formatCurrency(profile.trackedBudgetAllocated)],
-    ['Efficiency', `${Number(profile.legislativeEfficiencyRatio || 0).toFixed(1)}%`],
-  ]
-  return (
-    <section className={compact ? 'kpiGrid compact' : 'kpiGrid'}>
-      {metrics.map(([label, value]) => (
-        <article className="kpiCard" key={label}>
-          <span className="ty-label">{label}</span>
-          <strong>{value ?? 'N/A'}</strong>
-        </article>
-      ))}
-    </section>
-  )
+function KpiGrid(props) {
+  return <KPIWidget {...props} />
 }
 
-function TimelineLedger({ entries, compact = false, title = 'Published Timeline Ledger' }) {
-  return (
-    <section className={compact ? 'timeline compact' : 'timeline'}>
-      <h2 className="ty-section-title">{title}</h2>
-      {entries.length === 0 && <p className="emptyState">No published records returned.</p>}
-      {entries.map((entry) => (
-        <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
-          <div>
-            <strong>{entry.actionIdentifier}</strong>
-            <span style={{
-              background: 'var(--bg-inset)',
-              border: '1px solid var(--line-soft)',
-              borderRadius: 'var(--radius-full)',
-              fontFamily: 'var(--mono, monospace)',
-              fontSize: '11px',
-              fontWeight: '500',
-              letterSpacing: '0.04em',
-              padding: '2px 8px',
-              color: 'var(--text-muted)',
-            }}>{entry.categoryTag}</span>
-          </div>
-          <p className="ty-body">{entry.summary}</p>
-          <a href={entry.sourceUrl} rel="noreferrer" target="_blank">
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-              View Source <ExternalLinkIcon size={14} />
-            </span>
-          </a>
-        </article>
-      ))}
-    </section>
-  )
+function TimelineLedger(props) {
+  return <TimelineLedgerDecoupled {...props} />
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Shared primitives                                                           */
-/* ─────────────────────────────────────────────────────────────────────────── */
+function TrustDeltaBadge({ entry }) {
+  const status = String(entry.publicationStatus || entry.status || '').toUpperCase()
+  const delta = status === 'PUBLISHED' ? 15 : status === 'REJECTED' ? -20 : 0
+  if (!delta) return null
+  const isPositive = delta > 0
+  return (
+    <span
+      title="Trust score impact indicator"
+      style={{
+        background: isPositive ? 'var(--success-soft)' : 'var(--danger-soft)',
+        border: `1px solid ${isPositive ? 'var(--success-border)' : 'var(--danger-border)'}`,
+        borderRadius: 'var(--radius-full)',
+        fontFamily: 'var(--mono, monospace)',
+        fontSize: '11px',
+        fontWeight: '700',
+        letterSpacing: '0.02em',
+        padding: '2px 8px',
+        color: isPositive ? 'var(--success)' : 'var(--danger)',
+      }}
+    >
+      {isPositive ? `+${delta}` : `${delta}`} Trust
+    </span>
+  )
+}
 function Field({ label, name, onChange, required = true, type = 'text', value }) {
   return (
     <label>
@@ -1389,6 +1472,44 @@ function PaginationMini({ page, totalPages, onChange }) {
         <ArrowRightIcon size={17} strokeWidth={2.4} />
       </button>
     </nav>
+  )
+}
+
+function CursorHint({ hoverInfo }) {
+  const hintRef = useRef(null)
+  const [position, setPosition] = useState({ left: -9999, top: -9999 })
+
+  useEffect(() => {
+    if (!hoverInfo?.x || !hoverInfo?.y || !hintRef.current) return
+    const tooltipRect = hintRef.current.getBoundingClientRect()
+    const viewportWidth = window.innerWidth
+    const viewportHeight = window.innerHeight
+    const offsetX = 6
+    const offsetY = 8
+    const margin = 6
+
+    let left = hoverInfo.x + offsetX
+    let top = hoverInfo.y + offsetY
+
+    if (left + tooltipRect.width > viewportWidth - margin) {
+      left = hoverInfo.x - tooltipRect.width - offsetX
+    }
+    if (top + tooltipRect.height > viewportHeight - margin) {
+      top = hoverInfo.y - tooltipRect.height - offsetY
+    }
+
+    left = Math.max(margin, Math.min(left, viewportWidth - tooltipRect.width - margin))
+    top = Math.max(margin, Math.min(top, viewportHeight - tooltipRect.height - margin))
+    setPosition({ left, top })
+  }, [hoverInfo])
+
+  if (!hoverInfo?.x || !hoverInfo?.y) return null
+  return (
+    <div ref={hintRef} aria-hidden="true" className="cursorHint" style={{ left: `${position.left}px`, top: `${position.top}px` }}>
+      <strong>{hoverInfo.title}</strong>
+      <span>{hoverInfo.description}</span>
+      {hoverInfo.hint ? <small>{hoverInfo.hint}</small> : null}
+    </div>
   )
 }
 
@@ -1481,9 +1602,10 @@ function PageSectionLoader() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  My Contributions Panel                                                      */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function MyContributionsPanel({ user }) {
+function MyContributionsPanel({ onNavigateToSubmit, user }) {
   const [contributions, setContributions] = useState([])
   const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
+  const [page, setPage] = useState(1)
 
   useEffect(() => {
     if (!user?.userId) {
@@ -1504,73 +1626,48 @@ function MyContributionsPanel({ user }) {
       })
   }, [user?.userId])
 
-  const STAGES = ['SUBMITTED', 'JURY REVIEW', 'ADJUDICATION', 'FINALIZED', 'PUBLISHED']
+  const pageSize = 6
+  const totalPages = Math.max(1, Math.ceil(contributions.length / pageSize))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = contributions.slice((safePage - 1) * pageSize, safePage * pageSize)
 
-  function stageIndexFor(status) {
-    switch ((status || '').toUpperCase()) {
-      case 'SUBMITTED': case 'PENDING': return 0
-      case 'JURY_REVIEW': return 1
-      case 'ESCALATED': case 'REVISION_REQUIRED': return 2
-      case 'REJECTED': return 3
-      case 'PUBLISHED': return 4
-      default: return 0
-    }
-  }
+  useEffect(() => { setPage(1) }, [contributions.length])
 
   return (
     <section className="workspace">
       <section className="dashboardHeaderBlock">
         <h2 className="ty-section-title">My Contributions</h2>
         <p className="ty-body">Track the verification lifecycle of your submitted political records.</p>
+        <div>
+          <button type="button" onClick={() => onNavigateToSubmit?.()}>
+            Submit Official Audit Record
+          </button>
+        </div>
       </section>
 
       <StatusLine state={state} />
 
-      <div style={{ display: 'grid', gap: '16px' }}>
+      <div className="myContribGrid">
+        {state.status === 'loading' && <ContributionCardsSkeleton count={4} />}
         {state.status !== 'loading' && contributions.length === 0 && (
-          <div style={{
-            textAlign: 'center',
-            padding: '48px 32px',
-            background: 'var(--bg-surface)',
-            border: '1px dashed var(--line-strong)',
-            borderRadius: 'var(--radius-lg)',
-          }}>
-            <p className="ty-body" style={{ color: 'var(--text-muted)' }}>
-              No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.
-            </p>
+          <div className="myContribEmpty">
+            <p className="ty-body" style={{ color: 'var(--text-muted)' }}>No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.</p>
           </div>
         )}
 
-        {contributions.map((item) => {
-          const activeStage = stageIndexFor(item.status)
-          const isRejected = item.status === 'REJECTED'
+        {pageItems.map((item) => {
           return (
             <article key={item.submissionId} className="review-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{
-                  background: 'var(--info-soft)',
-                  color: 'var(--info)',
-                  border: '1px solid var(--info-border)',
-                  padding: '4px 10px',
-                  borderRadius: 'var(--radius-full)',
-                  fontFamily: 'var(--mono, monospace)',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  letterSpacing: '0.04em',
-                }}>
-                  #{item.submissionId.substring(0, 8).toUpperCase()}
-                </span>
-                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>
-                  {formatDate(item.createdAt)}
-                </span>
+                <span style={{ background: 'var(--info-soft)', color: 'var(--info)', border: '1px solid var(--info-border)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em' }}>#{item.submissionId.substring(0, 8).toUpperCase()}</span>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                  <TrustDeltaBadge entry={item} />
+                  <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
+                </div>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
-                {[
-                  ['Category', item.categoryTag],
-                  ['Action Tag', item.actionIdentifier],
-                  ['Metric', item.quantitativeMetric ? formatCurrency(item.quantitativeMetric) : 'N/A'],
-                ].map(([k, v]) => (
+                {[[ 'Category', item.categoryTag ], [ 'Action Tag', item.actionIdentifier ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
                   <div key={k}>
                     <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
                     <strong style={{ fontFamily: 'var(--display)', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{v}</strong>
@@ -1578,74 +1675,24 @@ function MyContributionsPanel({ user }) {
                 ))}
               </div>
 
-              <div style={{
-                background: 'var(--bg-inset)',
-                border: '1px solid var(--line-hairline)',
-                borderLeft: '3px solid var(--line-strong)',
-                padding: '12px 16px',
-                borderRadius: '0 var(--radius-xs) var(--radius-xs) 0',
-                fontStyle: 'italic',
-                fontSize: '13px',
-                color: 'var(--text-secondary)',
-                lineHeight: '1.65',
-              }}>
+              <div style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-hairline)', borderLeft: '3px solid var(--line-strong)', padding: '12px 16px', borderRadius: '0 var(--radius-xs) var(--radius-xs) 0', fontStyle: 'italic', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.65' }}>
                 "{item.impactSummary}"
               </div>
 
               <div>
                 <span className="ty-label" style={{ display: 'inline', marginRight: '6px' }}>Source</span>
-                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{
-                  fontFamily: 'var(--mono, monospace)',
-                  fontSize: '12px',
-                  color: 'var(--info)',
-                  fontWeight: '500',
-                  textDecoration: 'none',
-                  borderBottom: '1px solid var(--info-border)',
-                }}>
-                  {item.sourceUrl}
-                </a>
+                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--mono, monospace)', fontSize: '12px', color: 'var(--info)', fontWeight: '500', textDecoration: 'none', borderBottom: '1px solid var(--info-border)' }}>{item.sourceUrl}</a>
               </div>
 
-              <div style={{ marginTop: '4px', paddingTop: '16px', borderTop: '1px dashed var(--line-soft)' }}>
-                <span className="ty-label" style={{ display: 'block', marginBottom: '10px' }}>Lifecycle Stage</span>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '6px' }}>
-                  {STAGES.map((stage, index) => {
-                    const isPast = index <= activeStage
-                    const isActive = index === activeStage
-                    const stageLabel = stage === 'FINALIZED' && isRejected ? 'REJECTED' : stage
-                    return (
-                      <span key={stage} style={{
-                        textAlign: 'center',
-                        padding: '6px 4px',
-                        borderRadius: 'var(--radius-full)',
-                        fontFamily: 'var(--mono, monospace)',
-                        fontSize: '10px',
-                        fontWeight: '600',
-                        letterSpacing: '0.04em',
-                        border: `1px solid ${isPast ? (isRejected && index === 3 ? 'var(--danger-border)' : 'var(--ph-blue)') : 'var(--line-soft)'}`,
-                        background: isPast
-                          ? (isRejected && index === 3 ? 'var(--danger)' : 'var(--ph-blue)')
-                          : 'var(--bg-inset)',
-                        color: isPast ? '#ffffff' : 'var(--text-subtle)',
-                        opacity: isPast ? 1 : 0.6,
-                        boxShadow: isActive ? '0 0 0 2px rgba(10,29,66,0.15)' : 'none',
-                        transition: 'all 200ms ease',
-                      }}>
-                        {stageLabel}
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
+              <LifecycleStageStrip status={item.status} title="Lifecycle Stage" />
             </article>
           )
         })}
       </div>
+      {contributions.length > pageSize && <div className="myContribPagination"><PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} /></div>}
     </section>
   )
 }
-
-/* ─────────────────────────────────────────────────────────────────────────── */
 /*  Utilities                                                                   */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function initialsFor(name) {
@@ -1654,6 +1701,37 @@ function initialsFor(name) {
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0))
+}
+
+function formatActionMetric(actionDetails, actionIdentifier) {
+  if (!actionDetails) return 'N/A'
+  switch (actionIdentifier) {
+    case 'COA_FINDING':
+      return formatCurrency(actionDetails.flaggedAmount)
+    case 'BUDGET_ALLOCATION':
+      return formatCurrency(actionDetails.allocationAmount)
+    case 'PROJECT_COMPLETION':
+      return `${Number(actionDetails.completionPercentage || 0).toLocaleString('en-PH')}% Completed`
+    case 'SPONSORED_LEGISLATION':
+      return [
+        actionDetails.legislationTitle,
+        actionDetails.legislativeStatus,
+        formatDate(actionDetails.dateFiled),
+      ].filter(Boolean).join(' | ') || 'Legislation details'
+    default:
+      return actionDetails.metric !== undefined ? String(actionDetails.metric) : 'View Details'
+  }
+}
+
+function normalizeActionDetails(actionDetails = {}) {
+  return Object.fromEntries(
+    Object.entries(actionDetails)
+      .filter(([, value]) => value !== '')
+      .map(([key, value]) => {
+        const numericValue = Number(value)
+        return Number.isFinite(numericValue) && value !== null && value !== '' ? [key, numericValue] : [key, value]
+      }),
+  )
 }
 
 function formatDate(value) {

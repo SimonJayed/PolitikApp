@@ -1,5 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DeveloperSandboxContext } from './DeveloperSandboxContext';
+import { clampTrustScore, getTrustVoteWeight } from '../components/trustScore';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 const DEFAULT_PROFILE_METRICS = {
   contributorSubmissions: 14,
@@ -13,6 +16,58 @@ const DEFAULT_PROFILE_METRICS = {
   adminTimeoutOverrideActive: true,
 };
 
+const ROLE_DEFAULT_METRICS = {
+  CONTRIBUTOR: {
+    contributorSubmissions: 14,
+    contributorApproved: 12,
+    contributorRejected: 2,
+  },
+  JUDICIAL_REVIEWER: {
+    reviewerConsensusVotes: 25,
+    reviewerDissentVotes: 3,
+    reviewerTotalBallots: 28,
+  },
+  PEER: {
+    reviewerConsensusVotes: 25,
+    reviewerDissentVotes: 3,
+    reviewerTotalBallots: 28,
+  },
+  ADMIN: {
+    adminInterventions: 7,
+    adminTieBreakerActive: true,
+    adminTimeoutOverrideActive: true,
+  },
+  ADMINISTRATOR: {
+    adminInterventions: 7,
+    adminTieBreakerActive: true,
+    adminTimeoutOverrideActive: true,
+  }
+};
+
+function mapRoleForSandbox(role) {
+  if (role === "PEER") {
+    return "JUDICIAL_REVIEWER";
+  }
+  if (role === "ADMINISTRATOR") {
+    return "ADMIN";
+  }
+  return role || "JUDICIAL_REVIEWER";
+}
+
+function normalizeSandboxMetrics(metrics) {
+  if (!metrics || typeof metrics !== 'object') {
+    return {};
+  }
+  return Object.fromEntries(
+    Object.entries(metrics).map(([key, value]) => {
+      if (typeof DEFAULT_PROFILE_METRICS[key] === 'boolean') {
+        return [key, Boolean(value)];
+      }
+      return [key, clampNumber(value)];
+    })
+  );
+}
+
 function clampNumber(value, min = 0, max = Number.POSITIVE_INFINITY) {
   const numberValue = Number(value);
   if (!Number.isFinite(numberValue)) {
@@ -21,36 +76,99 @@ function clampNumber(value, min = 0, max = Number.POSITIVE_INFINITY) {
   return Math.min(max, Math.max(min, numberValue));
 }
 
-export function DeveloperSandboxProvider({ children }) {
-  const [isDevModeActive, setIsDevModeActive] = useState(false);
+export function DeveloperSandboxProvider({ children, currentUser, token }) {
+  const isDevModeActive = false;
+  const setIsDevModeActive = () => {};
   const [injectedQueue, setInjectedQueue] = useState([]); 
   const [profileMetrics, setProfileMetrics] = useState(DEFAULT_PROFILE_METRICS);
-
-  // Track changeable mock user attributes for Module 3 simulations
   const [manipulatedUser, setManipulatedUser] = useState({
     name: "Pedro Penduko",
     biography: "Verified Capstone Contributor Profile tracking municipal budget items.",
-    trustScore: 95.0,
+    trustScore: 100.0,
     status: "ACTIVE",
     role: "JUDICIAL_REVIEWER"
   });
 
+  function applyPersistedSandboxProfile(userProfile) {
+    if (!userProfile) return;
+    setManipulatedUser({
+      name: userProfile.fullName || userProfile.name || "Pedro Penduko",
+      biography: userProfile.biography || "Verified Capstone Contributor Profile tracking municipal budget items.",
+      trustScore: userProfile.trustScore !== undefined ? userProfile.trustScore : 100.0,
+      status: userProfile.accountStatus || userProfile.status || "ACTIVE",
+      role: mapRoleForSandbox(userProfile.role)
+    });
+
+    const savedMetrics = normalizeSandboxMetrics(userProfile.sandboxProfileMetrics);
+    if (Object.keys(savedMetrics).length > 0) {
+      setProfileMetrics((current) => ({
+        ...current,
+        ...savedMetrics,
+      }));
+    }
+  }
+
+  // Sync actual user and metrics dynamically when sandbox is enabled
+  useEffect(() => {
+    if (isDevModeActive && currentUser) {
+      applyPersistedSandboxProfile(currentUser);
+
+      const savedMetrics = normalizeSandboxMetrics(currentUser.sandboxProfileMetrics);
+      const hasSavedMetrics = Object.keys(savedMetrics).length > 0;
+      if (hasSavedMetrics) {
+        setProfileMetrics(current => ({
+          ...current,
+          ...savedMetrics,
+        }));
+      }
+
+      if (currentUser.userId && !hasSavedMetrics) {
+        fetch(`${API_BASE_URL}/api/submissions/contributor/${currentUser.userId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        })
+          .then(res => {
+            if (!res.ok) throw new Error("Fetch failed");
+            return res.json();
+          })
+          .then(data => {
+            const entries = Array.isArray(data) ? data : [];
+            const submissions = entries.length;
+            const approved = entries.filter((e) => e.status === 'PUBLISHED').length;
+            const rejected = entries.filter((e) => e.status === 'REJECTED').length;
+
+            setProfileMetrics(current => ({
+              ...current,
+              contributorSubmissions: submissions,
+              contributorApproved: approved,
+              contributorRejected: rejected,
+            }));
+          })
+          .catch(err => console.error("Sandbox failing to pre-fetch contributor stats:", err));
+      }
+    }
+  }, [isDevModeActive, currentUser, token]);
+
+  // Sync profile metrics preset when the spoofed role changes
+  useEffect(() => {
+    const roleKey = manipulatedUser.role;
+    if (roleKey && ROLE_DEFAULT_METRICS[roleKey]) {
+      setProfileMetrics((current) => ({
+        ...ROLE_DEFAULT_METRICS[roleKey],
+        ...current
+      }));
+    }
+  }, [manipulatedUser.role]);
+
   // 🧮 Compute voting weight dynamically based on SRS trust thresholds
   const getSimulatedVoteWeight = () => {
-    if (manipulatedUser.trustScore >= 90) return 5;
-    if (manipulatedUser.trustScore >= 70) return 3;
-    return 1;
+    return getTrustVoteWeight(manipulatedUser.trustScore);
   };
 
   const contributorRejectionRate = profileMetrics.contributorSubmissions > 0
     ? (profileMetrics.contributorRejected / profileMetrics.contributorSubmissions) * 100
     : 0;
 
-  const effectiveManipulatedUser = useMemo(() => (
-    contributorRejectionRate > 15
-      ? { ...manipulatedUser, status: 'SUSPENDED' }
-      : manipulatedUser
-  ), [contributorRejectionRate, manipulatedUser]);
+  const effectiveManipulatedUser = manipulatedUser;
   const voteWeight = getSimulatedVoteWeight();
 
   function updateProfileMetric(key, value) {
@@ -66,6 +184,10 @@ export function DeveloperSandboxProvider({ children }) {
       contributorSubmissions: current.contributorSubmissions + 1,
       contributorApproved: current.contributorApproved + 1,
     }));
+    setManipulatedUser((current) => ({
+      ...current,
+      trustScore: clampTrustScore((current.trustScore || 0) + 15),
+    }));
   }
 
   function simulateRejectedSubmission() {
@@ -73,6 +195,10 @@ export function DeveloperSandboxProvider({ children }) {
       ...current,
       contributorSubmissions: current.contributorSubmissions + 1,
       contributorRejected: current.contributorRejected + 1,
+    }));
+    setManipulatedUser((current) => ({
+      ...current,
+      trustScore: clampTrustScore((current.trustScore || 0) - 20),
     }));
   }
 
@@ -84,7 +210,7 @@ export function DeveloperSandboxProvider({ children }) {
     }));
     setManipulatedUser((current) => ({
       ...current,
-      trustScore: clampNumber((current.trustScore || 0) + 5, 0, 100),
+      trustScore: clampTrustScore((current.trustScore || 0) + 5),
     }));
   }
 
@@ -96,7 +222,7 @@ export function DeveloperSandboxProvider({ children }) {
     }));
     setManipulatedUser((current) => ({
       ...current,
-      trustScore: clampNumber((current.trustScore || 0) - 5, 0, 100),
+      trustScore: clampTrustScore((current.trustScore || 0) - 5),
     }));
   }
 
@@ -136,6 +262,7 @@ export function DeveloperSandboxProvider({ children }) {
       voteWeight,
       profileMetrics,
       setProfileMetrics,
+      applyPersistedSandboxProfile,
       updateProfileMetric,
       contributorRejectionRate,
       simulateApprovedSubmission,

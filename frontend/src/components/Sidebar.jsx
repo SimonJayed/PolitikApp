@@ -8,7 +8,7 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : 'JUDICIAL_REVIEWER'
+  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : (user?.role || 'CONTRIBUTOR')
 
   useEffect(() => {
     document.documentElement.style.setProperty('--sidebar-width', isOpen ? '320px' : '92px')

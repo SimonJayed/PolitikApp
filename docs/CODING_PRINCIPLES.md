@@ -99,3 +99,48 @@ const [formData, setFormData] = useState({
   impactSummary: ''          // camelCase descriptive translation summary
 });
 ```
+
+### 4. Reusable Modal & Confirmation Interaction Standards
+All high-stakes confirmations (appeals, destructive actions, irreversible actions) must use a reusable in-system modal component. Native browser dialogs (`window.alert`, `window.confirm`, `window.prompt`) are prohibited in production UI flows because they break visual consistency and interaction control.
+
+#### A. Reusable Modal Contract
+* Implement and use a shared component (example: `ConfirmActionModal` or `BaseModal`) with:
+  * Controlled open state (`isOpen`)
+  * Title/body/CTA slots (`title`, `description`, `confirmLabel`, `cancelLabel`)
+  * Severity variant (`neutral`, `warning`, `danger`)
+  * Async loading/disabled state support for submit actions
+* Mandatory behavior:
+  * Close on `Escape`
+  * Backdrop click to dismiss (except while submitting)
+  * Body scroll lock while open
+  * Focus handoff to modal on open, return focus to trigger on close
+
+#### B. Visual Alignment Rules
+* Modal layers must reuse system classes and tokens from `App.css`:
+  * Backdrop: subdued overlay with no neon hues
+  * Surface: `var(--bg-surface)`, border via `var(--line-soft)`, shadow via `--shadow-md`
+  * Radius: `--radius-lg` for modal container
+  * Buttons: primary action uses `--accent`; destructive action may use the danger token family where applicable
+* Keep headings/body/meta typography aligned with Section II.3.B scale.
+
+### 5. Dashboard Ranking & Leaderboard Styling Standards
+Tiered ranking views are first-class dashboard elements and must follow a reusable, data-dense pattern aligned with Module 1 objectives.
+
+#### A. Placement & Scope
+* Render leaderboard content inside the Dashboard view, not as a standalone disconnected screen.
+* Support separate ranking scopes:
+  * National
+  * Cebu City
+* Include an explicit sort basis indicator (example: Efficiency, Budget, COA flags).
+
+#### B. Visual Structure
+* Use a reusable leaderboard component (example: `PoliticianRankingPanel`) with:
+  * Ranked rows (`#`, politician identity block, KPI cells, trend/flag cell)
+  * Sticky header on scrollable ranking container
+  * Alert badge when `coaAuditDiscrepancies > 0`
+* Ranking rows must use design tokens already defined in `App.css` and preserve existing card/list spacing rhythm.
+
+#### C. Interaction + Responsiveness
+* Desktop: tabular row layout with compact KPI columns for scanability.
+* Mobile: stacked row layout preserving rank visibility and primary metric first.
+* Clicking a ranked row should navigate to that politician profile/dashboard context.

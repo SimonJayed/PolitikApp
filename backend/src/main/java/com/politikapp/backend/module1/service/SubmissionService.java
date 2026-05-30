@@ -36,7 +36,15 @@ public class SubmissionService {
         if (contributorId == null) {
             throw new HttpResponseException(401, "Authentication required.");
         }
-        sourceValidationService.validateSourceUrl(payload.sourceUrl());
+
+        // Evaluate domain approval — non-blocking, result is stored as a flag
+        boolean isApprovedDomain = sourceValidationService.checkApprovedDomain(payload.sourceUrl());
+
+        // Enrich actionDetails with the domain approval flag for reviewer visibility
+        java.util.Map<String, Object> enrichedDetails = new java.util.HashMap<>(
+                payload.actionDetails() != null ? payload.actionDetails() : java.util.Map.of()
+        );
+        enrichedDetails.put("isApprovedDomain", isApprovedDomain);
 
         try {
             boolean parserSuccess = executeExternalAiSummaryExtraction(payload.impactSummary());
@@ -46,7 +54,7 @@ public class SubmissionService {
                     payload.sourceUrl(),
                     payload.categoryTag(),
                     payload.actionIdentifier(),
-                    payload.quantitativeMetric(),
+                    enrichedDetails,
                     payload.impactSummary()
             ));
 
@@ -58,7 +66,7 @@ public class SubmissionService {
                     submission.getSourceUrl(),
                     submission.getCategoryTag(),
                     submission.getActionIdentifier(),
-                    submission.getQuantitativeMetric(),
+                    submission.getActionDetails(),
                     submission.getImpactSummary()
             ));
 

@@ -1,5 +1,10 @@
 import { useState } from 'react';
 import { useDeveloperSandbox } from './DeveloperSandboxContext';
+import { useAuth } from '../auth/AuthContext';
+import TrustScoreMeter from '../components/TrustScoreMeter';
+import { clampTrustScore } from '../components/trustScore';
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
 export default function DeveloperOptionsPanel() {
   const { 
@@ -11,8 +16,45 @@ export default function DeveloperOptionsPanel() {
     clearInjectedQueue,
     voteWeight,
     profileMetrics,
+    applyPersistedSandboxProfile,
     updateProfileMetric
   } = useDeveloperSandbox();
+  
+  const { token, updateSession } = useAuth();
+  const [saveStatus, setSaveStatus] = useState({ status: 'idle', message: '' });
+
+  async function handleSavePermanently() {
+    setSaveStatus({ status: 'loading', message: 'Saving permanently...' });
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/me`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          fullName: manipulatedUser.name,
+          role: manipulatedUser.role,
+          trustScore: clampTrustScore(manipulatedUser.trustScore),
+          accountStatus: manipulatedUser.status,
+          sandboxProfileMetrics: profileMetrics
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update sandbox profile.');
+      }
+      if (!data.user?.accountStatus || !data.user?.sandboxProfileMetrics || Object.keys(data.user.sandboxProfileMetrics).length === 0) {
+        throw new Error('Backend did not persist sandbox fields yet. Restart the backend so migration V10 and the updated /users/me API are active.');
+      }
+      updateSession(data);
+      applyPersistedSandboxProfile(data.user);
+      setSaveStatus({ status: 'success', message: 'Sandbox profile saved permanently!' });
+      setTimeout(() => setSaveStatus({ status: 'idle', message: '' }), 4000);
+    } catch (err) {
+      setSaveStatus({ status: 'error', message: err.message });
+    }
+  }
   
   // Decoupled modular interface state switches
   const [showIdentityModal, setShowIdentityModal] = useState(false);
@@ -76,10 +118,42 @@ export default function DeveloperOptionsPanel() {
               onChange={(e) => setManipulatedUser({ ...manipulatedUser, role: e.target.value })}
               style={{ width: '100%', padding: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
             >
-              <option value="ADMINISTRATOR">ADMINISTRATOR (Full System Controls)</option>
+              <option value="ADMIN">ADMINISTRATOR (Full System Controls)</option>
               <option value="JUDICIAL_REVIEWER">JUDICIAL_REVIEWER (Moderation Access Granted)</option>
               <option value="CONTRIBUTOR">CONTRIBUTOR (Moderation Restricted - Read Only)</option>
             </select>
+            
+            <button
+              onClick={handleSavePermanently}
+              disabled={saveStatus.status === 'loading'}
+              style={{
+                width: '100%',
+                padding: '8px',
+                background: '#10b981',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                fontSize: '11px',
+                marginTop: '8px',
+                transition: 'background 0.2s'
+              }}
+            >
+              {saveStatus.status === 'loading' ? '⏳ Saving...' : '💾 Save Permanently to DB'}
+            </button>
+            
+            {saveStatus.message && (
+              <p style={{
+                margin: '8px 0 0',
+                fontSize: '11px',
+                color: saveStatus.status === 'error' ? '#ef4444' : '#10b981',
+                textAlign: 'center',
+                fontWeight: 'bold'
+              }}>
+                {saveStatus.message}
+              </p>
+            )}
           </div>
 
           <div>
@@ -94,11 +168,12 @@ export default function DeveloperOptionsPanel() {
 
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
-              <label>Trust Balance Score: <strong style={{ color: '#34d399' }}>{manipulatedUser.trustScore}%</strong></label>
+              <label>Trust Score: <strong style={{ color: '#34d399' }}>{Math.round(clampTrustScore(manipulatedUser.trustScore))} / 500</strong></label>
               <span>Vote Weight: <strong style={{ color: '#38bdf8' }}>x{voteWeight}</strong></span>
             </div>
+            <TrustScoreMeter score={manipulatedUser.trustScore} theme="dark" variant="inline" />
             <input 
-              type="range" min="0" max="100" value={manipulatedUser.trustScore} 
+              type="range" min="0" max="500" value={manipulatedUser.trustScore} 
               onChange={(e) => setManipulatedUser({ ...manipulatedUser, trustScore: parseFloat(e.target.value) })}
               style={{ width: '100%', cursor: 'pointer' }}
             />

@@ -63,14 +63,14 @@ function MobileMenuItem({ active, icon: Icon, label, onClick }) {
   )
 }
 
-function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user }) {
+function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, onLogout, onSelectView, title = 'PolitikApp', user }) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
 
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : 'JUDICIAL_REVIEWER'
+  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : (user?.role || 'CONTRIBUTOR')
 
   const navItems = useMemo(() => {
     const items = [
@@ -93,8 +93,15 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
     setUserMenuOpen(false)
   }
 
+  const hideTopNav = isCompareModalOpen || isModalOpen
+  const isCompareActive = activeView === 'compare' && !hideTopNav
+
   return (
-    <div className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4">
+    <div
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4"
+      style={hideTopNav ? { visibility: 'hidden' } : undefined}
+      aria-hidden={hideTopNav}
+    >
       <div className="pointer-events-auto mx-auto w-full max-w-[1880px]">
         <div
           className="rounded-[30px] border border-white/10 shadow-[0_24px_60px_rgba(10,29,66,0.45)] backdrop-blur-xl"
@@ -123,7 +130,7 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
               {navItems.map((item) => (
                 <CenterNavItem
                   key={item.key}
-                  active={activeView === item.key}
+                  active={item.key === 'compare' ? isCompareActive : activeView === item.key}
                   icon={item.icon}
                   label={item.label}
                   onClick={() => navigate(item.key)}
@@ -170,7 +177,7 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
 
                     <div className="h-px bg-white/10" />
 
-                    <div className="p-2">
+                    <div className="p-2 user-menu-list">
                       <button
                         type="button"
                         onClick={() => navigate('profileMatrix')}
@@ -187,6 +194,15 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
                       >
                         <SettingsIcon size={24} />
                         <span>Settings</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => navigate('history')}
+                        className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                      >
+                        <HistoryIcon size={21} />
+                        <span>History</span>
                       </button>
                     </div>
                   </div>
@@ -210,7 +226,7 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
                 {navItems.map((item) => (
                   <MobileMenuItem
                     key={`m-${item.key}`}
-                    active={activeView === item.key}
+                    active={item.key === 'compare' ? isCompareActive : activeView === item.key}
                     icon={item.icon}
                     label={item.label}
                     onClick={() => navigate(item.key)}
@@ -229,6 +245,13 @@ function TopNav({ activeView, onLogout, onSelectView, title = 'PolitikApp', user
                   icon={SettingsIcon}
                   label="Settings"
                   onClick={() => navigate('account')}
+                />
+
+                <MobileMenuItem
+                  active={activeView === 'history'}
+                  icon={HistoryIcon}
+                  label="History"
+                  onClick={() => navigate('history')}
                 />
               </div>
             </div>

@@ -7,9 +7,9 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PoliticianRepository extends JpaRepository<Politician, UUID> {
-    List<Politician> findByStatusOrderByFullNameAsc(String status);
+    List<Politician> findAllByOrderByFullNameAsc();
 
-    List<Politician> findByFullNameContainingIgnoreCaseAndStatusOrderByFullNameAsc(String fullName, String status);
+    List<Politician> findByFullNameContainingIgnoreCaseOrderByFullNameAsc(String fullName);
 
     Optional<Politician> findByFullName(String fullName);
 }

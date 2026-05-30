@@ -1,24 +1,24 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
+import TrustScoreMeter from './TrustScoreMeter';
+import { clampTrustScore } from './trustScore';
+import ContributorPenaltyDashboard from './module3/ContributorPenaltyDashboard';
+import PeerVotingWeightDashboard from './module3/PeerVotingWeightDashboard';
+import './module3/Module3.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-function clampPercent(value) {
-  return Math.min(100, Math.max(0, Number(value || 0)));
-}
-
-function formatPercent(value, digits = 1) {
-  return `${Number(value || 0).toFixed(digits)}%`;
-}
-
 function resolveAuditorTier(trustScore) {
-  if (trustScore >= 90) {
-    return { label: 'Elite Auditor', weight: 5, tone: 'elite' };
+  if (trustScore >= 400) {
+    return { label: 'Civic Prime Auditor', weight: 5, tone: 'elite' };
   }
-  if (trustScore >= 70) {
+  if (trustScore >= 250) {
     return { label: 'Senior Auditor', weight: 3, tone: 'senior' };
   }
-  return { label: 'Standard Auditor', weight: 1, tone: 'standard' };
+  if (trustScore >= 150) {
+    return { label: 'Trusted Auditor', weight: 2, tone: 'senior' };
+  }
+  return { label: 'Baseline Auditor', weight: 1, tone: 'standard' };
 }
 
 function roleDescriptor(role) {
@@ -31,13 +31,6 @@ function roleDescriptor(role) {
   return 'The Auditor Node';
 }
 
-const LEDGER_FILTER_TABS = [
-  { key: 'all', label: 'ALL ENTRIES' },
-  { key: 'audit', label: 'AUDIT ENTRIES' },
-  { key: 'legislation', label: 'LEGISLATION ENTRIES' },
-  { key: 'project', label: 'PROJECT ENTRIES' },
-];
-
 async function readApiResponse(response) {
   const text = await response.text();
   const payload = text ? JSON.parse(text) : null;
@@ -45,42 +38,6 @@ async function readApiResponse(response) {
     throw new Error(payload?.message || 'Request failed.');
   }
   return payload;
-}
-
-function formatLedgerDate(value) {
-  if (!value) return 'Date unavailable';
-  return new Intl.DateTimeFormat('en', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(value));
-}
-
-function formatMetric(value) {
-  if (value === null || value === undefined || value === '') return 'N/A';
-  const numericValue = Number(value);
-  if (!Number.isFinite(numericValue)) return String(value);
-  return new Intl.NumberFormat('en-PH', {
-    maximumFractionDigits: 2,
-  }).format(numericValue);
-}
-
-function normalizeLedgerText(value) {
-  return String(value || '').toLowerCase();
-}
-
-function ledgerEntryKind(entry) {
-  const searchable = [
-    entry.categoryTag,
-    entry.actionIdentifier,
-    entry.impactSummary,
-    entry.sourceUrl,
-  ].map(normalizeLedgerText).join(' ');
-
-  if (searchable.includes('audit') || searchable.includes('coa')) return 'audit';
-  if (searchable.includes('project') || searchable.includes('infrastructure')) return 'project';
-  if (searchable.includes('legislation') || searchable.includes('bill') || searchable.includes('ordinance')) return 'legislation';
-  return 'audit';
 }
 
 export default function UserProfileMatrixPanel({ token, user }) {
@@ -94,19 +51,150 @@ export default function UserProfileMatrixPanel({ token, user }) {
     simulateRejectedSubmission,
     simulateConsensusVote,
     simulateDissentVote,
-    updateProfileMetric,
-    adjustAdminInterventions,
   } = sandbox;
 
-  const actor = isDevModeActive && manipulatedUser ? manipulatedUser : user;
+  const [liveUser, setLiveUser] = useState(null);
+
+  useEffect(() => {
+    if (isDevModeActive) return;
+
+    let ignore = false;
+    fetch(`${API_BASE_URL}/users/me`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        if (!ignore && data) {
+          setLiveUser(data);
+        }
+      })
+      .catch((err) => console.error('Failed to sync live profile:', err));
+
+    return () => {
+      ignore = true;
+    };
+  }, [token, isDevModeActive]);
+
+  const actor = isDevModeActive && manipulatedUser ? manipulatedUser : (liveUser || user);
   const activeRole = actor?.role || 'JUDICIAL_REVIEWER';
-  const trustScore = clampPercent(actor?.trustScore ?? 95);
+  const trustScore = clampTrustScore(actor?.trustScore ?? 100);
   const descriptor = roleDescriptor(activeRole);
   const auditorTier = resolveAuditorTier(trustScore);
-  const rejectionLocked = contributorRejectionRate > 15;
-  const consensusRate = profileMetrics?.reviewerTotalBallots > 0
-    ? (profileMetrics.reviewerConsensusVotes / profileMetrics.reviewerTotalBallots) * 100
+
+  // Dynamic profile metrics state for standard (non-sandbox) mode
+  const [dynamicMetrics, setDynamicMetrics] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    if (isDevModeActive) {
+      setDynamicMetrics(null);
+      return;
+    }
+
+    if (!actor?.userId) return;
+
+    let ignore = false;
+    setLoading(true);
+
+    const loadData = async () => {
+      try {
+        if (activeRole === 'CONTRIBUTOR') {
+          const resSub = await fetch(`${API_BASE_URL}/api/submissions/contributor/${actor.userId}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const submissionsData = await readApiResponse(resSub);
+          if (ignore) return;
+
+          const entries = Array.isArray(submissionsData) ? submissionsData : [];
+          const submissions = entries.length;
+          const approved = entries.filter((e) => e.status === 'PUBLISHED').length;
+          const rejected = entries.filter((e) => e.status === 'REJECTED').length;
+
+          setDynamicMetrics({
+            contributorSubmissions: submissions,
+            contributorApproved: approved,
+            contributorRejected: rejected,
+          });
+        } else if (activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') {
+          const adminMetrics = actor?.sandboxProfileMetrics || {};
+          setDynamicMetrics({
+            adminInterventions: adminMetrics.adminInterventions ?? 7,
+            adminTieBreakerActive: adminMetrics.adminTieBreakerActive ?? true,
+            adminTimeoutOverrideActive: adminMetrics.adminTimeoutOverrideActive ?? true,
+          });
+        } else {
+          // Reviewer / Peer role
+          const resWeight = await fetch(`${API_BASE_URL}/api/module3/peers/${actor.userId}/vote-weight`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const weightData = await readApiResponse(resWeight);
+
+          const resArchive = await fetch(`${API_BASE_URL}/api/moderation/archive`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+          const archiveData = await readApiResponse(resArchive);
+          if (ignore) return;
+
+          const ballotEntries = Array.isArray(archiveData) ? archiveData : [];
+          const totalBallots = ballotEntries.length;
+          const consensusVotes = ballotEntries.filter((e) => {
+            const isTerminal = e.status === 'PUBLISHED' || e.status === 'REJECTED';
+            const isAligned = (e.userVote === 'AGREE' && e.status === 'PUBLISHED') ||
+              (e.userVote === 'DISAGREE' && e.status === 'REJECTED');
+            return isTerminal && isAligned;
+          }).length;
+          const dissentVotes = ballotEntries.filter((e) => {
+            const isTerminal = e.status === 'PUBLISHED' || e.status === 'REJECTED';
+            const isAligned = (e.userVote === 'AGREE' && e.status === 'PUBLISHED') ||
+              (e.userVote === 'DISAGREE' && e.status === 'REJECTED');
+            return isTerminal && !isAligned;
+          }).length;
+
+          setDynamicMetrics({
+            reviewerTotalBallots: totalBallots,
+            reviewerConsensusVotes: consensusVotes,
+            reviewerDissentVotes: dissentVotes,
+            voteWeight: weightData.voteWeight ?? 1,
+            historicalPrecision: weightData.historicalPrecision ?? 0,
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch live profile metrics:", err);
+        if (!ignore) {
+          setError(err.message || "Failed to fetch live profile metrics.");
+        }
+      } finally {
+        if (!ignore) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [isDevModeActive, actor?.userId, activeRole, token]);
+
+  const activeMetrics = isDevModeActive ? profileMetrics : dynamicMetrics;
+
+  const dynamicRejectionRate = activeMetrics?.contributorSubmissions > 0
+    ? (activeMetrics.contributorRejected / activeMetrics.contributorSubmissions) * 100
     : 0;
+
+  const rejectionRate = isDevModeActive ? contributorRejectionRate : dynamicRejectionRate;
+
+  const rejectionLocked = isDevModeActive
+    ? (contributorRejectionRate > 15)
+    : (actor?.status === 'LOCKED' || actor?.accountStatus === 'LOCKED' || (activeMetrics?.contributorSubmissions >= 5 && rejectionRate > 15));
+
+  const consensusRate = isDevModeActive
+    ? (profileMetrics?.reviewerTotalBallots > 0
+      ? (profileMetrics.reviewerConsensusVotes / profileMetrics.reviewerTotalBallots) * 100
+      : 0)
+    : (activeMetrics?.historicalPrecision ?? 0);
 
   const headerTone = useMemo(() => {
     if (activeRole === 'CONTRIBUTOR') return 'matrixHero contributor';
@@ -114,7 +202,14 @@ export default function UserProfileMatrixPanel({ token, user }) {
     return 'matrixHero reviewer';
   }, [activeRole]);
 
-  if (!profileMetrics) {
+  if (!activeMetrics) {
+    if (loading) {
+      return (
+        <section className="workspace profileMatrixWorkspace" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="ledgerEmptyState">Loading dynamic profile metrics...</div>
+        </section>
+      );
+    }
     return null;
   }
 
@@ -127,17 +222,20 @@ export default function UserProfileMatrixPanel({ token, user }) {
           <p className="ty-body">{actor?.name || actor?.fullName || 'Sandbox Actor'} is mapped to a live role metrics matrix.</p>
         </div>
         <div className="matrixHeroScore">
-          <span>Trust Balance</span>
-          <strong>{formatPercent(trustScore, 1)}</strong>
-          <small>{actor?.status || 'ACTIVE'}</small>
+          {activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
+            <TrustScoreMeter score={trustScore} showEligibility={true} variant="compact" />
+          )}
+          <small>{actor?.status || actor?.accountStatus || 'ACTIVE'}</small>
         </div>
       </header>
 
+      {/* Contributor Matrix Layout */}
       {activeRole === 'CONTRIBUTOR' && (
-        <ContributorMatrix
-          metrics={profileMetrics}
+        <ContributorPenaltyDashboard
+          isSandboxMode={isDevModeActive}
+          metrics={activeMetrics}
           rejectionLocked={rejectionLocked}
-          rejectionRate={contributorRejectionRate}
+          rejectionRate={rejectionRate}
           simulateApprovedSubmission={simulateApprovedSubmission}
           simulateRejectedSubmission={simulateRejectedSubmission}
           token={token}
@@ -145,234 +243,167 @@ export default function UserProfileMatrixPanel({ token, user }) {
         />
       )}
 
+      {/* Reviewer Matrix Layout */}
       {activeRole !== 'CONTRIBUTOR' && activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
-        <ReviewerMatrix
+        <PeerVotingWeightDashboard
           consensusRate={consensusRate}
-          metrics={profileMetrics}
+          metrics={activeMetrics}
           simulateConsensusVote={simulateConsensusVote}
           simulateDissentVote={simulateDissentVote}
           tier={auditorTier}
           trustScore={trustScore}
+          isSandboxMode={isDevModeActive}
+          token={token}
+          user={actor}
         />
       )}
 
+      {/* Admin Matrix Layout */}
       {(activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') && (
         <AdminMatrix
-          adjustAdminInterventions={adjustAdminInterventions}
-          metrics={profileMetrics}
-          updateProfileMetric={updateProfileMetric}
+          metrics={activeMetrics}
+          token={token}
         />
       )}
     </section>
   );
 }
 
-function ContributorMatrix({
-  metrics,
-  rejectionLocked,
-  rejectionRate,
-  simulateApprovedSubmission,
-  simulateRejectedSubmission,
-  token,
-  user,
-}) {
-  const [ledgerEntries, setLedgerEntries] = useState([]);
-  const [ledgerState, setLedgerState] = useState({ status: 'loading', message: 'Loading ledger entries...' });
+function AdminMatrix({ metrics, token }) {
+  const [pendingApps, setPendingApps] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    let ignore = false;
-
-    if (!user?.userId) {
-      setLedgerEntries([]);
-      setLedgerState({ status: 'error', message: 'Unable to load database ledger records without a user id.' });
-      return () => {
-        ignore = true;
-      };
-    }
-
-    setLedgerState({ status: 'loading', message: 'Loading ledger entries...' });
-    fetch(`${API_BASE_URL}/api/submissions/contributor/${user.userId}`, {
+  const fetchPending = useCallback(() => {
+    setLoading(true);
+    fetch(`${API_BASE_URL}/api/peer-applications/admin/pending`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then(readApiResponse)
       .then((data) => {
-        if (ignore) return;
-        const entries = Array.isArray(data) ? data : [];
-        setLedgerEntries(entries);
-        setLedgerState({
-          status: 'success',
-          message: entries.length > 0 ? '' : 'No database ledger records found.',
-        });
+        setPendingApps(Array.isArray(data) ? data : []);
+        setLoading(false);
       })
-      .catch((error) => {
-        if (ignore) return;
-        setLedgerEntries([]);
-        setLedgerState({ status: 'error', message: error.message || 'Could not load database ledger records.' });
+      .catch((err) => {
+        setError(err.message || 'Failed to load applications.');
+        setLoading(false);
       });
+  }, [token]);
 
-    return () => {
-      ignore = true;
-    };
-  }, [token, user?.userId]);
+  useEffect(() => {
+    fetchPending();
+  }, [fetchPending]);
+
+  const handleAction = async (applicationId, action) => {
+    const originalPending = [...pendingApps];
+    setPendingApps(pendingApps.filter(app => app.applicationId !== applicationId));
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/peer-applications/admin/${applicationId}/${action}`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        throw new Error('Action failed.');
+      }
+      fetchPending();
+    } catch (err) {
+      console.error(err);
+      setPendingApps(originalPending);
+      alert('Failed to process administrative action: ' + err.message);
+    }
+  };
 
   return (
     <>
-      {rejectionLocked && (
-        <section className="matrixLockoutCard">
-          <strong>Automatic Contributor Lockout Active</strong>
-          <span>Lifetime rejection rate is {formatPercent(rejectionRate)}. The sandbox account status has been switched to SUSPENDED.</span>
-        </section>
-      )}
-
       <section className="matrixCardGrid">
-        <MetricCard label="Active Submissions" value={metrics.contributorSubmissions} />
-        <MetricCard label="Approved Cards" value={metrics.contributorApproved} tone="success" />
-        <MetricCard label="Rejected Cards" value={metrics.contributorRejected} tone="danger" />
-        <MetricCard label="Lifetime Rejection Rate" value={formatPercent(rejectionRate)} tone={rejectionLocked ? 'danger' : 'neutral'} />
-      </section>
-
-      <LedgerFilterTabs entries={ledgerEntries} state={ledgerState} />
-
-      <section className="matrixActionPanel">
-        <div>
-          <h3 className="ty-card-title">Submission Simulator</h3>
-          <p className="ty-body">Commit mock outcomes into the shared developer context.</p>
-        </div>
-        <div className="matrixActionRow">
-          <button onClick={simulateApprovedSubmission} type="button">+ Simulate Approved Submission</button>
-          <button className="dangerButton" onClick={simulateRejectedSubmission} type="button">+ Simulate Rejected Submission</button>
-        </div>
-      </section>
-    </>
-  );
-}
-
-function LedgerFilterTabs({ entries, state }) {
-  const [activeTab, setActiveTab] = useState(LEDGER_FILTER_TABS[0].key);
-  const filteredEntries = useMemo(() => (
-    activeTab === 'all'
-      ? entries
-      : entries.filter((entry) => ledgerEntryKind(entry) === activeTab)
-  ), [activeTab, entries]);
-
-  return (
-    <section className="ledgerPanel" aria-label="Ledger filtering">
-      <div className="ledgerFilterSection">
-        <span className="ledgerFilterLabel">Ledger filtering:</span>
-        <div className="ledgerFilterTabs" role="tablist" aria-label="Ledger entry filters">
-          {LEDGER_FILTER_TABS.map((tab) => (
-            <button
-              aria-selected={activeTab === tab.key}
-              className={activeTab === tab.key ? 'active' : ''}
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              role="tab"
-              type="button"
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {state?.status === 'loading' && (
-        <div className="ledgerEmptyState">Loading ledger entries...</div>
-      )}
-
-      {state?.status !== 'loading' && filteredEntries.length === 0 && (
-        <div className="ledgerEmptyState">{state?.message || 'No entries match this filter.'}</div>
-      )}
-
-      {state?.status !== 'loading' && filteredEntries.length > 0 && (
-        <div className="ledgerEntryList">
-          {filteredEntries.map((entry) => (
-            <article className="ledgerEntry" key={entry.submissionId}>
-              <div className="ledgerEntryTopline">
-                <span className={`ledgerTypeBadge ${ledgerEntryKind(entry)}`}>{ledgerEntryKind(entry).toUpperCase()}</span>
-                <span>{formatLedgerDate(entry.createdAt)}</span>
-              </div>
-              <strong>{entry.impactSummary || 'No impact summary provided.'}</strong>
-              <div className="ledgerEntryMeta">
-                <span>{entry.categoryTag || 'UNCATEGORIZED'}</span>
-                <span>{entry.actionIdentifier || 'NO_ACTION'}</span>
-                <span>{formatMetric(entry.quantitativeMetric)}</span>
-                <span>{entry.status || 'SUBMITTED'}</span>
-              </div>
-              {entry.sourceUrl && (
-                <a href={entry.sourceUrl} target="_blank" rel="noreferrer">{entry.sourceUrl}</a>
-              )}
-            </article>
-          ))}
-        </div>
-      )}
-    </section>
-  );
-}
-
-function ReviewerMatrix({ consensusRate, metrics, simulateConsensusVote, simulateDissentVote, tier, trustScore }) {
-  return (
-    <>
-      <section className="matrixCardGrid">
-        <MetricCard label="Audit Tier" value={tier.label} tone={tier.tone} />
-        <MetricCard label="Active Voting Weight" value={`x${tier.weight}`} tone={tier.tone} />
-        <MetricCard label="Trust Balance" value={formatPercent(trustScore, 1)} />
-        <MetricCard label="Consensus-Aligned Ballots" value={metrics.reviewerConsensusVotes} tone="success" />
-        <MetricCard label="Dissenting Ballots" value={metrics.reviewerDissentVotes} tone="danger" />
-        <MetricCard label="Participation Rate" value={formatPercent(consensusRate)} />
-      </section>
-
-      <section className="matrixActionPanel">
-        <div>
-          <h3 className="ty-card-title">Consensus Score Simulator</h3>
-          <p className="ty-body">SRS Section 3.2 thresholds recalculate instantly as trust changes.</p>
-        </div>
-        <div className="matrixActionRow">
-          <button onClick={simulateConsensusVote} type="button">+ Sim Consensus Vote</button>
-          <button className="dangerButton" onClick={simulateDissentVote} type="button">+ Sim Dissenting Vote</button>
-        </div>
-      </section>
-    </>
-  );
-}
-
-function AdminMatrix({ adjustAdminInterventions, metrics, updateProfileMetric }) {
-  return (
-    <>
-      <section className="matrixCardGrid">
-        <MetricCard label="Credential" value="ROLE_ADMIN" tone="admin" />
+        <MetricCard label="Credential" value="ADMINISTRATOR" tone="admin" />
         <MetricCard label="Intervention Count" value={metrics.adminInterventions} />
         <MetricCard label="50-50 Tie Breaker" value={metrics.adminTieBreakerActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTieBreakerActive ? 'success' : 'danger'} />
         <MetricCard label="24-Hour Timeout Override" value={metrics.adminTimeoutOverrideActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTimeoutOverrideActive ? 'success' : 'danger'} />
       </section>
 
-      <section className="matrixActionPanel adminPanel">
-        <div>
-          <h3 className="ty-card-title">Accountability Bypass Keys</h3>
-          <p className="ty-body">Toggle administrative override capabilities in the shared sandbox state.</p>
-        </div>
-        <div className="adminControlGrid">
-          <div className="stepperControl">
-            <button onClick={() => adjustAdminInterventions(-1)} type="button">-</button>
-            <span>{metrics.adminInterventions}</span>
-            <button onClick={() => adjustAdminInterventions(1)} type="button">+</button>
+      {/* Admin Verification Desk */}
+      <section className="matrixActionPanel" style={{ marginTop: '24px', background: 'var(--bg-surface)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-lg)', padding: '24px' }}>
+        <header style={{ borderBottom: '1px solid var(--line-hairline)', paddingBottom: '12px', marginBottom: '20px' }}>
+          <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>💼 Peer Verification Desk</h3>
+          <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>
+            Review pending applications from trusted community members applying for Peer Reviewer credentials.
+          </p>
+        </header>
+
+        {loading && pendingApps.length === 0 ? (
+          <div className="ledgerEmptyState">Loading verification queue...</div>
+        ) : error ? (
+          <div className="ledgerEmptyState" style={{ color: 'var(--danger)' }}>{error}</div>
+        ) : pendingApps.length === 0 ? (
+          <div className="ledgerEmptyState">No pending peer verification applications at this time.</div>
+        ) : (
+          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
+            {pendingApps.map((app) => (
+              <article key={app.applicationId} style={{
+                background: 'rgba(255,255,255,0.01)',
+                border: '1px solid var(--line-soft)',
+                borderRadius: 'var(--radius-md)',
+                padding: '20px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                boxShadow: 'var(--shadow-sm)',
+              }}>
+                <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'start' }}>
+                  <div>
+                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--ph-gold)', background: 'rgba(217,119,6,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.15)' }}>
+                      {app.organizationType}
+                    </span>
+                    <h4 style={{ margin: '8px 0 2px', fontSize: '14px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+                      Contributor Applicant
+                    </h4>
+                    <span style={{ fontSize: '11px', color: 'var(--text-subtle)', fontFamily: 'var(--mono, monospace)' }}>
+                      {app.contributorId.slice(0, 8)}...
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'grid', gap: '4px' }}>
+                  <div><strong>Institutional Email:</strong> {app.institutionalEmail}</div>
+                  <div><strong>Verification Proof:</strong> <a href={app.verificationProofUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--info)', textDecoration: 'underline' }}>View Proof Document ↗</a></div>
+                </div>
+
+                <div style={{
+                  padding: '10px 12px',
+                  background: 'rgba(0,0,0,0.015)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px dashed var(--line-soft)',
+                  fontSize: '12px',
+                  color: 'var(--text-subtle)',
+                  fontStyle: 'italic',
+                  lineHeight: '1.5'
+                }}>
+                  &ldquo;{app.justificationStatement}&rdquo;
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
+                  <button
+                    onClick={() => handleAction(app.applicationId, 'approve')}
+                    type="button"
+                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    ✓ Approve
+                  </button>
+                  <button
+                    onClick={() => handleAction(app.applicationId, 'reject')}
+                    className="dangerButton"
+                    type="button"
+                    style={{ border: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
+                  >
+                    ✕ Reject
+                  </button>
+                </div>
+              </article>
+            ))}
           </div>
-          <label className="matrixToggle">
-            <input
-              checked={metrics.adminTieBreakerActive}
-              onChange={(event) => updateProfileMetric('adminTieBreakerActive', event.target.checked)}
-              type="checkbox"
-            />
-            <span>50-50 Tie Breaker</span>
-          </label>
-          <label className="matrixToggle">
-            <input
-              checked={metrics.adminTimeoutOverrideActive}
-              onChange={(event) => updateProfileMetric('adminTimeoutOverrideActive', event.target.checked)}
-              type="checkbox"
-            />
-            <span>24-Hour Timeout Override</span>
-          </label>
-        </div>
+        )}
       </section>
     </>
   );

@@ -1,6 +1,7 @@
 package com.politikapp.backend.module2.service;
 
 import com.politikapp.backend.common.event.SubmissionCreatedEvent;
+import com.politikapp.backend.module2.dto.BallotArchiveEntryResponse;
 import com.politikapp.backend.module2.dto.PendingQueueCardResponse;
 import com.politikapp.backend.module2.entity.ModerationQueue;
 import com.politikapp.backend.module2.repository.ModerationQueueRepository;
@@ -11,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,10 +64,12 @@ public class ModerationQueueService {
 
         @SuppressWarnings("unchecked")
         List<Object[]> rawRows = entityManager.createNativeQuery(
-            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, pes.source_url, pes.category_tag, pes.action_identifier, " +
-            "pes.impact_summary, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at " +
+            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, p.full_name, c.full_name, pes.source_url, pes.category_tag, pes.action_identifier, " +
+            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at " +
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
+            "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
+            "LEFT JOIN public.contributors c ON c.contributor_id = pes.contributor_id " +
             "WHERE mq.queue_status IN ('PENDING', 'JURY_REVIEW') " +
             "ORDER BY mq.created_at ASC"
         ).getResultList();
@@ -81,9 +83,16 @@ public class ModerationQueueService {
             (String) row[5],
             (String) row[6],
             (String) row[7],
-            convertToBoolean(row[8]),
-            convertToInstant(row[9]),
-            convertToInstant(row[10])
+            row[8] != null ? row[8].toString() : null,
+            (String) row[9],
+            (String) row[10],
+            (String) row[11],
+            convertToLocalDate(row[12]),
+            convertToLocalDate(row[13]),
+            (String) row[14],
+            convertToBoolean(row[15]),
+            convertToInstant(row[16]),
+            convertToInstant(row[17])
         )).toList();
     }
 
@@ -96,13 +105,15 @@ public class ModerationQueueService {
 
         @SuppressWarnings("unchecked")
         List<Object[]> rawRows = entityManager.createNativeQuery(
-            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, pes.source_url, pes.category_tag, pes.action_identifier, " +
-            "pes.impact_summary, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at, " +
+            "SELECT mq.queue_id, mq.submission_id, mq.politician_id, p.full_name, c.full_name, pes.source_url, pes.category_tag, pes.action_identifier, " +
+            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at, " +
             "(SELECT COALESCE(SUM(jv1.vote_weight), 0) FROM public.jury_votes jv1 WHERE jv1.queue_id = mq.queue_id AND jv1.vote_type = 'AGREE') as agree_sum, " +
             "(SELECT COALESCE(SUM(jv2.vote_weight), 0) FROM public.jury_votes jv2 WHERE jv2.queue_id = mq.queue_id AND jv2.vote_type = 'DISAGREE') as disagree_sum " +
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
-            "WHERE mq.queue_status = 'ESCALATED' " +
+            "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
+            "LEFT JOIN public.contributors c ON c.contributor_id = pes.contributor_id " +
+            "WHERE mq.queue_status IN ('ESCALATED', 'APPEALED_PENDING') " +
             "ORDER BY mq.created_at ASC"
         ).getResultList();
 
@@ -115,12 +126,90 @@ public class ModerationQueueService {
             (String) row[5],
             (String) row[6],
             (String) row[7],
-            convertToBoolean(row[8]),
-            row[11] != null ? ((Number) row[11]).longValue() : 0L,
-            row[12] != null ? ((Number) row[12]).longValue() : 0L,
-            convertToInstant(row[9]),
-            convertToInstant(row[10])
+            row[8] != null ? row[8].toString() : null,
+            (String) row[9],
+            (String) row[10],
+            (String) row[11],
+            convertToLocalDate(row[12]),
+            convertToLocalDate(row[13]),
+            (String) row[14],
+            convertToBoolean(row[15]),
+            row[18] != null ? ((Number) row[18]).longValue() : 0L,
+            row[19] != null ? ((Number) row[19]).longValue() : 0L,
+            convertToInstant(row[16]),
+            convertToInstant(row[17])
         )).toList();
+    }
+
+    /**
+     * Performs a manual sandbox process stage transition override.
+     * Shifts queue status based on direction (next/prev) within the sandbox workflow bounds.
+     */
+    @Transactional
+    public String shiftSandboxStage(UUID queueId, String direction) {
+        log.info("Sandbox shifting stage for queueId={}, direction={}", queueId, direction);
+        ModerationQueue queueRow = moderationQueueRepository.findById(queueId)
+                .orElseThrow(() -> new com.politikapp.backend.common.HttpResponseException(404, "Not Found: Target entry not found."));
+
+        com.politikapp.backend.module1.entity.ProfileEditSubmission submission = entityManager.find(com.politikapp.backend.module1.entity.ProfileEditSubmission.class, queueRow.getSubmissionId());
+        if (submission == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(404, "Not Found: Associated submission not found.");
+        }
+
+        List<String> stages = List.of("PENDING", "JURY_REVIEW", "REVISION_REQUIRED", "ESCALATED", "REJECTED", "PUBLISHED");
+        String currentStatus = queueRow.getQueueStatus();
+        if ("SUBMITTED".equals(currentStatus)) {
+            currentStatus = "PENDING";
+        }
+        int currentIndex = stages.indexOf(currentStatus);
+        if (currentIndex == -1) {
+            currentIndex = 1; // default JURY_REVIEW
+        }
+
+        int newIndex = currentIndex;
+        if ("next".equalsIgnoreCase(direction)) {
+            newIndex = Math.min(stages.size() - 1, currentIndex + 1);
+        } else if ("prev".equalsIgnoreCase(direction)) {
+            newIndex = Math.max(0, currentIndex - 1);
+        }
+
+        String newStatus = stages.get(newIndex);
+        queueRow.setQueueStatus(newStatus);
+        submission.setStatus(newStatus);
+
+        if ("PUBLISHED".equals(newStatus)) {
+            cascadeToTimelineNative(submission);
+        }
+
+        moderationQueueRepository.save(queueRow);
+        entityManager.merge(submission);
+
+        return newStatus;
+    }
+
+    private void cascadeToTimelineNative(com.politikapp.backend.module1.entity.ProfileEditSubmission submission) {
+        try {
+            Long count = entityManager.createQuery(
+                "SELECT COUNT(t) FROM TimelineEntry t WHERE t.submissionId = :submissionId", Long.class
+            )
+            .setParameter("submissionId", submission.getSubmissionId())
+            .getSingleResult();
+
+            if (count == null || count == 0) {
+                com.politikapp.backend.module1.entity.TimelineEntry entry = new com.politikapp.backend.module1.entity.TimelineEntry();
+                entry.setPoliticianId(submission.getPoliticianId());
+                entry.setSubmissionId(submission.getSubmissionId());
+                entry.setCategoryTag(submission.getCategoryTag());
+                entry.setActionIdentifier(submission.getActionIdentifier());
+                entry.setActionDetails(submission.getActionDetails());
+                entry.setSummary(submission.getImpactSummary());
+                entry.setSourceUrl(submission.getSourceUrl());
+                entry.setPublicationStatus("PUBLISHED");
+                entityManager.persist(entry);
+            }
+        } catch (Exception e) {
+            log.error("Failed to cascade timeline entry in sandbox shift:", e);
+        }
     }
 
     private java.util.UUID convertToUUID(Object obj) {
@@ -154,6 +243,50 @@ public class ModerationQueueService {
         }
         try {
             return java.time.Instant.parse(obj.toString());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public List<BallotArchiveEntryResponse> getBallotArchive(UUID peerId) {
+        log.info("Fetching ballot archive for peerId={}", peerId);
+        @SuppressWarnings("unchecked")
+        List<Object[]> rawRows = entityManager.createNativeQuery(
+            "SELECT jv.queue_id, " +
+            "COALESCE(NULLIF(pes.impact_summary, ''), NULLIF(pes.action_identifier, ''), CAST(jv.queue_id AS TEXT)) AS title, " +
+            "jv.vote_type, mq.queue_status, jv.created_at, pes.source_url " +
+            "FROM public.jury_votes jv " +
+            "LEFT JOIN public.moderation_queue mq ON mq.queue_id = jv.queue_id " +
+            "LEFT JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
+            "WHERE jv.peer_id = :peerId " +
+            "ORDER BY jv.created_at DESC " +
+            "LIMIT 100"
+        )
+            .setParameter("peerId", peerId)
+            .getResultList();
+
+        return rawRows.stream()
+            .map(row -> new BallotArchiveEntryResponse(
+                convertToUUID(row[0]),
+                row[1] == null ? null : row[1].toString(),
+                row[2] == null ? null : row[2].toString(),
+                row[3] == null ? "FINALIZED" : row[3].toString(),
+                convertToInstant(row[4]),
+                row[5] == null ? null : row[5].toString()
+            ))
+            .toList();
+    }
+
+    private java.time.LocalDate convertToLocalDate(Object obj) {
+        if (obj == null) return null;
+        if (obj instanceof java.time.LocalDate) {
+            return (java.time.LocalDate) obj;
+        } else if (obj instanceof java.sql.Date) {
+            return ((java.sql.Date) obj).toLocalDate();
+        }
+        try {
+            return java.time.LocalDate.parse(obj.toString());
         } catch (Exception e) {
             return null;
         }

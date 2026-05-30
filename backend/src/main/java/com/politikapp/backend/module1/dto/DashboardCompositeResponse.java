@@ -17,6 +17,7 @@ public record DashboardCompositeResponse(
         double legislativeEfficiencyRatio,
         int coaAuditDiscrepancies,
         BigDecimal trackedBudgetAllocated,
+        double wgiCompositeScore,
         List<TimelineEntryResponse> publishedTimelineLedger
 ) {
 }

@@ -2,6 +2,7 @@ package com.politikapp.backend.auth.controller;
 
 import com.politikapp.backend.auth.dto.AuthDtos.AuthResponse;
 import com.politikapp.backend.auth.dto.AuthDtos.LoginRequest;
+import com.politikapp.backend.auth.dto.AuthDtos.RefreshRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.RegisterRequest;
 import com.politikapp.backend.auth.service.AuthService;
 import jakarta.validation.Valid;
@@ -28,6 +29,11 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authService.refresh(request));
     }
 
     @PostMapping("/logout")

@@ -231,6 +231,65 @@ export function ScaleIcon(props) {
   )
 }
 
+export function CircleCheckIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 12.5l2.7 2.7L15.8 10" />
+    </IconBase>
+  )
+}
+
+export function CircleXIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9 9l6 6" />
+      <path d="M15 9l-6 6" />
+    </IconBase>
+  )
+}
+
+export function UserPlusIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M19 8v6" />
+      <path d="M22 11h-6" />
+    </IconBase>
+  )
+}
+
+export function FlagIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M5 4v16" />
+      <path d="M5 5c3.5-1.5 6 1.5 9 0s4.5-1.5 5-1v8c-.5.5-2 .5-5 1.5s-5.5-1-9 0" />
+    </IconBase>
+  )
+}
+
+export function ThumbUpIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M7 10v10H4V10z" />
+      <path d="M7 19h9a2 2 0 0 0 2-1.7l1-7A2 2 0 0 0 17 8h-4V4.5a2 2 0 0 0-2-2c-.5 0-1 .2-1.4.6L7 7v3z" />
+      <path d="M9 10V7.5" />
+    </IconBase>
+  )
+}
+
+export function ThumbDownIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M7 14V4H4v10z" />
+      <path d="M7 5h9a2 2 0 0 1 2 1.7l1 7A2 2 0 0 1 17 16h-4v3.5a2 2 0 0 1-2 2c-.5 0-1-.2-1.4-.6L7 17v-3z" />
+      <path d="M9 14v2.5" />
+    </IconBase>
+  )
+}
+
 export function ChevronLeftIcon(props) {
   return (
     <IconBase {...props}>

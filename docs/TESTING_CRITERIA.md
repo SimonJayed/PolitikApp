@@ -23,9 +23,4 @@ This specification details the hard system thresholds and verification bounds th
 * **Rule Boundary:** A scheduled hourly server daemon process must run to inspect records stuck in open processing queues.
 * **Trigger Condition A (Temporal Age):** If the difference between the active system server clock and the entry's `created_at` timestamp is $\ge$ 24 hours, automatically trigger an escalation rewrite.
 * **Trigger Condition B (Gridlock Tie):** If total votes cast cross baseline minimum limits and the balance results in a perfect 50-50 tie split, execute a tie-breaker event.
-* **Enforcement Criteria:** Update the record's flag to `status_flag = 'STATUS_TIMEOUT_ESCALATION'`. This automatically removes the item from the public review lanes and routes it directly to the System Administrator's escalation dashboard interface.
-
-## 🏛️ 5. Wikidata Ingestion Ingestion Boundaries
-* **National-Level Constraint:** Only ingest politicians who have held national office (President, Vice President, Senator, Representative) since **May 2022** (office term start time $\ge$ `2022-05-01`).
-* **Cebu City Local Constraint:** Only ingest politicians holding local Cebu City offices (Mayor, Vice Mayor, Councilor) who are **currently active** (term end date is absent or in the future).
-* **Jurisdiction Mapping Constraint:** Dynamically assign and store `'NATIONAL'` for national offices and `'CEBU_CITY'` for local Cebu City offices in the `jurisdiction` database attribute.
+* **Enforcement Criteria:** Update the record's flag to `status_flag = 'STATUS_TIMEOUT_ESCALATION'`. This automatically removes the item from the public review lanes and routes it directly to the System Administrator's escalation dashboard interface.
