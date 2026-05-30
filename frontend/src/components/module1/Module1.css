@@ -1,0 +1,95 @@
+/* Module 1: Source-First Profile Aggregator styles */
+
+.submission-panel-wrapper {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.source-url-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.source-url-input-container input {
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  font-family: var(--mono, monospace);
+  font-size: 13px;
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.source-url-input-container input:focus {
+  border-color: var(--line-focus);
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.source-url-input-container input.input-valid {
+  border-color: var(--success);
+  background-color: var(--success-soft);
+}
+
+.source-url-input-container input.input-invalid {
+  border-color: var(--danger);
+  background-color: var(--danger-soft);
+}
+
+.submission-status-loading {
+  animation: fadeIn var(--duration-fast) var(--ease-out) both;
+}
+
+.submission-status-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  margin-top: 14px;
+  font-size: 14px;
+  animation: slideIn var(--duration-base) var(--ease-out) both;
+}
+
+.submission-status-alert.success {
+  background-color: var(--success-soft);
+  border: 1px solid var(--success-border);
+  color: var(--success);
+}
+
+.submission-status-alert.error {
+  background-color: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+}
+
+.alert-icon {
+  font-weight: bold;
+}
+
+.alert-message {
+  font-weight: 500;
+}
+
+.politician-profile-card {
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.kpi-card-alert {
+  animation: pulse-border 2s infinite ease-in-out;
+}
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(184, 150, 42, 0.2);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(184, 150, 42, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(184, 150, 42, 0);
+  }
+}

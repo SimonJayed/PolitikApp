@@ -16,6 +16,13 @@ import { useAuth } from './auth/AuthContext'
 import AuthPages from './auth/AuthPages'
 import TopNav from './components/TopNav'
 import UserHistoryPage from './components/UserHistoryPage'
+
+// Decoupled Module 1 Components
+import EditSubmissionForm from './components/module1/EditSubmissionForm'
+import PoliticianDashboard from './components/module1/PoliticianDashboard'
+import TimelineLedgerDecoupled from './components/module1/TimelineLedger'
+import KPIWidget from './components/module1/KPIWidget'
+import './components/module1/Module1.css'
 import {
   AlertTriangleIcon,
   BarChart3Icon,
@@ -440,159 +447,8 @@ function App() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Dashboard                                                                  */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function DashboardPanel({ isLoading = false, onOpenProfile, politicians, onNavigate, user }) {
-  const [hoverInfo, setHoverInfo] = useState(null)
-  const totalProfiles = politicians.length
-  const totalCoaDiscrepancies = politicians.reduce((acc, curr) => acc + (curr.coaAuditDiscrepancies || 0), 0)
-  const averageEfficiency = totalProfiles > 0
-    ? politicians.reduce((acc, curr) => acc + (curr.efficiencyRatio || 0), 0) / totalProfiles
-    : 0
-
-  const kpis = [
-    {
-      label: 'Politician Profiles',
-      value: totalProfiles,
-      sub: 'Active database profiles',
-      description: 'Total number of profile records available for review and comparison. Higher counts indicate broader platform coverage across offices and jurisdictions.',
-      hint: 'Open Directory to inspect each profile.',
-      accent: 'var(--ph-blue)',
-      icon: FolderIcon,
-    },
-    {
-      label: 'COA Flags Tracked',
-      value: totalCoaDiscrepancies,
-      sub: 'Audit discrepancies logged',
-      description: 'Combined count of Commission on Audit discrepancy entries linked to tracked officials. This helps surface governance risk signals quickly.',
-      hint: 'Use Compare to cross-check flags side by side.',
-      accent: 'var(--ph-gold)',
-      icon: BarChart3Icon,
-    },
-    {
-      label: 'Avg. Legislative Eff.',
-      value: `${averageEfficiency.toFixed(1)}%`,
-      sub: 'Sustained profile average',
-      description: 'Average legislative efficiency across all indexed profiles based on published activity data and profile metrics.',
-      hint: 'Select a profile to see per-candidate KPI detail.',
-      accent: 'var(--info)',
-      icon: BarChart3Icon,
-    },
-    {
-      label: 'My Clearance Role',
-      value: user?.role || 'CONTRIBUTOR',
-      sub: 'Authorized session role',
-      description: 'Your current permission level for this signed-in session. Role determines what you can submit, review, or administratively override.',
-      hint: 'Role-based access is enforced across all modules.',
-      accent: 'var(--ph-red)',
-      icon: KeyIcon,
-    },
-  ]
-
-  const actions = [
-    {
-      key: 'directory',
-      icon: UsersIcon,
-      title: 'Explore Directory',
-      sub: 'Browse all politician profiles',
-      description: 'Open the searchable profile list to inspect biography, jurisdiction, party details, and audit-linked records before taking action.',
-      hint: 'Best starting point for profile discovery.',
-      color: '#e8f0fe',
-      iconBg: '#c7d7fc',
-    },
-    {
-      key: 'submit',
-      icon: FileTextIcon,
-      title: 'File Evidence',
-      sub: 'Submit an official audit record',
-      description: 'Create a structured contribution using approved source domains and categorized action details so it can enter moderation.',
-      hint: 'Prepare source URL + impact summary first.',
-      color: '#fef9e8',
-      iconBg: '#faedb4',
-    },
-    {
-      key: 'compare',
-      icon: ScaleIcon,
-      title: 'Compare Profiles',
-      sub: 'Side-by-side candidate analysis',
-      description: 'Review two candidates in parallel with aligned records and metrics to identify policy, budget, and audit differences faster.',
-      hint: 'Use filters to narrow by jurisdiction.',
-      color: '#eef6ff',
-      iconBg: '#c3ddf9',
-    },
-    {
-      key: 'moderation',
-      icon: ShieldCheckIcon,
-      title: 'Moderation Jury',
-      sub: 'Cast a double-blind ballot',
-      description: 'Enter the adjudication queue where reviewers vote on evidence quality and outcome before records are finalized or published.',
-      hint: 'Your vote impacts consensus and trust outcomes.',
-      color: '#f3f0ff',
-      iconBg: '#dbd5fd',
-    },
-  ]
-
-  return (
-    <section className="workspace dashboardWorkspace" style={{ gap: '20px' }}>
-      <div style={{ background: 'linear-gradient(148deg, var(--ph-blue) 0%, #0c1e4a 55%, #06102a 100%)', borderRadius: 'var(--radius-xl)', padding: 'clamp(24px, 4vw, 36px)', position: 'relative', overflow: 'hidden', boxShadow: '0 16px 48px rgba(8, 20, 50, 0.28)' }}>
-        <div style={{ position: 'absolute', top: '-60px', right: '-40px', width: '220px', height: '220px', borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-40px', left: '5%', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative' }}>
-          <span className="ty-label" style={{ color: 'rgba(153, 132, 44, 0.95)', marginBottom: '10px', display: 'inline-block' }}>Live: Civic Transparency Platform</span>
-          <h2 className="ty-section-title" style={{ color: '#ffffff', margin: '0 0 10px', letterSpacing: '-0.02em', lineHeight: '1.15', fontSize: 'clamp(1.25rem, 2.2vw, 1.6rem)' }}>
-            Mabuhay, {user?.fullName?.split(' ')[0] || 'Contributor'}.
-          </h2>
-          <p style={{ color: 'rgba(220, 228, 245, 0.82)', fontSize: '14px', lineHeight: '1.7', margin: 0, maxWidth: '560px' }}>Track, analyze, and verify official legislative and audit records across local and national Philippine jurisdictions.</p>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
-        {kpis.map(({ label, value, sub, description, hint, accent, icon: Icon }) => (
-          <article
-            key={label}
-            className="hoverLiftCard"
-            onMouseEnter={() => setHoverInfo({ title: label, description, hint })}
-            onMouseLeave={() => setHoverInfo(null)}
-            onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--line-soft)', borderLeft: `3px solid ${accent}`, borderRadius: 'var(--radius-md)', padding: '18px 20px', boxShadow: 'var(--shadow-xs)', display: 'flex', flexDirection: 'column', gap: '6px' }}
-          >
-            <span aria-hidden="true" className="inline-flex items-center justify-center" style={{ width: '22px', height: '22px', color: accent }}><Icon size={18} /></span>
-            <span className="ty-label" style={{ marginTop: '4px' }}>{label}</span>
-            <strong style={{ fontFamily: 'var(--display)', fontSize: 'clamp(1.3rem, 2vw, 1.8rem)', fontWeight: '800', color: 'var(--text-primary)', lineHeight: '1.1', letterSpacing: '-0.03em' }}>{value}</strong>
-            <small className="ty-meta">{sub}</small>
-          </article>
-        ))}
-      </div>
-
-      <section>
-        <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Quick Actions</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '14px' }}>
-          {actions.map(({ key, icon: Icon, title, sub, description, hint, color, iconBg }) => (
-            <button
-              key={key}
-              onClick={() => onNavigate(key)}
-              onMouseEnter={() => setHoverInfo({ title, description, hint })}
-              onMouseLeave={() => setHoverInfo(null)}
-              onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
-              type="button"
-              className="dashboardCard"
-              style={{ minHeight: '120px', padding: '20px', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '10px', cursor: 'pointer', gridTemplateColumns: 'none', background: 'var(--bg-surface)' }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '38px', height: '38px', borderRadius: 'var(--radius-sm)', background: color, border: `1px solid ${iconBg}`, color: 'var(--ph-blue)' }}><Icon size={18} /></span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <strong className="ty-card-title">{title}</strong>
-                <small className="ty-meta">{sub}</small>
-              </div>
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section>
-        <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Performance Ranking</h2>
-        <PoliticianRankingPanel isLoading={isLoading} onSelectPolitician={onOpenProfile} politicians={politicians} />
-      </section>
-      <CursorHint hoverInfo={hoverInfo} />
-    </section>
-  )
+function DashboardPanel(props) {
+  return <PoliticianDashboard {...props} />
 }
 function UserAccountPage({ token, user }) {
   const { updateSession } = useAuth()
@@ -659,98 +515,8 @@ function UserAccountPage({ token, user }) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Submission Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function SubmissionPanel({ formData, isSourceAllowed, onChange, onDetailChange, onSubmit, selectedPoliticianId, state, politicians = [] }) {
-  const selectedPolitician = politicians.find((p) => p.politicianId === (formData.politicianId || selectedPoliticianId))
-  return (
-    <section className="workspace">
-      <form className="editorPanel" onSubmit={onSubmit}>
-        {selectedPolitician && (
-          <p className="statusLine success">
-            Adding contribution for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
-          </p>
-        )}
-        <label>
-          Select Politician Profile
-          <select name="politicianId" value={formData.politicianId} onChange={onChange} required>
-            <option value="">— Choose a Politician Profile —</option>
-            {politicians.map((p) => (
-              <option key={p.politicianId} value={p.politicianId}>
-                {p.fullName} ({p.position || 'UNSPECIFIED'})
-              </option>
-            ))}
-          </select>
-        </label>
-        <Field label="Source URL" name="sourceUrl" value={formData.sourceUrl} onChange={onChange} />
-        <div className="fieldRow">
-          <label>
-            Category
-            <select name="categoryTag" value={formData.categoryTag} onChange={onChange}>
-              {categoryOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </label>
-          <label>
-            Action
-            <select name="actionIdentifier" value={formData.actionIdentifier} onChange={onChange}>
-              {actionOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </label>
-        </div>
-        <ActionDetailsFields
-          actionDetails={formData.actionDetails || {}}
-          actionIdentifier={formData.actionIdentifier}
-          onChange={onDetailChange}
-        />
-        <label>
-          Impact Summary
-          <textarea name="impactSummary" required rows="5" value={formData.impactSummary} onChange={onChange} />
-        </label>
-        <div className="formFooter">
-          <span className={isSourceAllowed ? 'sourceBadge approved' : 'sourceBadge'}>
-            {isSourceAllowed ? '✓ Approved source' : '○ Awaiting approved source'}
-          </span>
-          <button disabled={state.status === 'loading'} type="submit">Submit Evidence</button>
-        </div>
-        <StatusLine state={state} />
-      </form>
-    </section>
-  )
-}
-
-function ActionDetailsFields({ actionDetails, actionIdentifier, onChange }) {
-  const fields = actionDetailFields[actionIdentifier] || [{ key: 'metric', label: 'Metric', type: 'number' }]
-  return (
-    <div className="fieldRow">
-      {fields.map((field) => (
-        <label key={field.key}>
-          {field.label}
-          {field.type === 'select' ? (
-            <select
-              name={field.key}
-              required
-              value={actionDetails[field.key] ?? ''}
-              onChange={(event) => onChange(field.key, event.target.value)}
-            >
-              <option value="">Select status</option>
-              {field.options.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-            </select>
-          ) : (
-            <input
-              max={field.max}
-              min={field.type === 'number' ? '0' : undefined}
-              name={field.key}
-              required
-              step={field.type === 'number' ? 'any' : undefined}
-              type={field.type}
-              value={actionDetails[field.key] ?? ''}
-              onChange={(event) => onChange(field.key, event.target.value)}
-            />
-          )}
-        </label>
-      ))}
-    </div>
-  )
+function SubmissionPanel(props) {
+  return <EditSubmissionForm {...props} />
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
@@ -1593,91 +1359,12 @@ function CandidateColumn({ profile }) {
   )
 }
 
-function KpiGrid({ profile, compact = false }) {
-  const metrics = [
-    ['Bills Authored', profile.billsAuthored],
-    ['Projects Completed', profile.projectCompletions],
-    ['COA Findings', profile.coaAuditDiscrepancies],
-    ['Budget Tracked', formatCurrency(profile.trackedBudgetAllocated)],
-    ['Efficiency', `${Number(profile.legislativeEfficiencyRatio || 0).toFixed(1)}%`],
-  ]
-  return (
-    <section className={compact ? 'kpiGrid compact' : 'kpiGrid'}>
-      {metrics.map(([label, value]) => (
-        <article className="kpiCard" key={label}>
-          <span className="ty-label">{label}</span>
-          <strong>{value ?? 'N/A'}</strong>
-        </article>
-      ))}
-    </section>
-  )
+function KpiGrid(props) {
+  return <KPIWidget {...props} />
 }
 
-function TimelineLedger({ className = '', entries, compact = false, isLoading = false, onAppeal, title = 'Published Timeline Ledger', user }) {
-  const trustScore = clampTrustScore(user?.trustScore)
-  const canAppeal = Boolean(user?.userId) && user?.role !== 'GUEST' && trustScore >= 150
-  const [page, setPage] = useState(1)
-  const [hoverInfo, setHoverInfo] = useState(null)
-  const pageSize = 15
-  const totalPages = Math.max(1, Math.ceil(entries.length / pageSize))
-  const safePage = Math.min(page, totalPages)
-  const pagedEntries = entries.slice((safePage - 1) * pageSize, safePage * pageSize)
-
-  useEffect(() => { setPage(1) }, [entries.length])
-
-  return (
-    <section className={[compact ? 'timeline compact' : 'timeline', className].filter(Boolean).join(' ')}>
-      <div className="timelineHeader">
-        <h2 className="ty-section-title">{title}</h2>
-        {!isLoading && entries.length > pageSize && <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />}
-      </div>
-      {isLoading && <TimelineCardsSkeleton count={6} />}
-      {!isLoading && entries.length === 0 && <p className="emptyState">No published records returned.</p>}
-      {!isLoading && <div className="timelineGrid">
-        {pagedEntries.map((entry) => (
-          <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
-            <div className="timelineItemTop">
-              <strong>{entry.actionIdentifier}</strong>
-              <span style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em', padding: '2px 8px', color: 'var(--text-muted)' }}>{entry.categoryTag}</span>
-            </div>
-            <p className="ty-body">{entry.summary}</p>
-            <a
-              href={entry.sourceUrl}
-              rel="noreferrer"
-              target="_blank"
-              onMouseEnter={() => setHoverInfo({
-                title: 'Source Evidence Link',
-                description: 'Opens the cited source document in a separate tab so you can validate authenticity, context, and completeness.',
-                hint: 'Tip: verify domain and publication date before citing.',
-              })}
-              onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
-              onMouseLeave={() => setHoverInfo(null)}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>View Source <ExternalLinkIcon size={14} /></span>
-            </a>
-            {onAppeal && (
-              <div className="appealActionArea">
-                <button
-                  className="appealRecordButton"
-                  disabled={!canAppeal || !entry.submissionId}
-                  onClick={() => onAppeal(entry)}
-                  title={!entry.submissionId ? 'This legacy record is missing submission linkage.' : !canAppeal ? 'Appeals require an authenticated user with at least 150.00 trust points.' : 'File a high-stakes post-publish appeal.'}
-                  type="button"
-                >
-                  <ScaleIcon size={15} />
-                  Appeal this Record
-                </button>
-                <div className="appealInfoTooltip" role="tooltip">
-                  {entry.submissionId ? <TrustScoreMeter score={trustScore} variant="inline" /> : <p className="ty-meta" style={{ color: 'var(--danger)', margin: 0 }}>Record cannot be appealed: missing submission linkage.</p>}
-                </div>
-              </div>
-            )}
-          </article>
-        ))}
-      </div>}
-      <CursorHint hoverInfo={hoverInfo} />
-    </section>
-  )
+function TimelineLedger(props) {
+  return <TimelineLedgerDecoupled {...props} />
 }
 
 function TrustDeltaBadge({ entry }) {
