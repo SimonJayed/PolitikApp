@@ -127,8 +127,7 @@ export default function PoliticianDashboard({
       sub: 'Browse all politician profiles',
       description: 'Open the searchable profile list to inspect biography, jurisdiction, party details, and audit-linked records before taking action.',
       hint: 'Best starting point for profile discovery.',
-      color: '#e8f0fe',
-      iconBg: '#c7d7fc',
+      accent: 'var(--ph-blue)',
     },
     {
       key: 'submit',
@@ -137,8 +136,7 @@ export default function PoliticianDashboard({
       sub: 'Submit an official audit record',
       description: 'Create a structured contribution using approved source domains and categorized action details so it can enter moderation.',
       hint: 'Prepare source URL + impact summary first.',
-      color: '#fef9e8',
-      iconBg: '#faedb4',
+      accent: 'var(--ph-gold)',
     },
     {
       key: 'compare',
@@ -147,8 +145,7 @@ export default function PoliticianDashboard({
       sub: 'Side-by-side candidate analysis',
       description: 'Review two candidates in parallel with aligned records and metrics to identify policy, budget, and audit differences faster.',
       hint: 'Use filters to narrow by jurisdiction.',
-      color: '#eef6ff',
-      iconBg: '#c3ddf9',
+      accent: 'var(--info)',
     },
     {
       key: 'moderation',
@@ -157,14 +154,13 @@ export default function PoliticianDashboard({
       sub: 'Cast a double-blind ballot',
       description: 'Enter the adjudication queue where reviewers vote on evidence quality and outcome before records are finalized or published.',
       hint: 'Your vote impacts consensus and trust outcomes.',
-      color: '#f3f0ff',
-      iconBg: '#dbd5fd',
+      accent: 'var(--ph-red)',
     },
   ];
 
   return (
     <section className="workspace dashboardWorkspace" style={{ gap: '20px', display: 'flex', flexDirection: 'column' }}>
-      <div style={{
+      <div className="dashboardHeroBanner" style={{
         background: 'linear-gradient(148deg, var(--ph-blue) 0%, #0c1e4a 55%, #06102a 100%)',
         borderRadius: 'var(--radius-xl)',
         padding: 'clamp(24px, 4vw, 36px)',
@@ -179,13 +175,13 @@ export default function PoliticianDashboard({
           <h2 className="ty-section-title" style={{ color: '#ffffff', margin: '0 0 10px', letterSpacing: '-0.02em', lineHeight: '1.15', fontSize: 'clamp(1.25rem, 2.2vw, 1.6rem)' }}>
             Mabuhay, {user?.fullName || 'Contributor'}.
           </h2>
-          <p style={{ color: 'rgba(220, 228, 245, 0.82)', fontSize: '14px', lineHeight: '1.7', margin: 0, maxWidth: '560px' }}>
+          <p style={{ color: 'rgba(220, 228, 245, 0.82)', fontSize: '14px', lineHeight: '1.7', margin: 0, maxWidth: '780px' }}>
             Track, analyze, and verify official legislative and audit records across local and national Philippine jurisdictions.
           </p>
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+      <div className="dashboardRowGrid">
         {kpis.map(({ label, value, sub, description, hint, accent, icon: Icon }) => (
           <article
             key={label}
@@ -224,10 +220,10 @@ export default function PoliticianDashboard({
         ))}
       </div>
 
-      <section>
+      <section className="dashboardSectionBlock">
         <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Quick Actions</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
-          {actions.map(({ key, icon: Icon, title, sub, description, hint, color, iconBg }) => (
+        <div className="dashboardRowGrid">
+          {actions.map(({ key, icon: Icon, title, sub, description, hint, accent }) => (
             <button
               key={key}
               onClick={() => onNavigate(key)}
@@ -235,42 +231,44 @@ export default function PoliticianDashboard({
               onMouseLeave={() => setHoverInfo(null)}
               onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
               type="button"
-              className="dashboardCard"
+              className="hoverLiftCard"
               style={{
-                minHeight: '120px',
-                padding: '20px',
+                minHeight: '170px',
+                padding: '18px 20px',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
-                gap: '10px',
+                justifyContent: 'flex-start',
+                gap: '6px',
                 cursor: 'pointer',
-                gridTemplateColumns: 'none',
-                background: 'var(--bg-surface)'
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--line-soft)',
+                borderLeft: `3px solid ${accent}`,
+                borderRadius: 'var(--radius-md)',
+                boxShadow: 'var(--shadow-xs)',
               }}
             >
-              <span style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '38px',
-                height: '38px',
-                borderRadius: 'var(--radius-sm)',
-                background: color,
-                border: `1px solid ${iconBg}`,
-                color: 'var(--ph-blue)'
-              }}>
+              <span aria-hidden="true" className="inline-flex items-center justify-center" style={{ width: '22px', height: '22px', color: accent }}>
                 <Icon size={18} />
               </span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                <strong className="ty-card-title">{title}</strong>
-                <small className="ty-meta">{sub}</small>
-              </div>
+              <span className="ty-label" style={{ marginTop: '4px' }}>Quick Action</span>
+              <strong style={{
+                fontFamily: 'var(--display)',
+                fontSize: 'clamp(1.3rem, 2vw, 1.8rem)',
+                fontWeight: '800',
+                color: 'var(--text-primary)',
+                lineHeight: '1.1',
+                letterSpacing: '-0.03em'
+              }}>
+                {title}
+              </strong>
+              <small className="ty-meta">{sub}</small>
             </button>
           ))}
         </div>
       </section>
 
-      <section>
+      <section className="dashboardSectionBlock">
         <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Performance Ranking</h2>
         <PoliticianRankingPanel isLoading={isLoading} onSelectPolitician={onOpenProfile} politicians={politicians} />
       </section>

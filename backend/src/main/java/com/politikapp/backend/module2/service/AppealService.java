@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 @Service
 public class AppealService {
@@ -38,7 +39,7 @@ public class AppealService {
     }
 
     @Transactional
-    public AppealResponse fileAppeal(UUID submissionId, UUID appealerId) {
+    public AppealResponse fileAppeal(UUID submissionId, String details, UUID appealerId) {
         AuthUser appealer = authUserRepository.findById(appealerId)
                 .orElseThrow(() -> new HttpResponseException(404, "Appealer account not found."));
         BigDecimal currentTrust = trustOrDefault(appealer.getTrustScore());
@@ -61,8 +62,11 @@ public class AppealService {
         BigDecimal newTrust = currentTrust.add(APPEAL_DEPOSIT).max(BigDecimal.ZERO);
         appealer.setTrustScore(newTrust);
         authUserRepository.save(appealer);
-        insertReputationLog(appealerId, queue.getQueueId(), APPEAL_DEPOSIT, currentTrust, newTrust,
-                "Appeal deposit docked for challenging published record " + submissionId);
+        String reason = "Appeal deposit docked for challenging published record " + submissionId;
+        if (StringUtils.hasText(details)) {
+            reason = reason + " | Details: " + details.trim();
+        }
+        insertReputationLog(appealerId, queue.getQueueId(), APPEAL_DEPOSIT, currentTrust, newTrust, reason);
 
         submission.setStatus("APPEALED_PENDING");
         queue.setQueueStatus("APPEALED_PENDING");

@@ -2,6 +2,7 @@ package com.politikapp.backend.auth.service;
 
 import com.politikapp.backend.auth.dto.AuthDtos.AuthResponse;
 import com.politikapp.backend.auth.dto.AuthDtos.LoginRequest;
+import com.politikapp.backend.auth.dto.AuthDtos.RefreshRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.RegisterRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.ReputationHistoryEntry;
 import com.politikapp.backend.auth.dto.AuthDtos.UpdateMeRequest;
@@ -77,6 +78,19 @@ public class AuthService {
         if (user == null || !StringUtils.hasText(user.getPasswordHash()) || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new HttpResponseException(401, "Invalid credentials.");
         }
+        return toAuthResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public AuthResponse refresh(RefreshRequest request) {
+        var claims = jwtService.parseToken(request.refreshToken().trim());
+        String tokenType = claims.get("typ", String.class);
+        if (!JwtService.REFRESH_TOKEN_TYPE.equals(tokenType)) {
+            throw new HttpResponseException(401, "Invalid refresh token.");
+        }
+        UUID userId = UUID.fromString(claims.get("uid", String.class));
+        AuthUser user = authUserRepository.findById(userId)
+                .orElseThrow(() -> new HttpResponseException(401, "Invalid refresh token."));
         return toAuthResponse(user);
     }
 
@@ -171,8 +185,9 @@ public class AuthService {
     }
 
     private AuthResponse toAuthResponse(AuthUser user) {
-        String token = jwtService.generateToken(user.getUserId(), user.getEmail(), user.getRole());
-        return new AuthResponse(token, toSafeUser(user));
+        String token = jwtService.generateAccessToken(user.getUserId(), user.getEmail(), user.getRole());
+        String refreshToken = jwtService.generateRefreshToken(user.getUserId(), user.getEmail(), user.getRole());
+        return new AuthResponse(token, refreshToken, jwtService.getAccessExpirationSeconds(), toSafeUser(user));
     }
 
     private UserResponse toSafeUser(AuthUser user) {

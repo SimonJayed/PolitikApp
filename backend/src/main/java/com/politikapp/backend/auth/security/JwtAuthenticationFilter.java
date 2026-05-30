@@ -38,6 +38,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
             try {
                 Claims claims = jwtService.parseToken(token);
+                String tokenType = claims.get("typ", String.class);
+                if (!JwtService.ACCESS_TOKEN_TYPE.equals(tokenType)) {
+                    throw new IllegalArgumentException("Invalid token type for API authentication.");
+                }
                 UUID userId = UUID.fromString(claims.get("uid", String.class));
 
                 // Real-time JWT invalidation / lockout check

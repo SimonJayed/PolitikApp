@@ -47,7 +47,13 @@ public class AuthDtos {
 
     public record AuthResponse(
             String token,
+            String refreshToken,
+            long expiresInSeconds,
             UserResponse user
+    ) {}
+
+    public record RefreshRequest(
+            @NotBlank String refreshToken
     ) {}
 
     public record ReputationHistoryEntry(

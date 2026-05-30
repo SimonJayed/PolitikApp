@@ -78,13 +78,13 @@ export default function PeerVotingPanel({
 
       <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
         <button
-          className="btn-submit-ballot"
+          className="btn-submit-ballot compareSubmitButton"
           disabled={isReadOnlyMode}
           onClick={handleVoteSubmit}
           type="button"
           style={{ flex: 1, margin: 0 }}
         >
-          Submit Live Ballot
+          Submit Ballot
         </button>
         {isDevModeActive && (
           <button 

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 
 public record AppealRequest(
-        @NotNull UUID submissionId
+        @NotNull UUID submissionId,
+        String details
 ) {
 }

@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import AccountLockStatus from './AccountLockStatus';
 import PenaltyAlert from './PenaltyAlert';
 import ContributorPenaltyDetail from './ContributorPenaltyDetail';
+import { ShieldCheckIcon } from '../icons/Lucide';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -277,101 +278,98 @@ export default function ContributorPenaltyDashboard({
       <LedgerFilterTabs entries={ledgerEntries} state={ledgerState} />
 
       {/* Peer Application Console */}
-      <section className="matrixActionPanel" style={{ marginTop: '24px', background: 'var(--bg-surface)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-lg)', padding: '24px' }}>
-        <header style={{ borderBottom: '1px solid var(--line-hairline)', paddingBottom: '12px', marginBottom: '20px' }}>
-          <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>🎓 Peer Reviewer Application</h3>
-          <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>
+      <section className="matrixActionPanel peerAppPanel">
+        <header className="peerAppHeader">
+          <span className="peerAppHeaderIcon" aria-hidden="true"><ShieldCheckIcon size={18} /></span>
+          <div>
+          <h3 className="ty-card-title">Peer Reviewer Application</h3>
+          <p className="ty-meta">
             Are you a university faculty, campus journalist, researcher, or civic volunteer? Elevate your role to PEER to review other submissions.
           </p>
+          </div>
         </header>
 
         {hasPending ? (
-          <div style={{
-            padding: '16px 20px',
-            background: 'rgba(217, 119, 6, 0.08)',
-            border: '1px solid rgba(217, 119, 6, 0.25)',
-            borderLeft: '4px solid #d97706',
-            borderRadius: 'var(--radius-md)',
-            color: '#b45309',
-            fontSize: '14px',
-            lineHeight: '1.6',
-            marginBottom: '20px'
-          }}>
+          <div className="peerAppPending">
             <strong>Application Under Review</strong>
-            <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#9a3412' }}>
+            <p>
               Your verification application is currently under review by administration. You will be automatically elevated to a Peer Reviewer with a trust baseline of 150.00 points upon approval.
             </p>
           </div>
         ) : (
-          <form onSubmit={handleAppSubmit} className="editorPanel" style={{ display: 'grid', gap: '16px', maxWidth: '640px', background: 'transparent', border: 'none', padding: 0, boxShadow: 'none' }}>
-            <div className="fieldRow" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                Organization / Role Type
-                <select 
-                  value={appForm.organizationType} 
-                  onChange={e => setAppForm({ ...appForm, organizationType: e.target.value })}
-                  required
-                >
-                  <option value="FACULTY">FACULTY (Professor / Instructor)</option>
-                  <option value="RESEARCHER">RESEARCHER (Academic Analyst)</option>
-                  <option value="CAMPUS_JOURNALIST">CAMPUS_JOURNALIST (Student Editor / Writer)</option>
-                  <option value="CIVIC_VOLUNTEER">CIVIC_VOLUNTEER (Public Advocate)</option>
-                </select>
-              </label>
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                Institutional Email
-                <input 
-                  type="email" 
-                  placeholder="e.g. professor@cit.edu" 
-                  value={appForm.institutionalEmail}
-                  onChange={e => setAppForm({ ...appForm, institutionalEmail: e.target.value })}
+          <form onSubmit={handleAppSubmit} className="editorPanel peerAppForm">
+            <div className="peerAppFormColumns">
+              <div className="peerAppLeftCol">
+                <div className="fieldRow peerAppTwoCol">
+                  <label>
+                    Organization / Role Type
+                    <select 
+                      value={appForm.organizationType} 
+                      onChange={e => setAppForm({ ...appForm, organizationType: e.target.value })}
+                      required
+                    >
+                      <option value="FACULTY">FACULTY (Professor / Instructor)</option>
+                      <option value="RESEARCHER">RESEARCHER (Academic Analyst)</option>
+                      <option value="CAMPUS_JOURNALIST">CAMPUS_JOURNALIST (Student Editor / Writer)</option>
+                      <option value="CIVIC_VOLUNTEER">CIVIC_VOLUNTEER (Public Advocate)</option>
+                    </select>
+                  </label>
+                  <label>
+                    Institutional Email
+                    <input 
+                      type="email" 
+                      placeholder="e.g. professor@cit.edu" 
+                      value={appForm.institutionalEmail}
+                      onChange={e => setAppForm({ ...appForm, institutionalEmail: e.target.value })}
+                      required 
+                    />
+                  </label>
+                </div>
+                <label>
+                  Verification Proof URL (ID Card / Reference Letter Link)
+                  <input 
+                    type="url" 
+                    placeholder="https://drive.google.com/file/... or official portfolio link"
+                    value={appForm.verificationProofUrl}
+                    onChange={e => setAppForm({ ...appForm, verificationProofUrl: e.target.value })}
+                    required 
+                  />
+                </label>
+                <div className="peerAppActions">
+                  <button type="submit" disabled={appState.status === 'loading'} style={{ width: 'auto', padding: '10px 24px' }}>
+                    {appState.status === 'loading' ? 'Submitting...' : 'Submit Peer Application'}
+                  </button>
+                  {appState.message && (
+                    <span className={`ty-meta ${appState.status === 'success' ? 'successText' : 'errorText'} peerAppStatus`}>
+                      {appState.message}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <label className="peerAppJustificationField">
+                Justification & Background Statement
+                <textarea 
+                  rows="7" 
+                  placeholder="Outline your background, academic affiliations, and motivation to serve as a Peer Reviewer..."
+                  value={appForm.justificationStatement}
+                  onChange={e => setAppForm({ ...appForm, justificationStatement: e.target.value })}
                   required 
                 />
               </label>
-            </div>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              Verification Proof URL (ID Card / Reference Letter Link)
-              <input 
-                type="url" 
-                placeholder="https://drive.google.com/file/... or official portfolio link"
-                value={appForm.verificationProofUrl}
-                onChange={e => setAppForm({ ...appForm, verificationProofUrl: e.target.value })}
-                required 
-              />
-            </label>
-            <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-              Justification & Background Statement
-              <textarea 
-                rows="4" 
-                placeholder="Outline your background, academic affiliations, and motivation to serve as a Peer Reviewer..."
-                value={appForm.justificationStatement}
-                onChange={e => setAppForm({ ...appForm, justificationStatement: e.target.value })}
-                required 
-              />
-            </label>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '4px' }}>
-              <button type="submit" disabled={appState.status === 'loading'} style={{ width: 'auto', padding: '10px 24px' }}>
-                {appState.status === 'loading' ? 'Submitting...' : 'Submit Peer Application'}
-              </button>
-              {appState.message && (
-                <span className={`ty-meta ${appState.status === 'success' ? 'successText' : 'errorText'}`} style={{ color: appState.status === 'success' ? 'var(--success)' : 'var(--danger)', fontWeight: '600' }}>
-                  {appState.message}
-                </span>
-              )}
             </div>
           </form>
         )}
 
         {/* Previous Applications list */}
         {applications.length > 0 && (
-          <div style={{ marginTop: '30px', borderTop: '1px solid var(--line-hairline)', paddingTop: '20px' }}>
-            <h4 className="ty-card-title" style={{ fontSize: '14px', marginBottom: '12px' }}>My Applications History</h4>
-            <div style={{ display: 'grid', gap: '10px' }}>
+          <div className="peerAppHistory">
+            <h4 className="ty-card-title">My Applications History</h4>
+            <div className="peerAppHistoryList">
               {applications.map((app) => (
-                <div key={app.applicationId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.02)', padding: '12px 16px', borderRadius: 'var(--radius-md)', border: '1px solid var(--line-soft)' }}>
+                <div key={app.applicationId} className="peerAppHistoryRow">
                   <div>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{app.organizationType} Application</strong>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    <strong>{app.organizationType} Application</strong>
+                    <div className="peerAppHistoryMeta">
                       <span>Email: {app.institutionalEmail}</span> | <span>Submitted: {new Date(app.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>

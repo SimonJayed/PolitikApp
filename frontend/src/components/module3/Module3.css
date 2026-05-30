@@ -317,6 +317,180 @@
   letter-spacing: -0.01em;
 }
 
+.peerAppPanel {
+  align-items: stretch;
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  box-shadow: var(--shadow-sm);
+  color: var(--text-primary);
+  display: grid;
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.peerAppHeader {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--line-hairline);
+  display: flex;
+  gap: 10px;
+  margin-bottom: 2px;
+  padding-bottom: 12px;
+}
+
+.peerAppHeaderIcon {
+  align-items: center;
+  background: var(--info-soft);
+  border: 1px solid var(--info-border);
+  border-radius: var(--radius-sm);
+  color: var(--info);
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  width: 32px;
+}
+
+.peerAppHeader h3 {
+  color: var(--text-primary);
+  font-size: 16px;
+  margin: 0;
+}
+
+.peerAppHeader p {
+  color: var(--text-muted);
+  margin: 4px 0 0;
+}
+
+.peerAppPending {
+  background: rgba(217, 119, 6, 0.08);
+  border: 1px solid rgba(217, 119, 6, 0.25);
+  border-left: 4px solid #d97706;
+  border-radius: var(--radius-md);
+  color: #b45309;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 4px;
+  padding: 16px 20px;
+}
+
+.peerAppPending p {
+  color: #9a3412;
+  font-size: 13px;
+  margin: 4px 0 0;
+}
+
+.peerAppForm {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  display: grid;
+  gap: 16px;
+  max-width: 100%;
+  width: 100%;
+  padding: 0;
+}
+
+.peerAppTwoCol {
+  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+}
+
+.peerAppFormColumns {
+  align-items: start;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.peerAppLeftCol {
+  display: grid;
+  gap: 16px;
+}
+
+.peerAppForm label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.peerAppDetailGrid {
+  align-items: start;
+}
+
+.peerAppJustificationField textarea {
+  min-height: 258px;
+}
+
+.peerAppActions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 4px;
+}
+
+.peerAppStatus {
+  font-weight: 600;
+}
+
+.peerAppStatus.successText {
+  color: var(--success);
+}
+
+.peerAppStatus.errorText {
+  color: var(--danger);
+}
+
+.peerAppHistory {
+  border-top: 1px solid var(--line-hairline);
+  margin-top: 10px;
+  padding-top: 20px;
+}
+
+.peerAppHistory h4 {
+  color: var(--text-primary);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.peerAppHistoryList {
+  display: grid;
+  gap: 10px;
+}
+
+.peerAppHistoryRow {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 12px 16px;
+}
+
+.peerAppHistoryRow strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.peerAppHistoryMeta {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+@media (max-width: 900px) {
+  .peerAppFormColumns,
+  .peerAppTwoCol {
+    grid-template-columns: 1fr;
+  }
+
+  .peerAppHistoryRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
 .matrixActionRow,
 .adminControlGrid {
   display: flex;

@@ -114,6 +114,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isApprovedDomain, setIsApprovedDomain] = useState(false)
 
   const activeHeader = {
@@ -208,11 +209,6 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     }
   }
 
-  async function handleDashboardLookup(event) {
-    event.preventDefault()
-    await loadDashboardById(dashboardId.trim())
-  }
-
   async function loadDashboardById(politicianId) {
     if (!politicianId) {
       setDashboardState({ status: 'error', message: 'Select a politician first.', data: null })
@@ -282,7 +278,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     }
   }
 
-  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isDirectoryModalOpen
+  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isDirectoryModalOpen || isProfileModalOpen
 
   return (
     <main className="appShell">
@@ -317,14 +313,19 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             </div>
           </header>
         )}
+        {!isAnyModalOpen && activeView !== 'dashboard' && (
+          <div className="backNavRow">
+            <button aria-label="Back to Dashboard" className="appBackButton" onClick={() => setActiveView('dashboard')} type="button">
+              <ArrowLeftIcon size={16} />
+              Back
+            </button>
+          </div>
+        )}
 
         {activeView === 'directory' && (
           <PoliticianDirectoryLoaderPanel
-            dashboardId={dashboardId}
             dbUser={currentUser}
-            onChange={setDashboardId}
             onViewProfile={openPoliticianProfile}
-            onSubmit={handleDashboardLookup}
             politicians={politiciansState.data}
             politiciansState={politiciansState}
             state={dashboardState}
@@ -353,6 +354,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             onReload={openPoliticianProfile}
             onUserUpdate={onUserUpdate}
             onAppealModalOpenChange={setIsAppealModalOpen}
+            onModalOpenChange={setIsProfileModalOpen}
             politicianId={selectedPoliticianId}
             politicians={politiciansState.data}
             state={dashboardState}
@@ -516,11 +518,12 @@ function SubmissionPanel(props) {
 /*  Politician Directory                                                        */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function PoliticianDirectoryLoaderPanel({
-  dashboardId, dbUser, onChange, onViewProfile, onSubmit,
+  dbUser, onViewProfile,
   politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [positionFilter, setPositionFilter] = useState('ALL')
   const [page, setPage] = useState(1)
   const pageSize = 9
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
@@ -551,14 +554,19 @@ function PoliticianDirectoryLoaderPanel({
     const q = query.trim().toLowerCase()
     return politicians.filter((p) => {
       const jurisdictionMatch = matchesJurisdiction(p.jurisdiction, jurisdictionFilter)
+      const positionMatch = positionFilter === 'ALL' || (p.position || '') === positionFilter
       const matchesQuery = !q || p.fullName.toLowerCase().includes(q) || (p.position || '').toLowerCase().includes(q)
-      return jurisdictionMatch && matchesQuery
+      return jurisdictionMatch && positionMatch && matchesQuery
     })
-  }, [jurisdictionFilter, politicians, query])
+  }, [jurisdictionFilter, politicians, positionFilter, query])
+
+  const positionOptions = useMemo(() => {
+    return Array.from(new Set(politicians.map((p) => p.position).filter(Boolean))).sort((a, b) => a.localeCompare(b))
+  }, [politicians])
 
   useEffect(() => {
     setPage(1)
-  }, [query, jurisdictionFilter])
+  }, [query, jurisdictionFilter, positionFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredPoliticians.length / pageSize))
   const safePage = Math.min(page, totalPages)
@@ -775,6 +783,15 @@ function PoliticianDirectoryLoaderPanel({
           />
         </label>
         <label>
+          Position
+          <select name="dashboardPosition" onChange={(e) => setPositionFilter(e.target.value)} value={positionFilter}>
+            <option value="ALL">All Positions</option>
+            {positionOptions.map((position) => (
+              <option key={position} value={position}>{position}</option>
+            ))}
+          </select>
+        </label>
+        <label>
           Jurisdiction
           <select name="dashboardJurisdiction" onChange={(e) => setJurisdictionFilter(e.target.value)} value={jurisdictionFilter}>
             <option value="ALL">All</option>
@@ -782,10 +799,6 @@ function PoliticianDirectoryLoaderPanel({
             <option value="CEBU_CITY">Cebu City</option>
           </select>
         </label>
-        <form className="dashboardQuickLoad" onSubmit={onSubmit}>
-          <Field label="Manual ID" name="dashboardId" onChange={(e) => onChange(e.target.value)} value={dashboardId} />
-          <button disabled={state.status === 'loading'} type="submit">Load</button>
-        </form>
       </section>
 
       <div className="dashboardDivider" aria-hidden="true" />
@@ -887,7 +900,7 @@ function PoliticianDirectoryLoaderPanel({
 
       {isEditOpen && (
         <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal" onClick={(e) => e.stopPropagation()} role="dialog">
+          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal editPoliticianModal" onClick={(e) => e.stopPropagation()} role="dialog">
             <header className="comparisonModalHeader">
               <h3 className="ty-section-title">Edit Politician</h3>
               <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsEditOpen(false)} type="button">Close</button>
@@ -988,12 +1001,13 @@ function PoliticianDirectoryLoaderPanel({
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
+function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [appealTarget, setAppealTarget] = useState(null)
+  const [appealDetails, setAppealDetails] = useState('')
   const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
   const [editErrors, setEditErrors] = useState({})
   const [editForm, setEditForm] = useState({ biography: '', fullName: '', jurisdiction: '', partyAffiliation: '', position: '', profileImageUrl: '' })
@@ -1012,6 +1026,11 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
       window.removeEventListener('keydown', handleEscape)
     }
   }, [isEditOpen])
+
+  useEffect(() => {
+    onModalOpenChange?.(isEditOpen)
+    return () => onModalOpenChange?.(false)
+  }, [isEditOpen, onModalOpenChange])
 
   function openEditModal() {
     if (!profile || !isDatabaseAdmin) return
@@ -1067,6 +1086,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
       return
     }
     onAppealModalOpenChange?.(true)
+    setAppealDetails('')
     setAppealTarget(entry)
   }
 
@@ -1077,7 +1097,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
       const data = await fetch(`${API_BASE_URL}/api/moderation/appeal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ submissionId: appealTarget.submissionId }),
+        body: JSON.stringify({ submissionId: appealTarget.submissionId, details: appealDetails.trim() }),
       }).then(readApiResponse)
 
       if (onUserUpdate) {
@@ -1126,7 +1146,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
 
       {isEditOpen && (
         <div aria-hidden="true" className="comparisonModalBackdrop" onClick={() => setIsEditOpen(false)}>
-          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal" onClick={(e) => e.stopPropagation()} role="dialog">
+          <section aria-label="Edit politician" aria-modal="true" className="comparisonModal editPoliticianModal" onClick={(e) => e.stopPropagation()} role="dialog">
             <header className="comparisonModalHeader">
               <h3 className="ty-section-title">Edit Politician</h3>
               <button aria-label="Close" className="comparisonModalClose" onClick={() => setIsEditOpen(false)} type="button">Close</button>
@@ -1177,6 +1197,10 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
         onConfirm={confirmAppeal}
         severity="warning"
         title="File Post-Publish Appeal?"
+        detailsLabel="Appeal Details"
+        detailsPlaceholder="Provide concise context for why this published record should be re-adjudicated."
+        detailsValue={appealDetails}
+        onDetailsChange={setAppealDetails}
       />
     </section>
   )

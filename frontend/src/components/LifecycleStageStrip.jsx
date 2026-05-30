@@ -23,6 +23,14 @@ export function getLifecycleStageIndex(status) {
 export default function LifecycleStageStrip({ status, title = 'Lifecycle Stage' }) {
   const activeStage = getLifecycleStageIndex(status)
   const isRejected = (status || '').toUpperCase() === 'REJECTED'
+  const stageStyles = {
+    SUBMITTED: { bg: 'var(--info-soft)', border: 'var(--info-border)', text: 'var(--info)' },
+    'JURY REVIEW': { bg: 'var(--warning-soft)', border: 'var(--warning-border)', text: 'var(--warning)' },
+    ADJUDICATION: { bg: 'rgba(123, 104, 238, 0.12)', border: 'rgba(123, 104, 238, 0.4)', text: '#5b4ac8' },
+    FINALIZED: { bg: 'var(--bg-inset)', border: 'var(--line-strong)', text: 'var(--text-secondary)' },
+    PUBLISHED: { bg: 'var(--success-soft)', border: 'var(--success-border)', text: 'var(--success)' },
+    REJECTED: { bg: 'var(--danger-soft)', border: 'var(--danger-border)', text: 'var(--danger)' },
+  }
 
   return (
     <div style={{ marginTop: '4px', paddingTop: '16px', borderTop: '1px dashed var(--line-soft)' }}>
@@ -32,6 +40,7 @@ export default function LifecycleStageStrip({ status, title = 'Lifecycle Stage' 
           const isPast = index <= activeStage
           const isActive = index === activeStage
           const stageLabel = stage === 'FINALIZED' && isRejected ? 'REJECTED' : stage
+          const palette = stageStyles[stageLabel] || stageStyles.FINALIZED
           return (
             <span key={stage} style={{
               textAlign: 'center',
@@ -41,13 +50,11 @@ export default function LifecycleStageStrip({ status, title = 'Lifecycle Stage' 
               fontSize: '10px',
               fontWeight: '600',
               letterSpacing: '0.04em',
-              border: `1px solid ${isPast ? (isRejected && index === 3 ? 'var(--danger-border)' : 'var(--ph-blue)') : 'var(--line-soft)'}`,
-              background: isPast
-                ? (isRejected && index === 3 ? 'var(--danger)' : 'var(--ph-blue)')
-                : 'var(--bg-inset)',
-              color: isPast ? '#ffffff' : 'var(--text-subtle)',
+              border: `1px solid ${isPast ? palette.border : 'var(--line-soft)'}`,
+              background: isPast ? palette.bg : 'var(--bg-inset)',
+              color: isPast ? palette.text : 'var(--text-subtle)',
               opacity: isPast ? 1 : 0.6,
-              boxShadow: isActive ? '0 0 0 2px rgba(10,29,66,0.15)' : 'none',
+              boxShadow: isActive ? '0 0 0 2px rgba(10,29,66,0.12)' : 'none',
               transition: 'all 200ms ease',
             }}>
               {stageLabel}

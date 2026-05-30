@@ -32,6 +32,6 @@ public class AppealController {
         if (principal == null) {
             throw new HttpResponseException(401, "Unauthorized: Authentication required.");
         }
-        return ResponseEntity.ok(appealService.fileAppeal(request.submissionId(), principal.getUserId()));
+        return ResponseEntity.ok(appealService.fileAppeal(request.submissionId(), request.details(), principal.getUserId()));
     }
 }

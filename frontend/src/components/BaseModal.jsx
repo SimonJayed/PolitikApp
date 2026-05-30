@@ -4,6 +4,7 @@ function BaseModal({
   children,
   isDismissDisabled = false,
   isOpen,
+  modalClassName = '',
   onClose,
   title,
 }) {
@@ -45,7 +46,7 @@ function BaseModal({
       <section
         aria-label={title || 'Modal'}
         aria-modal="true"
-        className="comparisonModal"
+        className={`comparisonModal ${modalClassName}`.trim()}
         onClick={(event) => event.stopPropagation()}
         ref={modalRef}
         role="dialog"

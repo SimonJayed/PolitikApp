@@ -10,10 +10,14 @@ function ConfirmActionModal({
   onConfirm,
   severity = 'warning',
   title,
+  detailsLabel = '',
+  detailsPlaceholder = '',
+  detailsValue = '',
+  onDetailsChange,
 }) {
   const isDanger = severity === 'danger'
   return (
-    <BaseModal isDismissDisabled={isSubmitting} isOpen={isOpen} onClose={onCancel} title={title}>
+    <BaseModal isDismissDisabled={isSubmitting} isOpen={isOpen} modalClassName="appealModalCompact" onClose={onCancel} title={title}>
       <header className="comparisonModalHeader">
         <h2 className="ty-section-title">{title}</h2>
         <button
@@ -29,6 +33,18 @@ function ConfirmActionModal({
       <div className="comparisonModalBody">
         <div className="confirmModalBody">
           <p className="ty-body">{description}</p>
+          {onDetailsChange ? (
+            <label className="confirmModalDetailField">
+              <span className="ty-label">{detailsLabel || 'Details'}</span>
+              <textarea
+                disabled={isSubmitting}
+                placeholder={detailsPlaceholder || 'Add details'}
+                rows={3}
+                value={detailsValue}
+                onChange={(event) => onDetailsChange(event.target.value)}
+              />
+            </label>
+          ) : null}
           <div className="confirmModalActions">
             <button disabled={isSubmitting} onClick={onCancel} type="button">
               {cancelLabel}

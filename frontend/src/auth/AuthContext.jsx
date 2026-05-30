@@ -22,8 +22,32 @@ export function AuthProvider({ children }) {
     }
   }, [session])
 
+  useEffect(() => {
+    if (!session?.refreshToken || !session?.expiresInSeconds) return undefined
+    const refreshInMs = Math.max((Number(session.expiresInSeconds) - 120) * 1000, 30_000)
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken: session.refreshToken }),
+        })
+        const body = await response.json().catch(() => ({}))
+        if (!response.ok) {
+          setSession(null)
+          return
+        }
+        setSession((prev) => ({ ...(prev || {}), ...body, user: body.user || prev?.user || null }))
+      } catch {
+        setSession(null)
+      }
+    }, refreshInMs)
+    return () => window.clearTimeout(timer)
+  }, [session?.expiresInSeconds, session?.refreshToken])
+
   const value = useMemo(() => ({
     token: session?.token || null,
+    refreshToken: session?.refreshToken || null,
     user: session?.user || null,
     isAuthenticated: Boolean(session?.token && session?.user),
     async login(login, password) {
@@ -35,6 +59,26 @@ export function AuthProvider({ children }) {
       const body = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(body.message || 'Login failed.')
       setSession(body)
+      return body
+    },
+    async refreshAuthToken() {
+      const currentRefreshToken = session?.refreshToken
+      if (!currentRefreshToken) throw new Error('No refresh token available.')
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken: currentRefreshToken }),
+      })
+      const body = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        setSession(null)
+        throw new Error(body.message || 'Session refresh failed.')
+      }
+      setSession((prev) => ({
+        ...(prev || {}),
+        ...body,
+        user: body.user || prev?.user || null,
+      }))
       return body
     },
     async register(payload) {
