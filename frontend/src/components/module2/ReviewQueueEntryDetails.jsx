@@ -37,6 +37,7 @@ export default function ReviewQueueEntryDetails({ card }) {
 
   const details = parseActionDetails(card);
   const actionId = card.actionIdentifier || '';
+  const isUnverifiedSource = details.isApprovedDomain === false;
 
   return (
     <div className="review-queue-entry-details">
@@ -62,10 +63,17 @@ export default function ReviewQueueEntryDetails({ card }) {
         </div>
         <div className="review-cardFact review-cardFactLink">
           <span className="review-cardFactLabel">Source Link</span>
-          <a href={card.sourceUrl} rel="noreferrer" target="_blank">
-            <ExternalLinkIcon size={14} />
-            <span>{card.sourceUrl}</span>
-          </a>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <a href={card.sourceUrl} rel="noreferrer" target="_blank">
+              <ExternalLinkIcon size={14} />
+              <span>{card.sourceUrl}</span>
+            </a>
+            {isUnverifiedSource && (
+              <span className="unverified-domain-badge" role="alert">
+                ⚠ UNVERIFIED SOURCE DOMAIN
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

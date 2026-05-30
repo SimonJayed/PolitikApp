@@ -1,5 +1,5 @@
 import React from 'react';
-import SourceUrlInput, { SOURCE_URL_PATTERN } from './SourceUrlInput';
+import SourceUrlInput from './SourceUrlInput';
 import SubmissionStatusAlert from './SubmissionStatusAlert';
 
 export const actionOptions = [
@@ -41,12 +41,13 @@ export default function EditSubmissionForm({
   selectedPoliticianId,
   state,
   politicians = [],
+  onDomainCheck,
 }) {
   const selectedPolitician = politicians.find(
     (p) => p.politicianId === (formData.politicianId || selectedPoliticianId)
   );
 
-  const isSourceAllowed = SOURCE_URL_PATTERN.test((formData.sourceUrl || '').trim());
+  const isSourceAllowed = true; // domain check is now non-blocking via onDomainCheck callback
 
   return (
     <section className="workspace submission-panel-wrapper">
@@ -68,7 +69,7 @@ export default function EditSubmissionForm({
           </select>
         </label>
 
-        <SourceUrlInput value={formData.sourceUrl} onChange={onChange} />
+        <SourceUrlInput value={formData.sourceUrl} onChange={onChange} onDomainCheck={onDomainCheck} />
 
         <div className="fieldRow">
           <label>
@@ -97,9 +98,6 @@ export default function EditSubmissionForm({
         </label>
 
         <div className="formFooter">
-          <span className={`sourceBadge ${isSourceAllowed ? 'approved' : ''}`}>
-            {isSourceAllowed ? '✓ Approved source' : '○ Awaiting approved source'}
-          </span>
           <button disabled={state.status === 'loading'} type="submit">Submit Evidence</button>
         </div>
 

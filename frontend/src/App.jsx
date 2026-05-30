@@ -22,6 +22,7 @@ import EditSubmissionForm from './components/module1/EditSubmissionForm'
 import PoliticianDashboard from './components/module1/PoliticianDashboard'
 import TimelineLedgerDecoupled from './components/module1/TimelineLedger'
 import KPIWidget from './components/module1/KPIWidget'
+import { POSITION_OPTIONS } from './components/module1/positionConfig'
 import './components/module1/Module1.css'
 import {
   AlertTriangleIcon,
@@ -39,7 +40,6 @@ import {
 } from './components/icons/Lucide'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-const SOURCE_URL_PATTERN = /^https?:\/\/([a-zA-Z0-9-]+\.)*(gov\.ph|edu\.ph)(\/.*)?$/
 
 const emptySubmission = {
   politicianId: '',
@@ -114,6 +114,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
+  const [isApprovedDomain, setIsApprovedDomain] = useState(false)
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -132,11 +133,6 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
 
   const headerTitleHiddenFor = new Set(['dashboard', 'directory', 'compare', 'contributions', 'submit', 'moderation'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
-
-  const isSourceAllowed = useMemo(
-    () => SOURCE_URL_PATTERN.test(formData.sourceUrl.trim()),
-    [formData.sourceUrl],
-  )
 
   const loadPoliticians = useCallback(async () => {
     setPoliticiansState((current) => ({ ...current, message: 'Loading politicians...', status: 'loading' }))
@@ -191,10 +187,6 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       setSubmissionState({ status: 'error', message: 'Please select a politician from the dropdown list.' })
       return
     }
-    if (!isSourceAllowed) {
-      setSubmissionState({ status: 'error', message: 'Source URL must resolve to an approved .gov.ph or .edu.ph domain.' })
-      return
-    }
     setSubmissionState({ status: 'loading', message: 'Submitting evidence record...' })
     try {
       const payload = {
@@ -209,6 +201,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         method: 'POST',
       }).then(readApiResponse)
       setFormData(emptySubmission)
+      setIsApprovedDomain(false)
       setSubmissionState({ status: 'success', message: data.message || 'Submission queued.' })
     } catch (error) {
       setSubmissionState({ status: 'error', message: error.message })
@@ -344,9 +337,9 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         {activeView === 'submit' && (
           <SubmissionPanel
             formData={formData}
-            isSourceAllowed={isSourceAllowed}
             onChange={updateFormField}
             onDetailChange={updateActionDetail}
+            onDomainCheck={setIsApprovedDomain}
             onSubmit={handleSubmission}
             selectedPoliticianId={selectedPoliticianId}
             state={submissionState}
@@ -902,7 +895,16 @@ function PoliticianDirectoryLoaderPanel({
             <div className="comparisonModalBody">
               <form className="editFormGrid" onSubmit={handleSaveEdit}>
                 <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-                <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
+                <label>
+                  Position
+                  <select name="position" onChange={updateEditField} required value={editForm.position}>
+                    <option value="">Select a position</option>
+                    {POSITION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                    ))}
+                  </select>
+                  {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
+                </label>
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
@@ -934,16 +936,26 @@ function PoliticianDirectoryLoaderPanel({
               <form className="editFormGrid" onSubmit={handleCreatePolitician}>
                 <label>Full Name<input name="fullName" onChange={updateCreateField} required value={createForm.fullName} />{createErrors.fullName && <span className="fieldError">{createErrors.fullName}</span>}</label>
                 <label>
-                  Jurisdiction
-                  <select name="jurisdiction" onChange={updateCreateField} required value={createForm.jurisdiction}>
-                    <option value="">Select jurisdiction</option>
-                    <option value="NATIONAL">National</option>
-                    <option value="CEBU_CITY">Cebu City</option>
+                  Position
+                  <select name="position" onChange={(e) => {
+                    const opt = POSITION_OPTIONS.find((o) => o.value === e.target.value)
+                    updateCreateField(e)
+                    if (opt) setCreateForm((c) => ({ ...c, position: e.target.value, jurisdiction: opt.jurisdiction }))
+                  }} required value={createForm.position}>
+                    <option value="">Select a position</option>
+                    {POSITION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                    ))}
                   </select>
+                  {createErrors.position && <span className="fieldError">{createErrors.position}</span>}
+                </label>
+                <label>
+                  Jurisdiction
+                  <input name="jurisdiction" readOnly value={createForm.jurisdiction || (POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdictionLabel ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                  <small style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Auto-derived from position</small>
                   {createErrors.jurisdiction && <span className="fieldError">{createErrors.jurisdiction}</span>}
                 </label>
                 <label>Party Affiliation<input name="partyAffiliation" onChange={updateCreateField} value={createForm.partyAffiliation} />{createErrors.partyAffiliation && <span className="fieldError">{createErrors.partyAffiliation}</span>}</label>
-                <label>Position<input name="position" onChange={updateCreateField} required value={createForm.position} />{createErrors.position && <span className="fieldError">{createErrors.position}</span>}</label>
                 <label>
                   Status
                   <select name="status" onChange={updateCreateField} required value={createForm.status}>
@@ -1122,7 +1134,16 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onPoliticianUpdate, 
             <div className="comparisonModalBody">
               <form className="editFormGrid" onSubmit={handleSaveEdit}>
                 <label>Full Name<input name="fullName" onChange={updateEditField} required value={editForm.fullName} />{editErrors.fullName && <span className="fieldError">{editErrors.fullName}</span>}</label>
-                <label>Position<input name="position" onChange={updateEditField} required value={editForm.position} />{editErrors.position && <span className="fieldError">{editErrors.position}</span>}</label>
+                <label>
+                  Position
+                  <select name="position" onChange={updateEditField} required value={editForm.position}>
+                    <option value="">Select a position</option>
+                    {POSITION_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                    ))}
+                  </select>
+                  {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
+                </label>
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
