@@ -77,7 +77,8 @@ function clampNumber(value, min = 0, max = Number.POSITIVE_INFINITY) {
 }
 
 export function DeveloperSandboxProvider({ children, currentUser, token }) {
-  const [isDevModeActive, setIsDevModeActive] = useState(false);
+  const isDevModeActive = false;
+  const setIsDevModeActive = () => {};
   const [injectedQueue, setInjectedQueue] = useState([]); 
   const [profileMetrics, setProfileMetrics] = useState(DEFAULT_PROFILE_METRICS);
   const [manipulatedUser, setManipulatedUser] = useState({
@@ -185,7 +186,7 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
     }));
     setManipulatedUser((current) => ({
       ...current,
-      trustScore: clampTrustScore((current.trustScore || 0) + 10),
+      trustScore: clampTrustScore((current.trustScore || 0) + 15),
     }));
   }
 
@@ -197,7 +198,7 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
     }));
     setManipulatedUser((current) => ({
       ...current,
-      trustScore: clampTrustScore((current.trustScore || 0) - 5),
+      trustScore: clampTrustScore((current.trustScore || 0) - 20),
     }));
   }
 

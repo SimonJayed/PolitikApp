@@ -1390,7 +1390,7 @@ function TimelineLedger(props) {
 
 function TrustDeltaBadge({ entry }) {
   const status = String(entry.publicationStatus || entry.status || '').toUpperCase()
-  const delta = status === 'PUBLISHED' ? 15 : status === 'REJECTED' ? -15 : 0
+  const delta = status === 'PUBLISHED' ? 15 : status === 'REJECTED' ? -20 : 0
   if (!delta) return null
   const isPositive = delta > 0
   return (

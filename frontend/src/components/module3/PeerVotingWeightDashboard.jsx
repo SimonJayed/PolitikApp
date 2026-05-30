@@ -166,7 +166,7 @@ export default function PeerVotingWeightDashboard({
 
   return (
     <>
-      <VotingWeightAlert tier={tier} trustScore={trustScore} />
+      <VotingWeightAlert tier={tier} trustScore={trustScore} weight={metrics?.voteWeight} />
 
       <PeerVotingWeightDetail
         tier={tier}

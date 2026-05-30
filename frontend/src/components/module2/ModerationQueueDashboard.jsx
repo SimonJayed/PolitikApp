@@ -111,6 +111,7 @@ export default function ModerationQueueDashboard({
                     isDevModeActive={isDevModeActive}
                     voteWeight={voteWeight}
                     manipulatedUser={manipulatedUser}
+                    user={user}
                   />
                 )}
               </div>

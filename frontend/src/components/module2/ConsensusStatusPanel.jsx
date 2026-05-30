@@ -5,6 +5,7 @@ export default function ConsensusStatusPanel({
   isDevModeActive,
   voteWeight = 1,
   manipulatedUser,
+  user,
 }) {
   if (!card) return null;
 
@@ -13,20 +14,20 @@ export default function ConsensusStatusPanel({
   const disagreeCount = (hashCharSum % 3);
   const flagCount = (hashCharSum % 2);
   const totalVotes = agreeCount + disagreeCount + flagCount;
-  
+
   const quorumTarget = (hashCharSum % 4) + 4;
   const currentConsensus = totalVotes > 0 ? (agreeCount / totalVotes) * 100 : 0;
 
-  const currentTrust = manipulatedUser?.trustScore ?? 100;
-  const trustIfPublished = Math.min(500, currentTrust + 3.5).toFixed(2);
-  const trustIfRejected = Math.max(0, currentTrust - 12.0).toFixed(2);
+  const currentTrust = isDevModeActive && manipulatedUser ? (manipulatedUser?.trustScore ?? 100) : (user?.trustScore ?? 100);
+  const trustIfPublished = Math.min(500, currentTrust + 15.00).toFixed(2);
+  const trustIfRejected = Math.max(0, currentTrust - 20.00).toFixed(2);
 
   return (
     <div className="sandbox-analytics-drawer" style={{ background: '#0f172a', border: '1px solid #334155', padding: '16px', borderRadius: '6px', margin: '12px 0 0' }}>
       <h5 style={{ margin: '0 0 10px', fontSize: '12px', color: '#38bdf8', letterSpacing: '0.05em', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
         📊 JURY CONSENSUS & REPUTATION ANALYTICS
       </h5>
-      
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '11px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <strong style={{ color: '#38bdf8', fontSize: '10px', letterSpacing: '0.05em' }}>CORE VOTING & QUORUM COEFFICIENTS</strong>

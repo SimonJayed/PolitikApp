@@ -53,7 +53,29 @@ export default function UserProfileMatrixPanel({ token, user }) {
     simulateDissentVote,
   } = sandbox;
 
-  const actor = isDevModeActive && manipulatedUser ? manipulatedUser : user;
+  const [liveUser, setLiveUser] = useState(null);
+
+  useEffect(() => {
+    if (isDevModeActive) return;
+
+    let ignore = false;
+    fetch(`${API_BASE_URL}/users/me`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(readApiResponse)
+      .then((data) => {
+        if (!ignore && data) {
+          setLiveUser(data);
+        }
+      })
+      .catch((err) => console.error('Failed to sync live profile:', err));
+
+    return () => {
+      ignore = true;
+    };
+  }, [token, isDevModeActive]);
+
+  const actor = isDevModeActive && manipulatedUser ? manipulatedUser : (liveUser || user);
   const activeRole = actor?.role || 'JUDICIAL_REVIEWER';
   const trustScore = clampTrustScore(actor?.trustScore ?? 100);
   const descriptor = roleDescriptor(activeRole);
