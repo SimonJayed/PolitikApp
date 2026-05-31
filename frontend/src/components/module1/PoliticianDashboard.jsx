@@ -24,6 +24,7 @@ function resolveWgiScore(politician) {
     Number(politician.billsAuthored || 0),
     Number(politician.projectCompletions || 0),
     Number(politician.trackedBudgetAllocated || 0),
+    0, // totalFlagged fallback
     Number(politician.coaAuditDiscrepancies || 0),
   )
 }

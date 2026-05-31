@@ -3,6 +3,7 @@ import { ExternalLinkIcon, ScaleIcon, ArrowLeftIcon, ArrowRightIcon } from '../i
 import TrustScoreMeter from '../TrustScoreMeter';
 import { clampTrustScore } from '../trustScore';
 import { TimelineCardsSkeleton } from '../Skeletons';
+import { formatActionIdentifier } from './positionConfig';
 
 function PaginationMini({ page, totalPages, onChange }) {
   const disabledPrev = page <= 1;
@@ -109,7 +110,7 @@ export default function TimelineLedger({
           {pagedEntries.map((entry) => (
             <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
               <div className="timelineItemTop">
-                <strong>{entry.actionIdentifier}</strong>
+                <strong>{formatActionIdentifier(entry.actionIdentifier)}</strong>
                 <span style={{
                   background: 'var(--bg-inset)',
                   border: '1px solid var(--line-soft)',

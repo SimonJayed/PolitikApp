@@ -27,18 +27,19 @@ public class DashboardMetricsService {
         List<ProfileEditSubmission> submissions = submissionRepository
                 .findByPoliticianIdAndStatus(politician.getPoliticianId(), "PUBLISHED");
 
-        long billsAuthored = countByAction(submissions, "SPONSORED_LEGISLATION");
-        long projectCompletions = countByAction(submissions, "PROJECT_COMPLETION");
+        double billsAuthored = sumEffectiveLegislation(submissions);
+        double projectCompletions = sumEffectiveProjects(submissions);
         int coaDiscrepancies = Math.toIntExact(countByAction(submissions, "COA_FINDING"));
         BigDecimal totalBudget = submissions.stream()
                 .filter(submission -> "BUDGET_ALLOCATION".equals(submission.getActionIdentifier()))
                 .map(this::allocationAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalFlagged = sumFlaggedAmount(submissions);
 
         double efficiencyRatio = 0.0;
         try {
             if (billsAuthored > 0) {
-                efficiencyRatio = ((double) projectCompletions / billsAuthored) * 100.0;
+                efficiencyRatio = (projectCompletions / billsAuthored) * 100.0;
             }
         } catch (ArithmeticException | NullPointerException e) {
             efficiencyRatio = 0.0;
@@ -49,6 +50,7 @@ public class DashboardMetricsService {
                 billsAuthored,
                 projectCompletions,
                 totalBudget,
+                totalFlagged,
                 coaDiscrepancies);
 
         return new SymmetricalKpiPayload(
@@ -77,14 +79,16 @@ public class DashboardMetricsService {
      * @param billsAuthored      Count of SPONSORED_LEGISLATION submissions
      * @param projectCompletions Count of PROJECT_COMPLETION submissions
      * @param trackedBudget      Sum of BUDGET_ALLOCATION submission amounts (PHP)
+     * @param totalFlagged       Sum of COA_FINDING flagged amounts (PHP)
      * @param coaDiscrepancies   Count of COA_FINDING submissions
      * @return WGI composite score clamped to [0, 100]
      */
     public double computeWgiCompositeScore(
             String position,
-            long billsAuthored,
-            long projectCompletions,
+            double billsAuthored,
+            double projectCompletions,
             BigDecimal trackedBudget,
+            BigDecimal totalFlagged,
             int coaDiscrepancies) {
         // Normalize each raw indicator to [0, 100]
         double normBills = normalize(billsAuthored, BILLS_REFERENCE_CEILING);
@@ -117,6 +121,14 @@ public class DashboardMetricsService {
                         + (legEfficiency * 0.20);
                 break;
 
+            case "VICE_EXECUTIVE":
+                // billsAuthored(0.30) + projectCompletions(0.20) + budget(0.25) + hybridEfficiency(0.25)
+                rawScore = (normBills * 0.30)
+                        + (normProjects * 0.20)
+                        + (normBudget * 0.25)
+                        + (legEfficiency * 0.25);
+                break;
+
             case "COUNCIL":
                 // ordinancesFiled(0.40) + budget(0.35)
                 rawScore = (normBills * 0.40)
@@ -132,9 +144,21 @@ public class DashboardMetricsService {
                 break;
         }
 
-        // Apply COA penalty: -5 per finding, capped at 40 (Control of Corruption
-        // pillar)
-        double coaPenalty = Math.min(coaDiscrepancies * COA_PENALTY_PER_FINDING, COA_MAX_PENALTY);
+        // Apply COA penalty: frequency penalty + financial magnitude penalty, capped at 40 (Control of Corruption pillar)
+        double freqPenalty = coaDiscrepancies * 2.0;
+        double magPenalty = 0.0;
+        double budget = trackedBudget != null ? trackedBudget.doubleValue() : 0.0;
+        double flagged = totalFlagged != null ? totalFlagged.doubleValue() : 0.0;
+
+        if (flagged > 0) {
+            if (budget > 0) {
+                magPenalty = Math.min(30.0, (flagged / (budget + 1000.0)) * 40.0);
+            } else {
+                magPenalty = Math.min(30.0, coaDiscrepancies * 3.0);
+            }
+        }
+
+        double coaPenalty = Math.min(40.0, freqPenalty + magPenalty);
         double finalScore = rawScore - coaPenalty;
 
         // Clamp to [0, 100]
@@ -142,6 +166,72 @@ public class DashboardMetricsService {
     }
 
     // ─── Private Helpers ───────────────────────────────────────────────────────
+
+    private double sumEffectiveProjects(List<ProfileEditSubmission> submissions) {
+        return submissions.stream()
+                .filter(sub -> "PROJECT_COMPLETION".equals(sub.getActionIdentifier()))
+                .mapToDouble(sub -> {
+                    Map<String, Object> details = sub.getActionDetails();
+                    if (details == null || !details.containsKey("completionPercentage")) {
+                        return 1.0;
+                    }
+                    Object val = details.get("completionPercentage");
+                    if (val == null) {
+                        return 1.0;
+                    }
+                    try {
+                        return Double.parseDouble(val.toString()) / 100.0;
+                    } catch (NumberFormatException | NullPointerException e) {
+                        return 1.0;
+                    }
+                })
+                .sum();
+    }
+
+    private double sumEffectiveLegislation(List<ProfileEditSubmission> submissions) {
+        return submissions.stream()
+                .filter(sub -> "SPONSORED_LEGISLATION".equals(sub.getActionIdentifier()))
+                .mapToDouble(sub -> {
+                    Map<String, Object> details = sub.getActionDetails();
+                    if (details == null || !details.containsKey("legislativeStatus")) {
+                        return 1.0;
+                    }
+                    Object val = details.get("legislativeStatus");
+                    if (val == null) {
+                        return 1.0;
+                    }
+                    String status = val.toString().trim().toUpperCase();
+                    return switch (status) {
+                        case "APPROVED", "ENACTED" -> 1.0;
+                        case "IN COMMITTEE", "IN_COMMITTEE" -> 0.6;
+                        case "FILED" -> 0.3;
+                        case "REJECTED", "WITHDRAWN" -> 0.0;
+                        default -> 1.0;
+                    };
+                })
+                .sum();
+    }
+
+    private BigDecimal sumFlaggedAmount(List<ProfileEditSubmission> submissions) {
+        return submissions.stream()
+                .filter(sub -> "COA_FINDING".equals(sub.getActionIdentifier()))
+                .map(sub -> {
+                    Map<String, Object> details = sub.getActionDetails();
+                    if (details == null || !details.containsKey("flaggedAmount")) {
+                        return BigDecimal.ZERO;
+                    }
+                    Object val = details.get("flaggedAmount");
+                    if (val == null) {
+                        return BigDecimal.ZERO;
+                    }
+                    try {
+                        return new BigDecimal(val.toString());
+                    } catch (NumberFormatException | NullPointerException e) {
+                        return BigDecimal.ZERO;
+                    }
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 
     /**
      * Normalizes a raw value against a reference ceiling to produce a [0, 100]
@@ -158,8 +248,9 @@ public class DashboardMetricsService {
         if (position == null)
             return "DEFAULT";
         return switch (position.toUpperCase()) {
+            case "PRESIDENT", "MAYOR" -> "EXECUTIVE";
+            case "VICE_PRESIDENT", "VICE_MAYOR" -> "VICE_EXECUTIVE";
             case "SENATOR", "HOUSE_REPRESENTATIVE" -> "LEGISLATIVE";
-            case "MAYOR", "VICE_MAYOR" -> "EXECUTIVE";
             case "CITY_COUNCILOR" -> "COUNCIL";
             default -> "DEFAULT";
         };

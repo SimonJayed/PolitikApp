@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { AlertTriangleIcon, ArrowLeftIcon, ArrowRightIcon } from './icons/Lucide'
 import { matchesJurisdiction } from './jurisdiction'
 import { RankingRowsSkeleton } from './Skeletons'
-import { computeWgiCompositeScore } from './module1/positionConfig'
+import { computeWgiCompositeScore, formatPosition } from './module1/positionConfig'
 
 // ─── Storage Key (persists filter across sessions) ────────────────────────────
 const STORAGE_KEY = 'politikapp:rankingFilter'
@@ -111,6 +111,7 @@ function resolveWgiScore(politician) {
     Number(politician.billsAuthored || 0),
     Number(politician.projectCompletions || 0),
     Number(politician.trackedBudgetAllocated || 0),
+    0, // totalFlagged fallback
     Number(politician.coaAuditDiscrepancies || 0),
   )
 }
@@ -205,7 +206,7 @@ function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politic
 
                           <span className="rankingIdentity">
                             <strong className="ty-card-title">{row.fullName}</strong>
-                            <small className="ty-meta">{row.position || 'Position unavailable'}</small>
+                            <small className="ty-meta">{formatPosition(row.position) || 'Position unavailable'}</small>
                           </span>
 
                           {/* Primary metric — reflects the active sort filter */}

@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import SourceUrlInput from './SourceUrlInput';
 import SubmissionStatusAlert from './SubmissionStatusAlert';
-import { getActionsForPosition } from './positionConfig';
+import { getActionsForPosition, formatPosition } from './positionConfig';
 
 /**
  * Human-readable labels for each actionIdentifier value.
@@ -75,7 +75,7 @@ export default function EditSubmissionForm({
           <p className="statusLine success">
             Adding contribution for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
             <small style={{ marginLeft: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>
-              ({selectedPolitician.position || 'UNSPECIFIED'})
+              ({formatPosition(selectedPolitician.position) || 'UNSPECIFIED'})
             </small>
           </p>
         )}
@@ -85,7 +85,7 @@ export default function EditSubmissionForm({
             <option value="">— Choose a Politician Profile —</option>
             {politicians.map((p) => (
               <option key={p.politicianId} value={p.politicianId}>
-                {p.fullName} ({p.position || 'UNSPECIFIED'})
+                {p.fullName} ({formatPosition(p.position) || 'UNSPECIFIED'})
               </option>
             ))}
           </select>

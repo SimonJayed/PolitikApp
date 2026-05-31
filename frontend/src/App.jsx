@@ -22,7 +22,7 @@ import EditSubmissionForm from './components/module1/EditSubmissionForm'
 import PoliticianDashboard from './components/module1/PoliticianDashboard'
 import TimelineLedgerDecoupled from './components/module1/TimelineLedger'
 import KPIWidget from './components/module1/KPIWidget'
-import { POSITION_OPTIONS } from './components/module1/positionConfig'
+import { POSITION_OPTIONS, formatPosition, formatJurisdiction, formatActionIdentifier } from './components/module1/positionConfig'
 import './components/module1/Module1.css'
 import {
   AlertTriangleIcon,
@@ -819,7 +819,7 @@ function PoliticianDirectoryLoaderPanel({
           <select name="dashboardPosition" onChange={(e) => setPositionFilter(e.target.value)} value={positionFilter}>
             <option value="ALL">All Positions</option>
             {positionOptions.map((position) => (
-              <option key={position} value={position}>{position}</option>
+              <option key={position} value={position}>{formatPosition(position)}</option>
             ))}
           </select>
         </label>
@@ -864,8 +864,8 @@ function PoliticianDirectoryLoaderPanel({
             </span>
             <span className="dashboardCardBody">
               <strong className="ty-card-title">{politician.fullName}</strong>
-              <small className="ty-meta">{politician.position || 'UNKNOWN'}</small>
-              <small className="ty-meta">{politician.jurisdiction || 'Unspecified'}</small>
+              <small className="ty-meta">{formatPosition(politician.position) || 'UNKNOWN'}</small>
+              <small className="ty-meta">{formatJurisdiction(politician.jurisdiction) || 'Unspecified'}</small>
               <small className="ty-meta">{politician.partyAffiliation || 'Party not disclosed'}</small>
               {politician.coaAuditDiscrepancies > 0 && (
                 <span style={{
@@ -911,8 +911,8 @@ function PoliticianDirectoryLoaderPanel({
                 </span>
                 <div className="detailsIdentity">
                   <h4 className="ty-section-title">{detailsData.fullName}</h4>
-                  <p className="ty-body">{detailsData.position || 'UNKNOWN'}</p>
-                  <p className="ty-body">{detailsData.jurisdiction || 'Unspecified'}</p>
+                  <p className="ty-body">{formatPosition(detailsData.position) || 'UNKNOWN'}</p>
+                  <p className="ty-body">{formatJurisdiction(detailsData.jurisdiction) || 'Unspecified'}</p>
                   <p className="ty-body">{detailsData.partyAffiliation || 'Party not disclosed'}</p>
                 </div>
               </div>
@@ -945,7 +945,7 @@ function PoliticianDirectoryLoaderPanel({
                   <select name="position" onChange={updateEditField} required value={editForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
@@ -953,8 +953,8 @@ function PoliticianDirectoryLoaderPanel({
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
+                    <option value="NATIONAL">{formatJurisdiction('NATIONAL')}</option>
+                    <option value="CEBU_CITY">{formatJurisdiction('CEBU_CITY')}</option>
                   </select>
                   {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
                 </label>
@@ -989,14 +989,14 @@ function PoliticianDirectoryLoaderPanel({
                   }} required value={createForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {createErrors.position && <span className="fieldError">{createErrors.position}</span>}
                 </label>
                 <label>
                   Jurisdiction
-                  <input name="jurisdiction" readOnly value={createForm.jurisdiction || (POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdictionLabel ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                  <input name="jurisdiction" readOnly value={formatJurisdiction(createForm.jurisdiction) || formatJurisdiction(POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdiction ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
                   <small style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Auto-derived from position</small>
                   {createErrors.jurisdiction && <span className="fieldError">{createErrors.jurisdiction}</span>}
                 </label>
@@ -1157,9 +1157,9 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
       {profile && (
         <>
           <section className="profileSummary">
-            <p className="eyebrow ty-page-kicker">{profile.position || 'UNKNOWN'}</p>
+            <p className="eyebrow ty-page-kicker">{formatPosition(profile.position) || 'UNKNOWN'}</p>
             <h2 className="ty-section-title">{profile.fullName}</h2>
-            <p className="ty-body">{profile.jurisdiction || 'Unspecified jurisdiction'}</p>
+            <p className="ty-body">{formatJurisdiction(profile.jurisdiction) || 'Unspecified jurisdiction'}</p>
             <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
           <div style={{ display: 'flex', gap: '10px' }}>
@@ -1191,7 +1191,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
                   <select name="position" onChange={updateEditField} required value={editForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
@@ -1199,8 +1199,8 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
+                    <option value="NATIONAL">{formatJurisdiction('NATIONAL')}</option>
+                    <option value="CEBU_CITY">{formatJurisdiction('CEBU_CITY')}</option>
                   </select>
                   {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
                 </label>
@@ -1352,8 +1352,8 @@ function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, po
                     </span>
                     <span className="compareCardBody">
                       <strong className="ty-card-title">{p.fullName}</strong>
-                      <small className="ty-meta">{p.position || 'UNKNOWN'}</small>
-                      <small className="ty-meta">{p.jurisdiction || 'Unspecified'}</small>
+                      <small className="ty-meta">{formatPosition(p.position) || 'UNKNOWN'}</small>
+                      <small className="ty-meta">{formatJurisdiction(p.jurisdiction) || 'Unspecified'}</small>
                     </span>
                     <span className="selectDot" aria-hidden="true" />
                   </button>
@@ -1699,7 +1699,7 @@ function MyContributionsPanel({ onNavigateToSubmit, user }) {
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
-                {[[ 'Category', item.categoryTag ], [ 'Action Tag', item.actionIdentifier ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
+                {[[ 'Category', item.categoryTag ], [ 'Action Tag', formatActionIdentifier(item.actionIdentifier) ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
                   <div key={k}>
                     <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
                     <strong style={{ fontFamily: 'var(--display)', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{v}</strong>
