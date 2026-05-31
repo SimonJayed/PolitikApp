@@ -3,9 +3,7 @@ package com.politikapp.backend.module3.service;
 import com.politikapp.backend.module3.dto.ContributorReputationResponse;
 import com.politikapp.backend.module3.entity.ContributorTrustProfile;
 import com.politikapp.backend.module3.entity.ReputationSubmissionRecord;
-import com.politikapp.backend.module3.port.TokenInvalidationPort;
 import com.politikapp.backend.module3.repository.ContributorTrustProfileRepository;
-import com.politikapp.backend.module3.repository.ReputationSubmissionRecordRepository;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -19,30 +17,32 @@ import org.springframework.transaction.annotation.Transactional;
 public class ContributorReputationService {
     public static final String UNAVAILABLE_MESSAGE =
             "Reputation check unavailable. Existing account status was preserved.";
-    public static final String TOKEN_UNAVAILABLE_MESSAGE =
-            "Token invalidation service unavailable. Account lock state was saved.";
     public static final String EVALUATED_MESSAGE = "Reputation check completed.";
     public static final String LOCKED_MESSAGE = "Contributor account locked after reputation check.";
     public static final String INSUFFICIENT_SAMPLE_MESSAGE =
             "Reputation check completed. Lockout threshold requires a larger terminal submission sample.";
 
     private static final Logger log = LoggerFactory.getLogger(ContributorReputationService.class);
-    private static final List<String> TERMINAL_STATUSES = List.of("PUBLISHED", "REJECTED");
-    private static final double LOCK_THRESHOLD = 15.0;
     private static final int MIN_TERMINAL_SUBMISSIONS_FOR_LOCK = 5;
 
     private final ContributorTrustProfileRepository contributorRepository;
-    private final ReputationSubmissionRecordRepository submissionRepository;
-    private final TokenInvalidationPort tokenInvalidationPort;
+    private final ContributorStatisticsService statisticsService;
+    private final RejectionMetricService metricService;
+    private final AccountPenaltyService penaltyService;
+    private final TokenInvalidationService tokenInvalidationService;
 
     public ContributorReputationService(
             ContributorTrustProfileRepository contributorRepository,
-            ReputationSubmissionRecordRepository submissionRepository,
-            TokenInvalidationPort tokenInvalidationPort
+            ContributorStatisticsService statisticsService,
+            RejectionMetricService metricService,
+            AccountPenaltyService penaltyService,
+            TokenInvalidationService tokenInvalidationService
     ) {
         this.contributorRepository = contributorRepository;
-        this.submissionRepository = submissionRepository;
-        this.tokenInvalidationPort = tokenInvalidationPort;
+        this.statisticsService = statisticsService;
+        this.metricService = metricService;
+        this.penaltyService = penaltyService;
+        this.tokenInvalidationService = tokenInvalidationService;
     }
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -59,20 +59,18 @@ public class ContributorReputationService {
                 return unavailableResponse(contributorId);
             }
 
-            List<ReputationSubmissionRecord> terminalSubmissions =
-                    submissionRepository.findByContributorIdAndStatusIn(contributorId, TERMINAL_STATUSES);
-            if (terminalSubmissions.isEmpty()) {
-                log.warn("Module 3 reputation check skipped because contributor {} has no terminal history.", contributorId);
+            List<ReputationSubmissionRecord> history = statisticsService.getSubmissionHistory(contributorId);
+            if (history.isEmpty()) {
+                log.warn("Module 3 reputation check skipped because contributor {} has no history.", contributorId);
                 return unavailableResponse(contributorId);
             }
 
-            long rejectedCount = terminalSubmissions.stream()
-                    .filter(submission -> "REJECTED".equals(submission.getStatus()))
-                    .count();
-            double rejectionMetric = ((double) rejectedCount / terminalSubmissions.size()) * 100;
+            long totalCount = statisticsService.getTotalSubmissionCount(history);
+            long rejectedCount = statisticsService.getRejectedSubmissionCount(history);
+            double rejectionMetric = metricService.computeRejectionMetric(rejectedCount, totalCount);
 
             ContributorTrustProfile profile = contributor.get();
-            if (terminalSubmissions.size() < MIN_TERMINAL_SUBMISSIONS_FOR_LOCK) {
+            if (totalCount < MIN_TERMINAL_SUBMISSIONS_FOR_LOCK) {
                 return new ContributorReputationResponse(
                         contributorId,
                         rejectionMetric,
@@ -84,11 +82,18 @@ public class ContributorReputationService {
                 );
             }
 
-            if (rejectionMetric > LOCK_THRESHOLD) {
-                profile.setAccountStatus("LOCKED");
-                profile.setWritingTokenStatus("INVALIDATED");
-                ContributorTrustProfile savedProfile = contributorRepository.save(profile);
-                return invalidateTokens(contributorId, rejectionMetric, savedProfile);
+            if (metricService.evaluateRejectionThreshold(rejectionMetric)) {
+                penaltyService.lockContributorAccount(profile);
+                tokenInvalidationService.invalidateWritingTokens(contributorId);
+                return new ContributorReputationResponse(
+                        contributorId,
+                        rejectionMetric,
+                        "LOCKED",
+                        "INVALIDATED",
+                        false,
+                        true,
+                        LOCKED_MESSAGE
+                );
             }
 
             return new ContributorReputationResponse(
@@ -103,36 +108,6 @@ public class ContributorReputationService {
         } catch (Exception exception) {
             log.warn("Module 3 reputation check failed for contributor {}.", contributorId, exception);
             return unavailableResponse(contributorId);
-        }
-    }
-
-    private ContributorReputationResponse invalidateTokens(
-            UUID contributorId,
-            double rejectionMetric,
-            ContributorTrustProfile profile
-    ) {
-        try {
-            tokenInvalidationPort.invalidateActiveUserJsonWebTokens(contributorId);
-            return new ContributorReputationResponse(
-                    contributorId,
-                    rejectionMetric,
-                    profile.getAccountStatus(),
-                    profile.getWritingTokenStatus(),
-                    false,
-                    true,
-                    LOCKED_MESSAGE
-            );
-        } catch (Exception exception) {
-            log.warn("Module 3 token invalidation failed for contributor {}.", contributorId, exception);
-            return new ContributorReputationResponse(
-                    contributorId,
-                    rejectionMetric,
-                    profile.getAccountStatus(),
-                    profile.getWritingTokenStatus(),
-                    true,
-                    true,
-                    TOKEN_UNAVAILABLE_MESSAGE
-            );
         }
     }
 

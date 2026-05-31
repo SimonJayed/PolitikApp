@@ -3,8 +3,6 @@ package com.politikapp.backend.module2.service;
 import com.politikapp.backend.common.HttpResponseException;
 import com.politikapp.backend.common.event.ConsensusReachedEvent;
 import com.politikapp.backend.module1.entity.ProfileEditSubmission;
-import com.politikapp.backend.module1.entity.TimelineEntry;
-import com.politikapp.backend.module1.repository.TimelineEntryRepository;
 import com.politikapp.backend.module2.dto.VoteCalculationTrace;
 import com.politikapp.backend.module2.entity.JuryVote;
 import com.politikapp.backend.module2.entity.ModerationQueue;
@@ -12,42 +10,46 @@ import com.politikapp.backend.module2.repository.JuryVoteRepository;
 import com.politikapp.backend.module2.repository.ModerationQueueRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.List;
-import java.util.UUID;
-import org.springframework.lang.NonNull;
 
 @Service
 public class VoteService {
     private static final Logger log = LoggerFactory.getLogger(VoteService.class);
-    private static final BigDecimal APPEAL_WIN_REWARD = BigDecimal.valueOf(25.00);
-    private static final BigDecimal APPEAL_LOSS_PENALTY = BigDecimal.valueOf(-20.00);
-    private static final BigDecimal FAULTY_AGREE_JUROR_PENALTY = BigDecimal.valueOf(-10.00);
-    private static final BigDecimal MAX_TRUST_SCORE = BigDecimal.valueOf(500.00);
 
     private final ModerationQueueRepository moderationQueueRepository;
     private final JuryVoteRepository juryVoteRepository;
-    private final TimelineEntryRepository timelineEntryRepository;
+    private final ConsensusService consensusService;
+    private final PublicationService publicationService;
+    private final RevisionService revisionService;
+    private final AdminReviewService adminReviewService;
     private final ApplicationEventPublisher eventPublisher;
 
     @PersistenceContext
     private EntityManager entityManager;
 
     public VoteService(
-            ModerationQueueRepository moderationQueueRepository, 
+            ModerationQueueRepository moderationQueueRepository,
             JuryVoteRepository juryVoteRepository,
-            TimelineEntryRepository timelineEntryRepository,
-            ApplicationEventPublisher eventPublisher) {
+            ConsensusService consensusService,
+            PublicationService publicationService,
+            RevisionService revisionService,
+            AdminReviewService adminReviewService,
+            ApplicationEventPublisher eventPublisher
+    ) {
         this.moderationQueueRepository = moderationQueueRepository;
         this.juryVoteRepository = juryVoteRepository;
-        this.timelineEntryRepository = timelineEntryRepository;
+        this.consensusService = consensusService;
+        this.publicationService = publicationService;
+        this.revisionService = revisionService;
+        this.adminReviewService = adminReviewService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -168,50 +170,54 @@ public class VoteService {
         String thresholdFormula = "AGREE >= 10 AND AGREE >= 2*DISAGREE (Publish) | DISAGREE >= 10 AND DISAGREE >= 2*AGREE (Reject)";
 
         if ("FLAG".equals(voteSelection)) {
-            queue.setQueueStatus("REVISION_REQUIRED");
-            submission.setStatus("REVISION_REQUIRED");
+            revisionService.flagEntryForRevision(queue, submission);
             finalOutcomeStatus = "REVISION_REQUIRED";
             databaseActionTaken = "ROUTED_FOR_REVISION";
             thresholdMet = true;
             thresholdFormula = "Any FLAG vote routes submission to REVISION_REQUIRED";
-        } else if (agreeSum >= 10 && (agreeSum >= disagreeSum * 2)) {
-            log.info("Consensus reached: APPROVED submission ID={}", submission.getSubmissionId());
-            queue.setQueueStatus("PUBLISHED");
-            submission.setStatus("PUBLISHED");
-            cascadeToTimeline(submission);
-            
-            finalOutcomeStatus = "PUBLISHED";
-            databaseActionTaken = "CASCADED_TO_TIMELINE";
-            thresholdMet = true;
+        } else {
+            String outcome = consensusService.determineModerationOutcome(agreeSum, disagreeSum, "PENDING");
+            if ("PUBLISHED".equals(outcome)) {
+                log.info("Consensus reached: APPROVED submission ID={}", submission.getSubmissionId());
+                queue.setQueueStatus("PUBLISHED");
+                submission.setStatus("PUBLISHED");
+                publicationService.executePublicationTrigger(submission);
+                
+                finalOutcomeStatus = "PUBLISHED";
+                databaseActionTaken = "CASCADED_TO_TIMELINE";
+                thresholdMet = true;
 
-            // Publish dynamic consensus event to decouple Module 3 reputation updates
-            eventPublisher.publishEvent(new ConsensusReachedEvent(
-                queueId,
-                submission.getSubmissionId(),
-                submission.getContributorId(),
-                "PUBLISHED"
-            ));
+                moderationQueueRepository.save(queue);
+                entityManager.merge(submission);
 
-        } else if (disagreeSum >= 10 && (disagreeSum >= agreeSum * 2)) {
-            log.info("Consensus reached: REJECTED submission ID={}", submission.getSubmissionId());
-            queue.setQueueStatus("REJECTED");
-            submission.setStatus("REJECTED");
-            
-            finalOutcomeStatus = "REJECTED";
-            databaseActionTaken = "REJECTED_SUBMISSION";
-            thresholdMet = true;
+                // Publish dynamic consensus event to decouple Module 3 reputation updates
+                eventPublisher.publishEvent(new ConsensusReachedEvent(
+                    queueId,
+                    submission.getSubmissionId(),
+                    submission.getContributorId(),
+                    "PUBLISHED"
+                ));
+            } else if ("REJECTED".equals(outcome)) {
+                log.info("Consensus reached: REJECTED submission ID={}", submission.getSubmissionId());
+                queue.setQueueStatus("REJECTED");
+                submission.setStatus("REJECTED");
+                
+                finalOutcomeStatus = "REJECTED";
+                databaseActionTaken = "REJECTED_SUBMISSION";
+                thresholdMet = true;
 
-            // Publish dynamic consensus event to decouple Module 3 reputation updates
-            eventPublisher.publishEvent(new ConsensusReachedEvent(
-                queueId,
-                submission.getSubmissionId(),
-                submission.getContributorId(),
-                "REJECTED"
-            ));
+                moderationQueueRepository.save(queue);
+                entityManager.merge(submission);
+
+                // Publish dynamic consensus event to decouple Module 3 reputation updates
+                eventPublisher.publishEvent(new ConsensusReachedEvent(
+                    queueId,
+                    submission.getSubmissionId(),
+                    submission.getContributorId(),
+                    "REJECTED"
+                ));
+            }
         }
-
-        moderationQueueRepository.save(queue);
-        entityManager.merge(submission);
 
         return new VoteCalculationTrace(
             queueId,
@@ -230,14 +236,14 @@ public class VoteService {
         );
     }
 
-    private void cascadeToTimeline(ProfileEditSubmission submission) {
-        log.info("Cascading approved edits to timeline_entries for politician ID={}", submission.getPoliticianId());
-        try {
-            timelineEntryRepository.save(TimelineEntry.publishedFrom(submission));
-            log.info("Successfully persisted timeline ledger record for politician ID={}", submission.getPoliticianId());
-        } catch (Exception e) {
-            log.error("Failed to cascade verified edits to timeline: {}", e.getMessage());
-        }
+    @Transactional
+    public VoteCalculationTrace processAdminOverride(UUID queueId, String action, String reason) {
+        return adminReviewService.processAdminOverride(queueId, action, reason);
+    }
+
+    @Transactional
+    public void returnToQueue(UUID queueId) {
+        adminReviewService.returnEntryToPeerQueue(queueId);
     }
 
     private long fetchWeightedVoteSum(UUID queueId, String voteType) {
@@ -248,152 +254,6 @@ public class VoteService {
         .setParameter("voteType", voteType)
         .getSingleResult();
         return sum != null ? sum : 0L;
-    }
-
-    /**
-     * Processes administrative tie-breakers or overrides.
-     * Bypasses standard community consensus, transitioning statuses directly.
-     */
-    @Transactional
-    public VoteCalculationTrace processAdminOverride(UUID queueId, String action, String reason) {
-        log.info("Processing administrative override: queueId={}, action={}, reason={}", queueId, action, reason);
-        String normalizedAction = action == null ? "" : action.trim().toUpperCase();
-        if (!normalizedAction.equals("PUBLISHED") && !normalizedAction.equals("REJECTED")) {
-            throw new HttpResponseException(422, "Unprocessable Entity: action must be PUBLISHED or REJECTED.");
-        }
-
-        // 1. Verify queue entry exists
-        ModerationQueue queueRow = moderationQueueRepository.findById(queueId)
-                .orElseThrow(() -> new HttpResponseException(404, "Not Found: Target moderation queue entry not found."));
-
-        // 2. Fetch the corresponding ProfileEditSubmission
-        ProfileEditSubmission submission = entityManager.find(ProfileEditSubmission.class, queueRow.getSubmissionId());
-        if (submission == null) {
-            log.error("Corrupted state: profile submission {} associated with queue entry {} does not exist", 
-                queueRow.getSubmissionId(), queueId);
-            throw new HttpResponseException(500, "Internal Server Error: Associated profile submission not found.");
-        }
-
-        String finalOutcomeStatus = normalizedAction;
-        String databaseActionTaken = "ADMIN_OVERRIDE_" + normalizedAction;
-        boolean isAppealResolution = "APPEALED_PENDING".equals(queueRow.getQueueStatus());
-
-        queueRow.setQueueStatus(normalizedAction);
-        queueRow.setEscalationFlag(true); // Ensure flag remains marked for override tracing
-        submission.setStatus(normalizedAction);
-
-        if (isAppealResolution) {
-            databaseActionTaken = resolveAppeal(queueRow, normalizedAction, submission.getSubmissionId());
-        } else if ("PUBLISHED".equals(normalizedAction)) {
-            cascadeToTimeline(submission);
-        }
-
-        moderationQueueRepository.save(queueRow);
-        entityManager.merge(submission);
-
-        if (!isAppealResolution) {
-            // Publish dynamic consensus event to decouple Module 3 reputation updates.
-            eventPublisher.publishEvent(new ConsensusReachedEvent(
-                queueId,
-                submission.getSubmissionId(),
-                submission.getContributorId(),
-                normalizedAction
-            ));
-        }
-
-        // Fetch current sums for tracing details
-        long agreeSum = fetchWeightedVoteSum(queueId, "AGREE");
-        long disagreeSum = fetchWeightedVoteSum(queueId, "DISAGREE");
-
-        return new VoteCalculationTrace(
-            queueId,
-            UUID.fromString("00000000-0000-0000-0000-000000000000"), // System Admin ID
-            "System Administrator",
-            100.0,
-            100, // Absolute admin override weight
-            "OVERRIDE_" + normalizedAction,
-            agreeSum,
-            disagreeSum,
-            "ADMINISTRATIVE_OVERRIDE_DECISION",
-            true,
-            finalOutcomeStatus,
-            databaseActionTaken,
-            Instant.now().toString()
-        );
-    }
-
-    private String resolveAppeal(ModerationQueue queue, String normalizedAction, UUID submissionId) {
-        UUID appealerId = queue.getAppealerId();
-        if (appealerId == null) {
-            throw new HttpResponseException(500, "Appeal resolution failed: missing appealer mapping.");
-        }
-
-        if ("REJECTED".equals(normalizedAction)) {
-            timelineEntryRepository.softDeleteBySubmissionId(submissionId);
-            adjustTrustScore(
-                    appealerId,
-                    queue.getQueueId(),
-                    APPEAL_WIN_REWARD,
-                    "Appeal sustained: deposit refunded and civic accuracy bonus awarded for submission " + submissionId
-            );
-
-            List<UUID> faultyJurorIds = juryVoteRepository.findByQueueIdAndVoteType(queue.getQueueId(), "AGREE")
-                    .stream()
-                    .map(JuryVote::getPeerId)
-                    .distinct()
-                    .toList();
-            for (UUID jurorId : faultyJurorIds) {
-                adjustTrustScore(
-                        jurorId,
-                        queue.getQueueId(),
-                        FAULTY_AGREE_JUROR_PENALTY,
-                        "Appeal sustained: prior AGREE vote supported a record later rejected by admin"
-                );
-            }
-            return "APPEAL_SUSTAINED_SOFT_DELETED";
-        }
-
-        adjustTrustScore(
-                appealerId,
-                queue.getQueueId(),
-                APPEAL_LOSS_PENALTY,
-                "Appeal denied: published record retained after admin adjudication for submission " + submissionId
-        );
-        return "APPEAL_DENIED_RECORD_RETAINED";
-    }
-
-    private void adjustTrustScore(UUID peerId, UUID queueId, BigDecimal scoreChange, String reason) {
-        BigDecimal previousScore = fetchTrustScore(peerId);
-        BigDecimal newScore = previousScore.add(scoreChange).max(BigDecimal.ZERO).min(MAX_TRUST_SCORE);
-
-        entityManager.createNativeQuery(
-                "UPDATE public.contributors SET trust_score = :newScore WHERE contributor_id = :peerId"
-        )
-        .setParameter("newScore", newScore)
-        .setParameter("peerId", peerId)
-        .executeUpdate();
-
-        entityManager.createNativeQuery(
-                "INSERT INTO public.reputation_audit_logs (log_id, peer_id, queue_id, score_change, previous_score, new_score, reason, created_at) " +
-                "VALUES (:logId, :peerId, :queueId, :scoreChange, :previousScore, :newScore, :reason, CURRENT_TIMESTAMP)"
-        )
-        .setParameter("logId", UUID.randomUUID())
-        .setParameter("peerId", peerId)
-        .setParameter("queueId", queueId)
-        .setParameter("scoreChange", scoreChange)
-        .setParameter("previousScore", previousScore)
-        .setParameter("newScore", newScore)
-        .setParameter("reason", reason)
-        .executeUpdate();
-    }
-
-    private BigDecimal fetchTrustScore(UUID peerId) {
-        Object score = entityManager.createNativeQuery(
-                "SELECT trust_score FROM public.contributors WHERE contributor_id = :peerId"
-        )
-        .setParameter("peerId", peerId)
-        .getSingleResult();
-        return score instanceof BigDecimal decimal ? decimal : BigDecimal.valueOf(100.00);
     }
 
     private int deriveVoteWeight(UUID peerId) {

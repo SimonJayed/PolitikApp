@@ -15,20 +15,17 @@ import org.springframework.stereotype.Service;
 @SuppressWarnings("null")
 public class DashboardService {
     private final PoliticianRepository politicianRepository;
-    private final TimelineEntryRepository timelineEntryRepository;
+    private final TimelineService timelineService;
     private final DashboardMetricsService dashboardMetricsService;
-    private final TimelineMapper timelineMapper;
 
     public DashboardService(
             PoliticianRepository politicianRepository,
-            TimelineEntryRepository timelineEntryRepository,
-            DashboardMetricsService dashboardMetricsService,
-            TimelineMapper timelineMapper
+            TimelineService timelineService,
+            DashboardMetricsService dashboardMetricsService
     ) {
         this.politicianRepository = politicianRepository;
-        this.timelineEntryRepository = timelineEntryRepository;
+        this.timelineService = timelineService;
         this.dashboardMetricsService = dashboardMetricsService;
-        this.timelineMapper = timelineMapper;
     }
 
     public DashboardCompositeResponse getDashboardData(UUID politicianId) {
@@ -36,11 +33,7 @@ public class DashboardService {
                 .orElseThrow(() -> new HttpResponseException(404, "Not Found: Target profile record does not exist."));
 
         SymmetricalKpiPayload kpis = dashboardMetricsService.buildKpiPayload(politician);
-        List<TimelineEntryResponse> timeline = timelineEntryRepository
-                .findActiveEntries(politicianId, "PUBLISHED")
-                .stream()
-                .map(timelineMapper::toResponse)
-                .toList();
+        List<TimelineEntryResponse> timeline = timelineService.getPublishedTimelineEntries(politicianId);
 
         return new DashboardCompositeResponse(
                 kpis.politicianId(),

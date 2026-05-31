@@ -2,11 +2,7 @@ package com.politikapp.backend.module3.service;
 
 import com.politikapp.backend.module3.dto.VoteWeightResponse;
 import com.politikapp.backend.module3.entity.JuryVoteTrustRecord;
-import com.politikapp.backend.module3.entity.ModerationOutcomeRecord;
-import com.politikapp.backend.module3.repository.JuryVoteTrustRecordRepository;
-import com.politikapp.backend.module3.repository.ModerationOutcomeRecordRepository;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,19 +16,20 @@ public class PeerVoteWeightService {
     public static final String EVALUATED_MESSAGE = "Vote weight resolved.";
 
     private static final Logger log = LoggerFactory.getLogger(PeerVoteWeightService.class);
-    private static final double ACCELERATION_THRESHOLD = 90.0;
     private static final int DEFAULT_VOTE_WEIGHT = 1;
-    private static final int ACCELERATED_VOTE_WEIGHT = 5;
 
-    private final JuryVoteTrustRecordRepository voteRepository;
-    private final ModerationOutcomeRecordRepository moderationRepository;
+    private final AccuracyTrackingService accuracyTrackingService;
+    private final AccuracyMetricService accuracyMetricService;
+    private final VoteWeightService voteWeightService;
 
     public PeerVoteWeightService(
-            JuryVoteTrustRecordRepository voteRepository,
-            ModerationOutcomeRecordRepository moderationRepository
+            AccuracyTrackingService accuracyTrackingService,
+            AccuracyMetricService accuracyMetricService,
+            VoteWeightService voteWeightService
     ) {
-        this.voteRepository = voteRepository;
-        this.moderationRepository = moderationRepository;
+        this.accuracyTrackingService = accuracyTrackingService;
+        this.accuracyMetricService = accuracyMetricService;
+        this.voteWeightService = voteWeightService;
     }
 
     @Transactional(readOnly = true)
@@ -43,55 +40,29 @@ public class PeerVoteWeightService {
         }
 
         try {
-            List<JuryVoteTrustRecord> votes = voteRepository.findByPeerId(peerId);
+            List<JuryVoteTrustRecord> votes = accuracyTrackingService.getModerationParticipationRecords(peerId);
             if (votes.isEmpty()) {
                 log.warn("Module 3 vote weight resolver defaulted because peer {} has no vote history.", peerId);
                 return defaultResponse(peerId);
             }
 
-            int terminalVotes = 0;
-            int alignedVotes = 0;
-            for (JuryVoteTrustRecord vote : votes) {
-                Optional<ModerationOutcomeRecord> moderationOutcome = moderationRepository.findById(vote.getQueueId());
-                if (moderationOutcome.isEmpty()) {
-                    continue;
-                }
+            long correctCount = accuracyTrackingService.getCorrectVoteCount(votes);
+            long incorrectCount = accuracyTrackingService.getIncorrectVoteCount(votes);
+            long totalCount = correctCount + incorrectCount;
 
-                String queueStatus = moderationOutcome.get().getQueueStatus();
-                if (!isTerminalStatus(queueStatus)) {
-                    continue;
-                }
-
-                terminalVotes++;
-                if (isAligned(vote.getVoteType(), queueStatus)) {
-                    alignedVotes++;
-                }
-            }
-
-            if (terminalVotes == 0) {
+            if (totalCount == 0) {
                 log.warn("Module 3 vote weight resolver defaulted because peer {} has no terminal vote history.", peerId);
                 return defaultResponse(peerId);
             }
 
-            double historicalPrecision = ((double) alignedVotes / terminalVotes) * 100;
-            int voteWeight = historicalPrecision >= ACCELERATION_THRESHOLD
-                    ? ACCELERATED_VOTE_WEIGHT
-                    : DEFAULT_VOTE_WEIGHT;
+            double historicalPrecision = accuracyMetricService.computeAccuracyPercentage(correctCount, totalCount);
+            int voteWeight = voteWeightService.resolveVoteWeight(historicalPrecision);
 
             return new VoteWeightResponse(peerId, voteWeight, historicalPrecision, false, EVALUATED_MESSAGE);
         } catch (Exception exception) {
             log.warn("Module 3 vote weight resolver failed for peer {}.", peerId, exception);
             return defaultResponse(peerId);
         }
-    }
-
-    private boolean isTerminalStatus(String queueStatus) {
-        return "PUBLISHED".equals(queueStatus) || "REJECTED".equals(queueStatus);
-    }
-
-    private boolean isAligned(String voteType, String queueStatus) {
-        return ("AGREE".equals(voteType) && "PUBLISHED".equals(queueStatus))
-                || ("DISAGREE".equals(voteType) && "REJECTED".equals(queueStatus));
     }
 
     private VoteWeightResponse defaultResponse(UUID peerId) {
