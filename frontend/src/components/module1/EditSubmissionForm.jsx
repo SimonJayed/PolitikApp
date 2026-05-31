@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import SourceUrlInput from './SourceUrlInput';
 import SubmissionStatusAlert from './SubmissionStatusAlert';
+import { getActionsForPosition } from './positionConfig';
 
-export const actionOptions = [
-  'COA_FINDING',
-  'BUDGET_ALLOCATION',
-  'PROJECT_COMPLETION',
-  'SPONSORED_LEGISLATION',
-];
+/**
+ * Human-readable labels for each actionIdentifier value.
+ * Used in the dropdown so contributors see friendly text instead of snake_case.
+ */
+export const ACTION_LABELS = {
+  COA_FINDING:           'COA Audit Finding',
+  BUDGET_ALLOCATION:     'Budget Allocation',
+  PROJECT_COMPLETION:    'Project Completion',
+  SPONSORED_LEGISLATION: 'Sponsored Legislation',
+};
 
 export const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education'];
 
@@ -47,7 +52,21 @@ export default function EditSubmissionForm({
     (p) => p.politicianId === (formData.politicianId || selectedPoliticianId)
   );
 
-  const isSourceAllowed = true; // domain check is now non-blocking via onDomainCheck callback
+  // Derive the allowed actions for the currently selected politician's position.
+  // Falls back to all actions when no politician is selected yet.
+  const allowedActions = getActionsForPosition(selectedPolitician?.position)
+
+  // When the politician changes, auto-reset actionIdentifier if the current
+  // value is no longer permitted for the new position. This prevents stale
+  // data (e.g. SPONSORED_LEGISLATION) from carrying over to an Executive.
+  useEffect(() => {
+    if (formData.actionIdentifier && !allowedActions.includes(formData.actionIdentifier)) {
+      onChange({
+        target: { name: 'actionIdentifier', value: allowedActions[0] },
+      })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPolitician?.politicianId])
 
   return (
     <section className="workspace submission-panel-wrapper">
@@ -55,6 +74,9 @@ export default function EditSubmissionForm({
         {selectedPolitician && (
           <p className="statusLine success">
             Adding contribution for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
+            <small style={{ marginLeft: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>
+              ({selectedPolitician.position || 'UNSPECIFIED'})
+            </small>
           </p>
         )}
         <label>
@@ -81,8 +103,15 @@ export default function EditSubmissionForm({
           <label>
             Action
             <select name="actionIdentifier" value={formData.actionIdentifier} onChange={onChange}>
-              {actionOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+              {allowedActions.map((o) => (
+                <option key={o} value={o}>{ACTION_LABELS[o] ?? o}</option>
+              ))}
             </select>
+            {selectedPolitician && (
+              <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+                Available actions are filtered by this politician&apos;s office.
+              </small>
+            )}
           </label>
         </div>
 

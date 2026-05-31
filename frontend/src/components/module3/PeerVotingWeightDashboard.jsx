@@ -67,7 +67,7 @@ function PeerReviewerLedger({ entries, state }) {
 
       {state?.status !== 'loading' && filteredEntries.length > 0 && (
         <div className="ledgerEntryList">
-          {filteredEntries.map((entry) => {
+          {filteredEntries.map((entry, index) => {
             const voteStr = String(entry.userVote || '').toUpperCase();
             const statusStr = String(entry.status || '').toUpperCase();
             
@@ -84,7 +84,7 @@ function PeerReviewerLedger({ entries, state }) {
             }
 
             return (
-              <article className="ledgerEntry" key={entry.queueId || Math.random()}>
+              <article className="ledgerEntry" key={entry.queueId || index}>
                 <div className="ledgerEntryTopline">
                   <span className={`ledgerTypeBadge ${voteStr.toLowerCase() === 'agree' ? 'project' : voteStr.toLowerCase() === 'disagree' ? 'audit' : 'legislation'}`}>
                     CAST: {voteStr}

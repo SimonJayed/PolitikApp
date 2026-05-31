@@ -175,7 +175,7 @@ export default function UserHistoryPage({ token }) {
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {entry.previousScore ?? 0} -> {entry.newScore ?? 0}
+                          {entry.previousScore ?? 0} {"->"} {entry.newScore ?? 0}
                         </td>
                         <td
                           className="ty-body"
@@ -206,7 +206,7 @@ export default function UserHistoryPage({ token }) {
                       {value > 0 ? '+' : ''}{value.toFixed(2)} | {tone.label}
                     </span>
                     <p className="ty-body">{entry.reason || 'No context provided'}</p>
-                    <p className="ty-meta historyScoreDelta">{entry.previousScore ?? 0} -> {entry.newScore ?? 0}</p>
+                    <p className="ty-meta historyScoreDelta">{entry.previousScore ?? 0} {"->"} {entry.newScore ?? 0}</p>
                     <p className="ty-meta">{entry.createdAt ? new Date(entry.createdAt).toLocaleString() : 'N/A'}</p>
                   </article>
                 )

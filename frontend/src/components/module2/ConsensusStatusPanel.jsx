@@ -60,11 +60,11 @@ export default function ConsensusStatusPanel({
             <span style={{ color: '#a5b4fc', fontSize: '9px', fontWeight: 'bold' }}>USER REPUTATION IMPACT PREDICTOR</span>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Published</span>
-              <strong style={{ color: '#22c55e' }}>{currentTrust} -> {trustIfPublished}</strong>
+              <strong style={{ color: '#22c55e' }}>{currentTrust} {"->"} {trustIfPublished}</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Rejected</span>
-              <strong style={{ color: '#ef4444' }}>{currentTrust} -> {trustIfRejected}</strong>
+              <strong style={{ color: '#ef4444' }}>{currentTrust} {"->"} {trustIfRejected}</strong>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155', color: '#fca5a5' }}>

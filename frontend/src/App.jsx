@@ -149,11 +149,27 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     loadPoliticians()
   }, [loadPoliticians])
 
+  // Re-fetch politician list whenever the dashboard view becomes active so that
+  // KPIs (billsAuthored, projectCompletions, WGI score, etc.) reflect any
+  // submissions that were approved/published since the initial page load.
+  useEffect(() => {
+    if (activeView === 'dashboard') {
+      loadPoliticians()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView])
+
   useEffect(() => {
     let cancelled = false
     if (!token) return () => { cancelled = true }
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(readApiResponse)
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          onLogout?.()
+          throw new Error('Session expired or unauthorized')
+        }
+        return readApiResponse(res)
+      })
       .then((data) => {
         if (cancelled || !data) return
         setResolvedUser(data)
@@ -161,7 +177,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       })
       .catch(() => null)
     return () => { cancelled = true }
-  }, [token, onUserUpdate])
+  }, [token, onUserUpdate, onLogout])
 
   function updateFormField(event) {
     const { name, value } = event.target
@@ -204,6 +220,8 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       setFormData(emptySubmission)
       setIsApprovedDomain(false)
       setSubmissionState({ status: 'success', message: data.message || 'Submission queued.' })
+      // Refresh politician KPIs in the background so ranking data stays current
+      loadPoliticians()
     } catch (error) {
       setSubmissionState({ status: 'error', message: error.message })
     }
@@ -236,7 +254,15 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   function openSubmitContributionForPolitician(politicianId) {
     if (!politicianId) return
     setSelectedPoliticianId(politicianId)
-    setFormData((current) => ({ ...current, politicianId }))
+    // Reset the whole form to a clean state for this politician so stale
+    // action details, previous status messages, and invalid actionIdentifier
+    // values from a prior session do not bleed through.
+    setFormData({
+      ...emptySubmission,
+      politicianId,
+    })
+    setSubmissionState({ status: 'idle', message: '' })
+    setIsApprovedDomain(false)
     setActiveView('submit')
   }
 
@@ -455,7 +481,13 @@ function UserAccountPage({ token, user }) {
     let cancelled = false
     setState({ status: 'loading', message: 'Loading profile...' })
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(readApiResponse)
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          updateSession(null)
+          throw new Error('Session expired or unauthorized')
+        }
+        return readApiResponse(res)
+      })
       .then((data) => {
         if (cancelled) return
         setProfile(data)

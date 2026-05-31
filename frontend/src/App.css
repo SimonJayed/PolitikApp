@@ -710,6 +710,23 @@
   text-align: right;
 }
 
+/* Danger tint applied to the metric cell when COA filter is active */
+.rankingMetricDanger {
+  color: var(--danger, #d9534f);
+}
+
+/* Secondary WGI pill shown alongside the primary filter metric */
+.rankingMetricSecondary {
+  color: var(--text-muted);
+  font-family: var(--mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  justify-self: end;
+  text-align: right;
+  opacity: 0.75;
+}
+
+/* Kept for backward compatibility with any remaining references */
 .rankingBudget {
   color: var(--text-secondary);
   font-family: var(--mono, monospace);

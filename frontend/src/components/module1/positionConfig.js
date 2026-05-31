@@ -8,6 +8,8 @@
  *  - POSITION_KPI_CONFIG     — WGI-pillar-mapped KPI definitions per position group
  *  - MOCK_APPROVED_DOMAINS   — regex-driven domain whitelist (simulates DB table)
  *  - getKpisForPosition()    — pure function: maps position + profile → KPI array
+ *  - getActionsForPosition() — pure function: returns allowed actionIdentifiers for a position
+ *  - getPositionGroupLabel() — pure function: returns display group label for a position
  *
  * Geographic Jurisdiction Scope:
  *  - NATIONAL  → Senator, House Representative
@@ -271,6 +273,39 @@ export function getKpisForPosition(position, profile) {
 export function getPositionGroupLabel(position) {
   const group = resolvePositionGroup(position)
   return POSITION_KPI_CONFIG[group]?.groupLabel ?? 'Politician'
+}
+
+// ─── Position-Aware Action Filter ─────────────────────────────────────────────
+
+/**
+ * Returns the ordered list of allowed `actionIdentifier` values for a
+ * given politician position. Prevents contributors from filing actions
+ * that are structurally invalid for the selected office.
+ *
+ * Rules (aligned with WGI position group methodology):
+ *   LEGISLATIVE  → SPONSORED_LEGISLATION, BUDGET_ALLOCATION, COA_FINDING
+ *   EXECUTIVE    → PROJECT_COMPLETION, BUDGET_ALLOCATION, COA_FINDING
+ *   COUNCIL      → SPONSORED_LEGISLATION (ordinances), BUDGET_ALLOCATION, COA_FINDING
+ *   DEFAULT      → All 4 actions (fallback for unknown positions)
+ *
+ * COA_FINDING and BUDGET_ALLOCATION are universal — every position can
+ * accrue audit findings and tracked budget allocations.
+ *
+ * @param {string} position - Politician position value (e.g. 'SENATOR', 'MAYOR')
+ * @returns {string[]} Array of valid actionIdentifier strings
+ */
+export function getActionsForPosition(position) {
+  const group = resolvePositionGroup(position)
+  switch (group) {
+    case 'LEGISLATIVE':
+      return ['SPONSORED_LEGISLATION', 'BUDGET_ALLOCATION', 'COA_FINDING']
+    case 'EXECUTIVE':
+      return ['PROJECT_COMPLETION', 'BUDGET_ALLOCATION', 'COA_FINDING']
+    case 'COUNCIL':
+      return ['SPONSORED_LEGISLATION', 'BUDGET_ALLOCATION', 'COA_FINDING']
+    default:
+      return ['COA_FINDING', 'BUDGET_ALLOCATION', 'PROJECT_COMPLETION', 'SPONSORED_LEGISLATION']
+  }
 }
 
 // ─── WGI Composite Score Engine ───────────────────────────────────────────────

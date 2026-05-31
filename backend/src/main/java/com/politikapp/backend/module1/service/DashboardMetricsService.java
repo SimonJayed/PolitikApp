@@ -9,49 +9,12 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.stereotype.Service;
 
-/**
- * DashboardMetricsService
- * ───────────────────────────────────────────────────────────────────────────
- * Computes all KPI metrics for a given politician profile, including the
- * Position-Aware WGI Composite Score following the World Bank Worldwide
- * Governance Indicators (WGI) aggregation methodology.
- *
- * WGI Methodology Reference (Kaufmann, Kraay & Mastruzzi):
- *   1. Multiple observed indicators mapped to governance dimensions.
- *   2. Weighted linear aggregation of normalized indicator values.
- *   3. Penalization for negative governance signals (COA audit discrepancies).
- *
- * Position Group Weights:
- *   LEGISLATIVE (Senator, House Representative):
- *     - billsAuthored       → 0.35  (Voice and Accountability)
- *     - trackedBudget       → 0.25  (Government Effectiveness)
- *     - legislativeEfficiency → 0.30 (Rule of Law)
- *     - Penalty: -5 per COA finding (max deduction: 40)
- *
- *   EXECUTIVE (Mayor, Vice Mayor):
- *     - projectCompletions  → 0.45  (Government Effectiveness)
- *     - trackedBudget       → 0.30  (Government Effectiveness)
- *     - deliveryEfficiency  → 0.20  (Political Stability)
- *     - Penalty: -5 per COA finding (max deduction: 40)
- *
- *   COUNCIL (City Councilor):
- *     - ordinancesFiled     → 0.40  (Voice and Accountability)
- *     - trackedBudget       → 0.35  (Regulatory Quality)
- *     - Penalty: -5 per COA finding (max deduction: 40)
- */
 @Service
 public class DashboardMetricsService {
-
-    // ─── WGI Normalization Constants ───────────────────────────────────────────
-    /** Bills/ordinances: normalize against a 50-bill reference ceiling → score out of 100. */
     private static final double BILLS_REFERENCE_CEILING = 50.0;
-    /** Projects: normalize against a 30-project reference ceiling → score out of 100. */
     private static final double PROJECTS_REFERENCE_CEILING = 30.0;
-    /** Budget: normalize against a 500M PHP reference ceiling → score out of 100. */
     private static final double BUDGET_REFERENCE_CEILING_PHP = 500_000_000.0;
-    /** Penalty per COA audit discrepancy (WGI Control of Corruption deduction). */
     private static final double COA_PENALTY_PER_FINDING = 5.0;
-    /** Maximum total COA penalty cap to prevent total score collapse. */
     private static final double COA_MAX_PENALTY = 40.0;
 
     private final ProfileEditSubmissionRepository submissionRepository;
@@ -72,7 +35,6 @@ public class DashboardMetricsService {
                 .map(this::allocationAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Legacy ratio (kept for backward compatibility with existing API consumers)
         double efficiencyRatio = 0.0;
         try {
             if (billsAuthored > 0) {
@@ -87,8 +49,7 @@ public class DashboardMetricsService {
                 billsAuthored,
                 projectCompletions,
                 totalBudget,
-                coaDiscrepancies
-        );
+                coaDiscrepancies);
 
         return new SymmetricalKpiPayload(
                 politician.getPoliticianId(),
@@ -101,8 +62,7 @@ public class DashboardMetricsService {
                 coaDiscrepancies,
                 totalBudget,
                 efficiencyRatio,
-                wgiScore
-        );
+                wgiScore);
     }
 
     /**
@@ -112,11 +72,12 @@ public class DashboardMetricsService {
      * ceiling, then multiplied by its position-group weight, and finally
      * penalized by COA audit discrepancies (Control of Corruption pillar).
      *
-     * @param position          Politician position string (e.g. "SENATOR", "MAYOR")
-     * @param billsAuthored     Count of SPONSORED_LEGISLATION submissions
+     * @param position           Politician position string (e.g. "SENATOR",
+     *                           "MAYOR")
+     * @param billsAuthored      Count of SPONSORED_LEGISLATION submissions
      * @param projectCompletions Count of PROJECT_COMPLETION submissions
-     * @param trackedBudget     Sum of BUDGET_ALLOCATION submission amounts (PHP)
-     * @param coaDiscrepancies  Count of COA_FINDING submissions
+     * @param trackedBudget      Sum of BUDGET_ALLOCATION submission amounts (PHP)
+     * @param coaDiscrepancies   Count of COA_FINDING submissions
      * @return WGI composite score clamped to [0, 100]
      */
     public double computeWgiCompositeScore(
@@ -124,22 +85,19 @@ public class DashboardMetricsService {
             long billsAuthored,
             long projectCompletions,
             BigDecimal trackedBudget,
-            int coaDiscrepancies
-    ) {
+            int coaDiscrepancies) {
         // Normalize each raw indicator to [0, 100]
-        double normBills    = normalize(billsAuthored, BILLS_REFERENCE_CEILING);
+        double normBills = normalize(billsAuthored, BILLS_REFERENCE_CEILING);
         double normProjects = normalize(projectCompletions, PROJECTS_REFERENCE_CEILING);
-        double normBudget   = normalize(
+        double normBudget = normalize(
                 trackedBudget != null ? trackedBudget.doubleValue() : 0.0,
-                BUDGET_REFERENCE_CEILING_PHP
-        );
+                BUDGET_REFERENCE_CEILING_PHP);
 
         // Compute efficiency signal: min(100, bills+projects normalized blend)
         double legEfficiency = Math.min(100.0,
                 billsAuthored > 0
                         ? (normProjects * 0.5 + normBills * 0.5)
-                        : normProjects
-        );
+                        : normProjects);
 
         double rawScore;
         String positionGroup = resolvePositionGroup(position);
@@ -174,7 +132,8 @@ public class DashboardMetricsService {
                 break;
         }
 
-        // Apply COA penalty: -5 per finding, capped at 40 (Control of Corruption pillar)
+        // Apply COA penalty: -5 per finding, capped at 40 (Control of Corruption
+        // pillar)
         double coaPenalty = Math.min(coaDiscrepancies * COA_PENALTY_PER_FINDING, COA_MAX_PENALTY);
         double finalScore = rawScore - coaPenalty;
 
@@ -184,20 +143,25 @@ public class DashboardMetricsService {
 
     // ─── Private Helpers ───────────────────────────────────────────────────────
 
-    /** Normalizes a raw value against a reference ceiling to produce a [0, 100] score. */
+    /**
+     * Normalizes a raw value against a reference ceiling to produce a [0, 100]
+     * score.
+     */
     private double normalize(double rawValue, double ceiling) {
-        if (ceiling <= 0) return 0.0;
+        if (ceiling <= 0)
+            return 0.0;
         return Math.min(100.0, (rawValue / ceiling) * 100.0);
     }
 
     /** Maps a position string to a logical group for WGI weight selection. */
     private String resolvePositionGroup(String position) {
-        if (position == null) return "DEFAULT";
+        if (position == null)
+            return "DEFAULT";
         return switch (position.toUpperCase()) {
             case "SENATOR", "HOUSE_REPRESENTATIVE" -> "LEGISLATIVE";
-            case "MAYOR", "VICE_MAYOR"             -> "EXECUTIVE";
-            case "CITY_COUNCILOR"                   -> "COUNCIL";
-            default                                 -> "DEFAULT";
+            case "MAYOR", "VICE_MAYOR" -> "EXECUTIVE";
+            case "CITY_COUNCILOR" -> "COUNCIL";
+            default -> "DEFAULT";
         };
     }
 
