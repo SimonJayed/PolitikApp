@@ -324,7 +324,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
               <div className="flex items-center gap-3">
                 {showHeaderTitles && (
                   <>
-                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
+                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-(--accent-soft) text-(--ph-blue) ring-1 ring-black/5">
                       <span className="ty-nav font-extrabold" aria-hidden="true">
                         {activeHeader[0]?.slice(0, 1) || 'P'}
                       </span>
@@ -332,7 +332,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
 
                     <div className="min-w-0">
                       <p className="ty-label">{activeHeader[0]}</p>
-                      <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
+                      <p className="ty-nav truncate text-(--text-primary)">{activeHeader[1]}</p>
                     </div>
                   </>
                 )}
@@ -839,7 +839,7 @@ function PoliticianDirectoryLoaderPanel({
       {state.status === 'loading' && <PageSectionLoader />}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="ty-meta text-[color:var(--text-muted)]">
+        <p className="ty-meta text-(--text-muted)">
           Showing {filteredPoliticians.length === 0 ? 0 : (safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filteredPoliticians.length)} of {filteredPoliticians.length}
         </p>
         <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />

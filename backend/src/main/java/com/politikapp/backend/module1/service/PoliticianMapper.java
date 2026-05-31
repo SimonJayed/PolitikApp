@@ -46,12 +46,17 @@ public class PoliticianMapper {
             efficiencyRatio = 0.0;
         }
 
+        double effBills = dashboardMetricsService.sumEffectiveLegislation(submissions);
+        double effProjects = dashboardMetricsService.sumEffectiveProjects(submissions);
+        BigDecimal totalFlagged = dashboardMetricsService.sumFlaggedAmount(submissions);
+
         // Position-aware WGI Composite Score
         double wgiScore = dashboardMetricsService.computeWgiCompositeScore(
                 politician.getPosition(),
-                billsAuthored,
-                projectCompletions,
+                effBills,
+                effProjects,
                 totalBudget,
+                totalFlagged,
                 coaDiscrepancies
         );
 

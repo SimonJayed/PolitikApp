@@ -370,8 +370,6 @@ export function getActionsForPosition(position) {
 const WGI_CEILING_BILLS    = 50     // Bills / ordinances reference ceiling
 const WGI_CEILING_PROJECTS = 30     // Project completions reference ceiling
 const WGI_CEILING_BUDGET   = 500_000_000  // PHP 500M budget reference ceiling
-const WGI_COA_PENALTY      = 5      // Score deducted per COA finding
-const WGI_COA_MAX_PENALTY  = 40     // Maximum total COA deduction
 
 /** Clamps a value to [0, 100] */
 function clamp100(v) {

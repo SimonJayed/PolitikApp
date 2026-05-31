@@ -14,8 +14,6 @@ public class DashboardMetricsService {
     private static final double BILLS_REFERENCE_CEILING = 50.0;
     private static final double PROJECTS_REFERENCE_CEILING = 30.0;
     private static final double BUDGET_REFERENCE_CEILING_PHP = 500_000_000.0;
-    private static final double COA_PENALTY_PER_FINDING = 5.0;
-    private static final double COA_MAX_PENALTY = 40.0;
 
     private final ProfileEditSubmissionRepository submissionRepository;
 
@@ -167,7 +165,7 @@ public class DashboardMetricsService {
 
     // ─── Private Helpers ───────────────────────────────────────────────────────
 
-    private double sumEffectiveProjects(List<ProfileEditSubmission> submissions) {
+    double sumEffectiveProjects(List<ProfileEditSubmission> submissions) {
         return submissions.stream()
                 .filter(sub -> "PROJECT_COMPLETION".equals(sub.getActionIdentifier()))
                 .mapToDouble(sub -> {
@@ -188,7 +186,7 @@ public class DashboardMetricsService {
                 .sum();
     }
 
-    private double sumEffectiveLegislation(List<ProfileEditSubmission> submissions) {
+    double sumEffectiveLegislation(List<ProfileEditSubmission> submissions) {
         return submissions.stream()
                 .filter(sub -> "SPONSORED_LEGISLATION".equals(sub.getActionIdentifier()))
                 .mapToDouble(sub -> {
@@ -212,7 +210,7 @@ public class DashboardMetricsService {
                 .sum();
     }
 
-    private BigDecimal sumFlaggedAmount(List<ProfileEditSubmission> submissions) {
+    BigDecimal sumFlaggedAmount(List<ProfileEditSubmission> submissions) {
         return submissions.stream()
                 .filter(sub -> "COA_FINDING".equals(sub.getActionIdentifier()))
                 .map(sub -> {
