@@ -1038,6 +1038,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isWgiModalOpen, setIsWgiModalOpen] = useState(false)
   const [appealTarget, setAppealTarget] = useState(null)
   const [appealDetails, setAppealDetails] = useState('')
   const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
@@ -1060,9 +1061,9 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
   }, [isEditOpen])
 
   useEffect(() => {
-    onModalOpenChange?.(isEditOpen)
+    onModalOpenChange?.(isEditOpen || isWgiModalOpen)
     return () => onModalOpenChange?.(false)
-  }, [isEditOpen, onModalOpenChange])
+  }, [isEditOpen, isWgiModalOpen, onModalOpenChange])
 
   function openEditModal() {
     if (!profile || !isDatabaseAdmin) return
@@ -1166,7 +1167,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
             {isDatabaseAdmin && <button onClick={openEditModal} type="button">Edit Profile</button>}
             <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
           </div>
-          <KpiGrid profile={profile} />
+          <KpiGrid profile={profile} onModalOpenChange={setIsWgiModalOpen} />
           <section className="biographyBlock" style={{ marginTop: '16px' }}>
             <h2 className="ty-section-title">Biography</h2>
             <p className="ty-body">{profile.biography || 'No biography available.'}</p>
