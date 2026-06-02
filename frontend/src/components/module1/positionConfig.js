@@ -187,7 +187,7 @@ const POSITION_KPI_CONFIG = {
       {
         key: 'legislativeEfficiencyRatio',
         label: 'Project Efficiency',
-        wgiPillar: 'Political Stability and Absence of Violence',
+        wgiPillar: 'Rule of Law',
         format: (v) => `${Number(v || 0).toFixed(1)}%`,
       },
     ],
@@ -367,9 +367,9 @@ export function getActionsForPosition(position) {
  * WGI normalization reference ceilings.
  * Mirror the constants in DashboardMetricsService.java.
  */
-const WGI_CEILING_BILLS    = 50     // Bills / ordinances reference ceiling
+const WGI_CEILING_BILLS = 50     // Bills / ordinances reference ceiling
 const WGI_CEILING_PROJECTS = 30     // Project completions reference ceiling
-const WGI_CEILING_BUDGET   = 500_000_000  // PHP 500M budget reference ceiling
+const WGI_CEILING_BUDGET = 500_000_000  // PHP 500M budget reference ceiling
 
 /** Clamps a value to [0, 100] */
 function clamp100(v) {
@@ -402,9 +402,9 @@ export function computeWgiCompositeScore(
   totalFlagged = 0,
   coaAuditDiscrepancies = 0,
 ) {
-  const normBills    = normalize(billsAuthored, WGI_CEILING_BILLS)
+  const normBills = normalize(billsAuthored, WGI_CEILING_BILLS)
   const normProjects = normalize(projectCompletions, WGI_CEILING_PROJECTS)
-  const normBudget   = normalize(trackedBudgetAllocated, WGI_CEILING_BUDGET)
+  const normBudget = normalize(trackedBudgetAllocated, WGI_CEILING_BUDGET)
 
   const legEfficiency = clamp100(
     billsAuthored > 0
@@ -493,9 +493,9 @@ export function formatJurisdiction(jurisdiction) {
 export function formatActionIdentifier(action) {
   if (!action) return '';
   const ACTION_LABELS = {
-    COA_FINDING:           'COA Audit Finding',
-    BUDGET_ALLOCATION:     'Budget Allocation',
-    PROJECT_COMPLETION:    'Project Completion',
+    COA_FINDING: 'COA Audit Finding',
+    BUDGET_ALLOCATION: 'Budget Allocation',
+    PROJECT_COMPLETION: 'Project Completion',
     SPONSORED_LEGISLATION: 'Sponsored Legislation',
   };
   if (ACTION_LABELS[action]) return ACTION_LABELS[action];
