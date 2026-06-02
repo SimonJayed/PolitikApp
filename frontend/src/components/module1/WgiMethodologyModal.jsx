@@ -64,11 +64,11 @@ export default function WgiMethodologyModal({ isOpen, onClose, initialPosition =
       break;
     case 'EXECUTIVE':
       rawScore = normProjects * 0.45 + normBudget * 0.30 + legEfficiency * 0.20;
-      formulaLabel = '45% Projects + 30% Budget + 20% Leg. Efficiency';
+      formulaLabel = '45% Projects + 30% Budget + 20% Project Efficiency';
       break;
     case 'VICE_EXECUTIVE':
       rawScore = normBills * 0.30 + normProjects * 0.20 + normBudget * 0.25 + legEfficiency * 0.25;
-      formulaLabel = '30% Bills + 20% Projects + 25% Budget + 25% Efficiency';
+      formulaLabel = '30% Bills + 20% Projects + 25% Budget + 25% Execution Efficiency';
       break;
     case 'COUNCIL':
       rawScore = normBills * 0.40 + normBudget * 0.35;
@@ -221,12 +221,12 @@ export default function WgiMethodologyModal({ isOpen, onClose, initialPosition =
                     <>
                       <div>• <strong>Projects Completed (45%):</strong> Rewards actual infrastructure/program output.</div>
                       <div>• <strong>Budget Allocated (30%):</strong> Reflects resource management scale.</div>
-                      <div>• <strong>Efficiency (20%):</strong> Assesses delivery speed and project density.</div>
+                      <div>• <strong>Project Efficiency (20%):</strong> Assesses delivery speed and project density.</div>
                     </>
                   )}
                   {activeTab === 'VICE_EXECUTIVE' && (
                     <>
-                      <div>• <strong>Hybrid Weights:</strong> Balanced blend of Bills (30%), Projects (20%), Budget (25%), and Efficiency (25%).</div>
+                      <div>• <strong>Hybrid Weights:</strong> Balanced blend of Bills (30%), Projects (20%), Budget (25%), and Execution Efficiency (25%).</div>
                     </>
                   )}
                   {activeTab === 'COUNCIL' && (
@@ -312,7 +312,7 @@ export default function WgiMethodologyModal({ isOpen, onClose, initialPosition =
           >
             <div style={{ textAlign: 'center', marginBottom: '8px' }}>
               <span className="ty-label" style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                INTERACTIVE SIMULATOR SANDBOX
+                INTERACTIVE SIMULATOR
               </span>
               <h4 className="ty-card-title" style={{ margin: '4px 0 0', fontSize: '16px' }}>
                 Test Governance Outputs Live

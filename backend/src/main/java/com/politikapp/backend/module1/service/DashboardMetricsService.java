@@ -22,8 +22,12 @@ public class DashboardMetricsService {
     }
 
     public SymmetricalKpiPayload buildKpiPayload(Politician politician) {
-        List<ProfileEditSubmission> submissions = submissionRepository
+        List<ProfileEditSubmission> rawSubmissions = submissionRepository
                 .findByPoliticianIdAndStatus(politician.getPoliticianId(), "PUBLISHED");
+
+        List<ProfileEditSubmission> submissions = rawSubmissions.stream()
+                .filter(sub -> isActionAllowedForPosition(sub.getActionIdentifier(), politician.getPosition()))
+                .toList();
 
         double billsAuthored = sumEffectiveLegislation(submissions);
         double projectCompletions = sumEffectiveProjects(submissions);
@@ -65,22 +69,26 @@ public class DashboardMetricsService {
                 wgiScore);
     }
 
-    /**
-     * Computes a position-aware WGI Composite Score in the range [0, 100].
-     *
-     * Each indicator is first normalized to [0, 100] relative to its reference
-     * ceiling, then multiplied by its position-group weight, and finally
-     * penalized by COA audit discrepancies (Control of Corruption pillar).
-     *
-     * @param position           Politician position string (e.g. "SENATOR",
-     *                           "MAYOR")
-     * @param billsAuthored      Count of SPONSORED_LEGISLATION submissions
-     * @param projectCompletions Count of PROJECT_COMPLETION submissions
-     * @param trackedBudget      Sum of BUDGET_ALLOCATION submission amounts (PHP)
-     * @param totalFlagged       Sum of COA_FINDING flagged amounts (PHP)
-     * @param coaDiscrepancies   Count of COA_FINDING submissions
-     * @return WGI composite score clamped to [0, 100]
-     */
+    public boolean isActionAllowedForPosition(String actionIdentifier, String position) {
+        String group = resolvePositionGroup(position);
+        return switch (group) {
+            case "LEGISLATIVE" -> "SPONSORED_LEGISLATION".equals(actionIdentifier)
+                    || "BUDGET_ALLOCATION".equals(actionIdentifier)
+                    || "COA_FINDING".equals(actionIdentifier);
+            case "EXECUTIVE" -> "PROJECT_COMPLETION".equals(actionIdentifier)
+                    || "BUDGET_ALLOCATION".equals(actionIdentifier)
+                    || "COA_FINDING".equals(actionIdentifier);
+            case "VICE_EXECUTIVE" -> "SPONSORED_LEGISLATION".equals(actionIdentifier)
+                    || "PROJECT_COMPLETION".equals(actionIdentifier)
+                    || "BUDGET_ALLOCATION".equals(actionIdentifier)
+                    || "COA_FINDING".equals(actionIdentifier);
+            case "COUNCIL" -> "SPONSORED_LEGISLATION".equals(actionIdentifier)
+                    || "BUDGET_ALLOCATION".equals(actionIdentifier)
+                    || "COA_FINDING".equals(actionIdentifier);
+            default -> true;
+        };
+    }
+
     public double computeWgiCompositeScore(
             String position,
             double billsAuthored,
@@ -88,14 +96,12 @@ public class DashboardMetricsService {
             BigDecimal trackedBudget,
             BigDecimal totalFlagged,
             int coaDiscrepancies) {
-        // Normalize each raw indicator to [0, 100]
         double normBills = normalize(billsAuthored, BILLS_REFERENCE_CEILING);
         double normProjects = normalize(projectCompletions, PROJECTS_REFERENCE_CEILING);
         double normBudget = normalize(
                 trackedBudget != null ? trackedBudget.doubleValue() : 0.0,
                 BUDGET_REFERENCE_CEILING_PHP);
 
-        // Compute efficiency signal: min(100, bills+projects normalized blend)
         double legEfficiency = Math.min(100.0,
                 billsAuthored > 0
                         ? (normProjects * 0.5 + normBills * 0.5)
@@ -106,21 +112,18 @@ public class DashboardMetricsService {
 
         switch (positionGroup) {
             case "LEGISLATIVE":
-                // billsAuthored(0.35) + budget(0.25) + legislativeEfficiency(0.30)
                 rawScore = (normBills * 0.35)
                         + (normBudget * 0.25)
                         + (legEfficiency * 0.30);
                 break;
 
             case "EXECUTIVE":
-                // projectCompletions(0.45) + budget(0.30) + deliveryEfficiency(0.20)
                 rawScore = (normProjects * 0.45)
                         + (normBudget * 0.30)
                         + (legEfficiency * 0.20);
                 break;
 
             case "VICE_EXECUTIVE":
-                // billsAuthored(0.30) + projectCompletions(0.20) + budget(0.25) + hybridEfficiency(0.25)
                 rawScore = (normBills * 0.30)
                         + (normProjects * 0.20)
                         + (normBudget * 0.25)
@@ -128,13 +131,11 @@ public class DashboardMetricsService {
                 break;
 
             case "COUNCIL":
-                // ordinancesFiled(0.40) + budget(0.35)
                 rawScore = (normBills * 0.40)
                         + (normBudget * 0.35);
                 break;
 
             default:
-                // Balanced fallback for unknown positions
                 rawScore = (normBills * 0.25)
                         + (normProjects * 0.25)
                         + (normBudget * 0.20)
@@ -142,7 +143,6 @@ public class DashboardMetricsService {
                 break;
         }
 
-        // Apply COA penalty: frequency penalty + financial magnitude penalty, capped at 40 (Control of Corruption pillar)
         double freqPenalty = coaDiscrepancies * 2.0;
         double magPenalty = 0.0;
         double budget = trackedBudget != null ? trackedBudget.doubleValue() : 0.0;
@@ -159,11 +159,8 @@ public class DashboardMetricsService {
         double coaPenalty = Math.min(40.0, freqPenalty + magPenalty);
         double finalScore = rawScore - coaPenalty;
 
-        // Clamp to [0, 100]
         return Math.max(0.0, Math.min(100.0, finalScore));
     }
-
-    // ─── Private Helpers ───────────────────────────────────────────────────────
 
     double sumEffectiveProjects(List<ProfileEditSubmission> submissions) {
         return submissions.stream()
@@ -231,17 +228,12 @@ public class DashboardMetricsService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    /**
-     * Normalizes a raw value against a reference ceiling to produce a [0, 100]
-     * score.
-     */
     private double normalize(double rawValue, double ceiling) {
         if (ceiling <= 0)
             return 0.0;
         return Math.min(100.0, (rawValue / ceiling) * 100.0);
     }
 
-    /** Maps a position string to a logical group for WGI weight selection. */
     private String resolvePositionGroup(String position) {
         if (position == null)
             return "DEFAULT";
