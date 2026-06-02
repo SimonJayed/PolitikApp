@@ -4,7 +4,6 @@ import { matchesJurisdiction } from './jurisdiction'
 import { RankingRowsSkeleton } from './Skeletons'
 import { computeWgiCompositeScore, formatPosition } from './module1/positionConfig'
 
-// ─── Storage Key (persists filter across sessions) ────────────────────────────
 const STORAGE_KEY = 'politikapp:rankingFilter'
 
 function getSavedSort() {
@@ -16,9 +15,7 @@ function getSavedSort() {
   }
 }
 
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-function formatWgi(value) {
+function formatDecimal(value) {
   return `${Number(value || 0).toFixed(1)}`
 }
 
@@ -34,25 +31,13 @@ function formatCount(value) {
   return Number(value || 0).toLocaleString()
 }
 
-// ─── Sort / Metric Config ─────────────────────────────────────────────────────
-
-/**
- * Each sort option carries:
- *   key        – internal sort key
- *   label      – filter dropdown label
- *   cardLabel  – short label shown on each ranking card
- *   getValue   – extracts the raw numeric value from a politician row
- *   format     – formats the value for display on the card
- *   title      – tooltip text for the metric cell
- *   lowerBetter – true when a lower value ranks higher (COA findings)
- */
 const SORT_OPTIONS = [
   {
     key: 'wgi',
     label: 'WGI Composite Score',
     cardLabel: 'WGI',
     getValue: (p) => Number(p._wgiScore || 0),
-    format: formatWgi,
+    format: formatDecimal,
     title: 'Position-Aware WGI Composite Score [0–100]',
     lowerBetter: false,
   },
@@ -70,7 +55,7 @@ const SORT_OPTIONS = [
     label: 'Projects Completed',
     cardLabel: 'Projects',
     getValue: (p) => Number(p.projectCompletions || 0),
-    format: formatCount,
+    format: formatDecimal,
     title: 'Total infrastructure / public projects completed',
     lowerBetter: false,
   },
@@ -94,14 +79,6 @@ const SORT_OPTIONS = [
   },
 ]
 
-// ─── WGI Score Resolver ───────────────────────────────────────────────────────
-
-/**
- * Resolves the WGI composite score for a politician row.
- * Prefers the server-computed `wgiCompositeScore` field; falls back to
- * computing it client-side from raw inputs when the field is absent (e.g.
- * older API responses or comparison matrix payloads).
- */
 function resolveWgiScore(politician) {
   if (Number.isFinite(Number(politician.wgiCompositeScore)) && Number(politician.wgiCompositeScore) > 0) {
     return Number(politician.wgiCompositeScore)
@@ -111,15 +88,12 @@ function resolveWgiScore(politician) {
     Number(politician.billsAuthored || 0),
     Number(politician.projectCompletions || 0),
     Number(politician.trackedBudgetAllocated || 0),
-    0, // totalFlagged fallback
+    0,
     Number(politician.coaAuditDiscrepancies || 0),
   )
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
-
 function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politicians = [] }) {
-  // Persist the active sort filter in localStorage so it survives navigation
   const [sortBy, setSortBy] = useState(() => getSavedSort())
   const [pages, setPages]   = useState({ CEBU_CITY: 1, NATIONAL: 1 })
   const pageSize = 10
@@ -134,9 +108,7 @@ function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politic
   }
 
   const ranked = useMemo(() => {
-    // Attach pre-resolved WGI scores to avoid re-computing on each comparison
     const withScores = politicians.map((p) => ({ ...p, _wgiScore: resolveWgiScore(p) }))
-
     const priority = [sortBy, ...['wgi', 'bills', 'projects', 'budget', 'coa'].filter((m) => m !== sortBy)]
 
     return withScores.sort((a, b) => {
@@ -209,7 +181,6 @@ function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politic
                             <small className="ty-meta">{formatPosition(row.position) || 'Position unavailable'}</small>
                           </span>
 
-                          {/* Primary metric — reflects the active sort filter */}
                           <span
                             className={`rankingMetric${isCoaActive && primaryValue > 0 ? ' rankingMetricDanger' : ''}`}
                             title={activeSortOption.title}
@@ -220,15 +191,13 @@ function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politic
                             </small>
                           </span>
 
-                          {/* Secondary pill: always show WGI score when not sorting by WGI */}
                           {sortBy !== 'wgi' && (
                             <span className="rankingMetricSecondary" title="WGI Composite Score">
-                              {formatWgi(row._wgiScore)}
+                              {formatDecimal(row._wgiScore)}
                               <small style={{ fontSize: '10px', opacity: 0.55, marginLeft: '2px' }}>WGI</small>
                             </span>
                           )}
 
-                          {/* COA flag badge (always visible for accountability) */}
                           <span className="rankingFlags">
                             {Number(row.coaAuditDiscrepancies || 0) > 0 ? (
                               <span className="rankingFlagBadge">
