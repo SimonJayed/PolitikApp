@@ -12,6 +12,6 @@ public interface TimelineEntryRepository extends JpaRepository<TimelineEntry, UU
     List<TimelineEntry> findActiveEntries(UUID politicianId, String publicationStatus);
 
     @Modifying
-    @Query("UPDATE TimelineEntry t SET t.isHidden = true, t.updatedAt = CURRENT_TIMESTAMP WHERE t.submissionId = :submissionId")
+    @Query("UPDATE TimelineEntry t SET t.isHidden = true, t.updatedAt = CURRENT_INSTANT WHERE t.submissionId = :submissionId")
     void softDeleteBySubmissionId(UUID submissionId);
 }

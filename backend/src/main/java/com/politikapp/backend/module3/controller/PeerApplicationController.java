@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+@Deprecated(since = "2.0", forRemoval = true)
 @RestController
 @RequestMapping("/api/peer-applications")
 public class PeerApplicationController {

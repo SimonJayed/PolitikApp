@@ -8,12 +8,10 @@ const DEFAULT_PROFILE_METRICS = {
   contributorSubmissions: 14,
   contributorApproved: 12,
   contributorRejected: 2,
-  reviewerConsensusVotes: 25,
-  reviewerDissentVotes: 3,
-  reviewerTotalBallots: 28,
-  adminInterventions: 7,
-  adminTieBreakerActive: true,
-  adminTimeoutOverrideActive: true,
+  adminCuratedRecords: 12,
+  adminPendingAdjudications: 2,
+  adminUpheldRulings: 3,
+  adminDismissedRulings: 1,
 };
 
 const ROLE_DEFAULT_METRICS = {
@@ -22,36 +20,30 @@ const ROLE_DEFAULT_METRICS = {
     contributorApproved: 12,
     contributorRejected: 2,
   },
-  JUDICIAL_REVIEWER: {
-    reviewerConsensusVotes: 25,
-    reviewerDissentVotes: 3,
-    reviewerTotalBallots: 28,
-  },
-  PEER: {
-    reviewerConsensusVotes: 25,
-    reviewerDissentVotes: 3,
-    reviewerTotalBallots: 28,
+  CITIZEN: {
+    contributorSubmissions: 5,
+    contributorApproved: 4,
+    contributorRejected: 1,
   },
   ADMIN: {
-    adminInterventions: 7,
-    adminTieBreakerActive: true,
-    adminTimeoutOverrideActive: true,
+    adminCuratedRecords: 12,
+    adminPendingAdjudications: 2,
+    adminUpheldRulings: 3,
+    adminDismissedRulings: 1,
   },
   ADMINISTRATOR: {
-    adminInterventions: 7,
-    adminTieBreakerActive: true,
-    adminTimeoutOverrideActive: true,
+    adminCuratedRecords: 12,
+    adminPendingAdjudications: 2,
+    adminUpheldRulings: 3,
+    adminDismissedRulings: 1,
   }
 };
 
 function mapRoleForSandbox(role) {
-  if (role === "PEER") {
-    return "JUDICIAL_REVIEWER";
-  }
-  if (role === "ADMINISTRATOR") {
+  if (role === "ADMINISTRATOR" || role === "ADMIN") {
     return "ADMIN";
   }
-  return role || "JUDICIAL_REVIEWER";
+  return role || "CONTRIBUTOR";
 }
 
 function normalizeSandboxMetrics(metrics) {
@@ -86,7 +78,7 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
     biography: "Verified Capstone Contributor Profile tracking municipal budget items.",
     trustScore: 100.0,
     status: "ACTIVE",
-    role: "JUDICIAL_REVIEWER"
+    role: "CONTRIBUTOR"
   });
 
   function applyPersistedSandboxProfile(userProfile) {

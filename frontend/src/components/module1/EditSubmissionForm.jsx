@@ -71,9 +71,21 @@ export default function EditSubmissionForm({
   return (
     <section className="workspace submission-panel-wrapper">
       <form className="editorPanel" onSubmit={onSubmit}>
+        <div style={{
+          background: 'var(--accent-soft, #f0f9ff)',
+          border: '1px solid var(--info-border, #bae6fd)',
+          borderRadius: '8px',
+          padding: '12px 16px',
+          marginBottom: '16px',
+          fontSize: '13px',
+          color: '#0369a1',
+          lineHeight: '1.5'
+        }}>
+          <strong>🏛️ Citizen Metric Proposal:</strong> Propose an evidence-based record or performance update. Submissions enter the <strong>SUBMITTED_REQUEST</strong> queue and are adjudicated directly by Admin Curators against primary sources.
+        </div>
         {selectedPolitician && (
-          <p className="statusLine success">
-            Adding contribution for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
+          <p className="statusLine success" style={{ marginBottom: '14px' }}>
+            Proposing record for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
             <small style={{ marginLeft: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>
               ({formatPosition(selectedPolitician.position) || 'UNSPECIFIED'})
             </small>
@@ -127,7 +139,9 @@ export default function EditSubmissionForm({
         </label>
 
         <div className="formFooter">
-          <button disabled={state.status === 'loading'} type="submit">Submit Evidence</button>
+          <button disabled={state.status === 'loading'} type="submit">
+            {state.status === 'loading' ? 'Submitting Request...' : 'Propose Metric for Review'}
+          </button>
         </div>
 
         <SubmissionStatusAlert state={state} />

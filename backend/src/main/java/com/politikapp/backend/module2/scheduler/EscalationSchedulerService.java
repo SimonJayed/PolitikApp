@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+@Deprecated(since = "2.0", forRemoval = true)
 @Component
 public class EscalationSchedulerService {
     private static final Logger log = LoggerFactory.getLogger(EscalationSchedulerService.class);
@@ -31,13 +32,13 @@ public class EscalationSchedulerService {
     }
 
     /**
-     * Continuous background scheduler auditing the moderation queue every hour.
-     * Triggers escalation if a card is stuck beyond 24 hours, or experiences a gridlock tie.
+     * Legacy background scheduler auditing the moderation queue for 24h timeouts and gridlock ties.
+     * Deprecated in favor of the Centralized Admin-Curator and Public Challenge Model.
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Deprecated(since = "2.0", forRemoval = true)
     @Transactional
     public void runHourlyEscalationAudit() {
-        log.info("Starting background scheduler escalation audit...");
+        log.debug("Legacy escalation audit invoked (scheduled background execution disabled).");
         executeEscalationAudit();
     }
 

@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ExternalLinkIcon, ScaleIcon, ArrowLeftIcon, ArrowRightIcon } from '../icons/Lucide';
-import TrustScoreMeter from '../TrustScoreMeter';
-import { clampTrustScore } from '../trustScore';
 import { TimelineCardsSkeleton } from '../Skeletons';
 import { formatActionIdentifier } from './positionConfig';
+import ChallengeRecordModal from '../module2/ChallengeRecordModal';
 
 function PaginationMini({ page, totalPages, onChange }) {
   const disabledPrev = page <= 1;
@@ -82,10 +81,9 @@ export default function TimelineLedger({
   title = 'Published Timeline Ledger',
   user,
 }) {
-  const trustScore = clampTrustScore(user?.trustScore);
-  const canAppeal = Boolean(user?.userId) && user?.role !== 'GUEST' && trustScore >= 150;
   const [page, setPage] = useState(1);
   const [hoverInfo, setHoverInfo] = useState(null);
+  const [challengeModalRecord, setChallengeModalRecord] = useState(null);
   const pageSize = 15;
   const totalPages = Math.max(1, Math.ceil(entries.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -107,77 +105,119 @@ export default function TimelineLedger({
       {!isLoading && entries.length === 0 && <p className="emptyState">No published records returned.</p>}
       {!isLoading && (
         <div className="timelineGrid">
-          {pagedEntries.map((entry) => (
-            <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
-              <div className="timelineItemTop">
-                <strong>{formatActionIdentifier(entry.actionIdentifier)}</strong>
-                <span style={{
-                  background: 'var(--bg-inset)',
-                  border: '1px solid var(--line-soft)',
-                  borderRadius: 'var(--radius-full)',
-                  fontFamily: 'var(--mono, monospace)',
-                  fontSize: '11px',
-                  fontWeight: '500',
-                  letterSpacing: '0.04em',
-                  padding: '2px 8px',
-                  color: 'var(--text-muted)'
-                }}>
-                  {entry.categoryTag}
-                </span>
-              </div>
-              <p className="ty-body">{entry.summary}</p>
-              <a
-                href={entry.sourceUrl}
-                rel="noreferrer"
-                target="_blank"
-                onMouseEnter={(e) => setHoverInfo({
-                  title: 'Source Evidence Link',
-                  description: 'Opens the cited source document in a separate tab so you can validate authenticity, context, and completeness.',
-                  hint: 'Tip: verify domain and publication date before citing.',
-                  x: e.clientX,
-                  y: e.clientY
-                })}
-                onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
-                onMouseLeave={() => setHoverInfo(null)}
-              >
-                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                  View Source <ExternalLinkIcon size={14} />
-                </span>
-              </a>
-              {onAppeal && (
-                <div className="appealActionArea">
-                  <button
-                    className="appealRecordButton"
-                    disabled={!canAppeal || !entry.submissionId}
-                    onClick={() => onAppeal(entry)}
-                    title={
-                      !entry.submissionId
-                        ? 'This legacy record is missing submission linkage.'
-                        : !canAppeal
-                        ? 'Appeals require an authenticated user with at least 150.00 trust points.'
-                        : 'File a high-stakes post-publish appeal.'
-                    }
-                    type="button"
-                  >
-                    <ScaleIcon size={15} />
-                    Appeal this Record
-                  </button>
-                  <div className="appealInfoTooltip" role="tooltip">
-                    {entry.submissionId ? (
-                      <TrustScoreMeter score={trustScore} variant="inline" />
-                    ) : (
-                      <p className="ty-meta" style={{ color: 'var(--danger)', margin: 0 }}>
-                        Record cannot be appealed: missing submission linkage.
-                      </p>
-                    )}
-                  </div>
+          {pagedEntries.map((entry) => {
+            const sourceUrl = entry.primarySourceUrl || entry.sourceUrl;
+            return (
+              <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
+                <div className="timelineItemTop">
+                  <strong>{formatActionIdentifier(entry.actionIdentifier)}</strong>
+                  <span style={{
+                    background: 'var(--bg-inset, #f8fafc)',
+                    border: '1px solid var(--line-soft, #e2e8f0)',
+                    borderRadius: 'var(--radius-full, 9999px)',
+                    fontFamily: 'var(--mono, monospace)',
+                    fontSize: '11px',
+                    fontWeight: '500',
+                    letterSpacing: '0.04em',
+                    padding: '2px 8px',
+                    color: 'var(--text-muted, #64748b)'
+                  }}>
+                    {entry.categoryTag}
+                  </span>
                 </div>
-              )}
-            </article>
-          ))}
+                <p className="ty-body">{entry.summary}</p>
+
+                {entry.verificationNotes && (
+                  <div style={{
+                    fontSize: '11px',
+                    color: '#047857',
+                    background: '#ecfdf5',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    marginBottom: '8px',
+                    fontFamily: 'var(--mono, monospace)'
+                  }}>
+                    ✓ Curator Verified: {entry.verificationNotes}
+                  </div>
+                )}
+
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: '10px',
+                  paddingTop: '10px',
+                  borderTop: '1px solid var(--line-soft, #f1f5f9)',
+                  flexWrap: 'wrap',
+                  gap: '8px'
+                }}>
+                  {sourceUrl ? (
+                    <a
+                      href={sourceUrl}
+                      rel="noreferrer"
+                      target="_blank"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        fontSize: '12px',
+                        color: 'var(--info, #0284c7)',
+                        textDecoration: 'none',
+                        fontWeight: '500'
+                      }}
+                      onMouseEnter={(e) => setHoverInfo({
+                        title: 'Primary Source Citation',
+                        description: 'Direct link to primary source document (COA report, legislative record, or official gazette).',
+                        hint: 'Click to verify authenticity.',
+                        x: e.clientX,
+                        y: e.clientY
+                      })}
+                      onMouseMove={(e) => setHoverInfo((current) => current ? { ...current, x: e.clientX, y: e.clientY } : current)}
+                      onMouseLeave={() => setHoverInfo(null)}
+                    >
+                      Primary Source <ExternalLinkIcon size={13} />
+                    </a>
+                  ) : (
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Citation pending</span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setChallengeModalRecord(entry)}
+                    title="Challenge this record with counter-evidence or audit discrepancies"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
+                      border: '1px solid #fecaca',
+                      background: '#fff5f5',
+                      color: '#dc2626',
+                      fontSize: '11px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      transition: 'all 150ms ease'
+                    }}
+                  >
+                    ⚠️ Challenge Record
+                  </button>
+                </div>
+              </article>
+            );
+          })}
         </div>
       )}
       <CursorHint hoverInfo={hoverInfo} />
+
+      <ChallengeRecordModal
+        isOpen={Boolean(challengeModalRecord)}
+        onClose={() => setChallengeModalRecord(null)}
+        targetRecord={challengeModalRecord}
+        onChallengeSubmitted={() => {
+          setChallengeModalRecord(null);
+        }}
+      />
     </section>
   );
 }

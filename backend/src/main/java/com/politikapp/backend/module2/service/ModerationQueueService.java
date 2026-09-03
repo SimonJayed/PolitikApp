@@ -41,12 +41,12 @@ public class ModerationQueueService {
             event.politicianId()
         );
         queueEntry.setQueueId(event.submissionId());
-        queueEntry.setQueueStatus("JURY_REVIEW");
+        queueEntry.setQueueStatus("SUBMITTED_REQUEST");
         
         moderationQueueRepository.save(queueEntry);
 
         entityManager.createNativeQuery(
-            "UPDATE public.profile_edit_submissions SET status = 'JURY_REVIEW', updated_at = CURRENT_TIMESTAMP WHERE submission_id = :submissionId"
+            "UPDATE public.profile_edit_submissions SET status = 'SUBMITTED_REQUEST', updated_at = CURRENT_TIMESTAMP WHERE submission_id = :submissionId"
         )
         .setParameter("submissionId", event.submissionId())
         .executeUpdate();
