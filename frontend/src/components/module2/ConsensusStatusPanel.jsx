@@ -2,10 +2,7 @@ import React from 'react';
 
 export default function ConsensusStatusPanel({
   card,
-  isDevModeActive,
   voteWeight = 1,
-  manipulatedUser,
-  user,
 }) {
   if (!card) return null;
 
@@ -17,10 +14,6 @@ export default function ConsensusStatusPanel({
 
   const quorumTarget = (hashCharSum % 4) + 4;
   const currentConsensus = totalVotes > 0 ? (agreeCount / totalVotes) * 100 : 0;
-
-  const currentTrust = isDevModeActive && manipulatedUser ? (manipulatedUser?.trustScore ?? 100) : (user?.trustScore ?? 100);
-  const trustIfPublished = Math.min(500, currentTrust + 15.00).toFixed(2);
-  const trustIfRejected = Math.max(0, currentTrust - 20.00).toFixed(2);
 
   return (
     <div className="sandbox-analytics-drawer" style={{ background: '#0f172a', border: '1px solid #334155', padding: '16px', borderRadius: '6px', margin: '12px 0 0' }}>
@@ -41,7 +34,7 @@ export default function ConsensusStatusPanel({
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155' }}>
             <span style={{ color: '#f8fafc', fontWeight: '500' }}>Dynamic Quorum Target</span>
-            <strong style={{ color: '#a5b4fc' }}>{quorumTarget} Votes (Trust-Weighted)</strong>
+            <strong style={{ color: '#a5b4fc' }}>{quorumTarget} Votes</strong>
           </div>
           <div style={{ background: '#1e293b', padding: '8px 10px', borderRadius: '4px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '4px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -55,16 +48,16 @@ export default function ConsensusStatusPanel({
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <strong style={{ color: '#38bdf8', fontSize: '10px', letterSpacing: '0.05em' }}>REPUTATION DELTA & ESCALATION TRACE</strong>
+          <strong style={{ color: '#38bdf8', fontSize: '10px', letterSpacing: '0.05em' }}>ESCALATION TRACE</strong>
           <div style={{ display: 'flex', flexDirection: 'column', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155', gap: '4px' }}>
-            <span style={{ color: '#a5b4fc', fontSize: '9px', fontWeight: 'bold' }}>USER REPUTATION IMPACT PREDICTOR</span>
+            <span style={{ color: '#a5b4fc', fontSize: '9px', fontWeight: 'bold' }}>OUTCOME ROUTING</span>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Published</span>
-              <strong style={{ color: '#22c55e' }}>{currentTrust} {"->"} {trustIfPublished}</strong>
+              <strong style={{ color: '#22c55e' }}>Record finalized</strong>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: '#f8fafc', fontWeight: '500' }}>If Rejected</span>
-              <strong style={{ color: '#ef4444' }}>{currentTrust} {"->"} {trustIfRejected}</strong>
+              <strong style={{ color: '#ef4444' }}>Record dismissed</strong>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', background: '#1e293b', padding: '6px 10px', borderRadius: '4px', border: '1px solid #334155', color: '#fca5a5' }}>

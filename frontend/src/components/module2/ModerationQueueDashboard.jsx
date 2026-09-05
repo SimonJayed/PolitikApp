@@ -22,8 +22,6 @@ export default function ModerationQueueDashboard({
   setOpenDrawerByCard,
   openDetailsByCard,
   setOpenDetailsByCard,
-  manipulatedUser,
-  user,
   voteWeight,
   isReadOnlyMode,
   getForm,
@@ -108,10 +106,7 @@ export default function ModerationQueueDashboard({
                 {isDevModeActive && isDrawerOpen && (
                   <ConsensusStatusPanel
                     card={card}
-                    isDevModeActive={isDevModeActive}
                     voteWeight={voteWeight}
-                    manipulatedUser={manipulatedUser}
-                    user={user}
                   />
                 )}
               </div>

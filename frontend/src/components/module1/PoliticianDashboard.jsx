@@ -8,7 +8,6 @@ import {
   UsersIcon,
   FileTextIcon,
   ScaleIcon,
-  ShieldCheckIcon,
 } from '../icons/Lucide';
 
 /**
@@ -147,15 +146,6 @@ export default function PoliticianDashboard({
       description: 'Review two candidates in parallel with aligned records and metrics to identify policy, budget, and audit differences faster.',
       hint: 'Use filters to narrow by jurisdiction.',
       accent: 'var(--info)',
-    },
-    {
-      key: 'moderation',
-      icon: ShieldCheckIcon,
-      title: 'Moderation Jury',
-      sub: 'Cast a double-blind ballot',
-      description: 'Enter the adjudication queue where reviewers vote on evidence quality and outcome before records are finalized or published.',
-      hint: 'Your vote impacts consensus and trust outcomes.',
-      accent: 'var(--ph-red)',
     },
   ];
 

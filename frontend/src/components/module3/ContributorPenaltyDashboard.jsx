@@ -294,7 +294,7 @@ export default function ContributorPenaltyDashboard({
           <div className="peerAppPending">
             <strong>Application Under Review</strong>
             <p>
-              Your verification application is currently under review by administration. You will be automatically elevated to a Peer Reviewer with a trust baseline of 150.00 points upon approval.
+              Your verification application is currently under review by administration. You will be automatically elevated to a Peer Reviewer upon approval.
             </p>
           </div>
         ) : (

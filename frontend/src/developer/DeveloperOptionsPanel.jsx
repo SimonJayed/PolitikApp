@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useDeveloperSandbox } from './DeveloperSandboxContext';
 import { useAuth } from '../auth/AuthContext';
-import TrustScoreMeter from '../components/TrustScoreMeter';
 import { clampTrustScore } from '../components/trustScore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -162,19 +161,6 @@ export default function DeveloperOptionsPanel() {
               value={manipulatedUser.name} 
               onChange={(e) => setManipulatedUser({ ...manipulatedUser, name: e.target.value })}
               style={{ width: '100%', padding: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
-            />
-          </div>
-
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
-              <label>Trust Score: <strong style={{ color: '#34d399' }}>{Math.round(clampTrustScore(manipulatedUser.trustScore))} / 500</strong></label>
-              <span>Status: <strong style={{ color: '#38bdf8' }}>{manipulatedUser.status}</strong></span>
-            </div>
-            <TrustScoreMeter score={manipulatedUser.trustScore} theme="dark" variant="inline" />
-            <input 
-              type="range" min="0" max="500" value={manipulatedUser.trustScore} 
-              onChange={(e) => setManipulatedUser({ ...manipulatedUser, trustScore: parseFloat(e.target.value) })}
-              style={{ width: '100%', cursor: 'pointer' }}
             />
           </div>
 

@@ -2,13 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
-import TrustScoreMeter from './components/TrustScoreMeter'
 import ConfirmActionModal from './components/ConfirmActionModal'
 import PoliticianRankingPanel from './components/PoliticianRankingPanel'
 import LifecycleStageStrip from './components/LifecycleStageStrip'
 import { matchesJurisdiction } from './components/jurisdiction'
 import { ContributionCardsSkeleton, TimelineCardsSkeleton } from './components/Skeletons'
-import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
@@ -123,7 +121,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     contributions: ['Submissions', 'My Contribution Ledger'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     directory: ['Directory', 'Politician Directory'],
-    history: ['History', 'Reputation Change Ledger'],
+    history: ['History', 'Account Event Ledger'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
     profileMatrix: isDevModeActive
@@ -525,9 +523,6 @@ function UserAccountPage({ token, user }) {
         <h2 className="ty-section-title">{profile?.fullName || user?.fullName || '—'}</h2>
         <p className="ty-body">{profile?.email || user?.email || '—'}</p>
         <p className="ty-body">Role: {profile?.role || user?.role || '—'}</p>
-        <div style={{ marginTop: '16px', maxWidth: '420px' }}>
-          <TrustScoreMeter score={profile?.trustScore ?? user?.trustScore ?? 0} />
-        </div>
       </section>
       <form className="editorPanel" onSubmit={onSave}>
         <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
@@ -1220,7 +1215,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
       <ConfirmActionModal
         cancelLabel="Cancel"
         confirmLabel="File Appeal"
-        description="This will immediately deduct 10.00 trust points. If the appeal fails, an additional 20.00 points will be deducted."
+        description="This will reopen the published record for administrative review. If the appeal fails, the original ruling will remain in effect."
         isOpen={Boolean(appealTarget)}
         isSubmitting={appealState.status === 'loading'}
         onCancel={() => {
@@ -1445,30 +1440,6 @@ function TimelineLedger(props) {
   return <TimelineLedgerDecoupled {...props} />
 }
 
-function TrustDeltaBadge({ entry }) {
-  const status = String(entry.publicationStatus || entry.status || '').toUpperCase()
-  const delta = status === 'PUBLISHED' ? 15 : status === 'REJECTED' ? -20 : 0
-  if (!delta) return null
-  const isPositive = delta > 0
-  return (
-    <span
-      title="Trust score impact indicator"
-      style={{
-        background: isPositive ? 'var(--success-soft)' : 'var(--danger-soft)',
-        border: `1px solid ${isPositive ? 'var(--success-border)' : 'var(--danger-border)'}`,
-        borderRadius: 'var(--radius-full)',
-        fontFamily: 'var(--mono, monospace)',
-        fontSize: '11px',
-        fontWeight: '700',
-        letterSpacing: '0.02em',
-        padding: '2px 8px',
-        color: isPositive ? 'var(--success)' : 'var(--danger)',
-      }}
-    >
-      {isPositive ? `+${delta}` : `${delta}`} Trust
-    </span>
-  )
-}
 function Field({ label, name, onChange, required = true, type = 'text', value }) {
   return (
     <label>
@@ -1693,10 +1664,7 @@ function MyContributionsPanel({ onNavigateToSubmit, user }) {
             <article key={item.submissionId} className="review-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ background: 'var(--info-soft)', color: 'var(--info)', border: '1px solid var(--info-border)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em' }}>#{item.submissionId.substring(0, 8).toUpperCase()}</span>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                  <TrustDeltaBadge entry={item} />
-                  <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
-                </div>
+                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>

@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
-import TrustScoreMeter from './TrustScoreMeter';
-import { clampTrustScore } from './trustScore';
 import './module3/Module3.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -57,7 +55,6 @@ export default function UserProfileMatrixPanel({ token, user }) {
 
   const actor = isDevModeActive && manipulatedUser ? manipulatedUser : (liveUser || user);
   const activeRole = actor?.role || 'CONTRIBUTOR';
-  const trustScore = clampTrustScore(actor?.trustScore ?? 100);
   const descriptor = roleDescriptor(activeRole);
   const isAdmin = activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN';
 
@@ -195,9 +192,6 @@ export default function UserProfileMatrixPanel({ token, user }) {
           </p>
         </div>
         <div className="matrixHeroScore">
-          {!isAdmin && (
-            <TrustScoreMeter score={trustScore} showEligibility={true} variant="compact" />
-          )}
           <small>{actor?.status || actor?.accountStatus || 'ACTIVE'}</small>
         </div>
       </header>
@@ -230,21 +224,6 @@ function AdminMatrix({ metrics = {}, token }) {
 
   return (
     <>
-      <section className="matrixCardGrid">
-        <MetricCard label="Credential" value="ADMIN CURATOR" tone="admin" />
-        <MetricCard
-          label="Pending Adjudications"
-          value={metrics.adminPendingAdjudications ?? 0}
-          tone={Number(metrics.adminPendingAdjudications) > 0 ? 'warning' : 'neutral'}
-        />
-        <MetricCard
-          label="Curated Records Published"
-          value={metrics.adminCuratedRecords ?? 0}
-          tone="success"
-        />
-        <MetricCard label="Evidence Standard" value="PRIMARY SOURCES" tone="info" />
-      </section>
-
       {/* Admin Active Adjudication Workbench */}
       <section
         className="matrixActionPanel"
@@ -379,21 +358,6 @@ function CitizenMatrix({ metrics = {}, user }) {
 
   return (
     <>
-      <section className="matrixCardGrid">
-        <MetricCard label="Proposals Submitted" value={metrics.contributorSubmissions ?? 0} />
-        <MetricCard
-          label="Under Review"
-          value={metrics.contributorUnderReview ?? 0}
-          tone={Number(metrics.contributorUnderReview) > 0 ? 'warning' : 'neutral'}
-        />
-        <MetricCard
-          label="Verified & Published"
-          value={metrics.contributorPublished ?? 0}
-          tone="success"
-        />
-        <MetricCard label="Evidence Standard" value="PRIMARY SOURCES" tone="info" />
-      </section>
-
       {/* Citizen Activity Ledger */}
       <section
         className="matrixActionPanel"
@@ -478,11 +442,3 @@ function CitizenMatrix({ metrics = {}, user }) {
   );
 }
 
-function MetricCard({ label, tone = 'neutral', value }) {
-  return (
-    <article className={`matrixMetricCard ${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
-  );
-}
