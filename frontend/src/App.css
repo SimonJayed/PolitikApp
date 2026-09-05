@@ -432,6 +432,8 @@
   display: flex;
   justify-content: space-between;
   padding-bottom: 14px;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }
 
 .comparisonModalHeader {
@@ -586,6 +588,14 @@
   align-items: start;
 }
 
+@media (max-width: 1024px) {
+  .compareSelectionGrid,
+  .comparisonGrid,
+  .compareLedgerPair {
+    grid-template-columns: 1fr;
+  }
+}
+
 .comparisonLedgerCard {
   background: var(--bg-surface);
   border: 1px solid var(--line-soft);
@@ -602,6 +612,14 @@
   width: 100%;
 }
 
+@media (max-width: 1024px) {
+  .rankingPanelWrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.appShell:has(.comparisonModalBackdrop) header,
+.appShell:has(.detailsModalBackdrop) header,
 .appShell:has(.comparisonModalBackdrop) .topBar,
 .appShell:has(.detailsModalBackdrop) .topBar {
   opacity: 0;
@@ -710,6 +728,23 @@
   text-align: right;
 }
 
+/* Danger tint applied to the metric cell when COA filter is active */
+.rankingMetricDanger {
+  color: var(--danger, #d9534f);
+}
+
+/* Secondary WGI pill shown alongside the primary filter metric */
+.rankingMetricSecondary {
+  color: var(--text-muted);
+  font-family: var(--mono, monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  justify-self: end;
+  text-align: right;
+  opacity: 0.75;
+}
+
+/* Kept for backward compatibility with any remaining references */
 .rankingBudget {
   color: var(--text-secondary);
   font-family: var(--mono, monospace);
@@ -1193,6 +1228,13 @@
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 1280px) {
+  .profileFacts,
+  .kpiGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .kpiGrid.compact { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -2597,8 +2639,8 @@ button:disabled {
 }
 
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes backdropIn {
@@ -2638,11 +2680,14 @@ button:disabled {
   .comparisonGrid,
   .profileHero,
   .detailsHero,
-  .profileFacts,
-  .kpiGrid,
-  .kpiGrid.compact,
   .matrixCardGrid {
     grid-template-columns: 1fr;
+  }
+
+  .profileFacts,
+  .kpiGrid,
+  .kpiGrid.compact {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .matrixHero,
@@ -2743,6 +2788,14 @@ button:disabled {
 
   .review-cardMetaPill {
     width: fit-content;
+  }
+}
+
+@media (max-width: 600px) {
+  .profileFacts,
+  .kpiGrid,
+  .kpiGrid.compact {
+    grid-template-columns: 1fr;
   }
 }
 

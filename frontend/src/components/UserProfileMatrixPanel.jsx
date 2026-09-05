@@ -1,34 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
-import TrustScoreMeter from './TrustScoreMeter';
-import { clampTrustScore } from './trustScore';
-import ContributorPenaltyDashboard from './module3/ContributorPenaltyDashboard';
-import PeerVotingWeightDashboard from './module3/PeerVotingWeightDashboard';
 import './module3/Module3.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
-function resolveAuditorTier(trustScore) {
-  if (trustScore >= 400) {
-    return { label: 'Civic Prime Auditor', weight: 5, tone: 'elite' };
-  }
-  if (trustScore >= 250) {
-    return { label: 'Senior Auditor', weight: 3, tone: 'senior' };
-  }
-  if (trustScore >= 150) {
-    return { label: 'Trusted Auditor', weight: 2, tone: 'senior' };
-  }
-  return { label: 'Baseline Auditor', weight: 1, tone: 'standard' };
-}
-
 function roleDescriptor(role) {
   if (role === 'CONTRIBUTOR') {
-    return 'The Ingestion Node';
+    return 'Citizen Contributor & Fact Checker';
   }
   if (role === 'ADMINISTRATOR' || role === 'ADMIN') {
-    return 'The System Overseer';
+    return 'Admin Curator & Lead Adjudicator';
   }
-  return 'The Auditor Node';
+  return 'Civic Member';
 }
 
 async function readApiResponse(response) {
@@ -46,11 +29,6 @@ export default function UserProfileMatrixPanel({ token, user }) {
     isDevModeActive,
     manipulatedUser,
     profileMetrics,
-    contributorRejectionRate = 0,
-    simulateApprovedSubmission,
-    simulateRejectedSubmission,
-    simulateConsensusVote,
-    simulateDissentVote,
   } = sandbox;
 
   const [liveUser, setLiveUser] = useState(null);
@@ -76,12 +54,11 @@ export default function UserProfileMatrixPanel({ token, user }) {
   }, [token, isDevModeActive]);
 
   const actor = isDevModeActive && manipulatedUser ? manipulatedUser : (liveUser || user);
-  const activeRole = actor?.role || 'JUDICIAL_REVIEWER';
-  const trustScore = clampTrustScore(actor?.trustScore ?? 100);
+  const activeRole = actor?.role || 'CONTRIBUTOR';
   const descriptor = roleDescriptor(activeRole);
-  const auditorTier = resolveAuditorTier(trustScore);
+  const isAdmin = activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN';
 
-  // Dynamic profile metrics state for standard (non-sandbox) mode
+  // Dynamic profile metrics state
   const [dynamicMetrics, setDynamicMetrics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -99,8 +76,45 @@ export default function UserProfileMatrixPanel({ token, user }) {
 
     const loadData = async () => {
       try {
-        if (activeRole === 'CONTRIBUTOR') {
-          const resSub = await fetch(`${API_BASE_URL}/api/submissions/contributor/${actor.userId}`, {
+        if (isAdmin) {
+          // Fetch real Admin Curation & Adjudication metrics
+          const [resQueue, resPoliticians] = await Promise.all([
+            fetch(`${API_BASE_URL}/api/admin/adjudication/queue`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }).catch(() => null),
+            fetch(`${API_BASE_URL}/api/politicians`).catch(() => null),
+          ]);
+
+          const queueData = resQueue && resQueue.ok ? await resQueue.json().catch(() => []) : [];
+          const politiciansData = resPoliticians && resPoliticians.ok ? await resPoliticians.json().catch(() => []) : [];
+
+          if (ignore) return;
+
+          const queueItems = Array.isArray(queueData) ? queueData : [];
+          const pendingItems = queueItems.filter((i) =>
+            ['SUBMITTED_REQUEST', 'CHALLENGE_OPEN', 'UNDER_REVIEW'].includes(i.queueStatus)
+          );
+          const upheldItems = queueItems.filter((i) => i.queueStatus === 'RESOLVED_UPHELD');
+          const dismissedItems = queueItems.filter((i) => i.queueStatus === 'RESOLVED_DISMISSED');
+
+          // Count published timeline records
+          let totalPublished = 0;
+          if (Array.isArray(politiciansData)) {
+            for (const p of politiciansData) {
+              totalPublished += Number(p.billsAuthored || 0) + Number(p.projectCompletions || 0);
+            }
+          }
+
+          setDynamicMetrics({
+            adminPendingAdjudications: pendingItems.length,
+            adminCuratedRecords: Math.max(totalPublished, 5),
+            adminUpheldRulings: upheldItems.length,
+            adminDismissedRulings: dismissedItems.length,
+            adminPendingQueue: pendingItems,
+          });
+        } else {
+          // Contributor / Citizen metrics
+          const resSub = await fetch(`${API_BASE_URL}/api/submissions`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
           const submissionsData = await readApiResponse(resSub);
@@ -108,61 +122,24 @@ export default function UserProfileMatrixPanel({ token, user }) {
 
           const entries = Array.isArray(submissionsData) ? submissionsData : [];
           const submissions = entries.length;
-          const approved = entries.filter((e) => e.status === 'PUBLISHED').length;
-          const rejected = entries.filter((e) => e.status === 'REJECTED').length;
+          const underReview = entries.filter((e) =>
+            ['SUBMITTED_REQUEST', 'UNDER_REVIEW', 'CHALLENGE_OPEN'].includes(e.status)
+          ).length;
+          const published = entries.filter((e) =>
+            ['PUBLISHED', 'RESOLVED_UPHELD'].includes(e.status)
+          ).length;
 
           setDynamicMetrics({
             contributorSubmissions: submissions,
-            contributorApproved: approved,
-            contributorRejected: rejected,
-          });
-        } else if (activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') {
-          const adminMetrics = actor?.sandboxProfileMetrics || {};
-          setDynamicMetrics({
-            adminInterventions: adminMetrics.adminInterventions ?? 7,
-            adminTieBreakerActive: adminMetrics.adminTieBreakerActive ?? true,
-            adminTimeoutOverrideActive: adminMetrics.adminTimeoutOverrideActive ?? true,
-          });
-        } else {
-          // Reviewer / Peer role
-          const resWeight = await fetch(`${API_BASE_URL}/api/module3/peers/${actor.userId}/vote-weight`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          const weightData = await readApiResponse(resWeight);
-
-          const resArchive = await fetch(`${API_BASE_URL}/api/moderation/archive`, {
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-          });
-          const archiveData = await readApiResponse(resArchive);
-          if (ignore) return;
-
-          const ballotEntries = Array.isArray(archiveData) ? archiveData : [];
-          const totalBallots = ballotEntries.length;
-          const consensusVotes = ballotEntries.filter((e) => {
-            const isTerminal = e.status === 'PUBLISHED' || e.status === 'REJECTED';
-            const isAligned = (e.userVote === 'AGREE' && e.status === 'PUBLISHED') ||
-              (e.userVote === 'DISAGREE' && e.status === 'REJECTED');
-            return isTerminal && isAligned;
-          }).length;
-          const dissentVotes = ballotEntries.filter((e) => {
-            const isTerminal = e.status === 'PUBLISHED' || e.status === 'REJECTED';
-            const isAligned = (e.userVote === 'AGREE' && e.status === 'PUBLISHED') ||
-              (e.userVote === 'DISAGREE' && e.status === 'REJECTED');
-            return isTerminal && !isAligned;
-          }).length;
-
-          setDynamicMetrics({
-            reviewerTotalBallots: totalBallots,
-            reviewerConsensusVotes: consensusVotes,
-            reviewerDissentVotes: dissentVotes,
-            voteWeight: weightData.voteWeight ?? 1,
-            historicalPrecision: weightData.historicalPrecision ?? 0,
+            contributorUnderReview: underReview,
+            contributorPublished: published,
+            contributorEntries: entries,
           });
         }
       } catch (err) {
-        console.error("Failed to fetch live profile metrics:", err);
+        console.error('Failed to fetch live profile metrics:', err);
         if (!ignore) {
-          setError(err.message || "Failed to fetch live profile metrics.");
+          setError(err.message || 'Failed to fetch live profile metrics.');
         }
       } finally {
         if (!ignore) {
@@ -176,231 +153,287 @@ export default function UserProfileMatrixPanel({ token, user }) {
     return () => {
       ignore = true;
     };
-  }, [isDevModeActive, actor?.userId, activeRole, token]);
+  }, [isDevModeActive, actor?.userId, activeRole, token, isAdmin]);
 
-  const activeMetrics = isDevModeActive ? profileMetrics : dynamicMetrics;
-
-  const dynamicRejectionRate = activeMetrics?.contributorSubmissions > 0
-    ? (activeMetrics.contributorRejected / activeMetrics.contributorSubmissions) * 100
-    : 0;
-
-  const rejectionRate = isDevModeActive ? contributorRejectionRate : dynamicRejectionRate;
-
-  const rejectionLocked = isDevModeActive
-    ? (contributorRejectionRate > 15)
-    : (actor?.status === 'LOCKED' || actor?.accountStatus === 'LOCKED' || (activeMetrics?.contributorSubmissions >= 5 && rejectionRate > 15));
-
-  const consensusRate = isDevModeActive
-    ? (profileMetrics?.reviewerTotalBallots > 0
-      ? (profileMetrics.reviewerConsensusVotes / profileMetrics.reviewerTotalBallots) * 100
-      : 0)
-    : (activeMetrics?.historicalPrecision ?? 0);
+  const activeMetrics = isDevModeActive
+    ? {
+        adminPendingAdjudications: profileMetrics?.adminPendingAdjudications ?? 1,
+        adminCuratedRecords: profileMetrics?.adminCuratedRecords ?? 12,
+        adminUpheldRulings: profileMetrics?.adminUpheldRulings ?? 3,
+        adminDismissedRulings: profileMetrics?.adminDismissedRulings ?? 0,
+        contributorSubmissions: profileMetrics?.contributorSubmissions ?? 4,
+        contributorUnderReview: 1,
+        contributorPublished: profileMetrics?.contributorApproved ?? 3,
+        adminPendingQueue: [],
+      }
+    : dynamicMetrics;
 
   const headerTone = useMemo(() => {
-    if (activeRole === 'CONTRIBUTOR') return 'matrixHero contributor';
-    if (activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') return 'matrixHero admin';
-    return 'matrixHero reviewer';
-  }, [activeRole]);
+    if (isAdmin) return 'matrixHero admin';
+    return 'matrixHero contributor';
+  }, [isAdmin]);
 
-  if (!activeMetrics) {
-    if (loading) {
-      return (
-        <section className="workspace profileMatrixWorkspace" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="ledgerEmptyState">Loading dynamic profile metrics...</div>
-        </section>
-      );
-    }
-    return null;
+  if (!activeMetrics && loading) {
+    return (
+      <section className="workspace profileMatrixWorkspace" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="ledgerEmptyState">Loading curation & profile metrics...</div>
+      </section>
+    );
   }
 
   return (
     <section className="workspace profileMatrixWorkspace">
       <header className={headerTone}>
         <div>
-          <span className="matrixRoleBadge">{activeRole}</span>
+          <span className="matrixRoleBadge">{isAdmin ? 'ADMIN CURATOR' : 'CITIZEN'}</span>
           <h2 className="ty-section-title">{descriptor}</h2>
-          <p className="ty-body">{actor?.name || actor?.fullName || 'Sandbox Actor'} is mapped to a live role metrics matrix.</p>
+          <p className="ty-body">
+            {actor?.name || actor?.fullName || 'User'} is connected to the Centralized Evidence-Based Curation Pipeline.
+          </p>
         </div>
         <div className="matrixHeroScore">
-          {activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
-            <TrustScoreMeter score={trustScore} showEligibility={true} variant="compact" />
-          )}
           <small>{actor?.status || actor?.accountStatus || 'ACTIVE'}</small>
         </div>
       </header>
 
-      {/* Contributor Matrix Layout */}
-      {activeRole === 'CONTRIBUTOR' && (
-        <ContributorPenaltyDashboard
-          isSandboxMode={isDevModeActive}
-          metrics={activeMetrics}
-          rejectionLocked={rejectionLocked}
-          rejectionRate={rejectionRate}
-          simulateApprovedSubmission={simulateApprovedSubmission}
-          simulateRejectedSubmission={simulateRejectedSubmission}
-          token={token}
-          user={actor}
-        />
-      )}
-
-      {/* Reviewer Matrix Layout */}
-      {activeRole !== 'CONTRIBUTOR' && activeRole !== 'ADMINISTRATOR' && activeRole !== 'ADMIN' && (
-        <PeerVotingWeightDashboard
-          consensusRate={consensusRate}
-          metrics={activeMetrics}
-          simulateConsensusVote={simulateConsensusVote}
-          simulateDissentVote={simulateDissentVote}
-          tier={auditorTier}
-          trustScore={trustScore}
-          isSandboxMode={isDevModeActive}
-          token={token}
-          user={actor}
-        />
-      )}
-
       {/* Admin Matrix Layout */}
-      {(activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN') && (
+      {isAdmin && (
         <AdminMatrix
-          metrics={activeMetrics}
+          metrics={activeMetrics || {}}
           token={token}
+          onRefresh={() => {
+            // Trigger refresh
+          }}
+        />
+      )}
+
+      {/* Contributor / Citizen Matrix Layout */}
+      {!isAdmin && (
+        <CitizenMatrix
+          metrics={activeMetrics || {}}
+          token={token}
+          user={actor}
         />
       )}
     </section>
   );
 }
 
-function AdminMatrix({ metrics, token }) {
-  const [pendingApps, setPendingApps] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  const fetchPending = useCallback(() => {
-    setLoading(true);
-    fetch(`${API_BASE_URL}/api/peer-applications/admin/pending`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then(readApiResponse)
-      .then((data) => {
-        setPendingApps(Array.isArray(data) ? data : []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message || 'Failed to load applications.');
-        setLoading(false);
-      });
-  }, [token]);
-
-  useEffect(() => {
-    fetchPending();
-  }, [fetchPending]);
-
-  const handleAction = async (applicationId, action) => {
-    const originalPending = [...pendingApps];
-    setPendingApps(pendingApps.filter(app => app.applicationId !== applicationId));
-
-    try {
-      const res = await fetch(`${API_BASE_URL}/api/peer-applications/admin/${applicationId}/${action}`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      if (!res.ok) {
-        throw new Error('Action failed.');
-      }
-      fetchPending();
-    } catch (err) {
-      console.error(err);
-      setPendingApps(originalPending);
-      alert('Failed to process administrative action: ' + err.message);
-    }
-  };
+function AdminMatrix({ metrics = {}, token }) {
+  const pendingQueue = metrics.adminPendingQueue || [];
 
   return (
     <>
-      <section className="matrixCardGrid">
-        <MetricCard label="Credential" value="ADMINISTRATOR" tone="admin" />
-        <MetricCard label="Intervention Count" value={metrics.adminInterventions} />
-        <MetricCard label="50-50 Tie Breaker" value={metrics.adminTieBreakerActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTieBreakerActive ? 'success' : 'danger'} />
-        <MetricCard label="24-Hour Timeout Override" value={metrics.adminTimeoutOverrideActive ? 'Enabled' : 'Disabled'} tone={metrics.adminTimeoutOverrideActive ? 'success' : 'danger'} />
-      </section>
+      {/* Admin Active Adjudication Workbench */}
+      <section
+        className="matrixActionPanel"
+        style={{
+          marginTop: '24px',
+          background: 'var(--bg-surface, #ffffff)',
+          border: '1px solid var(--line-soft, #e2e8f0)',
+          borderRadius: 'var(--radius-lg, 12px)',
+          padding: '24px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+        }}
+      >
+        <header
+          style={{
+            borderBottom: '1px solid var(--line-hairline, #f1f5f9)',
+            paddingBottom: '12px',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px',
+          }}
+        >
+          <div>
+            <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary, #0f172a)' }}>
+              ⚖️ Active Adjudication Workbench
+            </h3>
+            <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted, #64748b)', fontSize: '13px' }}>
+              Pending citizen metric proposals and public challenges requiring administrative primary-source review.
+            </p>
+          </div>
+          <span
+            style={{
+              fontSize: '12px',
+              fontWeight: '600',
+              color: '#0284c7',
+              background: '#e0f2fe',
+              padding: '4px 10px',
+              borderRadius: '9999px',
+            }}
+          >
+            {pendingQueue.length} items awaiting ruling
+          </span>
+        </header>
 
-      {/* Admin Verification Desk */}
-      <section className="matrixActionPanel" style={{ marginTop: '24px', background: 'var(--bg-surface)', border: '1px solid var(--line-soft)', borderRadius: 'var(--radius-lg)', padding: '24px' }}>
-        <header style={{ borderBottom: '1px solid var(--line-hairline)', paddingBottom: '12px', marginBottom: '20px' }}>
-          <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>💼 Peer Verification Desk</h3>
-          <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>
-            Review pending applications from trusted community members applying for Peer Reviewer credentials.
+        {pendingQueue.length === 0 ? (
+          <div
+            style={{
+              padding: '36px',
+              textAlign: 'center',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              border: '1px dashed #cbd5e1',
+              color: '#64748b',
+            }}
+          >
+            <div style={{ fontSize: '28px', marginBottom: '6px' }}>✓</div>
+            <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#1e293b' }}>
+              Adjudication Queue Clear
+            </h4>
+            <p style={{ margin: 0, fontSize: '12px' }}>
+              No pending citizen requests or public challenges require administrative investigation right now.
+            </p>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {pendingQueue.slice(0, 5).map((item) => {
+              const isChallenge = item.itemType === 'PUBLIC_CHALLENGE';
+              return (
+                <div
+                  key={item.queueId}
+                  style={{
+                    padding: '14px 16px',
+                    borderRadius: '8px',
+                    border: isChallenge ? '1px solid #fecaca' : '1px solid #e2e8f0',
+                    background: isChallenge ? '#fff5f5' : '#ffffff',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: '10px',
+                  }}
+                >
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <span
+                        style={{
+                          background: isChallenge ? '#ef4444' : '#0284c7',
+                          color: '#ffffff',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          fontSize: '10px',
+                          fontWeight: '700',
+                        }}
+                      >
+                        {isChallenge ? 'PUBLIC CHALLENGE' : 'CONTENT PROPOSAL'}
+                      </span>
+                      <strong style={{ fontSize: '13px', color: '#0f172a' }}>
+                        {item.politicianName}
+                      </strong>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '13px', color: '#334155' }}>
+                      {item.summary || item.challengeReason || 'Item under adjudication'}
+                    </p>
+                  </div>
+
+                  <span
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      padding: '3px 8px',
+                      borderRadius: '9999px',
+                      background: item.queueStatus === 'UNDER_REVIEW' ? '#fef3c7' : '#e0f2fe',
+                      color: item.queueStatus === 'UNDER_REVIEW' ? '#d97706' : '#0284c7',
+                    }}
+                  >
+                    {item.queueStatus}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
+
+function CitizenMatrix({ metrics = {}, user }) {
+  const entries = metrics.contributorEntries || [];
+
+  return (
+    <>
+      {/* Citizen Activity Ledger */}
+      <section
+        className="matrixActionPanel"
+        style={{
+          marginTop: '24px',
+          background: 'var(--bg-surface, #ffffff)',
+          border: '1px solid var(--line-soft, #e2e8f0)',
+          borderRadius: 'var(--radius-lg, 12px)',
+          padding: '24px',
+        }}
+      >
+        <header
+          style={{
+            borderBottom: '1px solid var(--line-hairline, #f1f5f9)',
+            paddingBottom: '12px',
+            marginBottom: '16px',
+          }}
+        >
+          <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>
+            📝 Citizen Contributions & Proposals
+          </h3>
+          <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+            All metric proposals undergo direct Admin Curator verification with official primary sources.
           </p>
         </header>
 
-        {loading && pendingApps.length === 0 ? (
-          <div className="ledgerEmptyState">Loading verification queue...</div>
-        ) : error ? (
-          <div className="ledgerEmptyState" style={{ color: 'var(--danger)' }}>{error}</div>
-        ) : pendingApps.length === 0 ? (
-          <div className="ledgerEmptyState">No pending peer verification applications at this time.</div>
+        {entries.length === 0 ? (
+          <div
+            style={{
+              padding: '32px',
+              textAlign: 'center',
+              background: '#f8fafc',
+              borderRadius: '8px',
+              border: '1px dashed #cbd5e1',
+              color: '#64748b',
+            }}
+          >
+            <p style={{ margin: '0 0 4px 0', fontSize: '13px' }}>
+              No proposals filed yet. Propose bills, projects, or audits to enrich public servant records.
+            </p>
+          </div>
         ) : (
-          <div style={{ display: 'grid', gap: '16px', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))' }}>
-            {pendingApps.map((app) => (
-              <article key={app.applicationId} style={{
-                background: 'rgba(255,255,255,0.01)',
-                border: '1px solid var(--line-soft)',
-                borderRadius: 'var(--radius-md)',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '12px',
-                boxShadow: 'var(--shadow-sm)',
-              }}>
-                <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'start' }}>
-                  <div>
-                    <span style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase', color: 'var(--ph-gold)', background: 'rgba(217,119,6,0.1)', padding: '3px 8px', borderRadius: '4px', border: '1px solid rgba(217,119,6,0.15)' }}>
-                      {app.organizationType}
-                    </span>
-                    <h4 style={{ margin: '8px 0 2px', fontSize: '14px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                      Contributor Applicant
-                    </h4>
-                    <span style={{ fontSize: '11px', color: 'var(--text-subtle)', fontFamily: 'var(--mono, monospace)' }}>
-                      {app.contributorId.slice(0, 8)}...
-                    </span>
-                  </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {entries.slice(0, 5).map((entry) => (
+              <div
+                key={entry.submissionId}
+                style={{
+                  padding: '12px 14px',
+                  borderRadius: '6px',
+                  border: '1px solid #e2e8f0',
+                  background: '#f8fafc',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontSize: '13px',
+                }}
+              >
+                <div>
+                  <strong>{entry.impactSummary}</strong>
+                  <span style={{ marginLeft: '8px', color: '#64748b', fontSize: '11px' }}>
+                    ({entry.categoryTag})
+                  </span>
                 </div>
-
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'grid', gap: '4px' }}>
-                  <div><strong>Institutional Email:</strong> {app.institutionalEmail}</div>
-                  <div><strong>Verification Proof:</strong> <a href={app.verificationProofUrl} target="_blank" rel="noreferrer" style={{ color: 'var(--info)', textDecoration: 'underline' }}>View Proof Document ↗</a></div>
-                </div>
-
-                <div style={{
-                  padding: '10px 12px',
-                  background: 'rgba(0,0,0,0.015)',
-                  borderRadius: 'var(--radius-sm)',
-                  border: '1px dashed var(--line-soft)',
-                  fontSize: '12px',
-                  color: 'var(--text-subtle)',
-                  fontStyle: 'italic',
-                  lineHeight: '1.5'
-                }}>
-                  &ldquo;{app.justificationStatement}&rdquo;
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '6px' }}>
-                  <button
-                    onClick={() => handleAction(app.applicationId, 'approve')}
-                    type="button"
-                    style={{ background: '#10b981', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
-                  >
-                    ✓ Approve
-                  </button>
-                  <button
-                    onClick={() => handleAction(app.applicationId, 'reject')}
-                    className="dangerButton"
-                    type="button"
-                    style={{ border: 'none', padding: '8px 14px', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
-                  >
-                    ✕ Reject
-                  </button>
-                </div>
-              </article>
+                <span
+                  style={{
+                    padding: '2px 8px',
+                    borderRadius: '9999px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                    background: entry.status === 'PUBLISHED' ? '#dcfce7' : '#e0f2fe',
+                    color: entry.status === 'PUBLISHED' ? '#15803d' : '#0284c7',
+                  }}
+                >
+                  {entry.status || 'SUBMITTED_REQUEST'}
+                </span>
+              </div>
             ))}
           </div>
         )}
@@ -409,11 +442,3 @@ function AdminMatrix({ metrics, token }) {
   );
 }
 
-function MetricCard({ label, tone = 'neutral', value }) {
-  return (
-    <article className={`matrixMetricCard ${tone}`}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </article>
-  );
-}

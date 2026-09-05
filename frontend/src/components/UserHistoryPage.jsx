@@ -10,9 +10,9 @@ async function readApiResponse(response) {
 }
 
 function changeTone(value) {
-  if (value > 0) return { label: 'Positive', className: 'text-emerald-700 bg-emerald-50 border-emerald-200' }
-  if (value < 0) return { label: 'Negative', className: 'text-rose-700 bg-rose-50 border-rose-200' }
-  return { label: 'Neutral', className: 'text-slate-700 bg-slate-100 border-slate-200' }
+  if (value > 0) return { label: 'Approved', className: 'text-emerald-700 bg-emerald-50 border-emerald-200' }
+  if (value < 0) return { label: 'Rejected', className: 'text-rose-700 bg-rose-50 border-rose-200' }
+  return { label: 'Updated', className: 'text-slate-700 bg-slate-100 border-slate-200' }
 }
 
 export default function UserHistoryPage({ token }) {
@@ -58,15 +58,13 @@ export default function UserHistoryPage({ token }) {
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(page, totalPages)
   const rows = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
-  const positives = entries.filter((entry) => Number(entry.scoreChange || 0) > 0).length
-  const negatives = entries.filter((entry) => Number(entry.scoreChange || 0) < 0).length
-  const net = entries.reduce((acc, entry) => acc + Number(entry.scoreChange || 0), 0)
+  const approvals = entries.filter((entry) => Number(entry.scoreChange || 0) > 0).length
+  const rejections = entries.filter((entry) => Number(entry.scoreChange || 0) < 0).length
 
   const statCards = [
     { label: 'Total', value: entries.length },
-    { label: 'Positive', value: positives },
-    { label: 'Negative', value: negatives },
-    { label: 'Net', value: `${net >= 0 ? '+' : ''}${net.toFixed(2)}` },
+    { label: 'Approved', value: approvals },
+    { label: 'Rejected', value: rejections },
   ]
 
   return (
@@ -74,8 +72,8 @@ export default function UserHistoryPage({ token }) {
       <section className="historyShell">
         <div className="historyHeader">
           <p className="eyebrow ty-page-kicker">History</p>
-          <h2 className="ty-section-title">Reputation Changes</h2>
-          <p className="ty-body">Track trust score additions/subtractions and their context.</p>
+          <h2 className="ty-section-title">Account Events</h2>
+          <p className="ty-body">Track account-related decisions and their context.</p>
         </div>
 
         <div className="historyStats">
@@ -100,9 +98,9 @@ export default function UserHistoryPage({ token }) {
             onChange={(event) => setChangeFilter(event.target.value)}
             className="historySelect"
           >
-            <option value="all">All Changes</option>
-            <option value="additions">Additions Only</option>
-            <option value="subtractions">Subtractions Only</option>
+            <option value="all">All Events</option>
+            <option value="additions">Approvals Only</option>
+            <option value="subtractions">Rejections Only</option>
           </select>
         </div>
 
@@ -130,14 +128,12 @@ export default function UserHistoryPage({ token }) {
             <div className="hidden md:block historyDesktopTable">
               <table style={{ width: '100%', borderCollapse: 'collapse', tableLayout: 'fixed' }}>
                 <colgroup>
-                  <col style={{ width: '180px' }} />
                   <col style={{ width: 'auto' }} />
-                  <col style={{ width: '160px' }} />
                   <col style={{ width: '160px' }} />
                 </colgroup>
                 <thead>
                   <tr style={{ background: 'var(--bg-inset)', textAlign: 'left' }}>
-                    {['Change', 'Context', 'Previous -> New', 'Date'].map((h) => (
+                    {['Event', 'Date'].map((h) => (
                       <th key={h} className="ty-meta historyTh">{h}</th>
                     ))}
                   </tr>
@@ -148,11 +144,6 @@ export default function UserHistoryPage({ token }) {
                     const tone = changeTone(value)
                     return (
                       <tr key={entry.logId} style={{ borderTop: '1px solid var(--line-hairline)' }}>
-                        <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
-                          <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold historyTone ${tone.className}`}>
-                            {value > 0 ? '+' : ''}{value.toFixed(2)} | {tone.label}
-                          </span>
-                        </td>
                         <td
                           className="ty-body"
                           style={{
@@ -162,20 +153,10 @@ export default function UserHistoryPage({ token }) {
                             color: 'var(--text-secondary)',
                           }}
                         >
-                          {entry.reason || 'No context provided'}
-                        </td>
-                        <td
-                          className="ty-body"
-                          style={{
-                            padding: '12px 16px',
-                            verticalAlign: 'middle',
-                            fontFamily: 'var(--mono, monospace)',
-                            fontSize: '0.82rem',
-                            color: 'var(--text-secondary)',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {entry.previousScore ?? 0} -> {entry.newScore ?? 0}
+                          <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold historyTone ${tone.className}`}>
+                            {tone.label}
+                          </span>
+                          <span style={{ marginLeft: '10px' }}>{entry.reason || 'No context provided'}</span>
                         </td>
                         <td
                           className="ty-body"
@@ -199,14 +180,13 @@ export default function UserHistoryPage({ token }) {
             <div className="md:hidden historyMobileCards">
               {rows.map((entry) => {
                 const value = Number(entry.scoreChange || 0)
-                const tone = changeTone(value)
-                return (
-                  <article key={entry.logId} className="historyMobileCard">
-                    <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold historyTone ${tone.className}`}>
-                      {value > 0 ? '+' : ''}{value.toFixed(2)} | {tone.label}
+                    const tone = changeTone(value)
+                    return (
+                      <article key={entry.logId} className="historyMobileCard">
+                        <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold historyTone ${tone.className}`}>
+                      {tone.label}
                     </span>
                     <p className="ty-body">{entry.reason || 'No context provided'}</p>
-                    <p className="ty-meta historyScoreDelta">{entry.previousScore ?? 0} -> {entry.newScore ?? 0}</p>
                     <p className="ty-meta">{entry.createdAt ? new Date(entry.createdAt).toLocaleString() : 'N/A'}</p>
                   </article>
                 )

@@ -2,13 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
-import TrustScoreMeter from './components/TrustScoreMeter'
 import ConfirmActionModal from './components/ConfirmActionModal'
 import PoliticianRankingPanel from './components/PoliticianRankingPanel'
 import LifecycleStageStrip from './components/LifecycleStageStrip'
 import { matchesJurisdiction } from './components/jurisdiction'
 import { ContributionCardsSkeleton, TimelineCardsSkeleton } from './components/Skeletons'
-import { clampTrustScore } from './components/trustScore'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
@@ -22,7 +20,7 @@ import EditSubmissionForm from './components/module1/EditSubmissionForm'
 import PoliticianDashboard from './components/module1/PoliticianDashboard'
 import TimelineLedgerDecoupled from './components/module1/TimelineLedger'
 import KPIWidget from './components/module1/KPIWidget'
-import { POSITION_OPTIONS } from './components/module1/positionConfig'
+import { POSITION_OPTIONS, formatPosition, formatJurisdiction, formatActionIdentifier } from './components/module1/positionConfig'
 import './components/module1/Module1.css'
 import {
   AlertTriangleIcon,
@@ -123,7 +121,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     contributions: ['Submissions', 'My Contribution Ledger'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     directory: ['Directory', 'Politician Directory'],
-    history: ['History', 'Reputation Change Ledger'],
+    history: ['History', 'Account Event Ledger'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
     profileMatrix: isDevModeActive
@@ -149,11 +147,27 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     loadPoliticians()
   }, [loadPoliticians])
 
+  // Re-fetch politician list whenever the dashboard view becomes active so that
+  // KPIs (billsAuthored, projectCompletions, WGI score, etc.) reflect any
+  // submissions that were approved/published since the initial page load.
+  useEffect(() => {
+    if (activeView === 'dashboard') {
+      loadPoliticians()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView])
+
   useEffect(() => {
     let cancelled = false
     if (!token) return () => { cancelled = true }
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(readApiResponse)
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          onLogout?.()
+          throw new Error('Session expired or unauthorized')
+        }
+        return readApiResponse(res)
+      })
       .then((data) => {
         if (cancelled || !data) return
         setResolvedUser(data)
@@ -161,7 +175,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       })
       .catch(() => null)
     return () => { cancelled = true }
-  }, [token, onUserUpdate])
+  }, [token, onUserUpdate, onLogout])
 
   function updateFormField(event) {
     const { name, value } = event.target
@@ -204,6 +218,8 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       setFormData(emptySubmission)
       setIsApprovedDomain(false)
       setSubmissionState({ status: 'success', message: data.message || 'Submission queued.' })
+      // Refresh politician KPIs in the background so ranking data stays current
+      loadPoliticians()
     } catch (error) {
       setSubmissionState({ status: 'error', message: error.message })
     }
@@ -236,7 +252,15 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   function openSubmitContributionForPolitician(politicianId) {
     if (!politicianId) return
     setSelectedPoliticianId(politicianId)
-    setFormData((current) => ({ ...current, politicianId }))
+    // Reset the whole form to a clean state for this politician so stale
+    // action details, previous status messages, and invalid actionIdentifier
+    // values from a prior session do not bleed through.
+    setFormData({
+      ...emptySubmission,
+      politicianId,
+    })
+    setSubmissionState({ status: 'idle', message: '' })
+    setIsApprovedDomain(false)
     setActiveView('submit')
   }
 
@@ -298,7 +322,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
               <div className="flex items-center gap-3">
                 {showHeaderTitles && (
                   <>
-                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
+                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-(--accent-soft) text-(--ph-blue) ring-1 ring-black/5">
                       <span className="ty-nav font-extrabold" aria-hidden="true">
                         {activeHeader[0]?.slice(0, 1) || 'P'}
                       </span>
@@ -306,7 +330,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
 
                     <div className="min-w-0">
                       <p className="ty-label">{activeHeader[0]}</p>
-                      <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
+                      <p className="ty-nav truncate text-(--text-primary)">{activeHeader[1]}</p>
                     </div>
                   </>
                 )}
@@ -455,7 +479,13 @@ function UserAccountPage({ token, user }) {
     let cancelled = false
     setState({ status: 'loading', message: 'Loading profile...' })
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(readApiResponse)
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          updateSession(null)
+          throw new Error('Session expired or unauthorized')
+        }
+        return readApiResponse(res)
+      })
       .then((data) => {
         if (cancelled) return
         setProfile(data)
@@ -493,9 +523,6 @@ function UserAccountPage({ token, user }) {
         <h2 className="ty-section-title">{profile?.fullName || user?.fullName || '—'}</h2>
         <p className="ty-body">{profile?.email || user?.email || '—'}</p>
         <p className="ty-body">Role: {profile?.role || user?.role || '—'}</p>
-        <div style={{ marginTop: '16px', maxWidth: '420px' }}>
-          <TrustScoreMeter score={profile?.trustScore ?? user?.trustScore ?? 0} />
-        </div>
       </section>
       <form className="editorPanel" onSubmit={onSave}>
         <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
@@ -787,7 +814,7 @@ function PoliticianDirectoryLoaderPanel({
           <select name="dashboardPosition" onChange={(e) => setPositionFilter(e.target.value)} value={positionFilter}>
             <option value="ALL">All Positions</option>
             {positionOptions.map((position) => (
-              <option key={position} value={position}>{position}</option>
+              <option key={position} value={position}>{formatPosition(position)}</option>
             ))}
           </select>
         </label>
@@ -807,7 +834,7 @@ function PoliticianDirectoryLoaderPanel({
       {state.status === 'loading' && <PageSectionLoader />}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="ty-meta text-[color:var(--text-muted)]">
+        <p className="ty-meta text-(--text-muted)">
           Showing {filteredPoliticians.length === 0 ? 0 : (safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filteredPoliticians.length)} of {filteredPoliticians.length}
         </p>
         <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />
@@ -832,8 +859,8 @@ function PoliticianDirectoryLoaderPanel({
             </span>
             <span className="dashboardCardBody">
               <strong className="ty-card-title">{politician.fullName}</strong>
-              <small className="ty-meta">{politician.position || 'UNKNOWN'}</small>
-              <small className="ty-meta">{politician.jurisdiction || 'Unspecified'}</small>
+              <small className="ty-meta">{formatPosition(politician.position) || 'UNKNOWN'}</small>
+              <small className="ty-meta">{formatJurisdiction(politician.jurisdiction) || 'Unspecified'}</small>
               <small className="ty-meta">{politician.partyAffiliation || 'Party not disclosed'}</small>
               {politician.coaAuditDiscrepancies > 0 && (
                 <span style={{
@@ -879,8 +906,8 @@ function PoliticianDirectoryLoaderPanel({
                 </span>
                 <div className="detailsIdentity">
                   <h4 className="ty-section-title">{detailsData.fullName}</h4>
-                  <p className="ty-body">{detailsData.position || 'UNKNOWN'}</p>
-                  <p className="ty-body">{detailsData.jurisdiction || 'Unspecified'}</p>
+                  <p className="ty-body">{formatPosition(detailsData.position) || 'UNKNOWN'}</p>
+                  <p className="ty-body">{formatJurisdiction(detailsData.jurisdiction) || 'Unspecified'}</p>
                   <p className="ty-body">{detailsData.partyAffiliation || 'Party not disclosed'}</p>
                 </div>
               </div>
@@ -913,7 +940,7 @@ function PoliticianDirectoryLoaderPanel({
                   <select name="position" onChange={updateEditField} required value={editForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
@@ -921,8 +948,8 @@ function PoliticianDirectoryLoaderPanel({
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
+                    <option value="NATIONAL">{formatJurisdiction('NATIONAL')}</option>
+                    <option value="CEBU_CITY">{formatJurisdiction('CEBU_CITY')}</option>
                   </select>
                   {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
                 </label>
@@ -957,14 +984,14 @@ function PoliticianDirectoryLoaderPanel({
                   }} required value={createForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {createErrors.position && <span className="fieldError">{createErrors.position}</span>}
                 </label>
                 <label>
                   Jurisdiction
-                  <input name="jurisdiction" readOnly value={createForm.jurisdiction || (POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdictionLabel ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                  <input name="jurisdiction" readOnly value={formatJurisdiction(createForm.jurisdiction) || formatJurisdiction(POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdiction ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
                   <small style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Auto-derived from position</small>
                   {createErrors.jurisdiction && <span className="fieldError">{createErrors.jurisdiction}</span>}
                 </label>
@@ -1006,6 +1033,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isWgiModalOpen, setIsWgiModalOpen] = useState(false)
   const [appealTarget, setAppealTarget] = useState(null)
   const [appealDetails, setAppealDetails] = useState('')
   const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
@@ -1028,9 +1056,9 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
   }, [isEditOpen])
 
   useEffect(() => {
-    onModalOpenChange?.(isEditOpen)
+    onModalOpenChange?.(isEditOpen || isWgiModalOpen)
     return () => onModalOpenChange?.(false)
-  }, [isEditOpen, onModalOpenChange])
+  }, [isEditOpen, isWgiModalOpen, onModalOpenChange])
 
   function openEditModal() {
     if (!profile || !isDatabaseAdmin) return
@@ -1125,16 +1153,16 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
       {profile && (
         <>
           <section className="profileSummary">
-            <p className="eyebrow ty-page-kicker">{profile.position || 'UNKNOWN'}</p>
+            <p className="eyebrow ty-page-kicker">{formatPosition(profile.position) || 'UNKNOWN'}</p>
             <h2 className="ty-section-title">{profile.fullName}</h2>
-            <p className="ty-body">{profile.jurisdiction || 'Unspecified jurisdiction'}</p>
+            <p className="ty-body">{formatJurisdiction(profile.jurisdiction) || 'Unspecified jurisdiction'}</p>
             <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
           <div style={{ display: 'flex', gap: '10px' }}>
             {isDatabaseAdmin && <button onClick={openEditModal} type="button">Edit Profile</button>}
             <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
           </div>
-          <KpiGrid profile={profile} />
+          <KpiGrid profile={profile} onModalOpenChange={setIsWgiModalOpen} />
           <section className="biographyBlock" style={{ marginTop: '16px' }}>
             <h2 className="ty-section-title">Biography</h2>
             <p className="ty-body">{profile.biography || 'No biography available.'}</p>
@@ -1159,7 +1187,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
                   <select name="position" onChange={updateEditField} required value={editForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
@@ -1167,8 +1195,8 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
+                    <option value="NATIONAL">{formatJurisdiction('NATIONAL')}</option>
+                    <option value="CEBU_CITY">{formatJurisdiction('CEBU_CITY')}</option>
                   </select>
                   {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
                 </label>
@@ -1187,7 +1215,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
       <ConfirmActionModal
         cancelLabel="Cancel"
         confirmLabel="File Appeal"
-        description="This will immediately deduct 10.00 trust points. If the appeal fails, an additional 20.00 points will be deducted."
+        description="This will reopen the published record for administrative review. If the appeal fails, the original ruling will remain in effect."
         isOpen={Boolean(appealTarget)}
         isSubmitting={appealState.status === 'loading'}
         onCancel={() => {
@@ -1320,8 +1348,8 @@ function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, po
                     </span>
                     <span className="compareCardBody">
                       <strong className="ty-card-title">{p.fullName}</strong>
-                      <small className="ty-meta">{p.position || 'UNKNOWN'}</small>
-                      <small className="ty-meta">{p.jurisdiction || 'Unspecified'}</small>
+                      <small className="ty-meta">{formatPosition(p.position) || 'UNKNOWN'}</small>
+                      <small className="ty-meta">{formatJurisdiction(p.jurisdiction) || 'Unspecified'}</small>
                     </span>
                     <span className="selectDot" aria-hidden="true" />
                   </button>
@@ -1412,30 +1440,6 @@ function TimelineLedger(props) {
   return <TimelineLedgerDecoupled {...props} />
 }
 
-function TrustDeltaBadge({ entry }) {
-  const status = String(entry.publicationStatus || entry.status || '').toUpperCase()
-  const delta = status === 'PUBLISHED' ? 15 : status === 'REJECTED' ? -20 : 0
-  if (!delta) return null
-  const isPositive = delta > 0
-  return (
-    <span
-      title="Trust score impact indicator"
-      style={{
-        background: isPositive ? 'var(--success-soft)' : 'var(--danger-soft)',
-        border: `1px solid ${isPositive ? 'var(--success-border)' : 'var(--danger-border)'}`,
-        borderRadius: 'var(--radius-full)',
-        fontFamily: 'var(--mono, monospace)',
-        fontSize: '11px',
-        fontWeight: '700',
-        letterSpacing: '0.02em',
-        padding: '2px 8px',
-        color: isPositive ? 'var(--success)' : 'var(--danger)',
-      }}
-    >
-      {isPositive ? `+${delta}` : `${delta}`} Trust
-    </span>
-  )
-}
 function Field({ label, name, onChange, required = true, type = 'text', value }) {
   return (
     <label>
@@ -1660,14 +1664,11 @@ function MyContributionsPanel({ onNavigateToSubmit, user }) {
             <article key={item.submissionId} className="review-card">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ background: 'var(--info-soft)', color: 'var(--info)', border: '1px solid var(--info-border)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em' }}>#{item.submissionId.substring(0, 8).toUpperCase()}</span>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                  <TrustDeltaBadge entry={item} />
-                  <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
-                </div>
+                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
-                {[[ 'Category', item.categoryTag ], [ 'Action Tag', item.actionIdentifier ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
+                {[[ 'Category', item.categoryTag ], [ 'Action Tag', formatActionIdentifier(item.actionIdentifier) ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
                   <div key={k}>
                     <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
                     <strong style={{ fontFamily: 'var(--display)', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{v}</strong>

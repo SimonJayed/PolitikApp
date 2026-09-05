@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useDeveloperSandbox } from './DeveloperSandboxContext';
 import { useAuth } from '../auth/AuthContext';
-import TrustScoreMeter from '../components/TrustScoreMeter';
 import { clampTrustScore } from '../components/trustScore';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -118,9 +117,8 @@ export default function DeveloperOptionsPanel() {
               onChange={(e) => setManipulatedUser({ ...manipulatedUser, role: e.target.value })}
               style={{ width: '100%', padding: '6px', background: '#1e293b', border: '1px solid #334155', color: '#fff', borderRadius: '4px', boxSizing: 'border-box' }}
             >
-              <option value="ADMIN">ADMINISTRATOR (Full System Controls)</option>
-              <option value="JUDICIAL_REVIEWER">JUDICIAL_REVIEWER (Moderation Access Granted)</option>
-              <option value="CONTRIBUTOR">CONTRIBUTOR (Moderation Restricted - Read Only)</option>
+              <option value="ADMIN">ADMIN (Lead Curator & Adjudicator)</option>
+              <option value="CONTRIBUTOR">CONTRIBUTOR (Proposals & Public Challenges)</option>
             </select>
             
             <button
@@ -167,19 +165,6 @@ export default function DeveloperOptionsPanel() {
           </div>
 
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>
-              <label>Trust Score: <strong style={{ color: '#34d399' }}>{Math.round(clampTrustScore(manipulatedUser.trustScore))} / 500</strong></label>
-              <span>Vote Weight: <strong style={{ color: '#38bdf8' }}>x{voteWeight}</strong></span>
-            </div>
-            <TrustScoreMeter score={manipulatedUser.trustScore} theme="dark" variant="inline" />
-            <input 
-              type="range" min="0" max="500" value={manipulatedUser.trustScore} 
-              onChange={(e) => setManipulatedUser({ ...manipulatedUser, trustScore: parseFloat(e.target.value) })}
-              style={{ width: '100%', cursor: 'pointer' }}
-            />
-          </div>
-
-          <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Account Status:</label>
             <select 
               value={manipulatedUser.status} 
@@ -192,50 +177,33 @@ export default function DeveloperOptionsPanel() {
           </div>
 
           <div style={{ borderTop: '1px solid #334155', paddingTop: '10px', display: 'grid', gap: '8px' }}>
-            <strong style={{ color: '#a5b4fc', fontSize: '12px' }}>Core Profile Metrics Matrix</strong>
+            <strong style={{ color: '#a5b4fc', fontSize: '12px' }}>Citizen Contribution Metrics</strong>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
               <label style={{ fontSize: '10px', color: '#94a3b8' }}>
                 Submitted
-                <input min="0" type="number" value={profileMetrics.contributorSubmissions} onChange={(e) => updateProfileMetric('contributorSubmissions', e.target.value)} style={numberInputStyle} />
+                <input min="0" type="number" value={profileMetrics.contributorSubmissions || 0} onChange={(e) => updateProfileMetric('contributorSubmissions', e.target.value)} style={numberInputStyle} />
               </label>
               <label style={{ fontSize: '10px', color: '#94a3b8' }}>
                 Approved
-                <input min="0" type="number" value={profileMetrics.contributorApproved} onChange={(e) => updateProfileMetric('contributorApproved', e.target.value)} style={numberInputStyle} />
+                <input min="0" type="number" value={profileMetrics.contributorApproved || 0} onChange={(e) => updateProfileMetric('contributorApproved', e.target.value)} style={numberInputStyle} />
               </label>
               <label style={{ fontSize: '10px', color: '#94a3b8' }}>
                 Rejected
-                <input min="0" type="number" value={profileMetrics.contributorRejected} onChange={(e) => updateProfileMetric('contributorRejected', e.target.value)} style={numberInputStyle} />
+                <input min="0" type="number" value={profileMetrics.contributorRejected || 0} onChange={(e) => updateProfileMetric('contributorRejected', e.target.value)} style={numberInputStyle} />
               </label>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+            <strong style={{ color: '#a5b4fc', fontSize: '12px', marginTop: '4px' }}>Admin Curation & Adjudication</strong>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
               <label style={{ fontSize: '10px', color: '#94a3b8' }}>
-                Consensus
-                <input min="0" type="number" value={profileMetrics.reviewerConsensusVotes} onChange={(e) => updateProfileMetric('reviewerConsensusVotes', e.target.value)} style={numberInputStyle} />
+                Curated Records
+                <input min="0" type="number" value={profileMetrics.adminCuratedRecords || 0} onChange={(e) => updateProfileMetric('adminCuratedRecords', e.target.value)} style={numberInputStyle} />
               </label>
               <label style={{ fontSize: '10px', color: '#94a3b8' }}>
-                Dissent
-                <input min="0" type="number" value={profileMetrics.reviewerDissentVotes} onChange={(e) => updateProfileMetric('reviewerDissentVotes', e.target.value)} style={numberInputStyle} />
-              </label>
-              <label style={{ fontSize: '10px', color: '#94a3b8' }}>
-                Ballots
-                <input min="0" type="number" value={profileMetrics.reviewerTotalBallots} onChange={(e) => updateProfileMetric('reviewerTotalBallots', e.target.value)} style={numberInputStyle} />
+                Pending Rulings
+                <input min="0" type="number" value={profileMetrics.adminPendingAdjudications || 0} onChange={(e) => updateProfileMetric('adminPendingAdjudications', e.target.value)} style={numberInputStyle} />
               </label>
             </div>
-
-            <label style={{ fontSize: '10px', color: '#94a3b8' }}>
-              Admin Interventions
-              <input min="0" type="number" value={profileMetrics.adminInterventions} onChange={(e) => updateProfileMetric('adminInterventions', e.target.value)} style={numberInputStyle} />
-            </label>
-
-            <label style={{ alignItems: 'center', display: 'flex', flexDirection: 'row', gap: '8px', color: '#cbd5e1', fontSize: '11px' }}>
-              <input checked={profileMetrics.adminTieBreakerActive} onChange={(e) => updateProfileMetric('adminTieBreakerActive', e.target.checked)} style={{ width: 'auto', minHeight: 'auto' }} type="checkbox" />
-              50-50 Tie Breaker Key
-            </label>
-            <label style={{ alignItems: 'center', display: 'flex', flexDirection: 'row', gap: '8px', color: '#cbd5e1', fontSize: '11px' }}>
-              <input checked={profileMetrics.adminTimeoutOverrideActive} onChange={(e) => updateProfileMetric('adminTimeoutOverrideActive', e.target.checked)} style={{ width: 'auto', minHeight: 'auto' }} type="checkbox" />
-              24-Hour Timeout Override Key
-            </label>
           </div>
         </div>
       )}

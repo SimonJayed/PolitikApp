@@ -3,6 +3,7 @@ import AccountLockStatus from './AccountLockStatus';
 import PenaltyAlert from './PenaltyAlert';
 import ContributorPenaltyDetail from './ContributorPenaltyDetail';
 import { ShieldCheckIcon } from '../icons/Lucide';
+import { formatActionIdentifier } from '../module1/positionConfig';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -125,7 +126,7 @@ function LedgerFilterTabs({ entries, state }) {
               <strong>{entry.impactSummary || 'No impact summary provided.'}</strong>
               <div className="ledgerEntryMeta">
                 <span>{entry.categoryTag || 'UNCATEGORIZED'}</span>
-                <span>{entry.actionIdentifier || 'NO_ACTION'}</span>
+                <span>{entry.actionIdentifier ? formatActionIdentifier(entry.actionIdentifier) : 'NO_ACTION'}</span>
                 <span>{formatActionMetric(entry.actionDetails, entry.actionIdentifier)}</span>
                 <span>{entry.status || 'SUBMITTED'}</span>
               </div>
@@ -293,7 +294,7 @@ export default function ContributorPenaltyDashboard({
           <div className="peerAppPending">
             <strong>Application Under Review</strong>
             <p>
-              Your verification application is currently under review by administration. You will be automatically elevated to a Peer Reviewer with a trust baseline of 150.00 points upon approval.
+              Your verification application is currently under review by administration. You will be automatically elevated to a Peer Reviewer upon approval.
             </p>
           </div>
         ) : (
@@ -368,7 +369,9 @@ export default function ContributorPenaltyDashboard({
               {applications.map((app) => (
                 <div key={app.applicationId} className="peerAppHistoryRow">
                   <div>
-                    <strong>{app.organizationType} Application</strong>
+                    <strong style={{ textTransform: 'capitalize' }}>
+                      {String(app.organizationType || '').toLowerCase().replaceAll('_', ' ')} Application
+                    </strong>
                     <div className="peerAppHistoryMeta">
                       <span>Email: {app.institutionalEmail}</span> | <span>Submitted: {new Date(app.createdAt).toLocaleDateString()}</span>
                     </div>

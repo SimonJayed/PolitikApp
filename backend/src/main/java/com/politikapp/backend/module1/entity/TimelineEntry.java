@@ -30,7 +30,7 @@ public class TimelineEntry {
     private String actionIdentifier;
 
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
-    @Column(name = "action_details", columnDefinition = "jsonb")
+    @Column(name = "action_details")
     private Map<String, Object> actionDetails;
 
     @Column(name = "summary", nullable = false, columnDefinition = "TEXT")
@@ -38,6 +38,12 @@ public class TimelineEntry {
 
     @Column(name = "source_url", columnDefinition = "TEXT")
     private String sourceUrl;
+
+    @Column(name = "primary_source_url", columnDefinition = "TEXT")
+    private String primarySourceUrl;
+
+    @Column(name = "verification_notes", columnDefinition = "TEXT")
+    private String verificationNotes;
 
     @Column(name = "publication_status", length = 50)
     private String publicationStatus = "PUBLISHED";
@@ -53,6 +59,8 @@ public class TimelineEntry {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    public TimelineEntry() {}
+
     public static TimelineEntry publishedFrom(ProfileEditSubmission submission) {
         TimelineEntry entry = new TimelineEntry();
         entry.setPoliticianId(submission.getPoliticianId());
@@ -62,6 +70,10 @@ public class TimelineEntry {
         entry.setActionDetails(submission.getActionDetails());
         entry.setSummary(submission.getImpactSummary());
         entry.setSourceUrl(submission.getSourceUrl());
+        entry.setPrimarySourceUrl(
+                submission.getPrimarySourceUrl() != null ? submission.getPrimarySourceUrl() : submission.getSourceUrl()
+        );
+        entry.setVerificationNotes(submission.getVerificationNotes());
         entry.setPublicationStatus("PUBLISHED");
         return entry;
     }
@@ -130,6 +142,22 @@ public class TimelineEntry {
         this.sourceUrl = sourceUrl;
     }
 
+    public String getPrimarySourceUrl() {
+        return primarySourceUrl;
+    }
+
+    public void setPrimarySourceUrl(String primarySourceUrl) {
+        this.primarySourceUrl = primarySourceUrl;
+    }
+
+    public String getVerificationNotes() {
+        return verificationNotes;
+    }
+
+    public void setVerificationNotes(String verificationNotes) {
+        this.verificationNotes = verificationNotes;
+    }
+
     public String getPublicationStatus() {
         return publicationStatus;
     }
@@ -148,5 +176,9 @@ public class TimelineEntry {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
     }
 }

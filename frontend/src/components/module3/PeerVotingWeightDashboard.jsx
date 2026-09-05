@@ -67,7 +67,7 @@ function PeerReviewerLedger({ entries, state }) {
 
       {state?.status !== 'loading' && filteredEntries.length > 0 && (
         <div className="ledgerEntryList">
-          {filteredEntries.map((entry) => {
+          {filteredEntries.map((entry, index) => {
             const voteStr = String(entry.userVote || '').toUpperCase();
             const statusStr = String(entry.status || '').toUpperCase();
             
@@ -84,7 +84,7 @@ function PeerReviewerLedger({ entries, state }) {
             }
 
             return (
-              <article className="ledgerEntry" key={entry.queueId || Math.random()}>
+              <article className="ledgerEntry" key={entry.queueId || index}>
                 <div className="ledgerEntryTopline">
                   <span className={`ledgerTypeBadge ${voteStr.toLowerCase() === 'agree' ? 'project' : voteStr.toLowerCase() === 'disagree' ? 'audit' : 'legislation'}`}>
                     CAST: {voteStr}
@@ -120,7 +120,6 @@ export default function PeerVotingWeightDashboard({
   simulateConsensusVote,
   simulateDissentVote,
   tier,
-  trustScore,
   isSandboxMode = false,
   token,
   user,
@@ -166,11 +165,10 @@ export default function PeerVotingWeightDashboard({
 
   return (
     <>
-      <VotingWeightAlert tier={tier} trustScore={trustScore} weight={metrics?.voteWeight} />
+      <VotingWeightAlert tier={tier} weight={metrics?.voteWeight} />
 
       <PeerVotingWeightDetail
         tier={tier}
-        trustScore={trustScore}
         consensusVotes={metrics.reviewerConsensusVotes}
         dissentVotes={metrics.reviewerDissentVotes}
         consensusRate={consensusRate}
@@ -190,7 +188,7 @@ export default function PeerVotingWeightDashboard({
         <section className="matrixActionPanel">
           <div>
             <h3 className="ty-card-title">Consensus Score Simulator</h3>
-            <p className="ty-body">SRS Section 3.2 thresholds recalculate instantly as trust changes.</p>
+            <p className="ty-body">SRS Section 3.2 thresholds recalculate instantly as reviewer status changes.</p>
           </div>
           <div className="matrixActionRow">
             <button onClick={simulateConsensusVote} type="button">+ Sim Consensus Vote</button>
