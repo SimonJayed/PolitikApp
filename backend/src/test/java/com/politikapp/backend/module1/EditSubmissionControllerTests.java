@@ -80,7 +80,7 @@ class EditSubmissionControllerTests {
                                 }
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.status").value("SUBMITTED"))
+                .andExpect(jsonPath("$.status").value("SUBMITTED_REQUEST"))
                 .andExpect(jsonPath("$.message").value("Transaction successfully committed to review queue ledger."));
     }
 

@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-@Profile("local")
+@Profile({"local", "supabase"})
 public class LocalDatabaseSeeder implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(LocalDatabaseSeeder.class);
 
@@ -47,41 +47,67 @@ public class LocalDatabaseSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        if (authUserRepository.count() > 0 && politicianRepository.count() > 0) {
-            log.info("Local database already populated. Skipping seeding.");
+        UUID adminId = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID contributorId = UUID.fromString("00000000-0000-0000-0000-000000000002");
+
+        // 1. Ensure Admin account exists and has valid credentials
+        var existingAdmin = authUserRepository.findByUsernameIgnoreCase("admin")
+                .or(() -> authUserRepository.findByEmailIgnoreCase("admin@politikapp.com"));
+        if (existingAdmin.isEmpty()) {
+            AuthUser admin = new AuthUser();
+            admin.setUserId(adminId);
+            admin.setFullName("System Administrator");
+            admin.setEmail("admin@politikapp.com");
+            admin.setUsername("admin");
+            admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
+            admin.setRole("ADMIN");
+            admin.setAccountStatus("ACTIVE");
+            admin.setTrustScore(BigDecimal.valueOf(500.00));
+            admin.setWritingTokenStatus("ACTIVE");
+            authUserRepository.save(admin);
+            log.info("Seeded default admin account (admin / Admin123!)");
+        } else {
+            adminId = existingAdmin.get().getUserId();
+            if (existingAdmin.get().getPasswordHash() == null || existingAdmin.get().getPasswordHash().isBlank()) {
+                AuthUser admin = existingAdmin.get();
+                admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
+                authUserRepository.save(admin);
+                log.info("Updated admin account with default password (Admin123!)");
+            }
+        }
+
+        // 2. Ensure Contributor account exists and has valid credentials
+        var existingContributor = authUserRepository.findByUsernameIgnoreCase("contributor")
+                .or(() -> authUserRepository.findByEmailIgnoreCase("contributor@politikapp.com"));
+        if (existingContributor.isEmpty()) {
+            AuthUser contributor = new AuthUser();
+            contributor.setUserId(contributorId);
+            contributor.setFullName("Civic Contributor");
+            contributor.setEmail("contributor@politikapp.com");
+            contributor.setUsername("contributor");
+            contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
+            contributor.setRole("CONTRIBUTOR");
+            contributor.setAccountStatus("ACTIVE");
+            contributor.setTrustScore(BigDecimal.valueOf(100.00));
+            contributor.setWritingTokenStatus("ACTIVE");
+            authUserRepository.save(contributor);
+            log.info("Seeded default contributor account (contributor / Contributor123!)");
+        } else {
+            contributorId = existingContributor.get().getUserId();
+            if (existingContributor.get().getPasswordHash() == null || existingContributor.get().getPasswordHash().isBlank()) {
+                AuthUser contributor = existingContributor.get();
+                contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
+                authUserRepository.save(contributor);
+                log.info("Updated contributor account with default password (Contributor123!)");
+            }
+        }
+
+        if (politicianRepository.count() > 0) {
+            log.info("Politicians already populated. Skipping politician seeding.");
             return;
         }
 
-        log.info("Seeding initial mock accounts and politicians for local offline development...");
-
-        // 1. Seed Admin & Contributor accounts
-        UUID adminId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        AuthUser admin = new AuthUser();
-        admin.setUserId(adminId);
-        admin.setFullName("System Administrator");
-        admin.setEmail("admin@politikapp.com");
-        admin.setUsername("admin");
-        admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
-        admin.setRole("ADMIN");
-        admin.setAccountStatus("ACTIVE");
-        admin.setTrustScore(BigDecimal.valueOf(500.00));
-        admin.setWritingTokenStatus("ACTIVE");
-        authUserRepository.save(admin);
-
-        UUID contributorId = UUID.fromString("00000000-0000-0000-0000-000000000002");
-        AuthUser contributor = new AuthUser();
-        contributor.setUserId(contributorId);
-        contributor.setFullName("Civic Contributor");
-        contributor.setEmail("contributor@politikapp.com");
-        contributor.setUsername("contributor");
-        contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
-        contributor.setRole("CONTRIBUTOR");
-        contributor.setAccountStatus("ACTIVE");
-        contributor.setTrustScore(BigDecimal.valueOf(100.00));
-        contributor.setWritingTokenStatus("ACTIVE");
-        authUserRepository.save(contributor);
-
-        // 2. Seed Politicians
+        log.info("Seeding initial politicians...");
         Politician mayor = new Politician();
         mayor.setFullName("Vico Sotto");
         mayor.setPosition("MAYOR");
