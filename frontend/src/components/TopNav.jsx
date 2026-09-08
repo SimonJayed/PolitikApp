@@ -5,6 +5,7 @@ import {
   GitCompareIcon,
   GavelIcon,
   HistoryIcon,
+  HomeIcon,
   LayoutDashboardIcon,
   LogOutIcon,
   MenuIcon,
@@ -63,9 +64,19 @@ function MobileMenuItem({ active, icon: Icon, label, onClick }) {
   )
 }
 
-function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, onLogout, onSelectView, title = 'PolitikApp', user }) {
+function TopNav({
+  activeView,
+  isCompareModalOpen = false,
+  isModalOpen = false,
+  onAuthClick,
+  onLogout,
+  onSelectView,
+  title = 'PolitikApp',
+  user,
+}) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const isAuthenticated = Boolean(user && user.userId)
 
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
@@ -74,18 +85,21 @@ function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, o
 
   const navItems = useMemo(() => {
     const items = [
+      { key: 'landing', label: 'Home', icon: HomeIcon },
       { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
       { key: 'directory', label: 'Politicians', icon: UsersIcon },
       { key: 'compare', label: 'Compare', icon: GitCompareIcon },
-      { key: 'contributions', label: 'Contributions', icon: HistoryIcon },
     ]
 
-    if (currentRole !== 'CONTRIBUTOR') {
-      items.push({ key: 'moderation', label: 'Moderation', icon: GavelIcon })
+    if (isAuthenticated) {
+      items.push({ key: 'contributions', label: 'Contributions', icon: HistoryIcon })
+      if (currentRole !== 'CONTRIBUTOR') {
+        items.push({ key: 'moderation', label: 'Moderation', icon: GavelIcon })
+      }
     }
 
     return items
-  }, [currentRole])
+  }, [currentRole, isAuthenticated])
 
   function navigate(viewKey) {
     onSelectView(viewKey)
@@ -149,74 +163,108 @@ function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, o
                 <MenuIcon size={22} />
               </button>
 
-              <div className="relative hidden md:block">
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                  className="ty-nav inline-flex h-14 items-center gap-3 rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
-                  aria-expanded={userMenuOpen}
-                  aria-label="User menu"
-                >
-                  <span className="grid h-10 w-10 place-items-center rounded-xl bg-[color:var(--ph-red)]/90 text-white">
-                    <UserCircleIcon size={22} />
-                  </span>
-                  <span className="max-w-[140px] truncate font-semibold">
-                    {user?.username || 'User'}
-                  </span>
-                  <ChevronDownIcon size={17} className="text-white/70" />
-                </button>
-
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-3 w-60 overflow-hidden rounded-2xl border border-white/10 bg-[color:var(--ph-blue)]/95 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-                    <div className="px-4 py-3">
-                      <div className="ty-meta text-white/60">Signed in as</div>
-                      <div className="ty-nav truncate font-semibold text-white">
+              {isAuthenticated ? (
+                <>
+                  <div className="relative hidden md:block">
+                    <button
+                      type="button"
+                      onClick={() => setUserMenuOpen((v) => !v)}
+                      className="ty-nav inline-flex h-14 items-center gap-3 rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                      aria-expanded={userMenuOpen}
+                      aria-label="User menu"
+                    >
+                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-[color:var(--ph-red)]/90 text-white">
+                        <UserCircleIcon size={22} />
+                      </span>
+                      <span className="max-w-[140px] truncate font-semibold">
                         {user?.username || 'User'}
+                      </span>
+                      <ChevronDownIcon size={17} className="text-white/70" />
+                    </button>
+
+                    {userMenuOpen && (
+                      <div className="absolute right-0 mt-3 w-60 overflow-hidden rounded-2xl border border-white/10 bg-[color:var(--ph-blue)]/95 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+                        <div className="px-4 py-3">
+                          <div className="ty-meta text-white/60">Signed in as</div>
+                          <div className="ty-nav truncate font-semibold text-white">
+                            {user?.username || 'User'}
+                          </div>
+                        </div>
+
+                        <div className="h-px bg-white/10" />
+
+                        <div className="p-2 user-menu-list">
+                          <button
+                            type="button"
+                            onClick={() => navigate('profileMatrix')}
+                            className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                          >
+                            <UserCircleIcon size={21} />
+                            <span>My Profile</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => navigate('account')}
+                            className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                          >
+                            <SettingsIcon size={24} />
+                            <span>Settings</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => navigate('history')}
+                            className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                          >
+                            <HistoryIcon size={21} />
+                            <span>History</span>
+                          </button>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="h-px bg-white/10" />
-
-                    <div className="p-2 user-menu-list">
-                      <button
-                        type="button"
-                        onClick={() => navigate('profileMatrix')}
-                        className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
-                      >
-                        <UserCircleIcon size={21} />
-                        <span>My Profile</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => navigate('account')}
-                        className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
-                      >
-                        <SettingsIcon size={24} />
-                        <span>Settings</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => navigate('history')}
-                        className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
-                      >
-                        <HistoryIcon size={21} />
-                        <span>History</span>
-                      </button>
-                    </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <button
-                type="button"
-                onClick={onLogout}
-                className="ty-nav inline-flex h-14 items-center gap-3 rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[color:var(--ph-red)]/80 hover:text-white"
-              >
-                <LogOutIcon size={22} />
-                <span className="hidden font-semibold sm:inline">Logout</span>
-              </button>
+                  <button
+                    type="button"
+                    onClick={onLogout}
+                    className="ty-nav inline-flex h-14 items-center gap-3 rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[color:var(--ph-red)]/80 hover:text-white"
+                  >
+                    <LogOutIcon size={22} />
+                    <span className="hidden font-semibold sm:inline">Logout</span>
+                  </button>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
+                    🌿 Guest Explorer
+                  </span>
+
+                  <button
+                    type="button"
+                    id="topnav-signin-btn"
+                    onClick={() => {
+                      onAuthClick?.('login')
+                      setMobileOpen(false)
+                    }}
+                    className="ty-nav inline-flex h-12 items-center justify-center rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                  >
+                    Sign In
+                  </button>
+
+                  <button
+                    type="button"
+                    id="topnav-register-btn"
+                    onClick={() => {
+                      onAuthClick?.('register')
+                      setMobileOpen(false)
+                    }}
+                    className="ty-nav hidden sm:inline-flex h-12 items-center justify-center rounded-2xl bg-teal-600 px-4 text-white font-semibold ring-1 ring-teal-400/40 shadow-sm transition hover:bg-teal-500 hover:text-white"
+                  >
+                    Create Account
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -233,26 +281,65 @@ function TopNav({ activeView, isCompareModalOpen = false, isModalOpen = false, o
                   />
                 ))}
 
-                <MobileMenuItem
-                  active={activeView === 'profileMatrix'}
-                  icon={UserCircleIcon}
-                  label="My Profile"
-                  onClick={() => navigate('profileMatrix')}
-                />
+                {isAuthenticated ? (
+                  <>
+                    <MobileMenuItem
+                      active={activeView === 'profileMatrix'}
+                      icon={UserCircleIcon}
+                      label="My Profile"
+                      onClick={() => navigate('profileMatrix')}
+                    />
 
-                <MobileMenuItem
-                  active={activeView === 'account'}
-                  icon={SettingsIcon}
-                  label="Settings"
-                  onClick={() => navigate('account')}
-                />
+                    <MobileMenuItem
+                      active={activeView === 'account'}
+                      icon={SettingsIcon}
+                      label="Settings"
+                      onClick={() => navigate('account')}
+                    />
 
-                <MobileMenuItem
-                  active={activeView === 'history'}
-                  icon={HistoryIcon}
-                  label="History"
-                  onClick={() => navigate('history')}
-                />
+                    <MobileMenuItem
+                      active={activeView === 'history'}
+                      icon={HistoryIcon}
+                      label="History"
+                      onClick={() => navigate('history')}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false)
+                        onLogout()
+                      }}
+                      className="ty-nav flex items-center gap-3 rounded-2xl px-3 py-3 text-left text-red-300 hover:bg-red-500/20"
+                    >
+                      <LogOutIcon size={20} />
+                      <span>Logout</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="pt-2 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false)
+                        onAuthClick?.('login')
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-[rgba(18,42,88,0.72)] text-white text-sm font-semibold"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileOpen(false)
+                        onAuthClick?.('register')
+                      }}
+                      className="w-full py-2.5 rounded-xl bg-teal-600 text-white text-sm font-semibold"
+                    >
+                      Create Account
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

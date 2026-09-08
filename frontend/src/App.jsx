@@ -3,10 +3,9 @@ import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
 import ConfirmActionModal from './components/ConfirmActionModal'
-import PoliticianRankingPanel from './components/PoliticianRankingPanel'
 import LifecycleStageStrip from './components/LifecycleStageStrip'
 import { matchesJurisdiction } from './components/jurisdiction'
-import { ContributionCardsSkeleton, TimelineCardsSkeleton } from './components/Skeletons'
+import { ContributionCardsSkeleton } from './components/Skeletons'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
@@ -14,6 +13,9 @@ import { useAuth } from './auth/AuthContext'
 import AuthPages from './auth/AuthPages'
 import TopNav from './components/TopNav'
 import UserHistoryPage from './components/UserHistoryPage'
+import LandingPage from './components/LandingPage'
+import AuthPromptModal from './components/AuthPromptModal'
+import WgiMethodologyModal from './components/module1/WgiMethodologyModal'
 
 // Decoupled Module 1 Components
 import EditSubmissionForm from './components/module1/EditSubmissionForm'
@@ -87,15 +89,22 @@ async function readApiResponse(response) {
   return body
 }
 
-function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
+function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate, token }) {
   const sandboxContext = useDeveloperSandbox()
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
   const [resolvedUser, setResolvedUser] = useState(currentUser || null)
   const activeUser = isDevModeActive && manipulatedUser ? manipulatedUser : resolvedUser
-  const currentRole = activeUser?.role || 'CONTRIBUTOR';
+  const currentRole = activeUser?.role || 'CONTRIBUTOR'
 
-  const [activeView, setActiveView] = useState('dashboard')
+  const initialParams = useMemo(() => new URLSearchParams(window.location.search), [])
+  const initialViewParam = initialParams.get('view')
+  const initialPoliticianParam = initialParams.get('id') || initialParams.get('politicianId')
+
+  const [activeView, setActiveView] = useState(() => {
+    if (initialViewParam) return initialViewParam
+    return isAuthenticated ? 'dashboard' : 'landing'
+  })
   const [politiciansState, setPoliticiansState] = useState({
     data: [],
     message: '',
@@ -106,7 +115,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' })
   const [dashboardId, setDashboardId] = useState('')
   const [dashboardState, setDashboardState] = useState({ status: 'idle', message: '', data: null })
-  const [selectedPoliticianId, setSelectedPoliticianId] = useState('')
+  const [selectedPoliticianId, setSelectedPoliticianId] = useState(() => initialPoliticianParam || '')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
@@ -114,14 +123,20 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isApprovedDomain, setIsApprovedDomain] = useState(false)
+  const [authMode, setAuthMode] = useState('login')
+  const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, actionType: 'general' })
+  const [isWgiMethodologyOpen, setIsWgiMethodologyOpen] = useState(false)
+  const [notFoundNotice, setNotFoundNotice] = useState('')
 
   const activeHeader = {
     account: ['Account', 'User Account'],
+    auth: ['Authentication', 'Civic Account Access'],
     compare: ['Compare', 'Compare Politicians'],
     contributions: ['Submissions', 'My Contribution Ledger'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     directory: ['Directory', 'Politician Directory'],
     history: ['History', 'Account Event Ledger'],
+    landing: ['Home', 'Verifiable Governance Platform'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
     profileMatrix: isDevModeActive
@@ -130,7 +145,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const headerTitleHiddenFor = new Set(['dashboard', 'directory', 'compare', 'contributions', 'submit', 'moderation'])
+  const headerTitleHiddenFor = new Set(['dashboard', 'directory', 'compare', 'contributions', 'submit', 'moderation', 'landing', 'auth'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const loadPoliticians = useCallback(async () => {
@@ -241,15 +256,98 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     }
   }
 
+  const navigateTo = useCallback((viewKey, politicianId = null, replace = false) => {
+    setNotFoundNotice('')
+    setActiveView(viewKey)
+    if (politicianId !== null) {
+      setSelectedPoliticianId(politicianId)
+    }
+
+    try {
+      const url = new URL(window.location.href)
+      if (viewKey && viewKey !== 'landing') {
+        url.searchParams.set('view', viewKey)
+      } else {
+        url.searchParams.delete('view')
+      }
+
+      if (politicianId) {
+        url.searchParams.set('id', politicianId)
+        url.searchParams.delete('politicianId')
+      } else if (politicianId === '') {
+        url.searchParams.delete('id')
+        url.searchParams.delete('politicianId')
+      }
+
+      if (replace) {
+        window.history.replaceState({ view: viewKey, id: politicianId }, '', url.toString())
+      } else {
+        window.history.pushState({ view: viewKey, id: politicianId }, '', url.toString())
+      }
+    } catch {
+      // Ignore URL manipulation failures
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  useEffect(() => {
+    function handlePopState() {
+      const params = new URLSearchParams(window.location.search)
+      const v = params.get('view') || (isAuthenticated ? 'dashboard' : 'landing')
+      const id = params.get('id') || params.get('politicianId') || ''
+      setActiveView(v)
+      if (id) {
+        setSelectedPoliticianId(id)
+        setDashboardId(id)
+        loadDashboardById(id)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [isAuthenticated])
+
+  const coldLoadHandled = useRef(false)
+  useEffect(() => {
+    if (coldLoadHandled.current || politiciansState.status !== 'success') return
+    coldLoadHandled.current = true
+
+    if (initialViewParam === 'profile' && initialPoliticianParam) {
+      const found = politiciansState.data.some((p) => p.politicianId === initialPoliticianParam)
+      if (found) {
+        setSelectedPoliticianId(initialPoliticianParam)
+        setDashboardId(initialPoliticianParam)
+        loadDashboardById(initialPoliticianParam)
+      } else {
+        setNotFoundNotice(`Politician profile "${initialPoliticianParam}" was not found. Redirected to public directory.`)
+        navigateTo('directory', '', true)
+      }
+    }
+  }, [politiciansState.status, politiciansState.data, initialViewParam, initialPoliticianParam, navigateTo])
+
+  useEffect(() => {
+    if (isAuthenticated && (activeView === 'auth' || activeView === 'landing')) {
+      navigateTo('dashboard', null, true)
+    }
+  }, [isAuthenticated, activeView, navigateTo])
+
+  const triggerAuthPrompt = useCallback((actionType = 'general') => {
+    setAuthModalConfig({ isOpen: true, actionType })
+  }, [])
+
   async function openPoliticianProfile(politicianId) {
     if (!politicianId) return
     setSelectedPoliticianId(politicianId)
     setDashboardId(politicianId)
     await loadDashboardById(politicianId)
-    setActiveView('profile')
+    navigateTo('profile', politicianId)
   }
 
   function openSubmitContributionForPolitician(politicianId) {
+    if (!isAuthenticated) {
+      triggerAuthPrompt('propose')
+      return
+    }
     if (!politicianId) return
     setSelectedPoliticianId(politicianId)
     // Reset the whole form to a clean state for this politician so stale
@@ -261,7 +359,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     })
     setSubmissionState({ status: 'idle', message: '' })
     setIsApprovedDomain(false)
-    setActiveView('submit')
+    navigateTo('submit', politicianId)
   }
 
   function handlePoliticianLocalUpdate(politicianId, updates) {
@@ -309,9 +407,13 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       <TopNav
         activeView={activeView}
         isCompareModalOpen={isCompareModalOpen}
-        isModalOpen={isAnyModalOpen}
+        isModalOpen={isAnyModalOpen || authModalConfig.isOpen || isWgiMethodologyOpen}
+        onAuthClick={(mode) => {
+          setAuthMode(mode || 'login')
+          navigateTo('auth')
+        }}
         onLogout={onLogout}
-        onSelectView={setActiveView}
+        onSelectView={(viewKey) => navigateTo(viewKey)}
         title="PolitikApp"
         user={activeUser}
       />
@@ -337,13 +439,74 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             </div>
           </header>
         )}
-        {!isAnyModalOpen && activeView !== 'dashboard' && (
+        {!isAnyModalOpen && activeView !== 'dashboard' && activeView !== 'landing' && activeView !== 'auth' && (
           <div className="backNavRow">
-            <button aria-label="Back to Dashboard" className="appBackButton" onClick={() => setActiveView('dashboard')} type="button">
+            <button
+              aria-label="Back"
+              className="appBackButton"
+              onClick={() => navigateTo(isAuthenticated ? 'dashboard' : 'landing')}
+              type="button"
+            >
               <ArrowLeftIcon size={16} />
-              Back
+              {isAuthenticated ? 'Back to Dashboard' : 'Back to Home'}
             </button>
           </div>
+        )}
+
+        {notFoundNotice && (
+          <div style={{
+            margin: '12px 0 20px',
+            padding: '12px 20px',
+            borderRadius: '12px',
+            background: '#fef3c7',
+            border: '1px solid #f59e0b',
+            color: '#92400e',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '14px',
+            fontWeight: '500',
+          }}>
+            <span>⚠️ {notFoundNotice}</span>
+            <button
+              type="button"
+              onClick={() => setNotFoundNotice('')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#92400e',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+              aria-label="Dismiss notice"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        {activeView === 'landing' && (
+          <LandingPage
+            politicians={politiciansState.data}
+            isGuest={!isAuthenticated}
+            onExploreDirectory={() => navigateTo('directory')}
+            onExploreDashboard={() => navigateTo('dashboard')}
+            onSelectPolitician={(id) => openPoliticianProfile(id)}
+            onCompare={() => navigateTo('compare')}
+            onAuthClick={(mode) => {
+              setAuthMode(mode || 'login')
+              navigateTo('auth')
+            }}
+            onMethodologyClick={() => setIsWgiMethodologyOpen(true)}
+          />
+        )}
+
+        {activeView === 'auth' && (
+          <AuthPages
+            initialMode={authMode}
+            onBack={() => navigateTo('directory')}
+          />
         )}
 
         {activeView === 'directory' && (
@@ -360,16 +523,43 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
           />
         )}
         {activeView === 'submit' && (
-          <SubmissionPanel
-            formData={formData}
-            onChange={updateFormField}
-            onDetailChange={updateActionDetail}
-            onDomainCheck={setIsApprovedDomain}
-            onSubmit={handleSubmission}
-            selectedPoliticianId={selectedPoliticianId}
-            state={submissionState}
-            politicians={politiciansState.data}
-          />
+          !isAuthenticated ? (
+            <section className="workspace">
+              <div style={{
+                textAlign: 'center',
+                padding: '48px 32px',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--info-border)',
+                borderRadius: 'var(--radius-lg)',
+              }}>
+                <h2 className="ty-section-title" style={{ margin: '0 0 10px' }}>Authentication Required</h2>
+                <p className="ty-body" style={{ color: 'var(--text-muted)', margin: '0 auto 20px', maxWidth: '460px' }}>
+                  Evidence submission requires an active civic contributor account to maintain provenance and verification records.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('login')
+                    navigateTo('auth')
+                  }}
+                  className="btn-landing-primary"
+                >
+                  Sign In to Submit Evidence
+                </button>
+              </div>
+            </section>
+          ) : (
+            <SubmissionPanel
+              formData={formData}
+              onChange={updateFormField}
+              onDetailChange={updateActionDetail}
+              onDomainCheck={setIsApprovedDomain}
+              onSubmit={handleSubmission}
+              selectedPoliticianId={selectedPoliticianId}
+              state={submissionState}
+              politicians={politiciansState.data}
+            />
+          )
         )}
         {activeView === 'profile' && (
           <PoliticianProfilePage
@@ -379,6 +569,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             onUserUpdate={onUserUpdate}
             onAppealModalOpenChange={setIsAppealModalOpen}
             onModalOpenChange={setIsProfileModalOpen}
+            onAuthPrompt={triggerAuthPrompt}
             politicianId={selectedPoliticianId}
             politicians={politiciansState.data}
             state={dashboardState}
@@ -390,7 +581,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         {activeView === 'dashboard' && (
           <DashboardPanel
             isLoading={politiciansState.status === 'loading'}
-            onNavigate={setActiveView}
+            onNavigate={navigateTo}
             onOpenProfile={openPoliticianProfile}
             politicians={politiciansState.data}
             user={activeUser}
@@ -407,7 +598,17 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             state={comparisonState}
           />
         )}
-        {activeView === 'contributions' && <MyContributionsPanel onNavigateToSubmit={() => setActiveView('submit')} user={activeUser} />}
+        {activeView === 'contributions' && (
+          !isAuthenticated ? (
+            <section className="workspace">
+              <div style={{ textAlign: 'center', padding: '48px 32px' }}>
+                <p className="ty-body">Please sign in to view your contribution history.</p>
+              </div>
+            </section>
+          ) : (
+            <MyContributionsPanel onNavigateToSubmit={() => navigateTo('submit')} user={activeUser} />
+          )
+        )}
         {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={activeUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
@@ -448,16 +649,42 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
         {activeView === 'account' && <UserAccountPage token={token} user={activeUser} />}
         {activeView === 'history' && <UserHistoryPage token={token} />}
       </section>
+
+      <AuthPromptModal
+        isOpen={authModalConfig.isOpen}
+        actionType={authModalConfig.actionType}
+        onClose={() => setAuthModalConfig({ isOpen: false, actionType: 'general' })}
+        onSignIn={() => {
+          setAuthModalConfig({ isOpen: false, actionType: 'general' })
+          setAuthMode('login')
+          navigateTo('auth')
+        }}
+        onRegister={() => {
+          setAuthModalConfig({ isOpen: false, actionType: 'general' })
+          setAuthMode('register')
+          navigateTo('auth')
+        }}
+      />
+
+      <WgiMethodologyModal
+        isOpen={isWgiMethodologyOpen}
+        onClose={() => setIsWgiMethodologyOpen(false)}
+      />
     </main>
   )
 }
 
 function App() {
   const { isAuthenticated, logout, token, updateSession, user } = useAuth()
-  if (!isAuthenticated) return <AuthPages />
   return (
     <DeveloperSandboxProvider currentUser={user} token={token}>
-      <AppInner currentUser={user} onLogout={logout} onUserUpdate={updateSession} token={token} />
+      <AppInner
+        currentUser={user}
+        isAuthenticated={isAuthenticated}
+        onLogout={logout}
+        onUserUpdate={updateSession}
+        token={token}
+      />
       {/* <DeveloperOptionsPanel /> */}
     </DeveloperSandboxProvider>
   )
@@ -1026,9 +1253,79 @@ function PoliticianDirectoryLoaderPanel({
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
+/*  Civic Data Export Helpers                                                   */
+/* ─────────────────────────────────────────────────────────────────────────── */
+function exportLedgerAsCsv(entries = [], politicianName = 'politician') {
+  const headers = ['Date', 'Category', 'Action Type', 'Summary', 'Source Citation', 'Status', 'Verification Notes']
+  const rows = entries.map((entry) => [
+    entry.createdAt ? new Date(entry.createdAt).toISOString().split('T')[0] : '',
+    entry.categoryTag || '',
+    formatActionIdentifier(entry.actionIdentifier) || '',
+    (entry.summary || entry.impactSummary || '').replace(/"/g, '""'),
+    (entry.sourceUrl || '').replace(/"/g, '""'),
+    entry.status || 'PUBLISHED',
+    (entry.verificationNotes || '').replace(/"/g, '""'),
+  ])
+  const csvContent = [
+    headers.map((h) => `"${h}"`).join(','),
+    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+  ].join('\r\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${politicianName.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_records.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function exportLedgerAsJson(entries = [], profile = {}) {
+  const data = {
+    metadata: {
+      politicianId: profile.politicianId,
+      fullName: profile.fullName,
+      position: profile.position,
+      jurisdiction: profile.jurisdiction,
+      partyAffiliation: profile.partyAffiliation,
+      wgiScore: profile.wgiScore,
+      exportedAt: new Date().toISOString(),
+      platform: 'PolitikApp 2.0 Civic Governance Ledger',
+      recordCount: entries.length,
+    },
+    timelineEntries: entries,
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${(profile.fullName || 'politician').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_records.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
+function PoliticianProfilePage({
+  dbUser,
+  onAddContribution,
+  onAppealModalOpenChange,
+  onAuthPrompt,
+  onModalOpenChange,
+  onPoliticianUpdate,
+  onReload,
+  onUserUpdate,
+  politicianId,
+  politicians,
+  state,
+  token,
+  user,
+}) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
@@ -1158,9 +1455,64 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
             <p className="ty-body">{formatJurisdiction(profile.jurisdiction) || 'Unspecified jurisdiction'}</p>
             <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             {isDatabaseAdmin && <button onClick={openEditModal} type="button">Edit Profile</button>}
-            <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
+            <button
+              onClick={() => {
+                if (!user && onAuthPrompt) {
+                  onAuthPrompt('propose')
+                  return
+                }
+                onAddContribution(profile.politicianId)
+              }}
+              type="button"
+            >
+              Add Contribution
+            </button>
+            <button
+              type="button"
+              id="export-ledger-csv-btn"
+              onClick={() => exportLedgerAsCsv(timelineEntries, profile?.fullName)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                color: '#0f172a',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
+              title="Download timeline records as CSV for research or journalism"
+            >
+              <span>📊</span> Export CSV
+            </button>
+            <button
+              type="button"
+              id="export-ledger-json-btn"
+              onClick={() => exportLedgerAsJson(timelineEntries, profile)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                color: '#0f172a',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
+              title="Download timeline records as structured JSON"
+            >
+              <span>📦</span> Export JSON
+            </button>
           </div>
           <KpiGrid profile={profile} onModalOpenChange={setIsWgiModalOpen} />
           <section className="biographyBlock" style={{ marginTop: '16px' }}>
@@ -1168,7 +1520,14 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
             <p className="ty-body">{profile.biography || 'No biography available.'}</p>
           </section>
           <StatusLine state={appealState} />
-          <TimelineLedger entries={timelineEntries} isLoading={state.status === 'loading'} onAppeal={handleAppeal} title="Published Contribution Timeline" user={user} />
+          <TimelineLedger
+            entries={timelineEntries}
+            isLoading={state.status === 'loading'}
+            onAppeal={handleAppeal}
+            onAuthPrompt={onAuthPrompt}
+            title="Published Contribution Timeline"
+            user={user}
+          />
         </>
       )}
 

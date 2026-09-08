@@ -78,6 +78,7 @@ export default function TimelineLedger({
   compact = false,
   isLoading = false,
   onAppeal,
+  onAuthPrompt,
   title = 'Published Timeline Ledger',
   user,
 }) {
@@ -183,7 +184,13 @@ export default function TimelineLedger({
 
                   <button
                     type="button"
-                    onClick={() => setChallengeModalRecord(entry)}
+                    onClick={() => {
+                      if (!user && onAuthPrompt) {
+                        onAuthPrompt('challenge');
+                        return;
+                      }
+                      setChallengeModalRecord(entry);
+                    }}
                     title="Challenge this record with counter-evidence or audit discrepancies"
                     style={{
                       display: 'inline-flex',

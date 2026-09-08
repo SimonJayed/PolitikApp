@@ -116,46 +116,16 @@ public class AuthService {
         if (StringUtils.hasText(request.username())) {
             user.setUsername(request.username().trim());
         }
-        if (StringUtils.hasText(request.role())) {
-            String targetRole = request.role().trim().toUpperCase(Locale.ROOT);
-            if ("JUDICIAL_REVIEWER".equals(targetRole)) {
-                targetRole = "PEER";
-            } else if ("ADMINISTRATOR".equals(targetRole)) {
-                targetRole = "ADMIN";
-            }
-            if (!"CONTRIBUTOR".equals(targetRole) && !"PEER".equals(targetRole) && !"ADMIN".equals(targetRole)) {
-                throw new HttpResponseException(400, "Invalid role name: " + request.role());
-            }
-            user.setRole(targetRole);
-        }
-        if (request.trustScore() != null) {
-            user.setTrustScore(clampTrustScore(request.trustScore()));
-        }
-        if (StringUtils.hasText(request.accountStatus())) {
-            String accountStatus = request.accountStatus().trim().toUpperCase(Locale.ROOT);
-            if (!"ACTIVE".equals(accountStatus) && !"LOCKED".equals(accountStatus) && !"SUSPENDED".equals(accountStatus)) {
-                throw new HttpResponseException(400, "Invalid account status: " + request.accountStatus());
-            }
-            user.setAccountStatus(accountStatus);
-        }
-        if (StringUtils.hasText(request.writingTokenStatus())) {
-            String tokenStatus = request.writingTokenStatus().trim().toUpperCase(Locale.ROOT);
-            if (!"ACTIVE".equals(tokenStatus) && !"INVALIDATED".equals(tokenStatus) && !"EXPIRED".equals(tokenStatus)) {
-                throw new HttpResponseException(400, "Invalid writing token status: " + request.writingTokenStatus());
-            }
-            user.setWritingTokenStatus(tokenStatus);
-        }
         if (request.sandboxProfileMetrics() != null) {
             user.setSandboxProfileMetrics(request.sandboxProfileMetrics());
         }
         
         AuthUser saved = authUserRepository.save(user);
 
-        // Map database role to standard Spring security authority string (e.g., "ROLE_ADMIN")
+        // Retain verified database role in the active security context container in-memory
         String securityRole = "ROLE_" + saved.getRole();
         List<SimpleGrantedAuthority> newAuthorities = List.of(new SimpleGrantedAuthority(securityRole));
 
-        // Re-authenticate the active security context container in-memory
         UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(
             new AuthPrincipal(saved.getUserId(), saved.getEmail(), saved.getRole()),
             SecurityContextHolder.getContext().getAuthentication() != null ?

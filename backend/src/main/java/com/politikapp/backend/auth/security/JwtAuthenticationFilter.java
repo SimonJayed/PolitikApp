@@ -18,13 +18,16 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository;
+    private final boolean sandboxEnabled;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository
+            com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository,
+            @org.springframework.beans.factory.annotation.Value("${app.sandbox.enabled:false}") boolean sandboxEnabled
     ) {
         this.jwtService = jwtService;
         this.authUserRepository = authUserRepository;
+        this.sandboxEnabled = sandboxEnabled;
     }
 
     @Override
@@ -55,14 +58,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
 
                 String role = claims.get("role", String.class);
-                String sandboxRoleOverride = request.getHeader("X-Sandbox-Role-Override");
-                if (org.springframework.util.StringUtils.hasText(sandboxRoleOverride)) {
-                    if ("JUDICIAL_REVIEWER".equalsIgnoreCase(sandboxRoleOverride)) {
-                        role = "PEER";
-                    } else if ("ADMINISTRATOR".equalsIgnoreCase(sandboxRoleOverride) || "ADMIN".equalsIgnoreCase(sandboxRoleOverride)) {
-                        role = "ADMIN";
-                    } else {
-                        role = sandboxRoleOverride.toUpperCase();
+                if (sandboxEnabled) {
+                    String sandboxRoleOverride = request.getHeader("X-Sandbox-Role-Override");
+                    if (org.springframework.util.StringUtils.hasText(sandboxRoleOverride)) {
+                        if ("JUDICIAL_REVIEWER".equalsIgnoreCase(sandboxRoleOverride)) {
+                            role = "PEER";
+                        } else if ("ADMINISTRATOR".equalsIgnoreCase(sandboxRoleOverride) || "ADMIN".equalsIgnoreCase(sandboxRoleOverride)) {
+                            role = "ADMIN";
+                        } else {
+                            role = sandboxRoleOverride.toUpperCase();
+                        }
                     }
                 }
 

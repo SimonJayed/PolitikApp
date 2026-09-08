@@ -95,10 +95,16 @@ function resolveWgiScore(politician) {
 
 function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politicians = [] }) {
   const [sortBy, setSortBy] = useState(() => getSavedSort())
-  const [pages, setPages]   = useState({ CEBU_CITY: 1, NATIONAL: 1 })
+  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
+  const [officeFilter, setOfficeFilter] = useState('ALL')
+  const [pages, setPages] = useState({ CEBU_CITY: 1, NATIONAL: 1 })
   const pageSize = 10
 
   const activeSortOption = SORT_OPTIONS.find((opt) => opt.key === sortBy) || SORT_OPTIONS[0]
+
+  const officeOptions = useMemo(() => {
+    return Array.from(new Set(politicians.map((p) => p.position).filter(Boolean))).sort()
+  }, [politicians])
 
   function handleSortChange(e) {
     const next = e.target.value
@@ -124,19 +130,68 @@ function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politic
     })
   }, [politicians, sortBy])
 
-  const national = ranked.filter((p) => matchesJurisdiction(p.jurisdiction, 'NATIONAL'))
-  const cebuCity = ranked.filter((p) => matchesJurisdiction(p.jurisdiction, 'CEBU_CITY'))
-  const scopes = [
-    { key: 'NATIONAL',  title: 'National Ranking',  rows: national },
-    { key: 'CEBU_CITY', title: 'Cebu City Ranking', rows: cebuCity },
-  ]
+  const filteredRanked = useMemo(() => {
+    return ranked.filter((p) => {
+      if (officeFilter !== 'ALL' && p.position !== officeFilter) {
+        return false
+      }
+      return true
+    })
+  }, [ranked, officeFilter])
+
+  const national = filteredRanked.filter((p) => matchesJurisdiction(p.jurisdiction, 'NATIONAL'))
+  const cebuCity = filteredRanked.filter((p) => matchesJurisdiction(p.jurisdiction, 'CEBU_CITY'))
+
+  const scopes = useMemo(() => {
+    const list = []
+    if (jurisdictionFilter === 'ALL' || jurisdictionFilter === 'NATIONAL') {
+      list.push({ key: 'NATIONAL', title: 'National Officials Ranking', rows: national })
+    }
+    if (jurisdictionFilter === 'ALL' || jurisdictionFilter === 'CEBU_CITY') {
+      list.push({ key: 'CEBU_CITY', title: 'Cebu City Officials Ranking', rows: cebuCity })
+    }
+    return list
+  }, [jurisdictionFilter, national, cebuCity])
 
   return (
     <section className="rankingPanelWrap">
-      <div className="rankingFilterBar">
+      <div className="rankingFilterBar" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <label>
+          Jurisdiction
+          <select
+            id="ranking-jurisdiction-filter"
+            value={jurisdictionFilter}
+            onChange={(e) => {
+              setJurisdictionFilter(e.target.value)
+              setPages({ CEBU_CITY: 1, NATIONAL: 1 })
+            }}
+          >
+            <option value="ALL">All Jurisdictions</option>
+            <option value="NATIONAL">National</option>
+            <option value="CEBU_CITY">Cebu City</option>
+          </select>
+        </label>
+
+        <label>
+          Office Type
+          <select
+            id="ranking-office-filter"
+            value={officeFilter}
+            onChange={(e) => {
+              setOfficeFilter(e.target.value)
+              setPages({ CEBU_CITY: 1, NATIONAL: 1 })
+            }}
+          >
+            <option value="ALL">All Office Types</option>
+            {officeOptions.map((pos) => (
+              <option key={pos} value={pos}>{formatPosition(pos)}</option>
+            ))}
+          </select>
+        </label>
+
         <label>
           Sort by
-          <select value={sortBy} onChange={handleSortChange}>
+          <select id="ranking-sort-filter" value={sortBy} onChange={handleSortChange}>
             {SORT_OPTIONS.map((opt) => <option key={opt.key} value={opt.key}>{opt.label}</option>)}
           </select>
         </label>

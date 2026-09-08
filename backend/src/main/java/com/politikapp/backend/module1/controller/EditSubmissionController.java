@@ -32,8 +32,10 @@ public class EditSubmissionController {
             @AuthenticationPrincipal AuthPrincipal principal,
             @Valid @RequestBody BallotSubmissionPayload payload
     ) {
-        UUID contributorId = principal != null ? principal.getUserId() : payload.contributorId();
-        return ResponseEntity.status(HttpStatus.CREATED).body(submissionService.createSubmission(payload, contributorId));
+        if (principal == null) {
+            throw new com.politikapp.backend.common.HttpResponseException(401, "Unauthorized: Authentication required.");
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(submissionService.createSubmission(payload, principal.getUserId()));
     }
 
     @GetMapping("/{id}")

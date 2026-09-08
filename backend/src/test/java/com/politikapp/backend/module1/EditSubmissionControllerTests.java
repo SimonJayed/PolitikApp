@@ -12,7 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @SuppressWarnings("null")
 class EditSubmissionControllerTests {
     @Autowired
@@ -20,6 +20,11 @@ class EditSubmissionControllerTests {
 
     @Autowired
     private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private com.politikapp.backend.auth.security.JwtService jwtService;
+
+    private String token;
 
     @org.junit.jupiter.api.BeforeEach
     void setupMockData() {
@@ -62,16 +67,18 @@ class EditSubmissionControllerTests {
                     "ACTIVE"
             );
         }
+
+        token = jwtService.generateAccessToken(contributorId, "mock.contributor@politikapp.com", "PEER");
     }
 
     @Test
     void createsSubmissionForValidSourceUrl() throws Exception {
         mockMvc.perform(post("/api/submissions")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "politicianId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-                                  "contributorId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
                                   "sourceUrl": "https://www.coa.gov.ph/reports/audit-cebu-2025",
                                   "categoryTag": "Audit",
                                   "actionIdentifier": "COA_FINDING",
@@ -87,11 +94,11 @@ class EditSubmissionControllerTests {
     @Test
     void rejectsSubmissionForInvalidSourceUrl() throws Exception {
         mockMvc.perform(post("/api/submissions")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
                                   "politicianId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
-                                  "contributorId": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d",
                                   "sourceUrl": "https://example.com/reports/audit-cebu-2025",
                                   "categoryTag": "Audit",
                                   "actionIdentifier": "COA_FINDING",
@@ -101,5 +108,22 @@ class EditSubmissionControllerTests {
                                 """))
                 .andExpect(status().isUnprocessableEntity())
                 .andExpect(jsonPath("$.message").value("Unprocessable Entity: Target domain fails validation rules."));
+    }
+
+    @Test
+    void rejectsUnauthenticatedSubmission() throws Exception {
+        mockMvc.perform(post("/api/submissions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "politicianId": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+                                  "sourceUrl": "https://www.coa.gov.ph/reports/audit-cebu-2025",
+                                  "categoryTag": "Audit",
+                                  "actionIdentifier": "COA_FINDING",
+                                  "actionDetails": { "flaggedAmount": 184500.00 },
+                                  "impactSummary": "The Commission on Audit flagged baseline logistical supply invoice record mismatches."
+                                }
+                                """))
+                .andExpect(status().isUnauthorized());
     }
 }

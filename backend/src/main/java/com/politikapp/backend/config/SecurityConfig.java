@@ -22,32 +22,45 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             CorsConfigurationSource corsConfigurationSource,
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            RateLimitingFilter rateLimitingFilter
     ) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
-                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentType -> {})
+                        .referrerPolicy(referrer -> referrer.policy(
+                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                        ))
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Authentication required.\"}");
+                        })
+                )
                 .authorizeHttpRequests(requests -> requests
                         .requestMatchers("/h2-console/**").permitAll()
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/challenges/**").authenticated()
                         .requestMatchers("/api/challenges/**").permitAll()
                         .requestMatchers(HttpMethod.PUT, "/api/politicians/**").authenticated()
                         .requestMatchers("/api/politicians/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/submissions").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/submissions").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/submissions/contributor/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/moderation/appeal").authenticated()
-                        .requestMatchers("/api/moderation/override", "/api/moderation/escalate/trigger").hasRole("ADMIN")
                         .requestMatchers("/api/moderation/**").hasAnyRole("PEER", "ADMIN")
-                        .requestMatchers("/api/peer-applications/submit", "/api/peer-applications/my").hasAnyRole("CONTRIBUTOR", "PEER")
-                        .requestMatchers("/api/peer-applications/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/submissions/**", "/users/**").authenticated()
                         .requestMatchers("/api/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(rateLimitingFilter, org.springframework.security.web.authentication.logout.LogoutFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
