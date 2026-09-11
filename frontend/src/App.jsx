@@ -120,7 +120,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
-  const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
+  const [isPoliticiansModalOpen, setIsPoliticiansModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isApprovedDomain, setIsApprovedDomain] = useState(false)
   const [authMode, setAuthMode] = useState('login')
@@ -134,7 +134,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     compare: ['Compare', 'Compare Politicians'],
     contributions: ['Submissions', 'My Contribution Ledger'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
-    directory: ['Directory', 'Politician Directory'],
+    politicians: ['Politicians', 'Politicians'],
     history: ['History', 'Account Event Ledger'],
     landing: ['Home', 'Verifiable Governance Platform'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
@@ -145,7 +145,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const headerTitleHiddenFor = new Set(['dashboard', 'directory', 'compare', 'contributions', 'submit', 'moderation', 'landing', 'auth'])
+  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'contributions', 'submit', 'moderation', 'landing', 'auth'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const loadPoliticians = useCallback(async () => {
@@ -319,8 +319,8 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         setDashboardId(initialPoliticianParam)
         loadDashboardById(initialPoliticianParam)
       } else {
-        setNotFoundNotice(`Politician profile "${initialPoliticianParam}" was not found. Redirected to public directory.`)
-        navigateTo('directory', '', true)
+        setNotFoundNotice(`Politician profile "${initialPoliticianParam}" was not found. Redirected to Politicians.`)
+        navigateTo('politicians', '', true)
       }
     }
   }, [politiciansState.status, politiciansState.data, initialViewParam, initialPoliticianParam, navigateTo])
@@ -400,7 +400,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
   }
 
-  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isDirectoryModalOpen || isProfileModalOpen
+  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isPoliticiansModalOpen || isProfileModalOpen
 
   return (
     <main className="appShell">
@@ -418,7 +418,9 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         user={activeUser}
       />
 
-      <section className={isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'}>
+      <section
+        className={`${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`}
+      >
         {!isAnyModalOpen && (
           <header className="topBar">
               <div className="flex items-center gap-3">
@@ -489,15 +491,10 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         {activeView === 'landing' && (
           <LandingPage
             politicians={politiciansState.data}
-            isGuest={!isAuthenticated}
-            onExploreDirectory={() => navigateTo('directory')}
+            onExplorePoliticians={() => navigateTo('politicians')}
             onExploreDashboard={() => navigateTo('dashboard')}
             onSelectPolitician={(id) => openPoliticianProfile(id)}
             onCompare={() => navigateTo('compare')}
-            onAuthClick={(mode) => {
-              setAuthMode(mode || 'login')
-              navigateTo('auth')
-            }}
             onMethodologyClick={() => setIsWgiMethodologyOpen(true)}
           />
         )}
@@ -505,12 +502,12 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         {activeView === 'auth' && (
           <AuthPages
             initialMode={authMode}
-            onBack={() => navigateTo('directory')}
+            onBack={() => navigateTo('politicians')}
           />
         )}
 
-        {activeView === 'directory' && (
-          <PoliticianDirectoryLoaderPanel
+        {activeView === 'politicians' && (
+          <PoliticiansLoaderPanel
             dbUser={currentUser}
             onViewProfile={openPoliticianProfile}
             politicians={politiciansState.data}
@@ -518,7 +515,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
             state={dashboardState}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onPoliticianCreate={handlePoliticianLocalCreate}
-            onModalOpenChange={setIsDirectoryModalOpen}
+            onModalOpenChange={setIsPoliticiansModalOpen}
             token={token}
           />
         )}
@@ -769,9 +766,9 @@ function SubmissionPanel(props) {
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
-/*  Politician Directory                                                        */
+/*  Politicians                                                                 */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianDirectoryLoaderPanel({
+function PoliticiansLoaderPanel({
   dbUser, onViewProfile,
   politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
@@ -1013,7 +1010,7 @@ function PoliticianDirectoryLoaderPanel({
       <section className="dashboardHeaderBlock">
         <div className="directoryHeaderRow">
           <div>
-            <h2 className="ty-section-title">Politician Directory</h2>
+            <h2 className="ty-section-title">Politicians</h2>
             <p className="ty-body">Browse and select a politician to load their performance profile instantly.</p>
           </div>
           {isDatabaseAdmin && (
@@ -1025,7 +1022,7 @@ function PoliticianDirectoryLoaderPanel({
         </div>
       </section>
 
-      <section className="dashboardFilterBar" aria-label="Directory filters">
+      <section className="dashboardFilterBar" aria-label="Politician filters">
         <label>
           Search
           <input
@@ -1067,7 +1064,7 @@ function PoliticianDirectoryLoaderPanel({
         <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />
       </div>
 
-      <section className="dashboardCardGrid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Politician directory">
+      <section className="dashboardCardGrid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Politicians">
         {state.status === 'loading' && <LoadingSkeletonCards count={4} />}
         {state.status !== 'loading' && filteredPoliticians.length === 0 && (
           <p className="emptyState" style={{ gridColumn: '1/-1', padding: '40px', textAlign: 'center' }}>No politicians found matching your search.</p>

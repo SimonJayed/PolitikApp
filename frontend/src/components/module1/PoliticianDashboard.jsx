@@ -86,7 +86,7 @@ export default function PoliticianDashboard({
       value: totalProfiles,
       sub: 'Active database profiles',
       description: 'Total number of profile records available for review and comparison. Higher counts indicate broader platform coverage across offices and jurisdictions.',
-      hint: 'Open Directory to inspect each profile.',
+      hint: 'Open Politicians to inspect each profile.',
       accent: 'var(--ph-blue)',
       icon: FolderIcon,
     },
@@ -121,9 +121,9 @@ export default function PoliticianDashboard({
 
   const actions = [
     {
-      key: 'directory',
+      key: 'politicians',
       icon: UsersIcon,
-      title: 'Explore Directory',
+      title: 'Explore Politicians',
       sub: 'Browse all politician profiles',
       description: 'Open the searchable profile list to inspect biography, jurisdiction, party details, and audit-linked records before taking action.',
       hint: 'Best starting point for profile discovery.',

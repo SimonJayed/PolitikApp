@@ -21,24 +21,27 @@ function CenterNavItem({ active, icon: Icon, label, onClick }) {
       type="button"
       onClick={onClick}
       className={[
-        'ty-nav group relative flex h-16 w-[125px] flex-col items-center justify-center gap-1 rounded-2xl px-4',
+        'ty-nav group relative flex h-16 w-[130px] flex-col items-center justify-center gap-2 rounded-xl px-5 !bg-transparent',
         'transition-all duration-200 ease-out',
         'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ph-gold)]/70',
         active
-          ? 'bg-[rgba(32,55,103,0.95)] text-white ring-1 ring-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]'
-          : 'bg-[rgba(18,42,88,0.72)] text-white/85 ring-1 ring-white/10 hover:bg-[rgba(42,68,120,0.95)] hover:text-white',
+          ? 'text-white font-bold'
+          : 'text-[#E2E8F0] hover:!bg-white/5 hover:text-white',
       ].join(' ')}
     >
-      <Icon size={20} className="text-current transition-all duration-200" />
+      <Icon
+        size={19}
+        className={`transition-all duration-200 ${active ? 'text-[color:var(--ph-gold)]' : 'text-current'}`}
+      />
 
-      <span className="text-[13px] font-semibold leading-none text-current transition-all duration-200">
+      <span className="text-[13px] font-medium leading-none text-current transition-all duration-200">
         {label}
       </span>
 
       {active && (
         <span
           aria-hidden="true"
-          className="absolute -bottom-1 left-1/2 h-1 w-10 -translate-x-1/2 rounded-full bg-[color:var(--ph-gold)]"
+          className="absolute bottom-0 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-[color:var(--ph-gold)] shadow-[0_0_8px_rgba(255,191,0,0.5)]"
         />
       )}
     </button>
@@ -53,8 +56,8 @@ function MobileMenuItem({ active, icon: Icon, label, onClick }) {
       className={[
         'ty-nav flex items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all duration-200',
         active
-          ? 'bg-[rgba(32,55,103,0.95)] text-white ring-1 ring-white/20'
-          : 'bg-[rgba(18,42,88,0.72)] text-white/85 ring-1 ring-white/10 hover:bg-[rgba(42,68,120,0.95)] hover:text-white',
+          ? 'bg-white/10 text-white ring-1 ring-white/15'
+          : 'text-[#E2E8F0] hover:bg-white/5 hover:text-white',
       ].join(' ')}
     >
       <Icon size={20} />
@@ -85,11 +88,14 @@ function TopNav({
 
   const navItems = useMemo(() => {
     const items = [
-      { key: 'landing', label: 'Home', icon: HomeIcon },
       { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
-      { key: 'directory', label: 'Politicians', icon: UsersIcon },
+      { key: 'politicians', label: 'Politicians', icon: UsersIcon },
       { key: 'compare', label: 'Compare', icon: GitCompareIcon },
     ]
+
+    if (!isAuthenticated) {
+      items.unshift({ key: 'landing', label: 'Home', icon: HomeIcon })
+    }
 
     if (isAuthenticated) {
       items.push({ key: 'contributions', label: 'Contributions', icon: HistoryIcon })
@@ -112,7 +118,7 @@ function TopNav({
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4"
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8"
       style={hideTopNav ? { visibility: 'hidden' } : undefined}
       aria-hidden={hideTopNav}
     >
@@ -133,9 +139,6 @@ function TopNav({
               <div className="min-w-0">
                 <div className="ty-nav truncate text-[18px] font-extrabold text-white">
                   {title}
-                </div>
-                <div className="ty-meta truncate text-[13px] font-medium text-white/60">
-                  Insights. Leaders. Change.
                 </div>
               </div>
             </div>
@@ -236,10 +239,6 @@ function TopNav({
                 </>
               ) : (
                 <div className="flex items-center gap-3">
-                  <span className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                    🌿 Guest Explorer
-                  </span>
-
                   <button
                     type="button"
                     id="topnav-signin-btn"
@@ -247,7 +246,7 @@ function TopNav({
                       onAuthClick?.('login')
                       setMobileOpen(false)
                     }}
-                    className="ty-nav inline-flex h-12 items-center justify-center rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                    className="ty-nav inline-flex h-12 items-center justify-center rounded-xl px-3 text-[#E2E8F0] transition hover:bg-white/5 hover:text-white"
                   >
                     Sign In
                   </button>
@@ -324,7 +323,7 @@ function TopNav({
                         setMobileOpen(false)
                         onAuthClick?.('login')
                       }}
-                      className="w-full py-2.5 rounded-xl bg-[rgba(18,42,88,0.72)] text-white text-sm font-semibold"
+                      className="w-full rounded-xl py-2.5 text-sm font-semibold text-[#E2E8F0] transition hover:bg-white/5 hover:text-white"
                     >
                       Sign In
                     </button>

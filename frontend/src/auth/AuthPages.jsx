@@ -310,7 +310,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
         {onBack && (
           <div style={{ textAlign: 'center', marginTop: '20px' }}>
             <button
-              id="auth-back-to-directory-btn"
+              id="auth-back-to-politicians-btn"
               type="button"
               onClick={onBack}
               style={{
@@ -327,7 +327,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                 textUnderlineOffset: '3px',
               }}
             >
-              <span>← Back to Public Directory (Explore as Guest)</span>
+              <span>← Back to Public Politicians</span>
             </button>
           </div>
         )}

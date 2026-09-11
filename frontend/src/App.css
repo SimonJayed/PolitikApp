@@ -86,6 +86,13 @@
   min-width: 0;
 }
 
+.pageContentAligned {
+  width: 100%;
+  max-width: 1880px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 2vw, 32px);
+}
+
 /* ── Top bar ───────────────────────────────────────────────────────── */
 .topBar {
   align-items: center;
@@ -117,7 +124,7 @@
 .workspace {
   display: grid;
   gap: 22px;
-  padding: 32px clamp(20px, 4vw, 52px) 56px;
+  padding: 32px 0 56px;
   animation: fadeUp var(--duration-base) var(--ease-out) both;
 }
 
@@ -1434,7 +1441,7 @@ textarea:hover {
 input:focus,
 select:focus,
 textarea:focus,
-button:focus-visible {
+button:focus-visible:not(.ty-nav) {
   outline: none;
   border-color: var(--info);
   background: var(--bg-surface);
@@ -1471,13 +1478,13 @@ button[type='submit']:hover {
   box-shadow: 0 8px 22px rgba(10, 29, 66, 0.36), inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
-button:not([type='submit']) {
+button:not([type='submit']):not(.ty-nav) {
   background: var(--bg-surface);
   border-color: var(--line-strong);
   color: var(--text-secondary);
 }
 
-button:not([type='submit']):hover {
+button:not([type='submit']):not(.ty-nav):hover {
   background: var(--bg-inset);
   border-color: #7a9bcc;
   color: var(--text-primary);

@@ -9,13 +9,11 @@ function initialsFor(name) {
 
 export default function LandingPage({
   politicians = [],
-  onExploreDirectory,
+  onExplorePoliticians,
   onExploreDashboard,
   onSelectPolitician,
   onCompare,
-  onAuthClick,
   onMethodologyClick,
-  isGuest = true,
 }) {
   // Compute telemetry metrics from live data
   const telemetry = useMemo(() => {
@@ -40,63 +38,14 @@ export default function LandingPage({
       {/* 1. Hero Section */}
       <section className="landing-hero">
         <div className="landing-hero-inner">
-          <div className="landing-badge">
-            <span className="landing-badge-dot"></span>
-            2.0 Evidence-Based Governance Architecture
-          </div>
-
           <h1 className="landing-title">
             Verifiable Governance. <br />
             <span className="landing-title-highlight">Primary-Source Citations.</span>
           </h1>
 
           <p className="landing-subtitle">
-            PolitikApp eliminates political gossip, unverified rumors, and partisan bias. 
-            Inspect official Commission on Audit (COA) findings, legislative tracking, 
-            and Worldwide Governance Indicators (WGI) backed strictly by whitelisted government sources.
+            PolitikApp eliminates unverified rumors and partisan bias by providing direct access to official COA audit reports, legislative tracking, and Worldwide Governance Indicators sourced strictly from verified government records.
           </p>
-
-          <div className="landing-cta-group">
-            <button
-              id="landing-explore-dir-btn"
-              className="btn-landing-primary"
-              onClick={onExploreDirectory}
-            >
-              <span>Explore Directory as Guest</span>
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </button>
-
-            <button
-              id="landing-compare-btn"
-              className="btn-landing-secondary"
-              onClick={onCompare}
-            >
-              <span>Compare Officials</span>
-              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 3v6a3 3 0 0 1-3 3H4m10 8v-6a3 3 0 0 1 3-3h3" />
-              </svg>
-            </button>
-
-            {isGuest && (
-              <button
-                id="landing-register-btn"
-                className="btn-landing-secondary"
-                onClick={() => onAuthClick && onAuthClick('register')}
-                style={{ borderColor: '#0d9488', color: '#0f766e' }}
-              >
-                <span>Join / Register</span>
-              </button>
-            )}
-          </div>
-
-          <div className="landing-guest-notice">
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <span>Read-only guest browsing enabled. No registration required to audit public records.</span>
-          </div>
         </div>
       </section>
 
@@ -255,10 +204,10 @@ export default function LandingPage({
           <div style={{ textAlign: 'center', marginTop: '32px' }}>
             <button
               className="btn-landing-secondary"
-              onClick={onExploreDirectory}
+              onClick={onExplorePoliticians}
               style={{ padding: '12px 28px' }}
             >
-              <span>View All Officials in Directory</span>
+              <span>View All Officials in Politicians</span>
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
@@ -325,7 +274,7 @@ export default function LandingPage({
           </div>
 
           <div className="landing-footer-links">
-            <button onClick={onExploreDirectory}>Directory</button>
+            <button onClick={onExplorePoliticians}>Politicians</button>
             <button onClick={onExploreDashboard}>Dashboard</button>
             <button onClick={onCompare}>Compare</button>
             <button onClick={onMethodologyClick}>Methodology</button>
