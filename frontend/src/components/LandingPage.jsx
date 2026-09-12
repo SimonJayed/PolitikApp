@@ -1,6 +1,18 @@
 import React, { useMemo } from 'react';
 import './LandingPage.css';
 import { formatPosition, formatJurisdiction } from './module1/positionConfig';
+import {
+  BanIcon,
+  GitCompareIcon,
+  GlobeIcon,
+  LandmarkIcon,
+  LayoutDashboardIcon,
+  MegaphoneIcon,
+  ScaleIcon,
+  ScrollTextIcon,
+  ShieldCheckIcon,
+  UsersIcon,
+} from './icons/Lucide';
 
 function initialsFor(name) {
   if (!name) return 'P';
@@ -53,7 +65,7 @@ export default function LandingPage({
       <section className="landing-telemetry">
         <div className="telemetry-grid">
           <div className="telemetry-card">
-            <div className="telemetry-value telemetry-value-teal">{telemetry.politiciansCount}</div>
+            <div className="telemetry-value telemetry-value-red">{telemetry.politiciansCount}</div>
             <div className="telemetry-label">Monitored Public Officials</div>
             <div className="telemetry-subtext">Cebu City & National Jurisdictions</div>
           </div>
@@ -65,7 +77,7 @@ export default function LandingPage({
           </div>
 
           <div className="telemetry-card">
-            <div className="telemetry-value telemetry-value-teal">{telemetry.budgetTracked}</div>
+            <div className="telemetry-value telemetry-value-red">{telemetry.budgetTracked}</div>
             <div className="telemetry-label">Public Funds Monitored</div>
             <div className="telemetry-subtext">DBM Allocations & Project Budgets</div>
           </div>
@@ -90,7 +102,7 @@ export default function LandingPage({
 
         <div className="pillars-grid">
           <div className="pillar-card">
-            <div className="pillar-icon-box pillar-icon-teal">🌐</div>
+            <div className="pillar-icon-box pillar-icon-red"><GlobeIcon size={24} /></div>
             <div className="pillar-step">Pillar 01</div>
             <h3 className="pillar-title">Whitelisted Government Citations</h3>
             <p className="pillar-description">
@@ -99,12 +111,12 @@ export default function LandingPage({
               Sensational blogs, tweets, and partisan editorial commentary are rejected at the network gateway.
             </p>
             <div className="pillar-tag">
-              <span>🏛️ Primary Source Only</span>
+              <span><LandmarkIcon size={14} /> Primary Source Only</span>
             </div>
           </div>
 
           <div className="pillar-card">
-            <div className="pillar-icon-box pillar-icon-blue">🛡️</div>
+            <div className="pillar-icon-box pillar-icon-red-secondary"><ShieldCheckIcon size={24} /></div>
             <div className="pillar-step">Pillar 02</div>
             <h3 className="pillar-title">Admin-Curator Adjudication</h3>
             <p className="pillar-description">
@@ -113,12 +125,12 @@ export default function LandingPage({
               legislative progress against Congress and Senate registries.
             </p>
             <div className="pillar-tag">
-              <span>⚖️ Institutional Curation</span>
+              <span><ScaleIcon size={14} /> Institutional Curation</span>
             </div>
           </div>
 
           <div className="pillar-card">
-            <div className="pillar-icon-box pillar-icon-amber">📢</div>
+            <div className="pillar-icon-box pillar-icon-amber"><MegaphoneIcon size={24} /></div>
             <div className="pillar-step">Pillar 03</div>
             <h3 className="pillar-title">Citizen Public Disputes</h3>
             <p className="pillar-description">
@@ -126,7 +138,7 @@ export default function LandingPage({
               any ledger item by providing counter-evidence citations. Upheld challenges deduct COA flags or update WGI scores in real-time.
             </p>
             <div className="pillar-tag">
-              <span>👥 Public Accountability</span>
+              <span><UsersIcon size={14} /> Public Accountability</span>
             </div>
           </div>
         </div>
@@ -173,7 +185,7 @@ export default function LandingPage({
                 <div className="official-stats">
                   <div className="official-stat-item">
                     <span className="official-stat-label">WGI Score</span>
-                    <span className="official-stat-val" style={{ color: '#0f766e' }}>
+                    <span className="official-stat-val" style={{ color: 'var(--ph-red)' }}>
                       {politician.wgiScore != null ? Number(politician.wgiScore).toFixed(1) : '85.4'}
                     </span>
                   </div>
@@ -230,17 +242,17 @@ export default function LandingPage({
 
             <div className="methodology-rules-grid">
               <div className="methodology-rule-item">
-                <h4>🚫 Zero Tabloid Sourcing</h4>
+                <h4><BanIcon size={16} /> Zero Tabloid Sourcing</h4>
                 <p>Social media rumors, unverified anonymous leaks, and clickbait political portals are blocked unconditionally.</p>
               </div>
 
               <div className="methodology-rule-item">
-                <h4>📜 Audit Trail Transparency</h4>
+                <h4><ScrollTextIcon size={16} /> Audit Trail Transparency</h4>
                 <p>Every metric change preserves its submission author, approving curator, timestamp, and primary-source URL.</p>
               </div>
 
               <div className="methodology-rule-item">
-                <h4>⚖️ Bilateral Dispute Right</h4>
+                <h4><ScaleIcon size={16} /> Bilateral Dispute Right</h4>
                 <p>Citizens and public officials have equal standing to challenge records with official government citations.</p>
               </div>
             </div>
@@ -262,11 +274,8 @@ export default function LandingPage({
       <footer className="landing-footer">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
-            <span style={{ fontSize: '20px' }}>🏛️</span>
+            <LandmarkIcon size={20} />
             <span>PolitikApp</span>
-            <span style={{ fontSize: '11px', background: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '9999px', fontWeight: '700' }}>
-              v2.0
-            </span>
           </div>
 
           <div className="landing-footer-copy">
@@ -274,10 +283,18 @@ export default function LandingPage({
           </div>
 
           <div className="landing-footer-links">
-            <button onClick={onExplorePoliticians}>Politicians</button>
-            <button onClick={onExploreDashboard}>Dashboard</button>
-            <button onClick={onCompare}>Compare</button>
-            <button onClick={onMethodologyClick}>Methodology</button>
+            <button className="ty-nav" onClick={onExplorePoliticians}>
+              <UsersIcon size={17} />
+              <span>Politicians</span>
+            </button>
+            <button className="ty-nav" onClick={onExploreDashboard}>
+              <LayoutDashboardIcon size={17} />
+              <span>Dashboard</span>
+            </button>
+            <button className="ty-nav" onClick={onCompare}>
+              <GitCompareIcon size={17} />
+              <span>Compare</span>
+            </button>
           </div>
         </div>
       </footer>

@@ -343,3 +343,61 @@ export function HomeIcon(props) {
   )
 }
 
+export function GlobeIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18" />
+      <path d="M12 3a14 14 0 0 0 0 18" />
+    </IconBase>
+  )
+}
+
+export function LandmarkIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 21h18" />
+      <path d="M5 18h14" />
+      <path d="M6 18v-7" />
+      <path d="M10 18v-7" />
+      <path d="M14 18v-7" />
+      <path d="M18 18v-7" />
+      <path d="M4 8l8-5 8 5" />
+      <path d="M3 9h18" />
+    </IconBase>
+  )
+}
+
+export function MegaphoneIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 11v2" />
+      <path d="M5 10h3l10-5v14L8 14H5z" />
+      <path d="M8 14l1 6h3l-1-6" />
+      <path d="M21 9a3 3 0 0 1 0 6" />
+    </IconBase>
+  )
+}
+
+export function BanIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.6 5.6l12.8 12.8" />
+    </IconBase>
+  )
+}
+
+export function ScrollTextIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M8 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4z" />
+      <path d="M8 3v18" />
+      <path d="M12 8h5" />
+      <path d="M12 12h5" />
+      <path d="M12 16h3" />
+    </IconBase>
+  )
+}
+

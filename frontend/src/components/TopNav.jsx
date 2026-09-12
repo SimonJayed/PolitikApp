@@ -258,7 +258,7 @@ function TopNav({
                       onAuthClick?.('register')
                       setMobileOpen(false)
                     }}
-                    className="ty-nav hidden sm:inline-flex h-12 items-center justify-center rounded-2xl bg-teal-600 px-4 text-white font-semibold ring-1 ring-teal-400/40 shadow-sm transition hover:bg-teal-500 hover:text-white"
+                    className="ty-nav hidden sm:inline-flex h-12 items-center justify-center rounded-2xl bg-[color:var(--ph-red)] px-4 text-white font-semibold ring-1 ring-[color:var(--ph-red-soft)]/60 shadow-sm transition hover:bg-[color:var(--ph-red-soft)] hover:text-white"
                   >
                     Create Account
                   </button>
@@ -333,7 +333,7 @@ function TopNav({
                         setMobileOpen(false)
                         onAuthClick?.('register')
                       }}
-                      className="w-full py-2.5 rounded-xl bg-teal-600 text-white text-sm font-semibold"
+                      className="w-full py-2.5 rounded-xl bg-[color:var(--ph-red)] text-white text-sm font-semibold transition hover:bg-[color:var(--ph-red-soft)]"
                     >
                       Create Account
                     </button>
