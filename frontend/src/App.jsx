@@ -58,6 +58,18 @@ const actionOptions = [
 ]
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
+const guestRestrictedViews = new Set([
+  'dashboard',
+  'politicians',
+  'compare',
+  'contributions',
+  'moderation',
+  'profile',
+  'submit',
+  'history',
+  'account',
+  'profileMatrix',
+])
 
 const actionDetailFields = {
   COA_FINDING: [
@@ -127,6 +139,18 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, actionType: 'general' })
   const [isWgiMethodologyOpen, setIsWgiMethodologyOpen] = useState(false)
   const [notFoundNotice, setNotFoundNotice] = useState('')
+
+  const triggerAuthPrompt = useCallback((actionType = 'general') => {
+    setAuthModalConfig({ isOpen: true, actionType })
+  }, [])
+
+  const selectView = useCallback((viewKey) => {
+    if (!isAuthenticated && guestRestrictedViews.has(viewKey)) {
+      triggerAuthPrompt('preview')
+      return
+    }
+    navigateTo(viewKey)
+  }, [isAuthenticated, triggerAuthPrompt])
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -292,9 +316,16 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   }, [])
 
   useEffect(() => {
+    if (!isAuthenticated && initialViewParam && guestRestrictedViews.has(initialViewParam)) {
+      navigateTo('landing', null, true)
+      return
+    }
     function handlePopState() {
       const params = new URLSearchParams(window.location.search)
-      const v = params.get('view') || (isAuthenticated ? 'dashboard' : 'landing')
+      const requestedView = params.get('view')
+      const v = !isAuthenticated && guestRestrictedViews.has(requestedView)
+        ? 'landing'
+        : requestedView || (isAuthenticated ? 'dashboard' : 'landing')
       const id = params.get('id') || params.get('politicianId') || ''
       setActiveView(v)
       if (id) {
@@ -305,7 +336,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [isAuthenticated])
+  }, [initialViewParam, isAuthenticated, navigateTo])
 
   const coldLoadHandled = useRef(false)
   useEffect(() => {
@@ -330,10 +361,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       navigateTo('dashboard', null, true)
     }
   }, [isAuthenticated, activeView, navigateTo])
-
-  const triggerAuthPrompt = useCallback((actionType = 'general') => {
-    setAuthModalConfig({ isOpen: true, actionType })
-  }, [])
 
   async function openPoliticianProfile(politicianId) {
     if (!politicianId) return
@@ -413,7 +440,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           navigateTo('auth')
         }}
         onLogout={onLogout}
-        onSelectView={(viewKey) => navigateTo(viewKey)}
+        onSelectView={selectView}
         title="PolitikApp"
         user={activeUser}
       />
@@ -490,11 +517,13 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
         {activeView === 'landing' && (
           <LandingPage
+            isAuthenticated={isAuthenticated}
             politicians={politiciansState.data}
-            onExplorePoliticians={() => navigateTo('politicians')}
-            onExploreDashboard={() => navigateTo('dashboard')}
+            onAuthPrompt={triggerAuthPrompt}
+            onExplorePoliticians={() => selectView('politicians')}
+            onExploreDashboard={() => selectView('dashboard')}
             onSelectPolitician={(id) => openPoliticianProfile(id)}
-            onCompare={() => navigateTo('compare')}
+            onCompare={() => selectView('compare')}
             onMethodologyClick={() => setIsWgiMethodologyOpen(true)}
           />
         )}

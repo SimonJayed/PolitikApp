@@ -26,6 +26,8 @@ export default function LandingPage({
   onSelectPolitician,
   onCompare,
   onMethodologyClick,
+  isAuthenticated = false,
+  onAuthPrompt,
 }) {
   // Compute telemetry metrics from live data
   const telemetry = useMemo(() => {
@@ -41,9 +43,13 @@ export default function LandingPage({
   // Featured sample politicians (prioritize Cebu City and National officials)
   const featuredPoliticians = useMemo(() => {
     if (!politicians || politicians.length === 0) return [];
-    // Pick up to 6 diverse politicians
-    return politicians.slice(0, 6);
+    // Guests only see a small sample; the full ledger remains behind auth.
+    return politicians.slice(0, 4);
   }, [politicians]);
+
+  function requestGuestAccess(actionType = 'preview') {
+    onAuthPrompt?.(actionType);
+  }
 
   return (
     <div className="landing-container">
@@ -157,10 +163,17 @@ export default function LandingPage({
 
           <div className="officials-grid">
             {featuredPoliticians.map((politician) => (
-              <div
+              <button
+                type="button"
                 key={politician.politicianId}
-                className="official-card"
-                onClick={() => onSelectPolitician && onSelectPolitician(politician.politicianId)}
+                className={`official-card ${!isAuthenticated ? 'official-card-locked' : ''}`}
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    requestGuestAccess('preview');
+                    return;
+                  }
+                  onSelectPolitician?.(politician.politicianId);
+                }}
                 title={`View profile for ${politician.fullName}`}
               >
                 <div className="official-top">
@@ -204,22 +217,22 @@ export default function LandingPage({
                 </div>
 
                 <div className="official-footer">
-                  <span>Inspect Audit Trail</span>
+                  <span>{isAuthenticated ? 'Inspect Audit Trail' : 'Sign in to inspect audit trail'}</span>
                   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                   </svg>
                 </div>
-              </div>
+              </button>
             ))}
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '32px' }}>
             <button
               className="btn-landing-secondary"
-              onClick={onExplorePoliticians}
+              onClick={() => isAuthenticated ? onExplorePoliticians?.() : requestGuestAccess('preview')}
               style={{ padding: '12px 28px' }}
             >
-              <span>View All Officials in Politicians</span>
+              <span>{isAuthenticated ? 'View All Officials in Politicians' : 'Sign in to view full database'}</span>
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
@@ -283,15 +296,15 @@ export default function LandingPage({
           </div>
 
           <div className="landing-footer-links">
-            <button className="ty-nav" onClick={onExplorePoliticians}>
+            <button className="ty-nav" onClick={() => isAuthenticated ? onExplorePoliticians?.() : requestGuestAccess('preview')}>
               <UsersIcon size={17} />
               <span>Politicians</span>
             </button>
-            <button className="ty-nav" onClick={onExploreDashboard}>
+            <button className="ty-nav" onClick={() => isAuthenticated ? onExploreDashboard?.() : requestGuestAccess('preview')}>
               <LayoutDashboardIcon size={17} />
               <span>Dashboard</span>
             </button>
-            <button className="ty-nav" onClick={onCompare}>
+            <button className="ty-nav" onClick={() => isAuthenticated ? onCompare?.() : requestGuestAccess('preview')}>
               <GitCompareIcon size={17} />
               <span>Compare</span>
             </button>

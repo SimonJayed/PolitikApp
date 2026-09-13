@@ -417,6 +417,8 @@
 }
 
 .official-card {
+  position: relative;
+  width: 100%;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -428,6 +430,35 @@
   flex-direction: column;
   justify-content: space-between;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  font: inherit;
+  text-align: left;
+}
+
+.official-card-locked {
+  overflow: hidden;
+}
+
+.official-card-locked::after {
+  content: '🔒 Preview only • Sign in to unlock';
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(248, 250, 252, 0.78);
+  color: #7f1d1d;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.official-card-locked:hover::after,
+.official-card-locked:focus-visible::after {
+  opacity: 1;
 }
 
 .official-card:hover {

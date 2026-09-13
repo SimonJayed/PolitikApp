@@ -13,7 +13,14 @@ export default function AuthPromptModal({
     propose: 'Proposing new governance metrics and timeline records',
     challenge: 'Challenging an official record with counter-evidence',
     general: 'Contributing to the civic ledger',
+    preview: 'Viewing the full public-official database, audit trails, and comparison tools',
   }[actionType] || 'Contributing to the civic ledger';
+  const actionIcon = {
+    challenge: '⚖️',
+    preview: '🔒',
+    general: '📝',
+    propose: '📝',
+  }[actionType] || '📝';
 
   return (
     <div
@@ -60,7 +67,7 @@ export default function AuthPromptModal({
             border: '1px solid rgba(13, 148, 136, 0.2)',
           }}
         >
-          {actionType === 'challenge' ? '⚖️' : '📝'}
+          {actionIcon}
         </div>
 
         <h3
@@ -73,7 +80,7 @@ export default function AuthPromptModal({
             letterSpacing: '-0.02em',
           }}
         >
-          Citizen Verification Required
+          {actionType === 'preview' ? 'Sign in to unlock the full ledger' : 'Citizen Verification Required'}
         </h3>
 
         <p
