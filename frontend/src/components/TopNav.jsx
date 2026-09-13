@@ -88,11 +88,9 @@ function TopNav({
 
   const navItems = useMemo(() => {
     const items = [
-      ...(isAuthenticated ? [
-        { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
-        { key: 'politicians', label: 'Politicians', icon: UsersIcon },
-        { key: 'compare', label: 'Compare', icon: GitCompareIcon },
-      ] : []),
+      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
+      { key: 'politicians', label: 'Politicians', icon: UsersIcon },
+      { key: 'compare', label: 'Compare', icon: GitCompareIcon },
     ]
 
     if (!isAuthenticated) {
