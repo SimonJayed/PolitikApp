@@ -105,6 +105,7 @@ export function AuthProvider({ children }) {
       });
     },
     logout() {
+      localStorage.removeItem('politikapp_auth')
       setSession(null)
     },
   }), [session])

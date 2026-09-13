@@ -106,7 +106,10 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
   const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
   const [resolvedUser, setResolvedUser] = useState(currentUser || null)
-  const activeUser = isDevModeActive && manipulatedUser ? manipulatedUser : resolvedUser
+  const wasAuthenticated = useRef(isAuthenticated)
+  const activeUser = isDevModeActive && manipulatedUser
+    ? manipulatedUser
+    : (isAuthenticated ? resolvedUser : null)
   const currentRole = activeUser?.role || 'CONTRIBUTOR'
 
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), [])
@@ -139,6 +142,21 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, actionType: 'general' })
   const [isWgiMethodologyOpen, setIsWgiMethodologyOpen] = useState(false)
   const [notFoundNotice, setNotFoundNotice] = useState('')
+
+  useEffect(() => {
+    setResolvedUser(currentUser || null)
+
+    if (!isAuthenticated && wasAuthenticated.current) {
+      setActiveView('landing')
+      setAuthModalConfig({ isOpen: false, actionType: 'general' })
+      setIsCompareModalOpen(false)
+      setIsAppealModalOpen(false)
+      setIsPoliticiansModalOpen(false)
+      setIsProfileModalOpen(false)
+    }
+
+    wasAuthenticated.current = isAuthenticated
+  }, [currentUser, isAuthenticated])
 
   const triggerAuthPrompt = useCallback((actionType = 'general') => {
     setAuthModalConfig({ isOpen: true, actionType })
