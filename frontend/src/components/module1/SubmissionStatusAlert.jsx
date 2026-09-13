@@ -1,4 +1,5 @@
 import React from 'react';
+import { AlertTriangleIcon, CircleCheckIcon } from '../icons/Lucide';
 
 export default function SubmissionStatusAlert({ state }) {
   if (!state || !state.message) return null;
@@ -18,8 +19,8 @@ export default function SubmissionStatusAlert({ state }) {
   const alertClass = `statusLine ${state.status}`;
   return (
     <div className={`submission-status-alert ${alertClass}`} role="alert">
-      {state.status === 'success' && <span className="alert-icon">✓</span>}
-      {state.status === 'error' && <span className="alert-icon">⚠</span>}
+      {state.status === 'success' && <CircleCheckIcon size={16} className="alert-icon" />}
+      {state.status === 'error' && <AlertTriangleIcon size={16} className="alert-icon" />}
       <span className="alert-message">{state.message}</span>
     </div>
   );

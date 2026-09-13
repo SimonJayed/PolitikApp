@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ExternalLinkIcon, ScaleIcon, ArrowLeftIcon, ArrowRightIcon } from '../icons/Lucide';
+import { CircleCheckIcon, ExternalLinkIcon, ScaleIcon, ArrowLeftIcon, ArrowRightIcon } from '../icons/Lucide';
 import { TimelineCardsSkeleton } from '../Skeletons';
 import { formatActionIdentifier } from './positionConfig';
 import ChallengeRecordModal from '../module2/ChallengeRecordModal';
@@ -138,7 +138,7 @@ export default function TimelineLedger({
                     marginBottom: '8px',
                     fontFamily: 'var(--mono, monospace)'
                   }}>
-                    ✓ Curator Verified: {entry.verificationNotes}
+                    <><CircleCheckIcon size={14} /> Curator Verified: {entry.verificationNotes}</>
                   </div>
                 )}
 
@@ -207,7 +207,7 @@ export default function TimelineLedger({
                       transition: 'all 150ms ease'
                     }}
                   >
-                    ⚠️ Challenge Record
+                    Challenge Record
                   </button>
                 </div>
               </article>

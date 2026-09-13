@@ -1,4 +1,5 @@
 import React from 'react';
+import { CircleCheckIcon, FileTextIcon, LockIcon, ScaleIcon } from './icons/Lucide';
 
 export default function AuthPromptModal({
   isOpen,
@@ -15,12 +16,12 @@ export default function AuthPromptModal({
     general: 'Contributing to the civic ledger',
     preview: 'Viewing the full public-official database, audit trails, and comparison tools',
   }[actionType] || 'Contributing to the civic ledger';
-  const actionIcon = {
-    challenge: '⚖️',
-    preview: '🔒',
-    general: '📝',
-    propose: '📝',
-  }[actionType] || '📝';
+  const ActionIcon = {
+    challenge: ScaleIcon,
+    preview: LockIcon,
+    general: FileTextIcon,
+    propose: FileTextIcon,
+  }[actionType] || FileTextIcon;
 
   return (
     <div
@@ -67,7 +68,7 @@ export default function AuthPromptModal({
             border: '1px solid rgba(13, 148, 136, 0.2)',
           }}
         >
-          {actionIcon}
+          <ActionIcon size={30} />
         </div>
 
         <h3
@@ -111,15 +112,15 @@ export default function AuthPromptModal({
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#0d9488', fontWeight: 'bold' }}>✓</span>
+            <CircleCheckIcon size={16} className="text-teal-600" />
             <span>Submit whitelisted <code>.gov.ph</code> / <code>.edu.ph</code> citations</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#0d9488', fontWeight: 'bold' }}>✓</span>
+            <CircleCheckIcon size={16} className="text-teal-600" />
             <span>Receive real-time updates on Admin Curator rulings</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: '#0d9488', fontWeight: 'bold' }}>✓</span>
+            <CircleCheckIcon size={16} className="text-teal-600" />
             <span>Track verified contributions on your personal civic ledger</span>
           </div>
         </div>

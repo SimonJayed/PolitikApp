@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import SourceUrlInput from './SourceUrlInput';
 import SubmissionStatusAlert from './SubmissionStatusAlert';
 import { getActionsForPosition, formatPosition } from './positionConfig';
+import { LandmarkIcon } from '../icons/Lucide';
 
 /**
  * Human-readable labels for each actionIdentifier value.
@@ -81,7 +82,7 @@ export default function EditSubmissionForm({
           color: '#0369a1',
           lineHeight: '1.5'
         }}>
-          <strong>🏛️ Citizen Metric Proposal:</strong> Propose an evidence-based record or performance update. Submissions enter the <strong>SUBMITTED_REQUEST</strong> queue and are adjudicated directly by Admin Curators against primary sources.
+          <strong><LandmarkIcon size={16} /> Citizen Metric Proposal:</strong> Propose an evidence-based record or performance update. Submissions enter the <strong>SUBMITTED_REQUEST</strong> queue and are adjudicated directly by Admin Curators against primary sources.
         </div>
         {selectedPolitician && (
           <p className="statusLine success" style={{ marginBottom: '14px' }}>

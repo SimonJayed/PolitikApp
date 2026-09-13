@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'
 import AdminAdjudicationTable from './module2/AdminAdjudicationTable'
+import { FileTextIcon, RefreshCwIcon, ScaleIcon, ShieldCheckIcon, UsersIcon } from './icons/Lucide'
 import './module2/Module2.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -67,7 +68,7 @@ export default function ModerationPanel({ token, user }) {
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '18px' }}>{isAdmin ? '🛡️' : '👥'}</span>
+            {isAdmin ? <ShieldCheckIcon size={18} /> : <UsersIcon size={18} />}
             <strong style={{ fontSize: '14px', color: '#0f172a' }}>
               {isAdmin ? 'Admin Curator Console' : 'Citizen Dispute & Request Pipeline'}
             </strong>
@@ -130,7 +131,7 @@ export default function ModerationPanel({ token, user }) {
                   border: '1px solid #e2e8f0',
                 }}
               >
-                <div style={{ fontSize: '20px', marginBottom: '6px' }}>📝</div>
+                <FileTextIcon size={20} style={{ marginBottom: '6px' }} />
                 <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>
                   1. Propose New Metrics
                 </h4>
@@ -147,7 +148,7 @@ export default function ModerationPanel({ token, user }) {
                   border: '1px solid #e2e8f0',
                 }}
               >
-                <div style={{ fontSize: '20px', marginBottom: '6px' }}>⚖️</div>
+                <ScaleIcon size={20} style={{ marginBottom: '6px' }} />
                 <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>
                   2. Dispute Inaccurate Records
                 </h4>
@@ -164,7 +165,7 @@ export default function ModerationPanel({ token, user }) {
                   border: '1px solid #e2e8f0',
                 }}
               >
-                <div style={{ fontSize: '20px', marginBottom: '6px' }}>🛡️</div>
+                <ShieldCheckIcon size={20} style={{ marginBottom: '6px' }} />
                 <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: '700', color: '#1e293b' }}>
                   3. Admin Curator Ruling
                 </h4>
@@ -201,7 +202,7 @@ export default function ModerationPanel({ token, user }) {
                   color: '#475569',
                 }}
               >
-                {citizenLoading ? 'Loading...' : '🔄 Refresh'}
+                {citizenLoading ? 'Loading...' : <><RefreshCwIcon size={14} /> Refresh</>}
               </button>
             </div>
 

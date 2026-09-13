@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
 import './module3/Module3.css';
+import { CircleCheckIcon, FileTextIcon, ScaleIcon } from './icons/Lucide';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -250,7 +251,7 @@ function AdminMatrix({ metrics = {}, token }) {
         >
           <div>
             <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary, #0f172a)' }}>
-              ⚖️ Active Adjudication Workbench
+              <ScaleIcon size={18} /> Active Adjudication Workbench
             </h3>
             <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted, #64748b)', fontSize: '13px' }}>
               Pending citizen metric proposals and public challenges requiring administrative primary-source review.
@@ -281,7 +282,7 @@ function AdminMatrix({ metrics = {}, token }) {
               color: '#64748b',
             }}
           >
-            <div style={{ fontSize: '28px', marginBottom: '6px' }}>✓</div>
+            <CircleCheckIcon size={28} style={{ marginBottom: '6px' }} />
             <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#1e293b' }}>
               Adjudication Queue Clear
             </h4>
@@ -377,7 +378,7 @@ function CitizenMatrix({ metrics = {}, user }) {
           }}
         >
           <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>
-            📝 Citizen Contributions & Proposals
+            <FileTextIcon size={18} /> Citizen Contributions & Proposals
           </h3>
           <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '13px' }}>
             All metric proposals undergo direct Admin Curator verification with official primary sources.

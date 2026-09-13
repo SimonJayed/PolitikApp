@@ -151,7 +151,7 @@ export function DeveloperSandboxProvider({ children, currentUser, token }) {
     }
   }, [manipulatedUser.role]);
 
-  // 🧮 Compute voting weight dynamically based on SRS trust thresholds
+  // Compute voting weight dynamically based on SRS trust thresholds
   const getSimulatedVoteWeight = () => {
     return getTrustVoteWeight(manipulatedUser.trustScore);
   };

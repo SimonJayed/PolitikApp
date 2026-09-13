@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useDeveloperSandbox } from './DeveloperSandboxContext';
 import { useAuth } from '../auth/AuthContext';
 import { clampTrustScore } from '../components/trustScore';
+import { CircleXIcon, FileTextIcon, FolderIcon, SettingsIcon, UserCircleIcon } from '../components/icons/Lucide';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -69,7 +70,7 @@ export default function DeveloperOptionsPanel() {
           onClick={() => setIsDevModeActive(true)}
           style={{ backgroundColor: '#4b5563', color: '#fff', border: 'none', padding: '10px 16px', borderRadius: '20px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
         >
-          🛠️ Enable Developer Sandbox
+          <SettingsIcon size={16} /> Enable Developer Sandbox
         </button>
       </div>
     );
@@ -78,37 +79,37 @@ export default function DeveloperOptionsPanel() {
   return (
     <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 9999, fontFamily: 'monospace', display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'flex-end', maxHeight: 'calc(100vh - 40px)' }}>
       
-      {/* 🟢 FIXED PERSISTENT CONTROL ANCHOR DOCK BAR */}
+      {/* Fixed persistent control anchor dock bar */}
       <div style={{ background: '#1e293b', padding: '6px 12px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', gap: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', flexShrink: 0 }}>
         <button 
           onClick={() => setShowIdentityModal(!showIdentityModal)} 
           style={{ background: showIdentityModal ? '#0284c7' : '#334155', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-          👤 Spoof My Session
+          <UserCircleIcon size={16} /> Spoof My Session
         </button>
         <button 
           onClick={() => setShowDataModal(!showDataModal)} 
           style={{ background: showDataModal ? '#2563eb' : '#334155', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-          📥 Inject Data Queue
+          <FolderIcon size={16} /> Inject Data Queue
         </button>
         <button 
           onClick={() => { setIsDevModeActive(false); setShowIdentityModal(false); setShowDataModal(false); }} 
           style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
         >
-          ❌ Turn Off
+          <CircleXIcon size={16} /> Turn Off
         </button>
       </div>
 
       {/* ========================================================================= */}
-      {/* 👤 MODAL 1: IDENTITY & SESSION PROFILE OVERRIDE SPOOFER                    */}
+      {/* Modal 1: identity and session profile override */}
       {/* ========================================================================= */}
       {showIdentityModal && (
         <div style={{ 
           background: '#0f172a', color: '#f8fafc', border: '2px solid #0284c7', borderRadius: '6px', padding: '16px', width: '320px', boxShadow: '0 10px 15px rgba(0,0,0,0.3)',
           display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto'
         }}>
-          <h3 style={{ margin: 0, fontSize: '13px', color: '#38bdf8', borderBottom: '1px solid #334155', paddingBottom: '6px' }}>👤 Sandbox Session Profile Spoofer</h3>
+          <h3 style={{ margin: 0, fontSize: '13px', color: '#38bdf8', borderBottom: '1px solid #334155', paddingBottom: '6px' }}><UserCircleIcon size={15} /> Sandbox Session Profile Spoofer</h3>
           
           <div>
             <label style={{ display: 'block', fontSize: '11px', color: '#94a3b8', marginBottom: '4px' }}>Session Role Override:</label>
@@ -138,7 +139,7 @@ export default function DeveloperOptionsPanel() {
                 transition: 'background 0.2s'
               }}
             >
-              {saveStatus.status === 'loading' ? '⏳ Saving...' : '💾 Save Permanently to DB'}
+              {saveStatus.status === 'loading' ? 'Saving...' : 'Save Permanently to DB'}
             </button>
             
             {saveStatus.message && (
@@ -209,7 +210,7 @@ export default function DeveloperOptionsPanel() {
       )}
 
       {/* ========================================================================= */}
-      {/* 📥 MODAL 2: MOCK DATA INJECTION CONTROL PANEL                               */}
+      {/* Modal 2: mock data injection control panel */}
       {/* ========================================================================= */}
       {showDataModal && (
         <div style={{ 
@@ -217,13 +218,13 @@ export default function DeveloperOptionsPanel() {
           display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: 'calc(100vh - 120px)', overflowY: 'auto'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '6px' }}>
-            <h3 style={{ margin: 0, fontSize: '13px', color: '#60a5fa' }}>📥 Mock Data Injection Control</h3>
+            <h3 style={{ margin: 0, fontSize: '13px', color: '#60a5fa' }}><FolderIcon size={15} /> Mock Data Injection Control</h3>
             <button
               type="button"
               onClick={() => setIsLargePreset(!isLargePreset)}
               style={{ background: '#334155', color: '#38bdf8', border: '1px solid #475569', borderRadius: '4px', padding: '2px 6px', fontSize: '10px', cursor: 'pointer' }}
             >
-              {isLargePreset ? '📺 Compact' : '🖥️ Wide View'}
+              {isLargePreset ? 'Compact' : 'Wide View'}
             </button>
           </div>
 
@@ -237,14 +238,14 @@ export default function DeveloperOptionsPanel() {
               onClick={injectMockCard}
               style={{ width: '100%', padding: '10px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer', fontSize: '12px' }}
             >
-              ➕ Inject Mock Review Ballot Card
+              <FileTextIcon size={14} /> Inject Mock Review Ballot Card
             </button>
             <button 
               type="button"
               onClick={clearInjectedQueue}
               style={{ width: '100%', padding: '8px', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', cursor: 'pointer', fontWeight: 'bold' }}
             >
-              🧹 Flush Active Mock Queue Memory Array
+              <CircleXIcon size={14} /> Flush Active Mock Queue Memory Array
             </button>
           </div>
         </div>

@@ -438,12 +438,14 @@
   overflow: hidden;
 }
 
-.official-card-locked::after {
-  content: '🔒 Preview only • Sign in to unlock';
+.official-card-lock-overlay {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
   padding: 20px;
   background: rgba(248, 250, 252, 0.78);
   color: #7f1d1d;
@@ -456,8 +458,8 @@
   pointer-events: none;
 }
 
-.official-card-locked:hover::after,
-.official-card-locked:focus-visible::after {
+.official-card-locked:hover .official-card-lock-overlay,
+.official-card-locked:focus-visible .official-card-lock-overlay {
   opacity: 1;
 }
 

@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect } from 'react';
 import { MOCK_APPROVED_DOMAINS } from './positionConfig';
+import { AlertTriangleIcon, CircleCheckIcon } from '../icons/Lucide';
 
 /**
  * Dynamically compiles approved domain patterns from MOCK_APPROVED_DOMAINS config.
@@ -52,12 +53,12 @@ export default function SourceUrlInput({ value, onChange, onDomainCheck }) {
       />
       {hasValue && isApprovedDomain && (
         <span className="sourceBadge approved" style={{ marginTop: '4px', display: 'inline-block' }}>
-          ✓ Approved source — verified .gov.ph / .edu.ph domain
+          <><CircleCheckIcon size={14} /> Approved source — verified .gov.ph / .edu.ph domain</>
         </span>
       )}
       {hasValue && !isApprovedDomain && (
         <div className="source-warning-banner" role="alert">
-          <span className="source-warning-icon">⚠</span>
+          <AlertTriangleIcon size={16} className="source-warning-icon" />
           <div>
             <strong>Unverified source domain</strong>
             <p>This submission will be accepted but will require heightened manual auditing by peer reviewers. The source link will be flagged in the moderation queue.</p>

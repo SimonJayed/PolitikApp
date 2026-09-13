@@ -250,6 +250,35 @@ export function CircleXIcon(props) {
   )
 }
 
+export function LockIcon(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </IconBase>
+  )
+}
+
+export function RefreshCwIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M20 11a8 8 0 0 0-14.8-4L3 10" />
+      <path d="M3 4v6h6" />
+      <path d="M4 13a8 8 0 0 0 14.8 4L21 14" />
+      <path d="M21 20v-6h-6" />
+    </IconBase>
+  )
+}
+
+export function SearchIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </IconBase>
+  )
+}
+
 export function UserPlusIcon(props) {
   return (
     <IconBase {...props}>

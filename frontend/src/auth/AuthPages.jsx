@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from './AuthContext'
+import { AlertTriangleIcon, CircleCheckIcon, LandmarkIcon } from '../components/icons/Lucide'
 
 export default function AuthPages({ initialMode = 'login', onBack }) {
   const { login, register } = useAuth()
@@ -59,7 +60,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
               boxShadow: '0 8px 20px rgba(10, 29, 66, 0.25)',
             }}
           >
-            🏛️
+            <LandmarkIcon size={28} />
           </div>
           <h1
             style={{
@@ -254,7 +255,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                   gap: '8px',
                 }}
               >
-                <span>⚠️</span>
+                <AlertTriangleIcon size={16} />
                 <span>{state.error}</span>
               </div>
             )}
@@ -273,7 +274,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                   gap: '8px',
                 }}
               >
-                <span>✓</span>
+                <CircleCheckIcon size={16} />
                 <span>{state.success}</span>
               </div>
             )}

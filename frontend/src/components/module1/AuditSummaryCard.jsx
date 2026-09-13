@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangleIcon } from '../icons/Lucide';
+import { AlertTriangleIcon, CircleCheckIcon } from '../icons/Lucide';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0));
@@ -78,7 +78,7 @@ export default function AuditSummaryCard({ coaDiscrepancies = 0, flaggedAmount =
             marginTop: '4px',
           }}
         >
-          ✓ No active Commission on Audit flags detected for this jurisdiction term.
+          <><CircleCheckIcon size={14} /> No active Commission on Audit flags detected for this jurisdiction term.</>
         </div>
       )}
     </article>

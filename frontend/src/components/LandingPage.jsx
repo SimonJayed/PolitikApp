@@ -7,6 +7,7 @@ import {
   GlobeIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
+  LockIcon,
   MegaphoneIcon,
   ScaleIcon,
   ScrollTextIcon,
@@ -222,6 +223,12 @@ export default function LandingPage({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                   </svg>
                 </div>
+                {!isAuthenticated && (
+                  <span className="official-card-lock-overlay" aria-hidden="true">
+                    <LockIcon size={20} />
+                    <span>Preview only | Sign in to unlock</span>
+                  </span>
+                )}
               </button>
             ))}
           </div>

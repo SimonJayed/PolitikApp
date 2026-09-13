@@ -496,7 +496,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
             fontSize: '14px',
             fontWeight: '500',
           }}>
-            <span>⚠️ {notFoundNotice}</span>
+            <span><AlertTriangleIcon size={16} /> {notFoundNotice}</span>
             <button
               type="button"
               onClick={() => setNotFoundNotice('')}
@@ -1515,7 +1515,7 @@ function PoliticianProfilePage({
               }}
               title="Download timeline records as CSV for research or journalism"
             >
-              <span>📊</span> Export CSV
+              <BarChart3Icon size={16} /> Export CSV
             </button>
             <button
               type="button"
@@ -1537,7 +1537,7 @@ function PoliticianProfilePage({
               }}
               title="Download timeline records as structured JSON"
             >
-              <span>📦</span> Export JSON
+              <FolderIcon size={16} /> Export JSON
             </button>
           </div>
           <KpiGrid profile={profile} onModalOpenChange={setIsWgiModalOpen} />

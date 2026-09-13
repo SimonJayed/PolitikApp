@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { AlertTriangleIcon, CircleCheckIcon, CircleXIcon, FileTextIcon, FolderIcon, RefreshCwIcon, ScaleIcon, SearchIcon } from '../icons/Lucide'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -232,7 +233,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
       >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '20px' }}>⚖️</span>
+            <ScaleIcon size={20} />
             <h2 style={{ margin: 0, fontSize: '18px', fontWeight: '700', color: '#0f172a' }}>
               Admin-Curator Adjudication Console
             </h2>
@@ -288,7 +289,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
               cursor: 'pointer',
             }}
           >
-            {loading ? 'Refreshing...' : '🔄 Refresh Queue'}
+            {loading ? 'Refreshing...' : <><RefreshCwIcon size={14} /> Refresh Queue</>}
           </button>
         </div>
       </div>
@@ -396,7 +397,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
             color: '#64748b',
           }}
         >
-          <div style={{ fontSize: '32px', marginBottom: '8px' }}>📂</div>
+          <FolderIcon size={32} style={{ marginBottom: '8px' }} />
           <h4 style={{ margin: '0 0 4px 0', fontSize: '15px', color: '#1e293b' }}>
             No queue records matching this view
           </h4>
@@ -455,7 +456,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
                         letterSpacing: '0.04em',
                       }}
                     >
-                      {isChallenge ? '⚠️ PUBLIC CHALLENGE' : '📄 CONTENT REQUEST'}
+                      {isChallenge ? <><AlertTriangleIcon size={13} /> PUBLIC CHALLENGE</> : <><FileTextIcon size={13} /> CONTENT REQUEST</>}
                     </span>
                     <strong style={{ fontSize: '15px', color: '#0f172a' }}>
                       {item.politicianName}
@@ -618,7 +619,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
                             cursor: 'pointer',
                           }}
                         >
-                          🔍 Mark Under Review
+                          <><SearchIcon size={14} /> Mark Under Review</>
                         </button>
                       )}
 
@@ -643,7 +644,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
                           cursor: 'pointer',
                         }}
                       >
-                        ✓ {isChallenge ? 'Uphold Challenge (Hide Invalid Metric)' : 'Approve & Publish Metric'}
+                        <><CircleCheckIcon size={14} /> {isChallenge ? 'Uphold Challenge (Hide Invalid Metric)' : 'Approve & Publish Metric'}</>
                       </button>
 
                       <button
@@ -667,7 +668,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
                           cursor: 'pointer',
                         }}
                       >
-                        ✕ Dismiss
+                        <><CircleXIcon size={14} /> Dismiss</>
                       </button>
                     </div>
                   )}
@@ -869,13 +870,13 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
                   color: '#94a3b8',
                 }}
               >
-                ✕
+                <CircleXIcon size={20} />
               </button>
             </div>
 
             {curateSuccess ? (
               <div style={{ padding: '30px', textAlign: 'center', background: '#f0fdf4', borderRadius: '10px' }}>
-                <div style={{ fontSize: '36px', marginBottom: '8px' }}>🎉</div>
+                <CircleCheckIcon size={36} style={{ marginBottom: '8px' }} />
                 <h4 style={{ margin: '0 0 4px 0', color: '#166534', fontSize: '16px' }}>
                   Metric Directly Published!
                 </h4>

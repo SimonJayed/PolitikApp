@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { AlertTriangleIcon, CircleCheckIcon, CircleXIcon } from '../icons/Lucide'
 
 export default function ChallengeRecordModal({
   isOpen,
@@ -135,7 +136,7 @@ export default function ChallengeRecordModal({
                 fontWeight: 'bold',
               }}
             >
-              ⚠️
+              <AlertTriangleIcon size={18} />
             </span>
             <div>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>
@@ -159,7 +160,7 @@ export default function ChallengeRecordModal({
               borderRadius: '6px',
             }}
           >
-            ✕
+            <CircleXIcon size={20} />
           </button>
         </div>
 
@@ -175,7 +176,7 @@ export default function ChallengeRecordModal({
                 border: '1px solid #a7f3d0',
               }}
             >
-              <div style={{ fontSize: '36px', marginBottom: '8px' }}>✅</div>
+              <CircleCheckIcon size={36} style={{ marginBottom: '8px' }} />
               <h4 style={{ margin: '0 0 6px 0', fontSize: '16px', fontWeight: '700', color: '#065f46' }}>
                 Dispute Submitted to Admin Curator
               </h4>
@@ -233,7 +234,7 @@ export default function ChallengeRecordModal({
                   lineHeight: '1.5',
                 }}
               >
-                💡 <strong>Dispute Ground Rules:</strong> Citations must point to primary records (e.g. Commission on Audit reports, legislative journals, official gazettes, or accredited investigative findings).
+                <strong>Dispute Ground Rules:</strong> Citations must point to primary records (e.g. Commission on Audit reports, legislative journals, official gazettes, or accredited investigative findings).
               </div>
 
               {/* Dispute Ground Field */}
