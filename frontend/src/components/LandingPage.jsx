@@ -45,7 +45,7 @@ export default function LandingPage({
   const featuredPoliticians = useMemo(() => {
     if (!politicians || politicians.length === 0) return [];
     // Guests only see a small sample; the full ledger remains behind auth.
-    return politicians.slice(0, 4);
+    return politicians.slice(0, 6);
   }, [politicians]);
 
   function requestGuestAccess(actionType = 'preview') {
@@ -235,7 +235,7 @@ export default function LandingPage({
 
           <div style={{ textAlign: 'center', marginTop: '32px' }}>
             <button
-              className="btn-landing-secondary"
+              className="btn-landing-secondary btn-landing-blue"
               onClick={() => isAuthenticated ? onExplorePoliticians?.() : requestGuestAccess('preview')}
               style={{ padding: '12px 28px' }}
             >
@@ -278,7 +278,7 @@ export default function LandingPage({
             </div>
 
             <button
-              className="btn-methodology"
+              className="btn-methodology btn-methodology-blue"
               onClick={onMethodologyClick}
             >
               <span>Inspect WGI Scoring Formula</span>

@@ -165,6 +165,18 @@
   box-shadow: 0 6px 20px rgba(168, 0, 32, 0.35);
 }
 
+.btn-landing-blue {
+  background: var(--ph-blue);
+  border-color: var(--ph-blue);
+  box-shadow: 0 4px 14px rgba(10, 29, 66, 0.25);
+}
+
+.btn-landing-blue:hover {
+  background: var(--ph-blue-mid);
+  border-color: var(--ph-blue-mid);
+  box-shadow: 0 6px 20px rgba(10, 29, 66, 0.35);
+}
+
 .landing-guest-notice {
   font-size: 13px;
   color: #64748b;
@@ -690,6 +702,15 @@
   background: var(--ph-red-soft);
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(168, 0, 32, 0.3);
+}
+
+.btn-methodology-blue {
+  background: var(--ph-blue);
+}
+
+.btn-methodology-blue:hover {
+  background: var(--ph-blue-mid);
+  box-shadow: 0 6px 16px rgba(10, 29, 66, 0.3);
 }
 
 /* Footer */
