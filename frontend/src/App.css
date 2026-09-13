@@ -96,10 +96,6 @@
 /* ── Top bar ───────────────────────────────────────────────────────── */
 .topBar {
   align-items: center;
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(14px) saturate(1.5);
-  -webkit-backdrop-filter: blur(14px) saturate(1.5);
-  border-bottom: 1px solid var(--line-soft);
   display: flex;
   gap: 16px;
   justify-content: space-between;
