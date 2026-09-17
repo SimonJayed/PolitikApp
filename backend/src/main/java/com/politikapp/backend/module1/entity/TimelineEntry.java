@@ -39,9 +39,6 @@ public class TimelineEntry {
     @Column(name = "source_url", columnDefinition = "TEXT")
     private String sourceUrl;
 
-    @Column(name = "primary_source_url", columnDefinition = "TEXT")
-    private String primarySourceUrl;
-
     @Column(name = "verification_notes", columnDefinition = "TEXT")
     private String verificationNotes;
 
@@ -70,9 +67,6 @@ public class TimelineEntry {
         entry.setActionDetails(submission.getActionDetails());
         entry.setSummary(submission.getImpactSummary());
         entry.setSourceUrl(submission.getSourceUrl());
-        entry.setPrimarySourceUrl(
-                submission.getPrimarySourceUrl() != null ? submission.getPrimarySourceUrl() : submission.getSourceUrl()
-        );
         entry.setVerificationNotes(submission.getVerificationNotes());
         entry.setPublicationStatus("PUBLISHED");
         return entry;
@@ -140,14 +134,6 @@ public class TimelineEntry {
 
     public void setSourceUrl(String sourceUrl) {
         this.sourceUrl = sourceUrl;
-    }
-
-    public String getPrimarySourceUrl() {
-        return primarySourceUrl;
-    }
-
-    public void setPrimarySourceUrl(String primarySourceUrl) {
-        this.primarySourceUrl = primarySourceUrl;
     }
 
     public String getVerificationNotes() {

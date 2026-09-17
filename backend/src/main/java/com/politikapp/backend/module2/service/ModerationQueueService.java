@@ -65,7 +65,7 @@ public class ModerationQueueService {
         @SuppressWarnings("unchecked")
         List<Object[]> rawRows = entityManager.createNativeQuery(
             "SELECT mq.queue_id, mq.submission_id, mq.politician_id, p.full_name, c.full_name, pes.source_url, pes.category_tag, pes.action_identifier, " +
-            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at " +
+            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, false AS escalation_flag, mq.assigned_at, mq.created_at " +
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
             "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
@@ -106,9 +106,7 @@ public class ModerationQueueService {
         @SuppressWarnings("unchecked")
         List<Object[]> rawRows = entityManager.createNativeQuery(
             "SELECT mq.queue_id, mq.submission_id, mq.politician_id, p.full_name, c.full_name, pes.source_url, pes.category_tag, pes.action_identifier, " +
-            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, mq.escalation_flag, mq.assigned_at, mq.created_at, " +
-            "(SELECT COALESCE(SUM(jv1.vote_weight), 0) FROM public.jury_votes jv1 WHERE jv1.queue_id = mq.queue_id AND jv1.vote_type = 'AGREE') as agree_sum, " +
-            "(SELECT COALESCE(SUM(jv2.vote_weight), 0) FROM public.jury_votes jv2 WHERE jv2.queue_id = mq.queue_id AND jv2.vote_type = 'DISAGREE') as disagree_sum " +
+            "CAST(pes.action_details AS TEXT), pes.impact_summary, p.jurisdiction, p.status, p.term_start, p.term_end, mq.queue_status, false AS escalation_flag, mq.assigned_at, mq.created_at, 0 AS agree_sum, 0 AS disagree_sum " +
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
             "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
@@ -250,32 +248,8 @@ public class ModerationQueueService {
 
     @Transactional(readOnly = true)
     public List<BallotArchiveEntryResponse> getBallotArchive(UUID peerId) {
-        log.info("Fetching ballot archive for peerId={}", peerId);
-        @SuppressWarnings("unchecked")
-        List<Object[]> rawRows = entityManager.createNativeQuery(
-            "SELECT jv.queue_id, " +
-            "COALESCE(NULLIF(pes.impact_summary, ''), NULLIF(pes.action_identifier, ''), CAST(jv.queue_id AS TEXT)) AS title, " +
-            "jv.vote_type, mq.queue_status, jv.created_at, pes.source_url " +
-            "FROM public.jury_votes jv " +
-            "LEFT JOIN public.moderation_queue mq ON mq.queue_id = jv.queue_id " +
-            "LEFT JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
-            "WHERE jv.peer_id = :peerId " +
-            "ORDER BY jv.created_at DESC " +
-            "LIMIT 100"
-        )
-            .setParameter("peerId", peerId)
-            .getResultList();
-
-        return rawRows.stream()
-            .map(row -> new BallotArchiveEntryResponse(
-                convertToUUID(row[0]),
-                row[1] == null ? null : row[1].toString(),
-                row[2] == null ? null : row[2].toString(),
-                row[3] == null ? "FINALIZED" : row[3].toString(),
-                convertToInstant(row[4]),
-                row[5] == null ? null : row[5].toString()
-            ))
-            .toList();
+        log.info("Fetching ballot archive for peerId={} (legacy peer-review archive retired)", peerId);
+        return List.of();
     }
 
     private java.time.LocalDate convertToLocalDate(Object obj) {

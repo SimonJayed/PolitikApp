@@ -26,9 +26,6 @@ public class ProfileEditSubmission {
     @Column(name = "source_url", nullable = false, columnDefinition = "TEXT")
     private String sourceUrl;
 
-    @Column(name = "primary_source_url", columnDefinition = "TEXT")
-    private String primarySourceUrl;
-
     @Column(name = "verification_notes", columnDefinition = "TEXT")
     private String verificationNotes;
 
@@ -89,7 +86,6 @@ public class ProfileEditSubmission {
         submission.politicianId = politicianId;
         submission.contributorId = contributorId;
         submission.sourceUrl = sourceUrl;
-        submission.primarySourceUrl = sourceUrl;
         submission.categoryTag = categoryTag;
         submission.actionIdentifier = actionIdentifier;
         submission.actionDetails = actionDetails;
@@ -112,7 +108,6 @@ public class ProfileEditSubmission {
         submission.challengeReason = challengeReason;
         submission.evidenceUrl = evidenceUrl;
         submission.sourceUrl = evidenceUrl != null ? evidenceUrl : "https://politikapp.civic/challenge";
-        submission.primarySourceUrl = evidenceUrl;
         submission.categoryTag = "Challenge";
         submission.actionIdentifier = "CITIZEN_CHALLENGE";
         submission.impactSummary = challengeReason != null ? challengeReason : "Public Citizen Challenge submitted.";
@@ -134,7 +129,6 @@ public class ProfileEditSubmission {
         submission.politicianId = politicianId;
         submission.contributorId = adminId;
         submission.sourceUrl = primarySourceUrl;
-        submission.primarySourceUrl = primarySourceUrl;
         submission.verificationNotes = verificationNotes;
         submission.categoryTag = categoryTag;
         submission.actionIdentifier = actionIdentifier;
@@ -174,14 +168,6 @@ public class ProfileEditSubmission {
 
     public void setSourceUrl(String sourceUrl) {
         this.sourceUrl = sourceUrl;
-    }
-
-    public String getPrimarySourceUrl() {
-        return primarySourceUrl;
-    }
-
-    public void setPrimarySourceUrl(String primarySourceUrl) {
-        this.primarySourceUrl = primarySourceUrl;
     }
 
     public String getVerificationNotes() {

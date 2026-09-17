@@ -77,7 +77,6 @@ public class ContributorReputationService {
                         contributorId,
                         rejectionMetric,
                         profile.getAccountStatus(),
-                        profile.getWritingTokenStatus(),
                         false,
                         false,
                         INSUFFICIENT_SAMPLE_MESSAGE
@@ -86,7 +85,6 @@ public class ContributorReputationService {
 
             if (rejectionMetric > LOCK_THRESHOLD) {
                 profile.setAccountStatus("LOCKED");
-                profile.setWritingTokenStatus("INVALIDATED");
                 ContributorTrustProfile savedProfile = contributorRepository.save(profile);
                 return invalidateTokens(contributorId, rejectionMetric, savedProfile);
             }
@@ -95,7 +93,6 @@ public class ContributorReputationService {
                     contributorId,
                     rejectionMetric,
                     profile.getAccountStatus(),
-                    profile.getWritingTokenStatus(),
                     false,
                     false,
                     EVALUATED_MESSAGE
@@ -117,7 +114,6 @@ public class ContributorReputationService {
                     contributorId,
                     rejectionMetric,
                     profile.getAccountStatus(),
-                    profile.getWritingTokenStatus(),
                     false,
                     true,
                     LOCKED_MESSAGE
@@ -128,7 +124,6 @@ public class ContributorReputationService {
                     contributorId,
                     rejectionMetric,
                     profile.getAccountStatus(),
-                    profile.getWritingTokenStatus(),
                     true,
                     true,
                     TOKEN_UNAVAILABLE_MESSAGE
@@ -137,6 +132,6 @@ public class ContributorReputationService {
     }
 
     private ContributorReputationResponse unavailableResponse(UUID contributorId) {
-        return new ContributorReputationResponse(contributorId, 0.0, "ACTIVE", "ACTIVE", true, false, UNAVAILABLE_MESSAGE);
+        return new ContributorReputationResponse(contributorId, 0.0, "ACTIVE", true, false, UNAVAILABLE_MESSAGE);
     }
 }

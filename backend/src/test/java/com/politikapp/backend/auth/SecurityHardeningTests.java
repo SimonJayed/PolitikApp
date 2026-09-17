@@ -12,7 +12,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.politikapp.backend.auth.entity.AuthUser;
 import com.politikapp.backend.auth.repository.AuthUserRepository;
 import com.politikapp.backend.auth.security.JwtService;
-import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -54,14 +53,12 @@ class SecurityHardeningTests {
             user.setPasswordHash(passwordEncoder.encode("password123"));
             user.setRole("CONTRIBUTOR");
             user.setAccountStatus("ACTIVE");
-            user.setWritingTokenStatus("ACTIVE");
-            user.setTrustScore(new BigDecimal("50.00"));
             return authUserRepository.save(user);
         });
 
         // Ensure role is reset to CONTRIBUTOR before each test
         contributorUser.setRole("CONTRIBUTOR");
-        contributorUser.setTrustScore(new BigDecimal("50.00"));
+        contributorUser.setAccountStatus("ACTIVE");
         authUserRepository.save(contributorUser);
 
         contributorToken = jwtService.generateAccessToken(
@@ -72,7 +69,7 @@ class SecurityHardeningTests {
     }
 
     @Test
-    void testPutUsersMeCannotSelfPromoteRoleOrTrustScore() throws Exception {
+    void testPutUsersMeCannotSelfPromoteRoleOrAccountStatus() throws Exception {
         mockMvc.perform(put("/users/me")
                         .header("Authorization", "Bearer " + contributorToken)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -80,18 +77,16 @@ class SecurityHardeningTests {
                                 {
                                   "fullName": "Updated Contributor",
                                   "role": "ADMIN",
-                                  "trustScore": 100.0,
                                   "accountStatus": "SUSPENDED"
                                 }
                                 """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.user.fullName").value("Updated Contributor"))
                 .andExpect(jsonPath("$.user.role").value("CONTRIBUTOR"))
-                .andExpect(jsonPath("$.user.trustScore").value(50.0));
+                .andExpect(jsonPath("$.user.accountStatus").value("ACTIVE"));
 
         AuthUser refreshed = authUserRepository.findById(contributorUser.getUserId()).orElseThrow();
         assertEquals("CONTRIBUTOR", refreshed.getRole());
-        assertEquals(new BigDecimal("50.00"), refreshed.getTrustScore());
         assertEquals("ACTIVE", refreshed.getAccountStatus());
     }
 

@@ -27,6 +27,8 @@ public class AdminCurationService {
     private final TimelineEntryRepository timelineEntryRepository;
     private final ModerationQueueRepository moderationQueueRepository;
 
+    private static final String RESOLVED_DISMISSED = "RESOLVED_DISMISSED";
+
     public AdminCurationService(
             PoliticianRepository politicianRepository,
             ProfileEditSubmissionRepository submissionRepository,
@@ -83,7 +85,6 @@ public class AdminCurationService {
         timeline.setActionDetails(request.actionDetails() != null ? request.actionDetails() : Collections.emptyMap());
         timeline.setSummary(request.impactSummary().trim());
         timeline.setSourceUrl(request.primarySourceUrl().trim());
-        timeline.setPrimarySourceUrl(request.primarySourceUrl().trim());
         timeline.setVerificationNotes(request.verificationNotes());
 
         if (timeline.getSubmissionId() != null) {
@@ -93,7 +94,6 @@ public class AdminCurationService {
                 sub.setActionDetails(request.actionDetails() != null ? request.actionDetails() : Collections.emptyMap());
                 sub.setImpactSummary(request.impactSummary().trim());
                 sub.setSourceUrl(request.primarySourceUrl().trim());
-                sub.setPrimarySourceUrl(request.primarySourceUrl().trim());
                 sub.setVerificationNotes(request.verificationNotes());
                 submissionRepository.save(sub);
             });
@@ -112,12 +112,12 @@ public class AdminCurationService {
                 .orElseThrow(() -> new HttpResponseException(404, "Timeline entry not found: " + timelineId));
 
         timeline.setIsHidden(true);
-        timeline.setPublicationStatus("RESOLVED_DISMISSED");
+        timeline.setPublicationStatus(RESOLVED_DISMISSED);
         timelineEntryRepository.save(timeline);
 
         if (timeline.getSubmissionId() != null) {
             submissionRepository.findById(timeline.getSubmissionId()).ifPresent(sub -> {
-                sub.setStatus("RESOLVED_DISMISSED");
+                sub.setStatus(RESOLVED_DISMISSED);
                 sub.setAdminResolutionNotes(reason != null ? reason : "Removed by Admin Curator.");
                 sub.setResolvedAt(Instant.now());
                 submissionRepository.save(sub);
@@ -159,7 +159,7 @@ public class AdminCurationService {
                     sub != null ? sub.getActionIdentifier() : "UNKNOWN",
                     sub != null ? sub.getActionDetails() : Collections.emptyMap(),
                     sub != null ? sub.getImpactSummary() : "",
-                    sub != null ? (sub.getPrimarySourceUrl() != null ? sub.getPrimarySourceUrl() : sub.getSourceUrl()) : "",
+                    resolveSourceUrl(sub),
                     q.getChallengeTargetId(),
                     q.getChallengeReason(),
                     q.getEvidenceUrl(),
@@ -239,7 +239,7 @@ public class AdminCurationService {
                 submission.getActionIdentifier(),
                 submission.getActionDetails(),
                 submission.getImpactSummary(),
-                submission.getPrimarySourceUrl() != null ? submission.getPrimarySourceUrl() : submission.getSourceUrl(),
+                resolveSourceUrl(submission),
                 queue.getChallengeTargetId(),
                 queue.getChallengeReason(),
                 queue.getEvidenceUrl(),
@@ -247,6 +247,13 @@ public class AdminCurationService {
                 queue.getResolvedAt(),
                 queue.getCreatedAt()
         );
+    }
+
+    private String resolveSourceUrl(ProfileEditSubmission submission) {
+        if (submission == null) {
+            return "";
+        }
+        return submission.getSourceUrl() != null ? submission.getSourceUrl() : "";
     }
 
     private void validateSourceUrl(String url) {

@@ -8,7 +8,6 @@ import com.politikapp.backend.module1.repository.ProfileEditSubmissionRepository
 import com.politikapp.backend.module2.dto.AppealResponse;
 import com.politikapp.backend.module2.entity.ModerationQueue;
 import com.politikapp.backend.module2.repository.ModerationQueueRepository;
-import java.math.BigDecimal;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,9 +15,6 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class AppealService {
-    private static final BigDecimal APPEAL_MINIMUM_TRUST = BigDecimal.valueOf(150.00);
-    private static final BigDecimal APPEAL_DEPOSIT = BigDecimal.valueOf(-10.00);
-
     private final AuthUserRepository authUserRepository;
     private final ProfileEditSubmissionRepository submissionRepository;
     private final ModerationQueueRepository moderationQueueRepository;
@@ -35,12 +31,8 @@ public class AppealService {
 
     @Transactional
     public AppealResponse fileAppeal(UUID submissionId, String details, UUID appealerId) {
-        AuthUser appealer = authUserRepository.findById(appealerId)
+        authUserRepository.findById(appealerId)
                 .orElseThrow(() -> new HttpResponseException(404, "Appealer account not found."));
-        BigDecimal currentTrust = trustOrDefault(appealer.getTrustScore());
-        if (currentTrust.compareTo(APPEAL_MINIMUM_TRUST) < 0) {
-            throw new HttpResponseException(403, "Appeal denied: trust score must be at least 150.00.");
-        }
 
         ProfileEditSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new HttpResponseException(404, "Published submission not found."));
@@ -54,12 +46,8 @@ public class AppealService {
             throw new HttpResponseException(409, "This record already has an appeal pending.");
         }
 
-        BigDecimal newTrust = currentTrust.add(APPEAL_DEPOSIT).max(BigDecimal.ZERO);
-        appealer.setTrustScore(newTrust);
-        authUserRepository.save(appealer);
         submission.setStatus("APPEALED_PENDING");
         queue.setQueueStatus("APPEALED_PENDING");
-        queue.setAppealerId(appealerId);
         submissionRepository.save(submission);
         moderationQueueRepository.save(queue);
 
@@ -68,11 +56,7 @@ public class AppealService {
                 submissionId,
                 queue.getQueueId(),
                 "APPEALED_PENDING",
-                newTrust
+                null
         );
-    }
-
-    private BigDecimal trustOrDefault(BigDecimal value) {
-        return value != null ? value : BigDecimal.valueOf(100.00);
     }
 }

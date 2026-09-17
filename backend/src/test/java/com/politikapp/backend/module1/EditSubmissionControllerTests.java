@@ -55,20 +55,18 @@ class EditSubmissionControllerTests {
         );
         if (countCon == null || countCon == 0) {
             jdbcTemplate.update(
-                    "INSERT INTO public.contributors (contributor_id, full_name, email, username, password_hash, role, account_status, trust_score, writing_token_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO public.contributors (contributor_id, full_name, email, username, password_hash, role, account_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
                     contributorId,
                     "Mock Contributor",
                     "mock.contributor@politikapp.com",
                     "mock_contributor",
                     "hash",
-                    "PEER",
-                    "ACTIVE",
-                    100.00,
+                    "CONTRIBUTOR",
                     "ACTIVE"
             );
         }
 
-        token = jwtService.generateAccessToken(contributorId, "mock.contributor@politikapp.com", "PEER");
+        token = jwtService.generateAccessToken(contributorId, "mock.contributor@politikapp.com", "CONTRIBUTOR");
     }
 
     @Test

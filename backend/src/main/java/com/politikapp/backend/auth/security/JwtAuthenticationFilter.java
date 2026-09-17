@@ -47,23 +47,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
                 UUID userId = UUID.fromString(claims.get("uid", String.class));
 
-                // Real-time JWT invalidation / lockout check
+                // Real-time account lockout check
                 com.politikapp.backend.auth.entity.AuthUser user = authUserRepository.findById(userId).orElse(null);
-                if (user == null || "LOCKED".equals(user.getAccountStatus()) || "INVALIDATED".equals(user.getWritingTokenStatus())) {
+                if (user == null || "LOCKED".equals(user.getAccountStatus())) {
                     jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
                     res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
-                    res.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Token has been invalidated or user account is locked.\"}");
-                    return; // Halt filter execution path cleanly
+                    res.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Account is locked or user no longer exists.\"}");
+                    return;
                 }
 
                 String role = claims.get("role", String.class);
                 if (sandboxEnabled) {
                     String sandboxRoleOverride = request.getHeader("X-Sandbox-Role-Override");
                     if (org.springframework.util.StringUtils.hasText(sandboxRoleOverride)) {
-                        if ("JUDICIAL_REVIEWER".equalsIgnoreCase(sandboxRoleOverride)) {
-                            role = "PEER";
-                        } else if ("ADMINISTRATOR".equalsIgnoreCase(sandboxRoleOverride) || "ADMIN".equalsIgnoreCase(sandboxRoleOverride)) {
+                        if ("ADMINISTRATOR".equalsIgnoreCase(sandboxRoleOverride) || "ADMIN".equalsIgnoreCase(sandboxRoleOverride)) {
                             role = "ADMIN";
                         } else {
                             role = sandboxRoleOverride.toUpperCase();

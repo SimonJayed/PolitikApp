@@ -16,9 +16,6 @@ public class ContributorTrustProfile {
     @Column(name = "account_status", nullable = false, length = 50)
     private String accountStatus = "ACTIVE";
 
-    @Column(name = "writing_token_status", length = 50)
-    private String writingTokenStatus = "ACTIVE";
-
     public UUID getContributorId() {
         return contributorId;
     }
@@ -29,13 +26,5 @@ public class ContributorTrustProfile {
 
     public void setAccountStatus(String accountStatus) {
         this.accountStatus = accountStatus;
-    }
-
-    public String getWritingTokenStatus() {
-        return writingTokenStatus;
-    }
-
-    public void setWritingTokenStatus(String writingTokenStatus) {
-        this.writingTokenStatus = writingTokenStatus;
     }
 }

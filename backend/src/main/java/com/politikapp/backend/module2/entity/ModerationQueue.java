@@ -19,14 +19,8 @@ public class ModerationQueue {
     @Column(name = "politician_id", nullable = false)
     private UUID politicianId;
 
-    @Column(name = "appealer_id")
-    private UUID appealerId;
-
     @Column(name = "queue_status", length = 50)
     private String queueStatus = "SUBMITTED_REQUEST";
-
-    @Column(name = "escalation_flag", nullable = false)
-    private boolean escalationFlag = false;
 
     @Column(name = "challenge_target_id")
     private UUID challengeTargetId;
@@ -61,7 +55,6 @@ public class ModerationQueue {
         this.submissionId = submissionId;
         this.politicianId = politicianId;
         this.queueStatus = "SUBMITTED_REQUEST";
-        this.escalationFlag = false;
     }
 
     public UUID getQueueId() {
@@ -88,28 +81,12 @@ public class ModerationQueue {
         this.politicianId = politicianId;
     }
 
-    public UUID getAppealerId() {
-        return appealerId;
-    }
-
-    public void setAppealerId(UUID appealerId) {
-        this.appealerId = appealerId;
-    }
-
     public String getQueueStatus() {
         return queueStatus;
     }
 
     public void setQueueStatus(String queueStatus) {
         this.queueStatus = queueStatus;
-    }
-
-    public boolean isEscalationFlag() {
-        return escalationFlag;
-    }
-
-    public void setEscalationFlag(boolean escalationFlag) {
-        this.escalationFlag = escalationFlag;
     }
 
     public UUID getChallengeTargetId() {

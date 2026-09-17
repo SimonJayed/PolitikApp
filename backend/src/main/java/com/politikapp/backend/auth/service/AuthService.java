@@ -14,7 +14,6 @@ import com.politikapp.backend.common.HttpResponseException;
 import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
-import java.math.BigDecimal;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,9 +24,6 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class AuthService {
-    private static final BigDecimal MIN_TRUST_SCORE = BigDecimal.ZERO;
-    private static final BigDecimal MAX_TRUST_SCORE = BigDecimal.valueOf(500.00);
-
     private final AuthUserRepository authUserRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
@@ -108,10 +104,6 @@ public class AuthService {
         if (StringUtils.hasText(request.username())) {
             user.setUsername(request.username().trim());
         }
-        if (request.sandboxProfileMetrics() != null) {
-            user.setSandboxProfileMetrics(request.sandboxProfileMetrics());
-        }
-        
         AuthUser saved = authUserRepository.save(user);
 
         // Retain verified database role in the active security context container in-memory
@@ -143,15 +135,8 @@ public class AuthService {
                 user.getUsername(),
                 user.getRole(),
                 user.getAccountStatus(),
-                user.getWritingTokenStatus(),
-                user.getTrustScore(),
-                user.getSandboxProfileMetrics(),
                 user.getCreatedAt()
         );
-    }
-
-    private BigDecimal clampTrustScore(BigDecimal trustScore) {
-        return trustScore.max(MIN_TRUST_SCORE).min(MAX_TRUST_SCORE);
     }
 
 }

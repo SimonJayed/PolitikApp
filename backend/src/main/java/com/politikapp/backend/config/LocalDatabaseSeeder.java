@@ -15,7 +15,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Map;
 import java.util.UUID;
@@ -62,8 +61,6 @@ public class LocalDatabaseSeeder implements CommandLineRunner {
             admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
             admin.setRole("ADMIN");
             admin.setAccountStatus("ACTIVE");
-            admin.setTrustScore(BigDecimal.valueOf(500.00));
-            admin.setWritingTokenStatus("ACTIVE");
             authUserRepository.save(admin);
             log.info("Seeded default admin account (admin / Admin123!)");
         } else {
@@ -88,18 +85,13 @@ public class LocalDatabaseSeeder implements CommandLineRunner {
             contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
             contributor.setRole("CONTRIBUTOR");
             contributor.setAccountStatus("ACTIVE");
-            contributor.setTrustScore(BigDecimal.valueOf(100.00));
-            contributor.setWritingTokenStatus("ACTIVE");
             authUserRepository.save(contributor);
             log.info("Seeded default contributor account (contributor / Contributor123!)");
-        } else {
-            contributorId = existingContributor.get().getUserId();
-            if (existingContributor.get().getPasswordHash() == null || existingContributor.get().getPasswordHash().isBlank()) {
-                AuthUser contributor = existingContributor.get();
-                contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
-                authUserRepository.save(contributor);
-                log.info("Updated contributor account with default password (Contributor123!)");
-            }
+        } else if (existingContributor.get().getPasswordHash() == null || existingContributor.get().getPasswordHash().isBlank()) {
+            AuthUser contributor = existingContributor.get();
+            contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
+            authUserRepository.save(contributor);
+            log.info("Updated contributor account with default password (Contributor123!)");
         }
 
         if (politicianRepository.count() > 0) {
@@ -139,7 +131,7 @@ public class LocalDatabaseSeeder implements CommandLineRunner {
         president.setTermEnd(LocalDate.of(2028, 6, 30));
         president.setBiography("Lawyer and public servant committed to people-centered governance, community empowerment, and ethical leadership.");
         president.setStatus("ACTIVE");
-        president = politicianRepository.save(president);
+        politicianRepository.save(president);
 
         // 3. Seed Published Metrics & Ledger Entries
         // Mayor Metrics

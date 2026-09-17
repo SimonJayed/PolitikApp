@@ -2,7 +2,6 @@ package com.politikapp.backend.module3.event;
 
 import com.politikapp.backend.common.event.ConsensusReachedEvent;
 import com.politikapp.backend.module3.service.ContributorReputationService;
-import com.politikapp.backend.module3.service.ReputationEngineService;
 import java.math.BigDecimal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,13 +20,9 @@ public class ReputationEventListener {
     private static final BigDecimal STANDARD_PUBLISH_REWARD = BigDecimal.valueOf(15.00);
     private static final BigDecimal STANDARD_REJECTION_PENALTY = BigDecimal.valueOf(-20.00);
 
-    private final ReputationEngineService reputationEngineService;
     private final ContributorReputationService contributorReputationService;
 
-    public ReputationEventListener(
-            ReputationEngineService reputationEngineService,
-            ContributorReputationService contributorReputationService) {
-        this.reputationEngineService = reputationEngineService;
+    public ReputationEventListener(ContributorReputationService contributorReputationService) {
         this.contributorReputationService = contributorReputationService;
     }
 
@@ -42,48 +37,9 @@ public class ReputationEventListener {
         log.info("Received ConsensusReachedEvent (AFTER_COMMIT) - Queue ID: {}, Contributor ID: {}, Final Status: {}",
                 event.queueId(), event.contributorId(), event.finalOutcomeStatus());
 
-        // Reward the author if consensus reached transitions to PUBLISHED
-        if ("PUBLISHED".equals(event.finalOutcomeStatus()) && event.contributorId() != null) {
-            try {
-                log.info("Submission successfully published. Awarding trust bounty to author: {}",
-                        event.contributorId());
-                reputationEngineService.adjustTrustScore(
-                        event.contributorId(),
-                        event.queueId(),
-                        STANDARD_PUBLISH_REWARD,
-                        "Contribution bounty: Submission successfully verified and published by community consensus.");
-            } catch (Exception e) {
-                log.error("Failed to award trust bounty to author {}: {}", event.contributorId(), e.getMessage(), e);
-            }
-        }
-
-        // Penalize the author if consensus reached transitions to REJECTED
-        if ("REJECTED".equals(event.finalOutcomeStatus()) && event.contributorId() != null) {
-            try {
-                log.info("Submission successfully rejected. Applying trust penalty to author: {}",
-                        event.contributorId());
-                reputationEngineService.adjustTrustScore(
-                        event.contributorId(),
-                        event.queueId(),
-                        STANDARD_REJECTION_PENALTY,
-                        "Contribution penalty: Submission rejected by community review consensus.");
-            } catch (Exception e) {
-                log.error("Failed to apply trust penalty to author {}: {}", event.contributorId(), e.getMessage(), e);
-            }
-        }
-
         try {
-            // Task 1: Recalculate peer reputations based on their jury votes
-            reputationEngineService.recalculateJuryReputations(event.queueId(), event.finalOutcomeStatus());
-            log.info("Successfully completed reputation adjustments for jury votes on queue ID: {}", event.queueId());
-        } catch (Exception e) {
-            log.error("Failed to recalculate jury reputations for queue ID: {}: {}", event.queueId(), e.getMessage(),
-                    e);
-        }
-
-        try {
-            // Task 2: Evaluate the contributor's overall reputation and handle potential
-            // lockout
+            // Legacy jury-vote reputation adjustments are retired. Contributor-level evaluation
+            // remains the active reputation signal after moderation consensus.
             if (event.contributorId() != null) {
                 contributorReputationService.evaluateContributorReputation(event.contributorId());
                 log.info("Successfully evaluated reputation for contributor ID: {}", event.contributorId());
