@@ -44,7 +44,6 @@ public class SecurityConfig {
                         })
                 )
                 .authorizeHttpRequests(requests -> requests
-                        .requestMatchers("/h2-console/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

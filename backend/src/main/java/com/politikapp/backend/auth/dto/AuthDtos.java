@@ -55,14 +55,4 @@ public class AuthDtos {
     public record RefreshRequest(
             @NotBlank String refreshToken
     ) {}
-
-    public record ReputationHistoryEntry(
-            UUID logId,
-            UUID queueId,
-            BigDecimal scoreChange,
-            BigDecimal previousScore,
-            BigDecimal newScore,
-            String reason,
-            Instant createdAt
-    ) {}
 }
