@@ -1,0 +1,237 @@
+.settingsWorkspace {
+  gap: 18px;
+  max-width: 1120px;
+  padding-top: 24px;
+}
+
+.settingsHeader {
+  align-items: flex-end;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+}
+
+.settingsHeaderCopy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.settingsHeaderCopy h2 {
+  margin: 0;
+}
+
+.settingsHeaderCopy p {
+  margin: 0;
+  max-width: 620px;
+}
+
+.settingsLayout {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(250px, 0.65fr);
+}
+
+.settingsCard {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.settingsCardHeader {
+  border-bottom: 1px solid var(--line-hairline);
+  display: grid;
+  gap: 5px;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+}
+
+.settingsCardHeader h3,
+.settingsInfoBlock h3 {
+  color: var(--text-primary);
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.settingsCardHeader p,
+.settingsInfoBlock p {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.settingsForm {
+  display: grid;
+  gap: 18px;
+}
+
+.settingsFormFields {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.settingsForm label {
+  gap: 8px;
+}
+
+.settingsForm input {
+  min-height: 46px;
+}
+
+.settingsFormFooter {
+  align-items: center;
+  border-top: 1px solid var(--line-hairline);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  padding-top: 18px;
+}
+
+.settingsInfoCard {
+  display: grid;
+  gap: 20px;
+}
+
+.settingsIdentity {
+  align-items: center;
+  background: var(--bg-inset);
+  border: 1px solid var(--line-hairline);
+  border-radius: var(--radius-md);
+  display: flex;
+  gap: 13px;
+  padding: 14px;
+}
+
+.settingsAvatar {
+  align-items: center;
+  background: var(--ph-blue);
+  border-radius: 12px;
+  color: #fff;
+  display: flex;
+  flex: 0 0 44px;
+  font-family: var(--display);
+  font-size: 1rem;
+  font-weight: 700;
+  height: 44px;
+  justify-content: center;
+}
+
+.settingsIdentityText {
+  min-width: 0;
+}
+
+.settingsIdentityText strong,
+.settingsIdentityText span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settingsIdentityText strong {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.settingsIdentityText span {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  margin-top: 2px;
+}
+
+.settingsInfoBlock {
+  display: grid;
+  gap: 8px;
+}
+
+.settingsInfoList {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+.settingsInfoRow {
+  align-items: baseline;
+  border-bottom: 1px solid var(--line-hairline);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 9px;
+}
+
+.settingsInfoRow:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settingsInfoRow dt {
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settingsInfoRow dd {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0;
+  text-align: right;
+}
+
+.settingsStatus {
+  background: var(--success-soft);
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius-full);
+  color: var(--success);
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 5px 9px;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .settingsLayout,
+  .settingsFormFields {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 480px) {
+  .settingsWorkspace {
+    padding-top: 14px;
+  }
+
+  .settingsCard {
+    padding: 18px;
+  }
+
+  .settingsFormFooter {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .settingsFormFooter button {
+    width: 100%;
+  }
+}

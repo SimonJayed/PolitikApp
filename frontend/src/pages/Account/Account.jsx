@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
+import './Account.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
@@ -12,6 +13,10 @@ async function readApiResponse(response) {
 function StatusLine({ state }) {
   if (!state?.message) return null
   return <p className={`statusLine ${state.status === 'error' ? 'isError' : ''}`}>{state.message}</p>
+}
+
+function initialsFor(name = '') {
+  return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'U'
 }
 
 export default function Account({ token, user }) {
@@ -61,19 +66,48 @@ export default function Account({ token, user }) {
   }
 
   return (
-    <section className="workspace">
-      <section className="profileSummary">
-        <p className="eyebrow ty-page-kicker">Account</p>
-        <h2 className="ty-section-title">{profile?.fullName || user?.fullName || '—'}</h2>
-        <p className="ty-body">{profile?.email || user?.email || '—'}</p>
-        <p className="ty-body">Role: {profile?.role || user?.role || '—'}</p>
-      </section>
-      <form className="editorPanel" onSubmit={onSave}>
-        <label>Full Name<input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} /></label>
-        <label>Username<input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} /></label>
-        <button type="submit" disabled={state.status === 'loading'}>Save Changes</button>
-      </form>
-      <StatusLine state={state} />
+    <section className="workspace settingsWorkspace">
+      <header className="settingsHeader">
+        <div className="settingsHeaderCopy">
+          <p className="ty-page-kicker">Account settings</p>
+          <h2 className="ty-page-title">Manage your profile</h2>
+          <p className="ty-body">Keep your public identity and account details up to date.</p>
+        </div>
+      </header>
+
+      <div className="settingsLayout">
+        <form className="settingsCard settingsForm" onSubmit={onSave}>
+          <div className="settingsCardHeader">
+            <h3>Profile details</h3>
+            <p>These details are used across your civic contribution activity.</p>
+          </div>
+          <div className="settingsFormFields">
+            <label>Full Name<input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} /></label>
+            <label>Username<input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} /></label>
+          </div>
+          <div className="settingsFormFooter">
+            <StatusLine state={state} />
+            <button type="submit" disabled={state.status === 'loading'}>{state.status === 'loading' ? 'Saving...' : 'Save Changes'}</button>
+          </div>
+        </form>
+
+        <aside className="settingsCard settingsInfoCard" aria-label="Account overview">
+          <div className="settingsIdentity">
+            <span className="settingsAvatar" aria-hidden="true">{initialsFor(profile?.fullName || user?.fullName)}</span>
+            <div className="settingsIdentityText">
+              <strong>{profile?.fullName || user?.fullName || 'Your profile'}</strong>
+              <span>{profile?.email || user?.email || 'Email unavailable'}</span>
+            </div>
+          </div>
+          <div className="settingsInfoBlock">
+            <h3>Account overview</h3>
+            <dl className="settingsInfoList">
+              <div className="settingsInfoRow"><dt>Role</dt><dd>{profile?.role || user?.role || '—'}</dd></div>
+              <div className="settingsInfoRow"><dt>Status</dt><dd><span className="settingsStatus">{profile?.accountStatus || profile?.status || 'Active'}</span></dd></div>
+            </dl>
+          </div>
+        </aside>
+      </div>
     </section>
   )
 }
