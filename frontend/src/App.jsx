@@ -460,20 +460,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
             </div>
           </header>
         )}
-        {!isAnyModalOpen && activeView !== 'dashboard' && activeView !== 'landing' && activeView !== 'auth' && (
-          <div className="backNavRow">
-            <button
-              aria-label="Back"
-              className="appBackButton"
-              onClick={() => navigateTo(isAuthenticated ? 'dashboard' : 'landing')}
-              type="button"
-            >
-              <ArrowLeftIcon size={16} />
-              {isAuthenticated ? 'Back to Dashboard' : 'Back to Home'}
-            </button>
-          </div>
-        )}
-
         {notFoundNotice && (
           <div style={{
             margin: '12px 0 20px',

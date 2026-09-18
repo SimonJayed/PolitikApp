@@ -938,46 +938,6 @@
   box-shadow: 0 12px 28px rgba(10, 29, 66, 0.34);
 }
 
-.backNavRow {
-  align-items: center;
-  display: flex;
-  justify-content: flex-start;
-  margin: 0 0 12px;
-  padding-left: 50px;
-  padding-top: 20px;
-}
-
-.appBackButton {
-  align-items: center;
-  background: var(--ph-blue);
-  background-image: linear-gradient(160deg, var(--ph-blue-light) 0%, var(--ph-blue) 60%, var(--accent-strong) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md);
-  box-shadow: 0 8px 20px rgba(10, 29, 66, 0.28);
-  color: #ffffff;
-  cursor: pointer;
-  display: inline-flex;
-  font-family: var(--display, 'Poppins', system-ui);
-  font-size: 0.88rem;
-  font-weight: 700;
-  gap: 8px;
-  min-height: 44px;
-  min-width: 108px;
-  justify-content: center;
-  letter-spacing: -0.01em;
-  padding: 0 16px;
-  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out), background var(--duration-fast) var(--ease-out);
-}
-
-.appBackButton:hover {
-  box-shadow: 0 12px 28px rgba(10, 29, 66, 0.34);
-  transform: translateY(-1px);
-}
-
-.appBackButton:focus-visible {
-  box-shadow: var(--shadow-focus);
-}
-
 .paginationMini {
   align-items: center;
   background: var(--bg-inset);
@@ -1484,21 +1444,6 @@ button:not([type='submit']):not(.ty-nav):hover {
   background: var(--bg-inset);
   border-color: #7a9bcc;
   color: var(--text-primary);
-}
-
-button.appBackButton {
-  background: var(--ph-blue);
-  background-image: linear-gradient(160deg, var(--ph-blue-light) 0%, var(--ph-blue) 60%, var(--accent-strong) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  box-shadow: 0 8px 20px rgba(10, 29, 66, 0.28);
-}
-
-button.appBackButton:hover {
-  background: var(--ph-blue);
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow: 0 12px 28px rgba(10, 29, 66, 0.34);
 }
 
 button.compareSubmitButton,
