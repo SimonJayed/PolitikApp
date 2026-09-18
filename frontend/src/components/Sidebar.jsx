@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'
 import './Sidebar.css'
 
 function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', user }) {
   const [isOpen, setIsOpen] = useState(true)
 
-  const sandboxContext = useDeveloperSandbox()
-  const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
-  const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : (user?.role || 'CONTRIBUTOR')
+  const currentRole = user?.role || 'CONTRIBUTOR'
 
   useEffect(() => {
     document.documentElement.style.setProperty('--sidebar-width', isOpen ? '320px' : '92px')

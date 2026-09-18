@@ -1,6 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext';
-import './module3/Module3.css';
+import { useEffect, useMemo, useState } from 'react';
 import { CircleCheckIcon, FileTextIcon, ScaleIcon } from './icons/Lucide';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -25,18 +23,9 @@ async function readApiResponse(response) {
 }
 
 export default function UserProfileMatrixPanel({ token, user }) {
-  const sandbox = useDeveloperSandbox() || {};
-  const {
-    isDevModeActive,
-    manipulatedUser,
-    profileMetrics,
-  } = sandbox;
-
   const [liveUser, setLiveUser] = useState(null);
 
   useEffect(() => {
-    if (isDevModeActive) return;
-
     let ignore = false;
     fetch(`${API_BASE_URL}/users/me`, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -52,9 +41,9 @@ export default function UserProfileMatrixPanel({ token, user }) {
     return () => {
       ignore = true;
     };
-  }, [token, isDevModeActive]);
+  }, [token]);
 
-  const actor = isDevModeActive && manipulatedUser ? manipulatedUser : (liveUser || user);
+  const actor = liveUser || user;
   const activeRole = actor?.role || 'CONTRIBUTOR';
   const descriptor = roleDescriptor(activeRole);
   const isAdmin = activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN';
@@ -65,11 +54,6 @@ export default function UserProfileMatrixPanel({ token, user }) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (isDevModeActive) {
-      setDynamicMetrics(null);
-      return;
-    }
-
     if (!actor?.userId) return;
 
     let ignore = false;
@@ -154,20 +138,9 @@ export default function UserProfileMatrixPanel({ token, user }) {
     return () => {
       ignore = true;
     };
-  }, [isDevModeActive, actor?.userId, activeRole, token, isAdmin]);
+  }, [actor?.userId, activeRole, token, isAdmin]);
 
-  const activeMetrics = isDevModeActive
-    ? {
-        adminPendingAdjudications: profileMetrics?.adminPendingAdjudications ?? 1,
-        adminCuratedRecords: profileMetrics?.adminCuratedRecords ?? 12,
-        adminUpheldRulings: profileMetrics?.adminUpheldRulings ?? 3,
-        adminDismissedRulings: profileMetrics?.adminDismissedRulings ?? 0,
-        contributorSubmissions: profileMetrics?.contributorSubmissions ?? 4,
-        contributorUnderReview: 1,
-        contributorPublished: profileMetrics?.contributorApproved ?? 3,
-        adminPendingQueue: [],
-      }
-    : dynamicMetrics;
+  const activeMetrics = dynamicMetrics;
 
   const headerTone = useMemo(() => {
     if (isAdmin) return 'matrixHero admin';

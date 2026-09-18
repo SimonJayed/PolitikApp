@@ -18,16 +18,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository;
-    private final boolean sandboxEnabled;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository,
-            @org.springframework.beans.factory.annotation.Value("${app.sandbox.enabled:false}") boolean sandboxEnabled
+            com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository
     ) {
         this.jwtService = jwtService;
         this.authUserRepository = authUserRepository;
-        this.sandboxEnabled = sandboxEnabled;
     }
 
     @Override
@@ -57,22 +54,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     return;
                 }
 
-                String role = claims.get("role", String.class);
-                if (sandboxEnabled) {
-                    String sandboxRoleOverride = request.getHeader("X-Sandbox-Role-Override");
-                    if (org.springframework.util.StringUtils.hasText(sandboxRoleOverride)) {
-                        if ("ADMINISTRATOR".equalsIgnoreCase(sandboxRoleOverride) || "ADMIN".equalsIgnoreCase(sandboxRoleOverride)) {
-                            role = "ADMIN";
-                        } else {
-                            role = sandboxRoleOverride.toUpperCase();
-                        }
-                    }
-                }
-
                 AuthPrincipal principal = new AuthPrincipal(
                         userId,
                         claims.getSubject(),
-                        role
+                        claims.get("role", String.class)
                 );
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities())

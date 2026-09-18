@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { AlertTriangleIcon, ArrowLeftIcon, ArrowRightIcon } from './icons/Lucide'
 import { matchesJurisdiction } from './jurisdiction'
 import { RankingRowsSkeleton } from './Skeletons'
-import { computeWgiCompositeScore, formatPosition } from './module1/positionConfig'
+import { computeWgiCompositeScore, formatPosition } from './governance/positionConfig'
 
 const STORAGE_KEY = 'politikapp:rankingFilter'
 

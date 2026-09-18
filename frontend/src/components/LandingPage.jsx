@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import './LandingPage.css';
-import { formatPosition, formatJurisdiction } from './module1/positionConfig';
+import { formatPosition, formatJurisdiction } from './governance/positionConfig';
 import {
   BanIcon,
   GitCompareIcon,

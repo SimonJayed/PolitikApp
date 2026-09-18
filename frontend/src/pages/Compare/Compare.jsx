@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ScaleIcon } from '../../components/icons/Lucide'
-import { formatJurisdiction, formatPosition } from '../../components/module1/positionConfig'
+import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { initialsFor, KpiGrid, PaginationMini, StatusLine, TimelineLedger } from '../pageHelpers'
 
 function ComparisonGrid({ comparison }) { const rows = comparison.alignedHorizontalMatrix || []; return <div className="comparisonGrid"><CandidateColumn profile={comparison.profileA} /><CandidateColumn profile={comparison.profileB} /><section className="matrix"><h2 className="ty-section-title">Aligned Evidence Ledger</h2>{rows.map((row) => <div className="matrixRow" key={row.categoryTag}><h3>{row.categoryTag}</h3><div className="compareLedgerPair"><TimelineLedger className="comparisonLedgerCard" entries={row.recordsA || []} title="Candidate A" /><TimelineLedger className="comparisonLedgerCard" entries={row.recordsB || []} title="Candidate B" /></div></div>)}</section></div> }

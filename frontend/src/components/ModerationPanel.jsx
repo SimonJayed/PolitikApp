@@ -1,18 +1,12 @@
 import { useEffect, useState } from 'react'
-import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'
-import AdminAdjudicationTable from './module2/AdminAdjudicationTable'
+import AdminAdjudicationTable from './moderation/AdminAdjudicationTable'
 import { FileTextIcon, RefreshCwIcon, ScaleIcon, ShieldCheckIcon, UsersIcon } from './icons/Lucide'
-import './module2/Module2.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 export default function ModerationPanel({ token, user }) {
-  const sandboxContext = useDeveloperSandbox() || {}
-  const isDevModeActive = sandboxContext.isDevModeActive || false
-  const manipulatedUser = sandboxContext.manipulatedUser || null
-
   // Determine effective user role
-  const effectiveRole = isDevModeActive && manipulatedUser?.role ? manipulatedUser.role : user?.role || 'CONTRIBUTOR'
+  const effectiveRole = user?.role || 'CONTRIBUTOR'
   const isAdmin = effectiveRole === 'ADMIN' || effectiveRole === 'ADMINISTRATOR'
 
   // Citizen view state

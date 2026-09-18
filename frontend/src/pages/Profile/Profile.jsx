@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import ConfirmActionModal from '../../components/ConfirmActionModal'
 import { BarChart3Icon, FolderIcon } from '../../components/icons/Lucide'
-import { formatJurisdiction, formatPosition } from '../../components/module1/positionConfig'
+import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { KpiGrid, PageSectionLoader, ProfileSkeleton, StatusLine, TimelineLedger } from '../pageHelpers'
 
 function exportLedger(entries, profile, type) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CircleCheckIcon, ExternalLinkIcon, ScaleIcon, ArrowLeftIcon, ArrowRightIcon } from '../icons/Lucide';
 import { TimelineCardsSkeleton } from '../Skeletons';
 import { formatActionIdentifier } from './positionConfig';
-import ChallengeRecordModal from '../module2/ChallengeRecordModal';
+import ChallengeRecordModal from '../moderation/ChallengeRecordModal';
 
 function PaginationMini({ page, totalPages, onChange }) {
   const disabledPrev = page <= 1;

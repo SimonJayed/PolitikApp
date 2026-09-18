@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import LifecycleStageStrip from '../../components/LifecycleStageStrip'
 import { ContributionCardsSkeleton } from '../../components/Skeletons'
-import { formatActionIdentifier } from '../../components/module1/positionConfig'
+import { formatActionIdentifier } from '../../components/governance/positionConfig'
 import { formatActionMetric, formatDate, PaginationMini, StatusLine } from '../pageHelpers'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'

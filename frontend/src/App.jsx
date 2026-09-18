@@ -1,14 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
-import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
-import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
 import { useAuth } from './auth/AuthContext'
 import TopNav from './components/TopNav'
 import AuthPromptModal from './components/AuthPromptModal'
-import WgiMethodologyModal from './components/module1/WgiMethodologyModal'
+import WgiMethodologyModal from './components/governance/WgiMethodologyModal'
 
-import './components/module1/Module1.css'
+import './components/governance.css'
+import './components/moderation.css'
 import Account from './pages/Account/Account'
 import Authentication from './pages/Authentication/Authentication'
 import Dashboard from './pages/Dashboard/Dashboard'
@@ -88,14 +87,9 @@ async function readApiResponse(response) {
 }
 
 function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate, token }) {
-  const sandboxContext = useDeveloperSandbox()
-  const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
-  const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
   const [resolvedUser, setResolvedUser] = useState(currentUser || null)
   const wasAuthenticated = useRef(isAuthenticated)
-  const activeUser = isDevModeActive && manipulatedUser
-    ? manipulatedUser
-    : (isAuthenticated ? resolvedUser : null)
+  const activeUser = isAuthenticated ? resolvedUser : null
   const currentRole = activeUser?.role || 'CONTRIBUTOR'
 
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), [])
@@ -167,9 +161,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     landing: ['Home', 'Verifiable Governance Platform'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
-    profileMatrix: isDevModeActive
-      ? ['Developer Sandbox', 'Core Profile Metrics Matrix']
-      : ['My Profile', 'Contribution Metrics'],
+    profileMatrix: ['My Profile', 'Contribution Metrics'],
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
@@ -702,18 +694,13 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
 function App() {
   const { isAuthenticated, logout, token, updateSession, user } = useAuth()
-  return (
-    <DeveloperSandboxProvider currentUser={user} token={token}>
-      <AppInner
-        currentUser={user}
-        isAuthenticated={isAuthenticated}
-        onLogout={logout}
-        onUserUpdate={updateSession}
-        token={token}
-      />
-      {/* <DeveloperOptionsPanel /> */}
-    </DeveloperSandboxProvider>
-  )
+  return <AppInner
+    currentUser={user}
+    isAuthenticated={isAuthenticated}
+    onLogout={logout}
+    onUserUpdate={updateSession}
+    token={token}
+  />
 }
 
 /* function LegacyPoliticiansLoaderPanel({

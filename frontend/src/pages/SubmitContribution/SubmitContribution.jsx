@@ -1,4 +1,4 @@
-import EditSubmissionForm from '../../components/module1/EditSubmissionForm'
+import EditSubmissionForm from '../../components/governance/EditSubmissionForm'
 
 export default function SubmitContribution(props) {
   return <EditSubmissionForm {...props} />

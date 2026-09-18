@@ -1,6 +1,6 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '../components/icons/Lucide'
-import KPIWidget from '../components/module1/KPIWidget'
-import TimelineLedgerDecoupled from '../components/module1/TimelineLedger'
+import KPIWidget from '../components/governance/KPIWidget'
+import TimelineLedgerDecoupled from '../components/governance/TimelineLedger'
 
 export function initialsFor(name = '') {
   return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()

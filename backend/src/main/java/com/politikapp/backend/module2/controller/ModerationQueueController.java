@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/moderation")
@@ -27,20 +26,5 @@ public class ModerationQueueController {
         log.info("Received request for double-blind anonymized moderation queue");
         List<PendingQueueCardResponse> anonymizedQueue = moderationQueueService.getAnonymizedModerationQueue();
         return ResponseEntity.ok(anonymizedQueue);
-    }
-
-    @PostMapping("/sandbox/shift-stage")
-    public ResponseEntity<Map<String, Object>> sandboxShiftStage(
-            @RequestBody Map<String, String> payload
-    ) {
-        log.info("Sandbox stage override shift requested");
-        String queueId = payload.get("queueId");
-        String direction = payload.get("direction");
-        String newStatus = moderationQueueService.shiftSandboxStage(java.util.UUID.fromString(queueId), direction);
-        return ResponseEntity.ok(Map.of(
-            "message", "Sandbox stage successfully shifted.",
-            "queueId", queueId,
-            "newStatus", newStatus
-        ));
     }
 }

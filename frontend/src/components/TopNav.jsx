@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react'
-import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'
 import {
   ChevronDownIcon,
   GitCompareIcon,
@@ -81,10 +80,7 @@ function TopNav({
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const isAuthenticated = Boolean(user && user.userId)
 
-  const sandboxContext = useDeveloperSandbox()
-  const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
-  const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : (user?.role || 'CONTRIBUTOR')
+  const currentRole = user?.role || 'CONTRIBUTOR'
 
   const navItems = useMemo(() => {
     const items = [

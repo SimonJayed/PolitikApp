@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangleIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
-import { formatJurisdiction, formatPosition } from '../../components/module1/positionConfig'
+import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { initialsFor, LoadingSkeletonCards, PageSectionLoader, PaginationMini, StatusLine } from '../pageHelpers'
 
 export default function PoliticiansLoaderPanel({ dbUser, onViewProfile, politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token }) {
