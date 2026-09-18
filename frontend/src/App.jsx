@@ -1,42 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
-import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
-import ConfirmActionModal from './components/ConfirmActionModal'
-import LifecycleStageStrip from './components/LifecycleStageStrip'
-import { matchesJurisdiction } from './components/jurisdiction'
-import { ContributionCardsSkeleton } from './components/Skeletons'
 import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
 import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
-import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
 import { useAuth } from './auth/AuthContext'
-import AuthPages from './auth/AuthPages'
 import TopNav from './components/TopNav'
-import UserHistoryPage from './components/UserHistoryPage'
-import LandingPage from './components/LandingPage'
 import AuthPromptModal from './components/AuthPromptModal'
 import WgiMethodologyModal from './components/module1/WgiMethodologyModal'
 
-// Decoupled Module 1 Components
-import EditSubmissionForm from './components/module1/EditSubmissionForm'
-import PoliticianDashboard from './components/module1/PoliticianDashboard'
-import TimelineLedgerDecoupled from './components/module1/TimelineLedger'
-import KPIWidget from './components/module1/KPIWidget'
-import { POSITION_OPTIONS, formatPosition, formatJurisdiction, formatActionIdentifier } from './components/module1/positionConfig'
 import './components/module1/Module1.css'
+import Account from './pages/Account/Account'
+import Authentication from './pages/Authentication/Authentication'
+import Dashboard from './pages/Dashboard/Dashboard'
+import History from './pages/History/History'
+import Landing from './pages/Landing/Landing'
+import ProfileMatrix from './pages/ProfileMatrix/ProfileMatrix'
+import SubmitContribution from './pages/SubmitContribution/SubmitContribution'
+import PoliticiansLoaderPanelExtracted from './pages/Politicians/Politicians'
+import PoliticianProfilePageExtracted from './pages/Profile/Profile'
+import ComparisonPanelExtracted from './pages/Compare/Compare'
+import MyContributionsPanelExtracted from './pages/Contributions/Contributions'
 import {
   AlertTriangleIcon,
-  BarChart3Icon,
   ArrowLeftIcon,
-  ArrowRightIcon,
-  ExternalLinkIcon,
-  FileTextIcon,
-  FolderIcon,
-  KeyIcon,
-  ScaleIcon,
-  ShieldCheckIcon,
-  UserPlusIcon,
-  UsersIcon,
 } from './components/icons/Lucide'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -530,7 +516,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         )}
 
         {activeView === 'landing' && (
-          <LandingPage
+          <Landing
             isAuthenticated={isAuthenticated}
             politicians={politiciansState.data}
             onAuthPrompt={triggerAuthPrompt}
@@ -543,14 +529,14 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         )}
 
         {activeView === 'auth' && (
-          <AuthPages
+          <Authentication
             initialMode={authMode}
             onBack={() => navigateTo('politicians')}
           />
         )}
 
         {activeView === 'politicians' && (
-          <PoliticiansLoaderPanel
+          <PoliticiansLoaderPanelExtracted
             dbUser={currentUser}
             onViewProfile={openPoliticianProfile}
             politicians={politiciansState.data}
@@ -589,7 +575,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
               </div>
             </section>
           ) : (
-            <SubmissionPanel
+            <SubmitContribution
               formData={formData}
               onChange={updateFormField}
               onDetailChange={updateActionDetail}
@@ -602,7 +588,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           )
         )}
         {activeView === 'profile' && (
-          <PoliticianProfilePage
+          <PoliticianProfilePageExtracted
             onAddContribution={openSubmitContributionForPolitician}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onReload={openPoliticianProfile}
@@ -619,7 +605,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           />
         )}
         {activeView === 'dashboard' && (
-          <DashboardPanel
+          <Dashboard
             isLoading={politiciansState.status === 'loading'}
             onNavigate={navigateTo}
             onOpenProfile={openPoliticianProfile}
@@ -628,7 +614,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           />
         )}
         {activeView === 'compare' && (
-          <ComparisonPanel
+          <ComparisonPanelExtracted
             compareIds={compareIds}
             onChange={setCompareIds}
             onModalOpenChange={setIsCompareModalOpen}
@@ -646,10 +632,10 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
               </div>
             </section>
           ) : (
-            <MyContributionsPanel onNavigateToSubmit={() => navigateTo('submit')} user={activeUser} />
+            <MyContributionsPanelExtracted onNavigateToSubmit={() => navigateTo('submit')} user={activeUser} />
           )
         )}
-        {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={activeUser} />}
+        {activeView === 'profileMatrix' && <ProfileMatrix token={token} user={activeUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
             <section className="workspace">
@@ -686,8 +672,8 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
             <ModerationPanel token={token} user={activeUser} />
           )
         )}
-        {activeView === 'account' && <UserAccountPage token={token} user={activeUser} />}
-        {activeView === 'history' && <UserHistoryPage token={token} />}
+        {activeView === 'account' && <Account token={token} user={activeUser} />}
+        {activeView === 'history' && <History token={token} />}
       </section>
 
       <AuthPromptModal
@@ -730,88 +716,7 @@ function App() {
   )
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Dashboard                                                                  */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function DashboardPanel(props) {
-  return <PoliticianDashboard {...props} />
-}
-function UserAccountPage({ token, user }) {
-  const { updateSession } = useAuth()
-  const [profile, setProfile] = useState(null)
-  const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
-  const [form, setForm] = useState({ fullName: '', username: '' })
-
-  useEffect(() => {
-    let cancelled = false
-    setState({ status: 'loading', message: 'Loading profile...' })
-    fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => {
-        if (res.status === 401 || res.status === 403) {
-          updateSession(null)
-          throw new Error('Session expired or unauthorized')
-        }
-        return readApiResponse(res)
-      })
-      .then((data) => {
-        if (cancelled) return
-        setProfile(data)
-        setForm({ fullName: data.fullName || '', username: data.username || '' })
-        setState({ status: 'success', message: '' })
-      })
-      .catch((error) => {
-        if (cancelled) return
-        setState({ status: 'error', message: error.message || 'Failed to load profile.' })
-      })
-    return () => { cancelled = true }
-  }, [token])
-
-  async function onSave(event) {
-    event.preventDefault()
-    setState({ status: 'loading', message: 'Saving profile...' })
-    try {
-      const data = await fetch(`${API_BASE_URL}/users/me`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
-      }).then(readApiResponse)
-      setProfile(data.user || data)
-      updateSession(data)
-      setState({ status: 'success', message: 'Profile updated.' })
-    } catch (error) {
-      setState({ status: 'error', message: error.message })
-    }
-  }
-
-  return (
-    <section className="workspace">
-      <section className="profileSummary">
-        <p className="eyebrow ty-page-kicker">Account</p>
-        <h2 className="ty-section-title">{profile?.fullName || user?.fullName || '—'}</h2>
-        <p className="ty-body">{profile?.email || user?.email || '—'}</p>
-        <p className="ty-body">Role: {profile?.role || user?.role || '—'}</p>
-      </section>
-      <form className="editorPanel" onSubmit={onSave}>
-        <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
-        <label>Username<input value={form.username} onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))} /></label>
-        <button type="submit" disabled={state.status === 'loading'}>Save Changes</button>
-      </form>
-      <StatusLine state={state} />
-    </section>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Submission Panel                                                            */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function SubmissionPanel(props) {
-  return <EditSubmissionForm {...props} />
-}
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Politicians                                                                 */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticiansLoaderPanel({
+/* function LegacyPoliticiansLoaderPanel({
   dbUser, onViewProfile,
   politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
@@ -1351,7 +1256,7 @@ function exportLedgerAsJson(entries = [], profile = {}) {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({
+function LegacyPoliticianProfilePage({
   dbUser,
   onAddContribution,
   onAppealModalOpenChange,
@@ -1636,7 +1541,7 @@ function PoliticianProfilePage({
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Comparison Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
+function LegacyComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -2005,7 +1910,7 @@ function PageSectionLoader() {
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  My Contributions Panel                                                      */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function MyContributionsPanel({ onNavigateToSubmit, user }) {
+function LegacyMyContributionsPanel({ onNavigateToSubmit, user }) {
   const [contributions, setContributions] = useState([])
   const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
   const [page, setPage] = useState(1)
@@ -2132,11 +2037,6 @@ function normalizeActionDetails(actionDetails = {}) {
         return Number.isFinite(numericValue) && value !== null && value !== '' ? [key, numericValue] : [key, value]
       }),
   )
-}
-
-function formatDate(value) {
-  if (!value) return null
-  return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
 }
 
 export default App
