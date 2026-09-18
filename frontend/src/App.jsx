@@ -245,7 +245,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         actionDetails: normalizeActionDetails(formData.actionDetails),
         sourceUrl: formData.sourceUrl.trim(),
       }
-      const data = await fetch(`${API_BASE_URL}/api/submissions`, {
+      const data = await fetch(`${API_BASE_URL}/api/submissions/my`, {
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         method: 'POST',

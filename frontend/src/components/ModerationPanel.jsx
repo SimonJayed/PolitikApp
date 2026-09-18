@@ -26,7 +26,7 @@ export default function ModerationPanel({ token, user }) {
     setCitizenLoading(true)
     setCitizenError(null)
     try {
-      const res = await fetch(`${API_BASE_URL}/api/submissions`, {
+      const res = await fetch(`${API_BASE_URL}/api/submissions/my`, {
         headers: {
           Authorization: effectiveToken ? `Bearer ${effectiveToken}` : '',
         },

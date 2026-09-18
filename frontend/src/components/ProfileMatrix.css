@@ -1,0 +1,296 @@
+.profileMatrixWorkspace {
+  display: grid;
+  font-family: var(--sans);
+  gap: 18px;
+  min-width: 0;
+  padding: clamp(18px, 3vw, 32px);
+  background: #f4f7fb;
+}
+
+.profileMatrixHero {
+  align-items: center;
+  background: linear-gradient(135deg, #102a56 0%, #174e70 58%, #0b766e 100%);
+  border: 1px solid rgba(16, 42, 86, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 18px 44px rgba(16, 42, 86, 0.18);
+  color: #fff;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  min-height: 184px;
+  overflow: hidden;
+  padding: clamp(22px, 4vw, 36px);
+  position: relative;
+}
+
+.profileMatrixHero.admin {
+  background: linear-gradient(135deg, #102a56 0%, #3b376f 58%, #a44a36 100%);
+}
+
+.profileMatrixHero::after {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  content: '';
+  height: 280px;
+  position: absolute;
+  right: -90px;
+  top: -145px;
+  width: 280px;
+}
+
+.profileMatrixHero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.profileMatrixHeroCopy {
+  min-width: 0;
+}
+
+.profileMatrixHeroTitle {
+  color: #fff;
+  font-family: var(--display);
+  font-size: clamp(1.55rem, 3vw, 2.45rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.08;
+  margin: 12px 0 8px;
+}
+
+.profileMatrixHeroText {
+  color: rgba(240, 249, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 620px;
+}
+
+.profileMatrixRoleBadge,
+.profileMatrixStatus {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profileMatrixRoleBadge {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  padding: 7px 11px;
+}
+
+.profileMatrixStatus {
+  background: #d7f7e9;
+  color: #087443;
+  justify-content: center;
+  min-width: 108px;
+  padding: 8px 12px;
+}
+
+.profileMatrixHeroScore {
+  align-items: flex-end;
+  background: rgba(6, 19, 42, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-width: 132px;
+  padding: 16px;
+}
+
+.profileMatrixHeroScoreLabel {
+  color: rgba(226, 232, 240, 0.72);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.profileMatrixMetrics {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.profileMatrixMetric {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.05);
+  min-width: 0;
+  padding: 16px;
+}
+
+.profileMatrixMetricLabel {
+  color: #64748b;
+  display: block;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.profileMatrixMetricValue {
+  color: #102a56;
+  display: block;
+  font-family: var(--display);
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.profileMatrixPanel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 8px 26px rgba(15, 23, 42, 0.05);
+  min-width: 0;
+  padding: clamp(18px, 3vw, 26px);
+}
+
+.profileMatrixPanelHeader {
+  align-items: flex-start;
+  border-bottom: 1px solid #edf2f7;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  padding-bottom: 15px;
+}
+
+.profileMatrixPanelTitle {
+  align-items: center;
+  color: #102a56;
+  display: flex;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  gap: 8px;
+  margin: 0;
+}
+
+.profileMatrixPanelDescription {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.55;
+  margin: 5px 0 0;
+  max-width: 680px;
+}
+
+.profileMatrixQueueCount {
+  background: #e6f4fb;
+  border-radius: 999px;
+  color: #036b91;
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.profileMatrixList {
+  display: grid;
+  gap: 10px;
+}
+
+.profileMatrixListItem {
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  min-width: 0;
+  padding: 13px 14px;
+}
+
+.profileMatrixListItem.challenge {
+  background: #fff8f7;
+  border-color: #fecaca;
+}
+
+.profileMatrixListCopy {
+  min-width: 0;
+}
+
+.profileMatrixListTitle {
+  color: #172b4d;
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profileMatrixListMeta {
+  color: #64748b;
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  margin-top: 3px;
+}
+
+.profileMatrixState {
+  background: #fff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  color: #64748b;
+  font-size: 13px;
+  padding: 30px 18px;
+  text-align: center;
+}
+
+@media (max-width: 820px) {
+  .profileMatrixMetrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .profileMatrixWorkspace {
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .profileMatrixHero {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+  }
+
+  .profileMatrixHeroScore {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .profileMatrixMetrics {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .profileMatrixPanelHeader,
+  .profileMatrixListItem {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profileMatrixQueueCount {
+    align-self: flex-start;
+  }
+
+  .profileMatrixListTitle {
+    white-space: normal;
+  }
+}

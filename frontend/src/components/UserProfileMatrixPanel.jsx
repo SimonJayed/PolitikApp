@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CircleCheckIcon, FileTextIcon, ScaleIcon } from './icons/Lucide';
+import './ProfileMatrix.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
 
@@ -99,7 +100,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
           });
         } else {
           // Contributor / Citizen metrics
-          const resSub = await fetch(`${API_BASE_URL}/api/submissions`, {
+          const resSub = await fetch(`${API_BASE_URL}/api/submissions/my`, {
             headers: token ? { Authorization: `Bearer ${token}` } : {},
           });
           const submissionsData = await readApiResponse(resSub);
@@ -149,26 +150,58 @@ export default function UserProfileMatrixPanel({ token, user }) {
 
   if (!activeMetrics && loading) {
     return (
-      <section className="workspace profileMatrixWorkspace" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="ledgerEmptyState">Loading curation & profile metrics...</div>
+      <section className="workspace profileMatrixWorkspace">
+        <div className="profileMatrixState">Loading your profile metrics...</div>
       </section>
     );
   }
 
+  if (!activeMetrics && error) {
+    return (
+      <section className="workspace profileMatrixWorkspace">
+        <div className="profileMatrixState">Unable to load profile metrics. {error}</div>
+      </section>
+    );
+  }
+
+  const metricCards = isAdmin
+    ? [
+        ['Curated records', activeMetrics?.adminCuratedRecords ?? 0],
+        ['Awaiting ruling', activeMetrics?.adminPendingAdjudications ?? 0],
+        ['Upheld rulings', activeMetrics?.adminUpheldRulings ?? 0],
+        ['Dismissed rulings', activeMetrics?.adminDismissedRulings ?? 0],
+      ]
+    : [
+        ['Proposals filed', activeMetrics?.contributorSubmissions ?? 0],
+        ['Under review', activeMetrics?.contributorUnderReview ?? 0],
+        ['Published', activeMetrics?.contributorPublished ?? 0],
+        ['Role', activeRole],
+      ];
+
   return (
     <section className="workspace profileMatrixWorkspace">
-      <header className={headerTone}>
-        <div>
-          <span className="matrixRoleBadge">{isAdmin ? 'ADMIN CURATOR' : 'CITIZEN'}</span>
-          <h2 className="ty-section-title">{descriptor}</h2>
-          <p className="ty-body">
+      <header className={headerTone.replace('matrixHero', 'profileMatrixHero')}>
+        <div className="profileMatrixHeroCopy">
+          <span className="profileMatrixRoleBadge">{isAdmin ? 'ADMIN CURATOR' : 'CITIZEN'}</span>
+          <h2 className="profileMatrixHeroTitle">{descriptor}</h2>
+          <p className="profileMatrixHeroText">
             {actor?.name || actor?.fullName || 'User'} is connected to the Centralized Evidence-Based Curation Pipeline.
           </p>
         </div>
-        <div className="matrixHeroScore">
-          <small>{actor?.status || actor?.accountStatus || 'ACTIVE'}</small>
+        <div className="profileMatrixHeroScore">
+          <span className="profileMatrixHeroScoreLabel">Account status</span>
+          <span className="profileMatrixStatus">{actor?.status || actor?.accountStatus || 'ACTIVE'}</span>
         </div>
       </header>
+
+      <div className="profileMatrixMetrics" aria-label="Profile summary metrics">
+        {metricCards.map(([label, value]) => (
+          <article className="profileMatrixMetric" key={label}>
+            <span className="profileMatrixMetricLabel">{label}</span>
+            <strong className="profileMatrixMetricValue">{value}</strong>
+          </article>
+        ))}
+      </div>
 
       {/* Admin Matrix Layout */}
       {isAdmin && (
@@ -200,61 +233,24 @@ function AdminMatrix({ metrics = {}, token }) {
     <>
       {/* Admin Active Adjudication Workbench */}
       <section
-        className="matrixActionPanel"
-        style={{
-          marginTop: '24px',
-          background: 'var(--bg-surface, #ffffff)',
-          border: '1px solid var(--line-soft, #e2e8f0)',
-          borderRadius: 'var(--radius-lg, 12px)',
-          padding: '24px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-        }}
+        className="profileMatrixPanel"
       >
-        <header
-          style={{
-            borderBottom: '1px solid var(--line-hairline, #f1f5f9)',
-            paddingBottom: '12px',
-            marginBottom: '20px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '10px',
-          }}
-        >
+        <header className="profileMatrixPanelHeader">
           <div>
-            <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary, #0f172a)' }}>
+            <h3 className="profileMatrixPanelTitle">
               <ScaleIcon size={18} /> Active Adjudication Workbench
             </h3>
-            <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted, #64748b)', fontSize: '13px' }}>
+            <p className="profileMatrixPanelDescription">
               Pending citizen metric proposals and public challenges requiring administrative primary-source review.
             </p>
           </div>
-          <span
-            style={{
-              fontSize: '12px',
-              fontWeight: '600',
-              color: '#0284c7',
-              background: '#e0f2fe',
-              padding: '4px 10px',
-              borderRadius: '9999px',
-            }}
-          >
+          <span className="profileMatrixQueueCount">
             {pendingQueue.length} items awaiting ruling
           </span>
         </header>
 
         {pendingQueue.length === 0 ? (
-          <div
-            style={{
-              padding: '36px',
-              textAlign: 'center',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              border: '1px dashed #cbd5e1',
-              color: '#64748b',
-            }}
-          >
+          <div className="profileMatrixState">
             <CircleCheckIcon size={28} style={{ marginBottom: '6px' }} />
             <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: '#1e293b' }}>
               Adjudication Queue Clear
@@ -264,25 +260,12 @@ function AdminMatrix({ metrics = {}, token }) {
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="profileMatrixList">
             {pendingQueue.slice(0, 5).map((item) => {
               const isChallenge = item.itemType === 'PUBLIC_CHALLENGE';
               return (
-                <div
-                  key={item.queueId}
-                  style={{
-                    padding: '14px 16px',
-                    borderRadius: '8px',
-                    border: isChallenge ? '1px solid #fecaca' : '1px solid #e2e8f0',
-                    background: isChallenge ? '#fff5f5' : '#ffffff',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: '10px',
-                  }}
-                >
-                  <div>
+                <div className={`profileMatrixListItem${isChallenge ? ' challenge' : ''}`} key={item.queueId}>
+                  <div className="profileMatrixListCopy">
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                       <span
                         style={{
@@ -300,7 +283,7 @@ function AdminMatrix({ metrics = {}, token }) {
                         {item.politicianName}
                       </strong>
                     </div>
-                    <p style={{ margin: 0, fontSize: '13px', color: '#334155' }}>
+                    <p className="profileMatrixListMeta">
                       {item.summary || item.challengeReason || 'Item under adjudication'}
                     </p>
                   </div>
@@ -334,66 +317,33 @@ function CitizenMatrix({ metrics = {}, user }) {
     <>
       {/* Citizen Activity Ledger */}
       <section
-        className="matrixActionPanel"
-        style={{
-          marginTop: '24px',
-          background: 'var(--bg-surface, #ffffff)',
-          border: '1px solid var(--line-soft, #e2e8f0)',
-          borderRadius: 'var(--radius-lg, 12px)',
-          padding: '24px',
-        }}
+        className="profileMatrixPanel"
       >
-        <header
-          style={{
-            borderBottom: '1px solid var(--line-hairline, #f1f5f9)',
-            paddingBottom: '12px',
-            marginBottom: '16px',
-          }}
-        >
-          <h3 className="ty-card-title" style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>
+        <header className="profileMatrixPanelHeader">
+          <div>
+          <h3 className="profileMatrixPanelTitle">
             <FileTextIcon size={18} /> Citizen Contributions & Proposals
           </h3>
-          <p className="ty-meta" style={{ margin: '4px 0 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+          <p className="profileMatrixPanelDescription">
             All metric proposals undergo direct Admin Curator verification with official primary sources.
           </p>
+          </div>
+          <span className="profileMatrixQueueCount">{entries.length} total proposals</span>
         </header>
 
         {entries.length === 0 ? (
-          <div
-            style={{
-              padding: '32px',
-              textAlign: 'center',
-              background: '#f8fafc',
-              borderRadius: '8px',
-              border: '1px dashed #cbd5e1',
-              color: '#64748b',
-            }}
-          >
+          <div className="profileMatrixState">
             <p style={{ margin: '0 0 4px 0', fontSize: '13px' }}>
               No proposals filed yet. Propose bills, projects, or audits to enrich public servant records.
             </p>
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="profileMatrixList">
             {entries.slice(0, 5).map((entry) => (
-              <div
-                key={entry.submissionId}
-                style={{
-                  padding: '12px 14px',
-                  borderRadius: '6px',
-                  border: '1px solid #e2e8f0',
-                  background: '#f8fafc',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  fontSize: '13px',
-                }}
-              >
-                <div>
-                  <strong>{entry.impactSummary}</strong>
-                  <span style={{ marginLeft: '8px', color: '#64748b', fontSize: '11px' }}>
-                    ({entry.categoryTag})
-                  </span>
+              <div className="profileMatrixListItem" key={entry.submissionId}>
+                <div className="profileMatrixListCopy">
+                  <strong className="profileMatrixListTitle">{entry.impactSummary || 'Untitled proposal'}</strong>
+                  <span className="profileMatrixListMeta">{entry.categoryTag || 'Uncategorized'}</span>
                 </div>
                 <span
                   style={{
