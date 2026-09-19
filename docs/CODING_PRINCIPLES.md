@@ -1,24 +1,24 @@
 # PolitikApp Codebase Engineering Principles & Style Guide
 
-**Document Status:** RELEASED / FULLY ALIGNED WITH SDD
-**Target Phase:** Phase 3 MVP - 60% Vertical Slice Implementation Strategy
+**Document Status:** RELEASED / FULLY ALIGNED WITH 2.0 ARCHITECTURE  
+**Target Architecture:** 2.0 Centralized Evidence-Based Admin Curation & Public Disputes  
 
 ---
 
 ## I. Global Architectural Principles
 
-### 1. The 60% Vertical Slice Boundary
-* **Rule:** Every code artifact must prioritize connecting the data pipeline from end-to-end over building comprehensive edge-case handling.
-* **Implementation:** * Frontend components must prioritize capturing form states and initiating API calls.
-  * Backend layers must prioritize data ingestion, critical regex domain validation, and table persistence.
-  * Secondary integrations (e.g., `AIParserService`) must handle timeouts gracefully using `handleParserTimeout()` to keep user sessions responsive.
+### 1. Zero-Trust & End-to-End Data Integrity
+* **Rule:** All mutating requests (submissions, citizen challenges, profile edits) must strictly authenticate the caller via JWT and derive author identities from security context—never from client request bodies.
+* **Implementation:**
+  * Frontend components must capture form states, validate domain whitelists (.gov.ph / .edu.ph), and handle authenticated/guest sessions cleanly.
+  * Backend layers enforce role-based access control, input validation, and transactional persistence.
+  * Public endpoints (e.g. politician directories, timelines, metrics) remain read-accessible to unauthenticated guests to ensure maximum civic transparency.
 
-### 2. Cross-Origin & Network Accessibility Setup
-* Because developers are collaborating across separate hardware units pointing to a centralized host IP address over local Wi-Fi, Cross-Origin Resource Sharing (CORS) rules must be explicitly initialized.
-* **Backend Configuration:** All Spring Boot REST controllers must include an explicit global cross-origin resource annotation:
-  * Configuration Annotation: `@CrossOrigin(origins = "*")`
-* **Frontend Endpoint Routing:** Frontend fetch/axios configurations must not utilize `localhost` references. They must dynamically point to the host machine's designated IPv4 address:
-  * Current Host Target: `http://192.168.1.100:8080/`
+### 2. Environment Configuration & Network Routing
+* Do not hardcode static IPv4 addresses or machine-specific network locations.
+* **Backend Configuration:** Security rules and CORS are managed centrally in `SecurityConfig.java` and `application.properties` via configurable allowed origins.
+* **Frontend Endpoint Routing:** Frontend API clients must rely on environment-driven base URLs (`import.meta.env.VITE_API_URL` or Vite proxy paths) with sensible fallbacks:
+  * Default Local Development: `/api` or `http://localhost:8080`
 
 ---
 
@@ -34,7 +34,7 @@
 * Data payloads constructed within frontend methods must identically map properties to match the backend ingestion transfer schemas to prevent data mapping failures.
 
 ### 3. Typography & UI Layout Style System
-To ensure a unified, professional, and premium user interface across all dashboards, all CSS modules and style structures must strictly utilize the dynamic design tokens and layout classes declared in [App.css](file:///c:/Users/Legion/Documents/Simonaerse/Capstone/PolitikApp/PolitikApp/frontend/src/App.css):
+To ensure a unified, professional, and premium user interface across all dashboards, all CSS modules and style structures must strictly utilize the dynamic design tokens and layout classes declared in [App.css](file:///frontend/src/App.css):
 
 #### A. Core Style System & Design Tokens (`App.css` Root Variables)
 * **Tailored Colors (Curated Slate-Teal Palette):**
@@ -71,7 +71,7 @@ To ensure a unified, professional, and premium user interface across all dashboa
   * `font-size: clamp(1.55rem, 2vw, 2.2rem);` (35px - 44px)
   * `font-weight: 800;` (Extra Bold)
   * `color: var(--text-primary);`
-* **Jury Queue / Detail Headers (e.g., `.mod-header h2`, `.timeline h2`):**
+* **Moderation & Curation / Detail Headers (e.g., `.mod-header h2`, `.timeline h2`):**
   * `font-size: 1.2rem;` (19.2px)
   * `font-weight: 800;`
   * `color: var(--text-primary);`
@@ -144,3 +144,30 @@ Tiered ranking views are first-class dashboard elements and must follow a reusab
 * Desktop: tabular row layout with compact KPI columns for scanability.
 * Mobile: stacked row layout preserving rank visibility and primary metric first.
 * Clicking a ranked row should navigate to that politician profile/dashboard context.
+
+---
+
+## III. Backend Architecture & Code Conventions (Spring Boot / Java)
+
+### 1. Domain-Driven Bounded Context Organization
+The backend is strictly organized by business domain contexts rather than academic module numbers or monolithic flat layers:
+* `com.politikapp.backend.politician`: Politician profiles, biographical details, legislative timelines, comparative matrix analysis, and WGI indicator scoring.
+* `com.politikapp.backend.submission`: Citizen evidence proposals, primary source URL whitelisting (`.gov.ph` / `.edu.ph`), and submission intake.
+* `com.politikapp.backend.curation`: Administrative adjudication queue, citizen public disputes / challenges, appeals, and timeline publication.
+* `com.politikapp.backend.reputation`: Contributor trust scoring, audit logging, and automated account standing safeguards.
+* `com.politikapp.backend.auth`: Identity, JWT session tokens, and security principal resolution.
+* `com.politikapp.backend.common`: Cross-cutting concerns including `GlobalExceptionHandler`, API response wrappers, and domain events.
+* `com.politikapp.backend.config`: Spring Security, rate limiting filters, CORS configuration, and database seeders.
+
+### 2. Domain Internal Structure
+Each domain package encapsulates its own components with standard subpackages:
+* `controller`: REST endpoints with clear resource naming and validation annotations.
+* `service`: Business logic, transaction boundaries (`@Transactional`), and mappers.
+* `repository`: Spring Data JPA repository interfaces extending `JpaRepository`.
+* `entity`: JPA entity classes mapping directly to PostgreSQL schema tables.
+* `dto`: Immutable request payloads and response transfer objects (prefer Java `record`s).
+* `event`: Domain event listeners and dispatchers.
+
+### 3. Cross-Domain Communication
+* Cross-domain operations must interact through service interfaces or domain events (e.g., `SubmissionCreatedEvent`, `ReputationEventListener`), avoiding tight circular coupling.
+* Common entities like `Politician` and `ProfileEditSubmission` are imported cleanly across bounded contexts where required (such as `curation.service` publishing to `politician.entity.TimelineEntry`).

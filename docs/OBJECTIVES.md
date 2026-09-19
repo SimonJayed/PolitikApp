@@ -1,93 +1,107 @@
-## Objectives
+# PolitikApp Project Objectives & System Specifications
 
-### General Objectives
+**Architecture Version:** 2.0 (Centralized Evidence-Based Admin Curation & Citizen Public Disputes)  
+**Milestone:** Production Alignment & Public Transparency Framework  
 
-- **General Objective 1 (Module 1: Source-First Profile Aggregator):** To optimize data centralization and civic accessibility by integrating fragmented public governance records into unified, searchable candidate dashboards.
-- **General Objective 2 (Module 2: Asynchronous Judicial Moderation Engine):** To maintain strict narrative neutrality and minimize platform vulnerability to organized partisan narrative manipulation or coordinated "edit wars".
-- **General Objective 3 (Module 3: Reputation-Based Trust Architecture):** To maximize data accuracy and enforce strict accountability among platform contributors through automated, history-driven permission gating.
+---
 
-### Specific Objectives (SMART)
+## 1. Objectives
 
-**Module 1: Source-First Profile Aggregator Functional Goals**
+### 1.1 General Objectives
 
-- **Specific Objective 1.1 (Automate Source Validation):** Enforce a strict domain-whitelist filter (.gov.ph, .edu.ph) to eliminate unverified external entries, ensuring that 100% of user-submitted background data points match primary-source links.
-- **Specific Objective 1.2 (Minimize Search Friction):** Consolidate isolated legislative and audit logs to reduce user cross-referencing times across different institutional web spaces by at least 40%.
-- **Specific Objective 1.3 (Enhance Information Comprehension):** Translate dense legal terminology and long-form audit logs into structured text summaries, improving information evaluation accuracy among low-literacy student voters to 85% during user acceptance testing.
-- **Specific Objective 1.4 (Categorized Evaluation & Comparative Analysis):** Integrate dynamic, tiered sorting algorithms and a side-by-side profile comparison matrix to segment national and Cebu City-localized public officials, achieving a 100% data computation accuracy rate during functionality testing when generating relative performance metrics.
+- **General Objective 1 (Module 1: Source-First Profile Aggregator):** To optimize data centralization and civic accessibility by integrating fragmented public governance records into unified, searchable candidate dashboards with verified primary-source citations.
+- **General Objective 2 (Module 2: Evidence-Based Curation & Citizen Adjudication Engine):** To maintain strict narrative neutrality and eliminate platform vulnerability to organized partisan narrative manipulation or coordinated "edit wars" through professional curator verification and an adversarial citizen challenge system.
+- **General Objective 3 (Module 3: Zero-Trust Attribution & Civic Security Architecture):** To maximize data accuracy, enforce strict accountability among platform contributors, and protect civic infrastructure through cryptographic session attribution and memory-safe sliding-window rate limiting.
 
-**Module 2: Asynchronous Judicial Moderation Engine Functional Goals**
+---
 
-- Specific Objective 2.1 (Distribute Verification Workloads): Route new content adjustments to an asynchronous community queue, maintaining a target peer voting velocity where entries are validated or flagged within 24 hours of input without manual admin interaction.
-- Specific Objective 2.2 (Ensure Adjudication Reliability): Automate the multi-tier escalation pipeline to isolate disputed or heavily tied entries, routing complex conflicts directly to admin tie-breaker review to maintain platform content neutrality at a verified 100% accuracy level.
-- Specific Objective 2.3 (Disrupt Participant Bias): Integrate visual, multi-stage progress bars and tracking elements to communicate the real-time status of content updates, aiming to reduce intuitive, emotion-based sharing loops among platform contributors by at least 30% during testing.
+### 1.2 Specific Objectives (SMART)
 
-**Module 3: Reputation-Based Trust Architecture Functional Goals**
+#### Module 1: Source-First Profile Aggregator Functional Goals
 
-- Specific Objective 3.1 (Mitigate Coordinated Tampering): Apply mathematical reputation adjustments to user profiles following finalized edit reviews, automatically locking out low-trust users whose submission rejection metrics exceed 15%.
-- Specific Objective 3.2 (Reward Verification Consistency): Scale individual contribution permissions automatically, enabling contributors who maintain a sustained historical data precision score of 90% to hold heavier voting weight within the Asynchronous Jury Queue, accelerating the verification of their edits without bypassing mandatory community or administrative oversight.
+- **Specific Objective 1.1 (Automate Source Validation):** Enforce a strict domain-whitelist filter (`.gov.ph`, `.edu.ph`) to eliminate unverified external entries, ensuring that 100% of user-submitted background data points match primary-source links before reaching the curation queue.
+- **Specific Objective 1.2 (Minimize Search Friction):** Consolidate isolated legislative records, COA audit logs, and official performance metrics to reduce user cross-referencing times across different institutional web spaces by at least 40%.
+- **Specific Objective 1.3 (Enhance Information Comprehension):** Translate dense legal terminology and long-form audit logs into structured text summaries and World Governance Indicators (WGI), improving governance literacy among student voters during user acceptance testing.
+- **Specific Objective 1.4 (Categorized Evaluation & Comparative Analysis):** Integrate dynamic, tiered sorting algorithms and a side-by-side profile comparison matrix to segment national and Cebu City-localized public officials, achieving a 100% data computation accuracy rate when generating relative performance metrics.
+- **Specific Objective 1.5 (Public Guest Discovery):** Provide a friction-free guest mode enabling unauthenticated citizens and researchers to browse politician profiles, rankings, and compare tools without mandatory registration.
 
-## Expected System
+#### Module 2: Evidence-Based Curation & Citizen Adjudication Engine Functional Goals
 
-**4.1 Key Features of the System**
+- **Specific Objective 2.1 (Admin Curator Ingestion & Verification):** Route incoming civic proposals to an administrative curation ledger where trained curators verify primary sources against official gazettes, COA findings, and legislative records with 100% citation fidelity.
+- **Specific Objective 2.2 (Citizen Public Disputes & Counter-Evidence Pipeline):** Implement an adversarial dispute workflow allowing authenticated citizens to formally challenge existing timeline records by supplying counter-evidence URLs and dispute rationale.
+- **Specific Objective 2.3 (Transparent Ledger Audit & Soft Deletion):** Maintain an immutable public audit trail for all approved, dismissed, and disputed items, using soft-deletion (`is_hidden`) and public justification notes to eliminate partisan edit wars and preserve historical accountability.
 
-- **User Trust and Reputation System:** Tracks user submissions and automatically promotes or penalizes accounts based on data precision.
-- **Transparent Edit Lifecycle System**: A frontend visual progress bar informing users of data verification stages.
-- **Tiered Performance Leaderboards:** Segregated ranking matrices comparing politicians based on categorical criteria within local (Cebu) and national jurisdictions.
-- **Side-by-Side Politician Profile Comparator:** Interface allowing comparative evaluation of empirical candidate personas.
+#### Module 3: Zero-Trust Attribution & Civic Security Architecture Functional Goals
 
-**4.2 High-Level Workflow of the System**
+- **Specific Objective 3.1 (Cryptographic Identity & Verified Attribution):** Enforce strict JWT-bound session principals for all proposal submissions and citizen challenges, preventing identity spoofing and privilege escalation in user profile states.
+- **Specific Objective 3.2 (Abuse Mitigation & Sliding-Window Rate Limiting):** Deploy an automated sliding-window rate-limiting layer on public proposal and authentication endpoints to mitigate brute force, coordinated denial-of-service, and queue-flooding attacks.
+- **Specific Objective 3.3 (Data Export & Transparency):** Provide CSV and JSON data export capabilities for verified timeline records and COA audit findings to empower student journalists and civic researchers.
 
-The high-level workflow of the platform features a unified, crowdsourced routing logic designed to distribute the resource-intensive work of data verification across the community. By utilizing a Decentralized Asynchronous Jury Model, the system leverages collective intelligence for baseline content moderation, reserving direct administrative action strictly for deadlocks, ties, or severe policy violations.
+---
 
-#### 1\. Input Stage (Contribution Submission)
+## 2. Expected System
 
-- **User Trigger:** A registered contributor initiates an edit or profile update regarding a politician's legislative voting history, public project allocations, or campaign declarations.
-- **Input Parameters:** The interface strictly forces the input of the following structural attributes:
-  - **Politician Target ID:** Binding the entry to a specific individual database persona.
-  - **Primary Source URL:** A link that must match whitelisted .gov.ph or .edu.ph domains.
-  - **Core Category Tag:** e.g., Education, Infrastructure, Healthcare, Environmental Protection, Finance.
-  - **Action Type Identifier:** e.g., Sponsored Legislation, Co-Authored Bill, Project Budget Allocation, COA Audit Finding.
-  - **Quantitative Metric:** e.g., Bill Number, Pesos Allocated, or Audit Discrepancy Amount.
-  - **Impact Text Summary:** A concise text summary written by the contributor outlining the document.
-- **Optional AI Input Assistant:** Contributors may click an optional "AI Generate Draft" button. An LLM parses the whitelisted URL and pre-fills the text summary fields. This remains purely as an editable draft that the contributor must manually review, edit, and officially submit themselves.
-- **System Guardrail:** Submissions lacking references or originating from unauthorized domains are automatically blocked by the validation engine.
+### 2.1 Key Features of the System
 
-#### 2\. Process Stage (Asynchronous Crowdsourced Moderation)
+- **Public Guest Landing Page & Telemetry:** Dynamic animated counters tracking total monitored officials, verified records, analyzed budgets, and active challenges, accompanied by a 3-pillar verification explainer.
+- **Public Politician Directory & Profiler:** Searchable roster with filter tags (National vs Cebu City, office positions), biographical details, legislative timelines, and WGI governance indicators.
+- **Side-by-Side Politician Comparator:** Empirical comparison matrix evaluating two elected officials across bills authored, enacted laws, allocated budgets, and audit flags.
+- **Source-First Metric Proposal Workflow:** Whitelisted domain validation (`.gov.ph` / `.edu.ph`), category taxonomy, and structured metric ingestion for authenticated citizens.
+- **Citizen Public Challenge Modal:** Adversarial dispute tool allowing citizens to submit verifiable counter-evidence against disputed records.
+- **Admin Adjudication & Curation Dashboard:** High-authority curation table enabling curators to review citations, approve additions to the live ledger, uphold challenges, or dismiss with public reason.
 
-- **Asynchronous Jury Queue:** Upon passing the initial validation layer, submissions enter a "Pending" status within the moderation engine. Verified community users independently and asynchronously cast "Agree" or "Disagree" votes over time to audit the entry for Language Neutrality and Factual Alignment with the link.
-- **Optional Revision Loop:** If the source link is accurate but the written summary is flagged as grammatically broken or highly biased, jury members can click "Flag for Revision", routing the card to a rewrite pipeline instead of a terminal rejection.
-- **Clear Consensus:** If an entry crosses a mathematically defined threshold majority of "Agree" votes from the community, the backend engine triggers an automated publication loop.
-- **Escalation (Judicial Review):** Deadlocks (such as a 50-50 tie) or 24-hour idle timeouts are automatically elevated to the Admin Review Queue where administrators step in as human-in-the-loop tie-breakers.
+### 2.2 High-Level Workflow of the System
 
-#### 3\. Output Stage (Public Ledger Aggregation)
+```
+[Public Guest / Citizen]
+        │
+        ├── Browses Directory, Profiles, Compare Matrix (Read-Only)
+        │
+        └── Authenticates to Participate
+                │
+                ├── [Propose Metric] ──► Domain Whitelist Check ──► SUBMITTED_REQUEST
+                │                                                          │
+                └── [Challenge Record] ──► Counter-Evidence Check ─► CHALLENGE_OPEN
+                                                                           │
+                                                                           ▼
+                                                            [Admin Curation Table]
+                                                                           │
+                                              ┌────────────────────────────┴────────────────────────────┐
+                                              ▼                                                         ▼
+                                       [Proposal Upheld]                                       [Challenge Upheld]
+                                              │                                                         │
+                                    Published to Live Ledger                                 Soft-Deleted (is_hidden=true)
+                                    & Recalculate WGI Score                                  & Deduct Discrepancy Amount
+```
 
-- **Profile Publication:** Approved edits are dynamically aggregated into respective public politician profiles, updating their empirical attributes.
-- **Data Simplification & Progress Lifecycle:** The interface updates the 5-stage progress tracking bar (Submitted -> Jury Review -> Adjudication -> Finalized -> Published). Concurrently, the system applies an automated mathematical adjustment to the user's dynamic Reputation-Based Trust Score based on the outcome accuracy.
+#### 1. Input Stage (Submission & Whitelisting)
+- Registered citizens submit proposals regarding bills, budget allocations, or audit findings.
+- The system enforces target politician binding, `.gov.ph`/`.edu.ph` URL whitelisting, action identifiers, and impact summaries. Unwhitelisted links are rejected automatically.
 
-## PART 5: Discussion
+#### 2. Process Stage (Curator Adjudication & Adversarial Challenges)
+- Submissions enter the `moderation_queue` under `SUBMITTED_REQUEST` or `CHALLENGE_OPEN`.
+- Administrators audit the primary-source documents directly. If valid, the proposal is approved; if fraudulent, it is dismissed with recorded justification notes.
+- Citizens can file disputes against published timeline records by attaching counter-evidence.
 
-### 5.1 Scope of the System
+#### 3. Output Stage (Public Ledger & Civic Telemetry)
+- Approved entries are aggregated into the politician's live profile ledger and trigger WGI score recalculation.
+- Upheld citizen challenges soft-delete the flagged record (`is_hidden = true`) and adjust COA audit metrics accordingly.
 
-The proposed system will establish a localized, responsive web-based political tracking registry configured explicitly around the structural setup of Philippine governance. The system scope encompasses the following features:
+---
 
-- **Relational Database Core (The Politician Persona):** Centralized profile structures tracking elected public figures through empirical variables: Full Name, Current Office, Region/Constituency, Bills Authored, Bills Passed, Budgets Allocated, and COA Audit Discrepancies.
-- **Three-Tier Adjudication Pipeline:** A modular backend engine supporting community-based peer voting, administrative overrides, and definitive appeal tracking.
-- **Dynamic Reputation Tracking:** Automated mathematical calculation loops that scale contributor editing privileges up or down based on verification historical data accuracy.
-- **Tiered Sorting & Comparison Module:** Separate ranking matrices for the National Scope (Sitting Senators and Cabinet Secretaries) and Local Scope (Elected Officials belonging to the current, active administration term of Cebu City) alongside a percentage-normalized "Overall View" toggle.
+## 3. Scope & Limitations
 
-### 5.2 Limitations of the Project
+### 3.1 Scope of the System
+- **Relational Database Core:** Centralized profile structures tracking elected officials through empirical variables: Full Name, Current Office, Region/Constituency, Bills Authored, Bills Passed, Budgets Allocated, and COA Audit Discrepancies.
+- **Centralized Curation with Public Recourse:** Eliminates the vulnerability of crowdsourced peer-juries to partisan capture by placing verification in the hands of trained curators, paired with public citizen counter-evidence disputes.
+- **Jurisdictional Coverage:** Segregated ranking matrices and profiles for National Scope (Senators, Cabinet Secretaries) and Local Scope (Elected Officials belonging to the active administration term of Cebu City).
 
-The functional boundaries of the system are constrained by external environmental factors, which include:
+### 3.2 Limitations of the Project
+- **Temporal and Positional Bounding:** The platform tracks data generated from the May 2022 election cycle up to the present (2026). Local tracking is strictly bound to the active terms within Cebu City.
+- **Primary Source Dependencies:** The application operates strictly as a structural aggregator and verification layer. It relies on official government portals (`.gov.ph`) and cannot independently produce records where official public repositories have omitted them.
+- **Strict Factual Non-Partisanship:** The platform is explicitly restricted to verified documentary evidence and empirical metrics. It strictly rejects opinion editorials, subjective predictions, and unverified social media claims.
 
-- **Temporal and Positional Bounding:** The platform tracks data generated strictly from the May 2022 election cycle up to the present year (2026). Candidate "runners" are strictly limited to the 2022 national campaigns. To maintain structural verifiability, local tracking is strictly bound to the active terms of the current administration within Cebu City.
-- **Primary Source Dependencies:** The application operates strictly as a structural aggregator and translation layer. It cannot autonomously investigate politicians or verify instances where official public government bodies fail to update their data repositories.
-- **Constitutional Neutrality Constraints:** The platform is explicitly restricted to historical factual logging and structural document summarization. It will not host opinion essays, subjective political predictions, or unverified claims.
-- **Anti-Trolling Saturation Caps:** While a reputation-based framework mitigates localized bad actors, the platform remains vulnerable to severe, hyper-coordinated denial-of-service or mass-reporting attacks launched by highly funded professional troll syndicates.
-
-### 5.3 Expected Contribution of the System
-
-The platform bridges the "Interpretation and Transparency Gap" by introducing key structural improvements over current isolated solutions:
-
-- **Elimination of Structural Silos:** Instead of forcing student voters to parse detached, complex, and unoptimized legislative or audit web pages, the platform aggregates fragmented historical footprints into a single searchable dashboard.
-- **Mitigation of Democratic Clientelism:** By transforming abstract bureaucratic codes into accessible summaries, the system enhances baseline political media literacy among the youth. This structural access to historical track records provides voters with an alternative to relying heavily on emotional, biased, and viral social media propaganda or seasonal campaign narratives.
-- **A Resilient Crowdsourcing Blueprint:** The project demonstrates an empirical design model for distributed digital moderation that actively prevents the destructive edit wars common on unprotected, open community-edited systems.
+### 3.3 Expected Contribution
+- **Elimination of Information Silos:** Centralizes fragmented legislative and audit portals into a single responsive web interface for youth and student voters.
+- **Empirical Democratic Accountability:** Replaces emotional and algorithmic social media propaganda with cold, verified primary-source track records.
+- **Robust Civic Platform Model:** Demonstrates an evidence-backed curation architecture resistant to brigading, coordinated edit wars, and partisan capture.

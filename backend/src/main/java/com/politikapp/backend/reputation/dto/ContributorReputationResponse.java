@@ -1,0 +1,13 @@
+package com.politikapp.backend.reputation.dto;
+
+import java.util.UUID;
+
+public record ContributorReputationResponse(
+        UUID contributorId,
+        double rejectionMetric,
+        String accountStatus,
+        boolean fallbackUsed,
+        boolean locked,
+        String message
+) {
+}

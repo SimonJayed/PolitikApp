@@ -2,12 +2,12 @@ package com.politikapp.backend.config;
 
 import com.politikapp.backend.auth.entity.AuthUser;
 import com.politikapp.backend.auth.repository.AuthUserRepository;
-import com.politikapp.backend.module1.entity.Politician;
-import com.politikapp.backend.module1.entity.ProfileEditSubmission;
-import com.politikapp.backend.module1.entity.TimelineEntry;
-import com.politikapp.backend.module1.repository.PoliticianRepository;
-import com.politikapp.backend.module1.repository.ProfileEditSubmissionRepository;
-import com.politikapp.backend.module1.repository.TimelineEntryRepository;
+import com.politikapp.backend.politician.entity.Politician;
+import com.politikapp.backend.submission.entity.ProfileEditSubmission;
+import com.politikapp.backend.politician.entity.TimelineEntry;
+import com.politikapp.backend.politician.repository.PoliticianRepository;
+import com.politikapp.backend.submission.repository.ProfileEditSubmissionRepository;
+import com.politikapp.backend.politician.repository.TimelineEntryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
