@@ -26,3 +26,9 @@ desktop.ini
 *.bak
 temp/
 tmp/
+
+# Local secrets
+.env
+*.env
+backend/.env
+frontend/.env*

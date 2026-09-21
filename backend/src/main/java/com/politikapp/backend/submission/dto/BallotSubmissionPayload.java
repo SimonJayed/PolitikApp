@@ -8,10 +8,10 @@ import java.util.Map;
 public record BallotSubmissionPayload(
         @NotNull java.util.UUID politicianId,
         java.util.UUID contributorId,
-        @NotBlank String sourceUrl,
+        @NotBlank @Size(max = 2048) String sourceUrl,
         @NotBlank @Size(max = 100) String categoryTag,
         @NotBlank @Size(max = 150) String actionIdentifier,
         Map<String, Object> actionDetails,
-        @NotBlank String impactSummary
+        @NotBlank @Size(max = 5000) String impactSummary
 ) {
 }

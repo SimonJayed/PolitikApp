@@ -1,7 +1,9 @@
 package com.politikapp.backend.submission.service;
 
 import com.politikapp.backend.common.HttpResponseException;
-import java.util.regex.Pattern;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Locale;
 import org.springframework.stereotype.Service;
 
 /**
@@ -11,10 +13,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class SourceValidationService {
-    private static final Pattern WHITELIST_PATTERN = Pattern.compile(
-            "^https?://([a-zA-Z0-9-]+\\.)*(gov\\.ph|edu\\.ph)(/.*)?$"
-    );
-
     /**
      * Evaluates whether the source URL originates from an approved domain.
      * Returns true for whitelisted .gov.ph / .edu.ph domains.
@@ -34,6 +32,22 @@ public class SourceValidationService {
         if (url == null || url.isBlank()) {
             return false;
         }
-        return WHITELIST_PATTERN.matcher(url.trim()).matches();
+        try {
+            URI uri = new URI(url.trim());
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+            if (scheme == null || host == null || uri.getUserInfo() != null) {
+                return false;
+            }
+            String normalizedScheme = scheme.toLowerCase(Locale.ROOT);
+            String normalizedHost = host.toLowerCase(Locale.ROOT);
+            return ("http".equals(normalizedScheme) || "https".equals(normalizedScheme))
+                    && (normalizedHost.equals("gov.ph")
+                    || normalizedHost.endsWith(".gov.ph")
+                    || normalizedHost.equals("edu.ph")
+                    || normalizedHost.endsWith(".edu.ph"));
+        } catch (URISyntaxException exception) {
+            return false;
+        }
     }
 }

@@ -11,7 +11,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/moderation")
-@CrossOrigin(origins = "*")
 public class ModerationQueueController {
     private static final Logger log = LoggerFactory.getLogger(ModerationQueueController.class);
 

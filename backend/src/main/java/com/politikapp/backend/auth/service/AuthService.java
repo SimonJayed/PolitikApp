@@ -11,7 +11,6 @@ import com.politikapp.backend.auth.repository.AuthUserRepository;
 import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.auth.security.JwtService;
 import com.politikapp.backend.common.HttpResponseException;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -45,13 +44,12 @@ public class AuthService {
         if (authUserRepository.findByUsernameIgnoreCase(request.username().trim()).isPresent()) {
             throw new HttpResponseException(409, "Username is already taken.");
         }
-        String role = StringUtils.hasText(request.role()) ? request.role().trim().toUpperCase(Locale.ROOT) : "CONTRIBUTOR";
         AuthUser user = new AuthUser();
         user.setUserId(UUID.randomUUID());
         user.setFullName(request.fullName().trim());
         user.setEmail(request.email().trim());
         user.setUsername(request.username().trim());
-        user.setRole(role);
+        user.setRole("CONTRIBUTOR");
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         AuthUser saved = authUserRepository.save(user);
         return toAuthResponse(saved);

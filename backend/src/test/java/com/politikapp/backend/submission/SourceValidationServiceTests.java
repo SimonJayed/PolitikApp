@@ -24,4 +24,11 @@ class SourceValidationServiceTests {
                 .isInstanceOf(HttpResponseException.class)
                 .hasMessage("Unprocessable Entity: Target domain fails validation rules.");
     }
+
+    @Test
+    void rejectsDangerousOrAmbiguousUrls() {
+        assertThat(sourceValidationService.checkApprovedDomain("file://coa.gov.ph/report")).isFalse();
+        assertThat(sourceValidationService.checkApprovedDomain("https://coa.gov.ph.evil.example/report")).isFalse();
+        assertThat(sourceValidationService.checkApprovedDomain("https://user@coa.gov.ph/report")).isFalse();
+    }
 }

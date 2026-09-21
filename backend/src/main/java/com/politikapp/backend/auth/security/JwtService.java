@@ -21,10 +21,16 @@ public class JwtService {
     private final long refreshExpirationSeconds;
 
     public JwtService(
-            @Value("${app.auth.jwt.secret:politikapp-super-secret-key-must-be-at-least-32-bytes}") String secret,
+            @Value("${app.auth.jwt.secret}") String secret,
             @Value("${app.auth.jwt.expiration-seconds:3600}") long accessExpirationSeconds,
             @Value("${app.auth.jwt.refresh-expiration-seconds:1209600}") long refreshExpirationSeconds
     ) {
+        if (secret == null || secret.length() < 32) {
+            throw new IllegalStateException("app.auth.jwt.secret must be configured with at least 32 characters.");
+        }
+        if (accessExpirationSeconds <= 0 || refreshExpirationSeconds <= 0) {
+            throw new IllegalStateException("JWT expiration settings must be positive.");
+        }
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.accessExpirationSeconds = accessExpirationSeconds;
         this.refreshExpirationSeconds = refreshExpirationSeconds;

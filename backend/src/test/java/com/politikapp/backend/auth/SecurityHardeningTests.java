@@ -3,6 +3,7 @@ package com.politikapp.backend.auth;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -91,6 +92,36 @@ class SecurityHardeningTests {
     }
 
     @Test
+    void testRegisterIgnoresClientSuppliedRole() throws Exception {
+        String unique = UUID.randomUUID().toString().substring(0, 8);
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Role Injection Attempt",
+                                  "email": "role-injection-%s@politikapp.com",
+                                  "username": "role_injection_%s",
+                                  "password": "Password123!",
+                                  "role": "ADMIN"
+                                }
+                                """.formatted(unique, unique)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.role").value("CONTRIBUTOR"));
+
+        AuthUser saved = authUserRepository.findByUsernameIgnoreCase("role_injection_" + unique).orElseThrow();
+        assertEquals("CONTRIBUTOR", saved.getRole());
+        assertNotEquals("Password123!", saved.getPasswordHash());
+    }
+
+    @Test
+    void testContributorCannotTriggerReputationEvaluation() throws Exception {
+        mockMvc.perform(post("/api/reputation/contributors/{contributorId}/reputation/evaluate", contributorUser.getUserId())
+                        .header("Authorization", "Bearer " + contributorToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void testSandboxRoleOverrideIsIgnoredByDefault() throws Exception {
         // Contributor attempts to access admin-only endpoint using X-Sandbox-Role-Override header
         mockMvc.perform(get("/api/admin/adjudication/queue")
@@ -104,6 +135,16 @@ class SecurityHardeningTests {
         mockMvc.perform(get("/api/politicians"))
                 .andExpect(header().string("X-Content-Type-Options", "nosniff"))
                 .andExpect(header().string("X-Frame-Options", "DENY"))
-                .andExpect(header().string("Referrer-Policy", "strict-origin-when-cross-origin"));
+                .andExpect(header().string("Referrer-Policy", "strict-origin-when-cross-origin"))
+                .andExpect(header().exists("Content-Security-Policy"))
+                .andExpect(header().exists("Permissions-Policy"));
+    }
+
+    @Test
+    void testCorsRejectsUnconfiguredOrigins() throws Exception {
+        mockMvc.perform(options("/api/politicians")
+                        .header("Origin", "https://evil.example")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isForbidden());
     }
 }

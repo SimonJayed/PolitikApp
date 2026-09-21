@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-@Profile({"local", "supabase"})
+@Profile("local")
 public class LocalDatabaseSeeder implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(LocalDatabaseSeeder.class);
 
@@ -62,14 +62,14 @@ public class LocalDatabaseSeeder implements CommandLineRunner {
             admin.setRole("ADMIN");
             admin.setAccountStatus("ACTIVE");
             authUserRepository.save(admin);
-            log.info("Seeded default admin account (admin / Admin123!)");
+            log.info("Seeded local admin account.");
         } else {
             adminId = existingAdmin.get().getUserId();
             if (existingAdmin.get().getPasswordHash() == null || existingAdmin.get().getPasswordHash().isBlank()) {
                 AuthUser admin = existingAdmin.get();
                 admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
                 authUserRepository.save(admin);
-                log.info("Updated admin account with default password (Admin123!)");
+                log.info("Updated local admin account credentials.");
             }
         }
 
@@ -86,12 +86,12 @@ public class LocalDatabaseSeeder implements CommandLineRunner {
             contributor.setRole("CONTRIBUTOR");
             contributor.setAccountStatus("ACTIVE");
             authUserRepository.save(contributor);
-            log.info("Seeded default contributor account (contributor / Contributor123!)");
+            log.info("Seeded local contributor account.");
         } else if (existingContributor.get().getPasswordHash() == null || existingContributor.get().getPasswordHash().isBlank()) {
             AuthUser contributor = existingContributor.get();
             contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
             authUserRepository.save(contributor);
-            log.info("Updated contributor account with default password (Contributor123!)");
+            log.info("Updated local contributor account credentials.");
         }
 
         if (politicianRepository.count() > 0) {

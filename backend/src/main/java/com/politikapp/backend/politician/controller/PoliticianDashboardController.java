@@ -6,7 +6,6 @@ import com.politikapp.backend.politician.service.ComparisonService;
 import com.politikapp.backend.politician.service.DashboardService;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -15,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/politicians")
-@CrossOrigin(origins = "*")
 public class PoliticianDashboardController {
     private final DashboardService dashboardService;
     private final ComparisonService comparisonService;
