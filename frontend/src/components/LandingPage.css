@@ -343,32 +343,6 @@
   box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
 }
 
-.pillar-icon-box {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
-.pillar-icon-red {
-  background: rgba(168, 0, 32, 0.1);
-  color: var(--ph-red);
-}
-
-.pillar-icon-red-secondary {
-  background: rgba(192, 0, 42, 0.1);
-  color: var(--ph-red-soft);
-}
-
-.pillar-icon-amber {
-  background: rgba(217, 119, 6, 0.1);
-  color: #d97706;
-}
-
 .pillar-step {
   font-size: 11px;
   font-weight: 700;

@@ -342,27 +342,32 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   }
 
   const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isPoliticiansModalOpen || isProfileModalOpen
+  const isAuthView = activeView === 'auth'
 
   return (
     <main className="appShell">
-      <TopNav
-        activeView={activeView}
-        isCompareModalOpen={isCompareModalOpen}
-        isModalOpen={isAnyModalOpen || authModalConfig.isOpen || isWgiMethodologyOpen}
-        onAuthClick={(mode) => {
-          setAuthMode(mode || 'login')
-          navigateTo('auth')
-        }}
-        onLogout={onLogout}
-        onSelectView={selectView}
-        title="PolitikApp"
-        user={activeUser}
-      />
+      {!isAuthView && (
+        <TopNav
+          activeView={activeView}
+          isCompareModalOpen={isCompareModalOpen}
+          isModalOpen={isAnyModalOpen || authModalConfig.isOpen || isWgiMethodologyOpen}
+          onAuthClick={(mode) => {
+            setAuthMode(mode || 'login')
+            navigateTo('auth')
+          }}
+          onLogout={onLogout}
+          onSelectView={selectView}
+          title="PolitikApp"
+          user={activeUser}
+        />
+      )}
 
       <section
-        className={`${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`}
+        className={isAuthView
+          ? 'authPageContent'
+          : `${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`}
       >
-        {!isAnyModalOpen && showHeaderTitles && <AppPageHeader activeHeader={activeHeader} />}
+        {!isAuthView && !isAnyModalOpen && showHeaderTitles && <AppPageHeader activeHeader={activeHeader} />}
         <NoticeBanner message={notFoundNotice} onDismiss={() => setNotFoundNotice('')} />
         <AppRoutes
           activeUser={activeUser}

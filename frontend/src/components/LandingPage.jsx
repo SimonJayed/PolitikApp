@@ -4,14 +4,11 @@ import { formatPosition, formatJurisdiction } from './governance/positionConfig'
 import {
   BanIcon,
   GitCompareIcon,
-  GlobeIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
   LockIcon,
-  MegaphoneIcon,
   ScaleIcon,
   ScrollTextIcon,
-  ShieldCheckIcon,
   UsersIcon,
 } from './icons/Lucide';
 
@@ -109,7 +106,6 @@ export default function LandingPage({
 
         <div className="pillars-grid">
           <div className="pillar-card">
-            <div className="pillar-icon-box pillar-icon-red"><GlobeIcon size={24} /></div>
             <div className="pillar-step">Pillar 01</div>
             <h3 className="pillar-title">Whitelisted Government Citations</h3>
             <p className="pillar-description">
@@ -123,7 +119,6 @@ export default function LandingPage({
           </div>
 
           <div className="pillar-card">
-            <div className="pillar-icon-box pillar-icon-red-secondary"><ShieldCheckIcon size={24} /></div>
             <div className="pillar-step">Pillar 02</div>
             <h3 className="pillar-title">Admin-Curator Adjudication</h3>
             <p className="pillar-description">
@@ -137,7 +132,6 @@ export default function LandingPage({
           </div>
 
           <div className="pillar-card">
-            <div className="pillar-icon-box pillar-icon-amber"><MegaphoneIcon size={24} /></div>
             <div className="pillar-step">Pillar 03</div>
             <h3 className="pillar-title">Citizen Public Disputes</h3>
             <p className="pillar-description">
@@ -297,7 +291,6 @@ export default function LandingPage({
       <footer className="landing-footer">
         <div className="landing-footer-inner">
           <div className="landing-footer-brand">
-            <LandmarkIcon size={20} />
             <span>PolitikApp</span>
           </div>
 

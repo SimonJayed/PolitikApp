@@ -1,0 +1,512 @@
+.authModernShell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  justify-content: stretch;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(10, 29, 66, 0.16), transparent 32%),
+    linear-gradient(135deg, #eef4fb 0%, #f8fafc 52%, #e2e8f0 100%);
+  color: #0f172a;
+  font-family: var(--display, 'Poppins', system-ui, -apple-system, sans-serif);
+  overflow: auto;
+}
+
+.authModernPanel {
+  min-width: 0;
+  position: relative;
+}
+
+.authModernVisual {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(32px, 4vw, 56px);
+  background:
+    linear-gradient(145deg, #0a1d42 0%, #152c5e 54%, #a80020 100%);
+  color: #ffffff;
+}
+
+.authShape {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.authShapeOne {
+  width: 240px;
+  height: 240px;
+  top: -64px;
+  right: -52px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.authShapeTwo {
+  width: 160px;
+  height: 160px;
+  left: 12%;
+  bottom: 18%;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.authShapeThree {
+  width: 96px;
+  height: 96px;
+  right: 18%;
+  bottom: 12%;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.authBrandBlock {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 430px);
+  text-align: center;
+}
+
+.authBrandKicker {
+  margin: 0 0 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.authBrandBlock h1 {
+  max-width: 430px;
+  margin: 0 auto;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: clamp(2.6rem, 3vw, 3.35rem);
+  font-weight: 800;
+  line-height: 1.06;
+  letter-spacing: 0;
+  text-wrap: balance;
+}
+
+.authBrandBlock p:last-child {
+  max-width: 380px;
+  margin: 22px auto 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+.authFormSection {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.authFormWrapper {
+  width: 460px;
+  max-width: calc(100% - 64px);
+  margin: auto 0;
+}
+
+.authBackLink {
+  min-height: auto;
+  padding: 0;
+  margin-bottom: 26px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent !important;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+
+.authBackLink:hover,
+.authBackLink:focus-visible {
+  color: var(--ph-blue);
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none;
+}
+
+.authFormHeader {
+  margin-bottom: 24px;
+}
+
+.authFormHeader h2 {
+  margin: 0 0 8px;
+  font-family: var(--display, 'Poppins', system-ui);
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: 0;
+  color: #08152f;
+}
+
+.authFormHeader p {
+  margin: 0;
+  color: #64748b;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.authModeTabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 14px;
+  background: #e8eef6;
+  margin-bottom: 24px;
+  box-shadow: inset 0 0 0 1px rgba(10, 29, 66, 0.04);
+  overflow: hidden;
+}
+
+.authModeTabs::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 18px) / 2);
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--ph-blue) 0%, var(--ph-blue-light) 100%);
+  box-shadow:
+    0 10px 24px rgba(10, 29, 66, 0.16),
+    0 0 0 1px rgba(10, 29, 66, 0.08) inset,
+    0 1px 0 rgba(255, 255, 255, 0.94) inset;
+  transform: translateX(0);
+  transition:
+    transform 260ms cubic-bezier(0.2, 0.9, 0.2, 1.1),
+    box-shadow 180ms ease;
+  z-index: 0;
+}
+
+.authModeTabs.is-register::before {
+  transform: translateX(calc(100% + 6px));
+  background: linear-gradient(135deg, var(--ph-red) 0%, var(--ph-red-soft) 100%);
+}
+
+.authModeTabs:has(button:active)::before {
+  box-shadow:
+    0 6px 14px rgba(10, 29, 66, 0.12),
+    0 0 0 1px rgba(168, 0, 32, 0.1) inset,
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+}
+
+.authModeTabs button {
+  position: relative;
+  z-index: 1;
+  min-height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font-weight: 600;
+  transition:
+    color 160ms ease,
+    transform 160ms cubic-bezier(0.2, 0.9, 0.2, 1.2),
+    text-shadow 160ms ease;
+}
+
+.authModeTabs button:hover {
+  color: var(--ph-blue);
+  transform: translateY(-1px);
+  background: transparent;
+  box-shadow: none;
+}
+
+.authModeTabs button:not(.active):hover {
+  color: var(--ph-red);
+}
+
+.authModeTabs button:active {
+  transform: translateY(1px) scale(0.97);
+}
+
+.authModeTabs button:focus-visible {
+  background: transparent;
+  box-shadow: 0 0 0 3px rgba(10, 29, 66, 0.12);
+}
+
+.authModeTabs button.active {
+  background: linear-gradient(135deg, var(--ph-blue) 0%, var(--ph-blue-light) 100%) !important;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(10, 29, 66, 0.18);
+  text-shadow: 0 0 0.01px currentColor;
+}
+
+.authModeTabs.is-register button.active {
+  background: linear-gradient(135deg, var(--ph-red) 0%, var(--ph-red-soft) 100%) !important;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(168, 0, 32, 0.18);
+}
+
+.authModeTabs button.active:hover,
+.authModeTabs button.active:focus-visible {
+  color: #ffffff;
+  box-shadow: 0 12px 26px rgba(10, 29, 66, 0.22);
+}
+
+.authModeTabs.is-register button.active:hover,
+.authModeTabs.is-register button.active:focus-visible {
+  box-shadow: 0 12px 26px rgba(168, 0, 32, 0.22);
+}
+
+.authModernForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+  border: 1px solid #dbe4ef;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.09);
+}
+
+.authField {
+  display: grid;
+  gap: 7px;
+}
+
+.authFieldLabel {
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.authFieldControl {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.authFieldIcon {
+  position: absolute;
+  left: 14px;
+  display: inline-flex;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.authFieldControl input {
+  width: 100%;
+  min-height: 52px;
+  box-sizing: border-box;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f172a;
+  font: 500 0.92rem/1.2 var(--display, 'Poppins', system-ui);
+  padding: 0 48px;
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.authFieldControl input:focus {
+  border-color: var(--ph-blue);
+  box-shadow: 0 0 0 4px rgba(10, 29, 66, 0.12);
+}
+
+.authFieldControl input::placeholder {
+  color: #94a3b8;
+}
+
+.authPasswordToggle {
+  position: absolute;
+  right: 8px;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent !important;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.authPasswordToggle:hover,
+.authPasswordToggle:focus-visible {
+  background: transparent !important;
+  color: var(--ph-blue);
+  box-shadow: none;
+}
+
+.authAlert {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 11px 13px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.authAlert.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.authAlert.success {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: #15803d;
+}
+
+.authSubmitButton {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 14px;
+  background: var(--ph-blue);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 14px 28px rgba(10, 29, 66, 0.28);
+}
+
+.authSubmitButton:hover,
+.authSubmitButton:focus-visible {
+  background: var(--ph-blue);
+  color: #ffffff;
+  box-shadow: 0 18px 32px rgba(10, 29, 66, 0.32);
+}
+
+.authSubmitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+  transform: none;
+}
+
+.authFormFooter {
+  margin: 2px 0 0;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.86rem;
+  font-weight: 400;
+}
+
+.authFormFooter button {
+  min-height: auto;
+  padding: 0;
+  margin-left: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ph-blue);
+  font-weight: 700;
+}
+
+.authFormFooter button:hover,
+.authFormFooter button:focus-visible {
+  background: transparent;
+  box-shadow: none;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 920px) {
+  .authModernShell {
+    grid-template-columns: 1fr;
+    justify-content: stretch;
+    overflow: visible;
+  }
+
+  .authModernVisual {
+    min-height: auto;
+    padding: 32px clamp(22px, 6vw, 48px);
+  }
+
+  .authBrandBlock h1 {
+    max-width: 680px;
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+
+  .authBrandBlock p:last-child {
+    max-width: 640px;
+  }
+
+  .authFormSection {
+    overflow: visible;
+    width: 100%;
+  }
+}
+
+@media (max-width: 560px) {
+  .authModernVisual {
+    padding: 32px 22px;
+  }
+
+  .authFormSection {
+    padding: 28px 16px;
+  }
+
+  .authModernForm {
+    padding: 20px;
+  }
+
+}
+
+@media (min-width: 921px) and (max-width: 1180px) {
+  .authModernVisual {
+    padding: 34px;
+  }
+
+  .authBrandBlock h1 {
+    font-size: clamp(2.1rem, 4.2vw, 3.2rem);
+  }
+
+  .authBrandBlock p:last-child {
+    font-size: 0.94rem;
+  }
+
+}
+
+@media (min-width: 901px) and (max-height: 760px) {
+  .authModernVisual,
+  .authFormSection {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .authBrandBlock h1 {
+    font-size: clamp(2rem, 4vw, 3.1rem);
+  }
+
+  .authBrandBlock p:last-child {
+    margin-top: 14px;
+    line-height: 1.5;
+  }
+
+  .authFormHeader {
+    margin-bottom: 16px;
+  }
+
+  .authModernForm {
+    gap: 12px;
+    padding: 22px;
+  }
+
+  .authFieldControl input,
+  .authSubmitButton {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 380px) {
+  .authModeTabs {
+    grid-template-columns: 1fr;
+  }
+
+  .authFieldControl input {
+    padding-right: 44px;
+    padding-left: 44px;
+  }
+}

@@ -103,7 +103,7 @@ export default function AppRoutes({
     return (
       <Authentication
         initialMode={authMode}
-        onBack={() => navigateTo('politicians')}
+        onBack={() => navigateTo('landing')}
       />
     )
   }

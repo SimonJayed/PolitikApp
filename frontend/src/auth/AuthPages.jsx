@@ -1,25 +1,96 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
-import { AlertTriangleIcon, CircleCheckIcon, LandmarkIcon } from '../components/icons/Lucide'
+import './AuthPages.css'
+import {
+  AlertTriangleIcon,
+  ArrowLeftIcon,
+  CircleCheckIcon,
+  KeyIcon,
+} from '../components/icons/Lucide'
+
+function MailIcon({ size = 20 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" strokeWidth="2" />
+      <path d="M4 7l8 6 8-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function UserIcon({ size = 20 }) {
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
+      <path d="M5 21a7 7 0 0 1 14 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function EyeIcon({ hidden = false, size = 20 }) {
+  if (hidden) {
+    return (
+      <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+        <path d="M3 3l18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        <path d="M8.5 5.5A9.8 9.8 0 0 1 12 5c6 0 9 7 9 7a16.2 16.2 0 0 1-2.2 3.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M6.3 6.9C4.1 8.4 3 12 3 12s3 7 9 7a9.7 9.7 0 0 0 4-.8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path d="M3 12s3-7 9-7 9 7 9 7-3 7-9 7-9-7-9-7z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  )
+}
+
+function AuthField({ autoComplete, icon, id, label, onChange, placeholder, required = true, type = 'text', value }) {
+  return (
+    <label className="authField" htmlFor={id}>
+      <span className="authFieldLabel">{label}</span>
+      <span className="authFieldControl">
+        <span className="authFieldIcon">{icon}</span>
+        <input
+          autoComplete={autoComplete}
+          id={id}
+          onChange={onChange}
+          placeholder={placeholder}
+          required={required}
+          type={type}
+          value={value}
+        />
+      </span>
+    </label>
+  )
+}
 
 export default function AuthPages({ initialMode = 'login', onBack }) {
   const { login, register } = useAuth()
   const [mode, setMode] = useState(initialMode)
+  const [showPassword, setShowPassword] = useState(false)
   const [state, setState] = useState({ loading: false, error: '', success: '' })
-  const [form, setForm] = useState({ fullName: '', email: '', username: '', password: '' })
+  const [form, setForm] = useState({ fullName: '', email: '', password: '' })
+  const isLogin = mode === 'login'
 
   useEffect(() => {
     setMode(initialMode)
   }, [initialMode])
 
+  function switchMode(nextMode) {
+    setMode(nextMode)
+    setState({ loading: false, error: '', success: '' })
+  }
+
   async function handleSubmit(event) {
     event.preventDefault()
     setState({ loading: true, error: '', success: '' })
     try {
-      if (mode === 'login') {
-        await login(form.email || form.username, form.password)
+      if (isLogin) {
+        await login(form.email, form.password)
       } else {
-        await register({ ...form, role: 'CONTRIBUTOR' })
+        await register({ ...form, username: form.email, role: 'CONTRIBUTOR' })
         setState({ loading: false, error: '', success: 'Registration successful. Signing you in...' })
       }
     } catch (error) {
@@ -30,309 +101,133 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
   }
 
   return (
-    <main
-      style={{
-        minHeight: '100vh',
-        background: 'radial-gradient(ellipse at 50% 30%, rgba(13, 148, 136, 0.08) 0%, #f1f5f9 60%, #e2e8f0 100%)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '24px 16px',
-        color: '#0f172a',
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: '440px' }}>
-        {/* Brand Header */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '56px',
-              height: '56px',
-              borderRadius: '16px',
-              background: 'linear-gradient(135deg, #0a1d42 0%, #122a58 100%)',
-              color: '#ffffff',
-              fontSize: '28px',
-              marginBottom: '12px',
-              boxShadow: '0 8px 20px rgba(10, 29, 66, 0.25)',
-            }}
-          >
-            <LandmarkIcon size={28} />
-          </div>
-          <h1
-            style={{
-              fontFamily: "var(--display, 'Poppins', sans-serif)",
-              fontSize: '26px',
-              fontWeight: '800',
-              margin: '0 0 6px 0',
-              letterSpacing: '-0.02em',
-              color: '#0f172a',
-            }}
-          >
-            PolitikApp
-          </h1>
-          <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>
-            Primary-Source Governance &amp; Public Official Auditing
+    <main className="authModernShell">
+      <section className="authModernPanel authModernVisual" aria-label="PolitikApp sign in overview">
+        <div className="authShape authShapeOne" />
+        <div className="authShape authShapeTwo" />
+        <div className="authShape authShapeThree" />
+
+        <div className="authBrandBlock">
+          <p className="authBrandKicker">PolitikApp</p>
+          <h1>Evidence-first civic accountability.</h1>
+          <p>
+            Track public servants through source-backed records, audit trails, and governance indicators.
           </p>
         </div>
 
-        {/* Main Card */}
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '20px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 12px 35px rgba(15, 23, 42, 0.08)',
-            padding: '32px 28px',
-          }}
-        >
-          {/* Tab Switcher */}
-          <div
-            style={{
-              display: 'flex',
-              background: '#f1f5f9',
-              borderRadius: '10px',
-              padding: '4px',
-              marginBottom: '24px',
-            }}
-          >
+      </section>
+
+      <section className="authModernPanel authFormSection">
+        <div className="authFormWrapper">
+          {onBack && (
+            <button className="authBackLink" id="auth-back-to-home-btn" type="button" onClick={onBack}>
+              <ArrowLeftIcon size={18} />
+              <span>Back to Home</span>
+            </button>
+          )}
+
+          <div className="authFormHeader">
+            <h2>{isLogin ? 'Welcome back' : 'Create your account'}</h2>
+            <p>
+              {isLogin
+                ? 'Enter your credentials to continue reviewing public governance records.'
+                : 'Create a citizen contributor account to submit and track evidence-backed records.'}
+            </p>
+          </div>
+
+          <div className={`authModeTabs ${isLogin ? 'is-login' : 'is-register'}`} role="tablist" aria-label="Authentication mode">
             <button
               type="button"
               id="auth-tab-login"
-              onClick={() => {
-                setMode('login')
-                setState({ loading: false, error: '', success: '' })
-              }}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: 'none',
-                background: mode === 'login' ? '#ffffff' : 'transparent',
-                color: mode === 'login' ? '#0f172a' : '#64748b',
-                fontWeight: '700',
-                fontSize: '13px',
-                cursor: 'pointer',
-                boxShadow: mode === 'login' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
-                transition: 'all 0.15s ease',
-              }}
+              className={isLogin ? 'active' : ''}
+              onClick={() => switchMode('login')}
             >
               Sign In
             </button>
             <button
               type="button"
               id="auth-tab-register"
-              onClick={() => {
-                setMode('register')
-                setState({ loading: false, error: '', success: '' })
-              }}
-              style={{
-                flex: 1,
-                padding: '8px 12px',
-                borderRadius: '8px',
-                border: 'none',
-                background: mode === 'register' ? '#ffffff' : 'transparent',
-                color: mode === 'register' ? '#0f172a' : '#64748b',
-                fontWeight: '700',
-                fontSize: '13px',
-                cursor: 'pointer',
-                boxShadow: mode === 'register' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
-                transition: 'all 0.15s ease',
-              }}
+              className={!isLogin ? 'active' : ''}
+              onClick={() => switchMode('register')}
             >
               Create Account
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-            {mode === 'register' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '5px' }}>
-                  Full Name
-                </label>
-                <input
-                  id="auth-fullname-input"
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                  placeholder="e.g. Maria Santos"
-                  required
-                  value={form.fullName}
-                  onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))}
-                />
-              </div>
+          <form className="authModernForm" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <AuthField
+                autoComplete="name"
+                icon={<UserIcon />}
+                id="auth-fullname-input"
+                label="Full Name"
+                placeholder="e.g. Maria Santos"
+                value={form.fullName}
+                onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))}
+              />
             )}
 
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '5px' }}>
-                {mode === 'login' ? 'Email or Username' : 'Email Address'}
-              </label>
-              <input
-                id="auth-login-input"
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '14px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-                placeholder={mode === 'login' ? 'username or email@domain.com' : 'citizen@domain.gov.ph'}
-                required
-                value={form.email}
-                onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
-              />
-            </div>
+            <AuthField
+              autoComplete={isLogin ? 'username' : 'email'}
+              icon={<MailIcon />}
+              id="auth-login-input"
+              label={isLogin ? 'Email or Username' : 'Email Address'}
+              placeholder={isLogin ? 'username or email@domain.com' : 'citizen@domain.gov.ph'}
+              value={form.email}
+              onChange={(e) => setForm((s) => ({ ...s, email: e.target.value }))}
+            />
 
-            {mode === 'register' && (
-              <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '5px' }}>
-                  Choose Username
-                </label>
+            <label className="authField" htmlFor="auth-password-input">
+              <span className="authFieldLabel">Password</span>
+              <span className="authFieldControl">
+                <span className="authFieldIcon"><KeyIcon size={20} /></span>
                 <input
-                  id="auth-username-input"
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box',
-                  }}
-                  placeholder="e.g. maria_santos"
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
+                  id="auth-password-input"
+                  onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
+                  placeholder="Enter your password"
                   required
-                  value={form.username}
-                  onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))}
+                  type={showPassword ? 'text' : 'password'}
+                  value={form.password}
                 />
-              </div>
-            )}
-
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#475569', marginBottom: '5px' }}>
-                Password
-              </label>
-              <input
-                id="auth-password-input"
-                style={{
-                  width: '100%',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid #cbd5e1',
-                  fontSize: '14px',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                }}
-                placeholder="••••••••"
-                required
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm((s) => ({ ...s, password: e.target.value }))}
-              />
-            </div>
+                <button
+                  type="button"
+                  className="authPasswordToggle"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <EyeIcon hidden={showPassword} />
+                </button>
+              </span>
+            </label>
 
             {state.error && (
-              <div
-                style={{
-                  background: '#fef2f2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  fontSize: '13px',
-                  color: '#b91c1c',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
+              <div className="authAlert error">
                 <AlertTriangleIcon size={16} />
                 <span>{state.error}</span>
               </div>
             )}
 
             {state.success && (
-              <div
-                style={{
-                  background: '#f0fdf4',
-                  border: '1px solid #bbf7d0',
-                  borderRadius: '8px',
-                  padding: '10px 14px',
-                  fontSize: '13px',
-                  color: '#15803d',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                }}
-              >
+              <div className="authAlert success">
                 <CircleCheckIcon size={16} />
                 <span>{state.success}</span>
               </div>
             )}
 
-            <button
-              id="auth-submit-btn"
-              type="submit"
-              disabled={state.loading}
-              style={{
-                marginTop: '6px',
-                padding: '12px 20px',
-                borderRadius: '10px',
-                background: 'var(--ph-blue)',
-                color: '#ffffff',
-                fontWeight: '700',
-                fontSize: '14px',
-                border: 'none',
-                cursor: state.loading ? 'not-allowed' : 'pointer',
-                opacity: state.loading ? 0.7 : 1,
-                boxShadow: '0 4px 14px rgba(10, 29, 66, 0.28)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {state.loading
-                ? 'Verifying...'
-                : mode === 'login'
-                ? 'sign in'
-                : 'Create Citizen Account'}
+            <button id="auth-submit-btn" className="authSubmitButton" type="submit" disabled={state.loading}>
+              {state.loading ? 'Verifying...' : isLogin ? 'Sign In' : 'Create Account'}
             </button>
+
+            <p className="authFormFooter">
+              {isLogin ? "Don't have an account?" : 'Already have an account?'}
+              <button type="button" onClick={() => switchMode(isLogin ? 'register' : 'login')}>
+                {isLogin ? 'Create one' : 'Sign in'}
+              </button>
+            </p>
           </form>
         </div>
-
-        {/* Escape / Back Link */}
-        {onBack && (
-          <div style={{ textAlign: 'center', marginTop: '20px' }}>
-            <button
-              id="auth-back-to-politicians-btn"
-              type="button"
-              onClick={onBack}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: '#0f766e',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                textDecoration: 'underline',
-                textUnderlineOffset: '3px',
-              }}
-            >
-              <span>← Back to Public Politicians</span>
-            </button>
-          </div>
-        )}
-      </div>
+      </section>
     </main>
   )
 }

@@ -86,6 +86,13 @@
   min-width: 0;
 }
 
+.authPageContent {
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: transparent;
+}
+
 .pageContentAligned {
   width: 100%;
   max-width: 1880px;
