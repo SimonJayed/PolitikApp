@@ -1,6 +1,8 @@
 package com.politikapp.backend.common;
 
 import jakarta.validation.ConstraintViolationException;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +18,11 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(HttpResponseException.class)
     public ResponseEntity<ApiErrorResponse> handleHttpResponseException(HttpResponseException exception) {
+        if (!exception.getFieldErrors().isEmpty()) {
+            return ResponseEntity
+                    .status(exception.getStatus())
+                    .body(ApiErrorResponse.withFieldErrors(exception.getStatus(), exception.getMessage(), exception.getFieldErrors()));
+        }
         return ResponseEntity
                 .status(exception.getStatus())
                 .body(ApiErrorResponse.of(exception.getStatus(), exception.getMessage()));
@@ -23,14 +30,20 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException exception) {
-        String message = exception.getBindingResult()
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        exception.getBindingResult()
                 .getFieldErrors()
                 .stream()
-                .map(error -> error.getField() + ": " + error.getDefaultMessage())
-                .collect(Collectors.joining("; "));
+                .forEach(error -> fieldErrors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        String message = fieldErrors.isEmpty()
+                ? "Validation failed."
+                : fieldErrors.entrySet()
+                        .stream()
+                        .map(error -> error.getKey() + ": " + error.getValue())
+                        .collect(Collectors.joining("; "));
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
-                .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST.value(), message));
+                .body(ApiErrorResponse.withFieldErrors(HttpStatus.BAD_REQUEST.value(), message, fieldErrors));
     }
 
     @ExceptionHandler(ConstraintViolationException.class)

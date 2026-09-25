@@ -23,7 +23,7 @@ export default function Account({ token, user }) {
   const { updateSession } = useAuth()
   const [profile, setProfile] = useState(null)
   const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
-  const [form, setForm] = useState({ fullName: '', username: '' })
+  const [form, setForm] = useState({ fullName: '' })
 
   useEffect(() => {
     let cancelled = false
@@ -39,7 +39,7 @@ export default function Account({ token, user }) {
       .then((data) => {
         if (cancelled) return
         setProfile(data)
-        setForm({ fullName: data.fullName || '', username: data.username || '' })
+        setForm({ fullName: data.fullName || '' })
         setState({ status: 'success', message: '' })
       })
       .catch((error) => {
@@ -82,8 +82,7 @@ export default function Account({ token, user }) {
             <p>These details are used across your civic contribution activity.</p>
           </div>
           <div className="settingsFormFields">
-            <label>Full Name<input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} /></label>
-            <label>Username<input value={form.username} onChange={(event) => setForm((current) => ({ ...current, username: event.target.value }))} /></label>
+            <label>Name<input value={form.fullName} onChange={(event) => setForm((current) => ({ ...current, fullName: event.target.value }))} /></label>
           </div>
           <div className="settingsFormFooter">
             <StatusLine state={state} />

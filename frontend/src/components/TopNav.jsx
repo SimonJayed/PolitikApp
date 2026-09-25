@@ -176,7 +176,7 @@ function TopNav({
                         <UserCircleIcon size={22} />
                       </span>
                       <span className="max-w-[140px] truncate font-semibold">
-                        {user?.username || 'User'}
+                        {user?.fullName || user?.email || 'User'}
                       </span>
                       <ChevronDownIcon size={17} className="text-white/70" />
                     </button>
@@ -186,7 +186,7 @@ function TopNav({
                         <div className="px-4 py-3">
                           <div className="ty-meta text-white/60">Signed in as</div>
                           <div className="ty-nav truncate font-semibold text-white">
-                            {user?.username || 'User'}
+                            {user?.fullName || user?.email || 'User'}
                           </div>
                         </div>
 

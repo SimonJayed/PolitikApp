@@ -154,7 +154,6 @@
 }
 
 .authModeTabs {
-  position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 6px;
@@ -166,48 +165,17 @@
   overflow: hidden;
 }
 
-.authModeTabs::before {
-  content: '';
-  position: absolute;
-  top: 6px;
-  bottom: 6px;
-  left: 6px;
-  width: calc((100% - 18px) / 2);
-  border-radius: 10px;
-  background: linear-gradient(135deg, var(--ph-blue) 0%, var(--ph-blue-light) 100%);
-  box-shadow:
-    0 10px 24px rgba(10, 29, 66, 0.16),
-    0 0 0 1px rgba(10, 29, 66, 0.08) inset,
-    0 1px 0 rgba(255, 255, 255, 0.94) inset;
-  transform: translateX(0);
-  transition:
-    transform 260ms cubic-bezier(0.2, 0.9, 0.2, 1.1),
-    box-shadow 180ms ease;
-  z-index: 0;
-}
-
-.authModeTabs.is-register::before {
-  transform: translateX(calc(100% + 6px));
-  background: linear-gradient(135deg, var(--ph-red) 0%, var(--ph-red-soft) 100%);
-}
-
-.authModeTabs:has(button:active)::before {
-  box-shadow:
-    0 6px 14px rgba(10, 29, 66, 0.12),
-    0 0 0 1px rgba(168, 0, 32, 0.1) inset,
-    0 1px 0 rgba(255, 255, 255, 0.9) inset;
-}
-
 .authModeTabs button {
   position: relative;
-  z-index: 1;
   min-height: 42px;
   border: none;
   border-radius: 10px;
-  background: transparent;
+  background: transparent !important;
   color: #64748b;
   font-weight: 600;
   transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
     color 160ms ease,
     transform 160ms cubic-bezier(0.2, 0.9, 0.2, 1.2),
     text-shadow 160ms ease;
@@ -216,7 +184,7 @@
 .authModeTabs button:hover {
   color: var(--ph-blue);
   transform: translateY(-1px);
-  background: transparent;
+  background: rgba(255, 255, 255, 0.48) !important;
   box-shadow: none;
 }
 
@@ -229,7 +197,7 @@
 }
 
 .authModeTabs button:focus-visible {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.48) !important;
   box-shadow: 0 0 0 3px rgba(10, 29, 66, 0.12);
 }
 
@@ -312,8 +280,25 @@
   box-shadow: 0 0 0 4px rgba(10, 29, 66, 0.12);
 }
 
+.authFieldControl.hasError input {
+  border-color: #dc2626;
+  background: #fff7f7;
+}
+
+.authFieldControl.hasError input:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+}
+
 .authFieldControl input::placeholder {
   color: #94a3b8;
+}
+
+.authFieldError {
+  color: #b91c1c;
+  font-size: 0.76rem;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .authPasswordToggle {

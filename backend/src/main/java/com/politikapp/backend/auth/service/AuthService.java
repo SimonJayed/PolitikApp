@@ -12,6 +12,7 @@ import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.auth.security.JwtService;
 import com.politikapp.backend.common.HttpResponseException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.List;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,17 +41,17 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (authUserRepository.findByEmailIgnoreCase(request.email().trim()).isPresent()) {
-            throw new HttpResponseException(409, "Email is already registered.");
-        }
-        if (authUserRepository.findByUsernameIgnoreCase(request.username().trim()).isPresent()) {
-            throw new HttpResponseException(409, "Username is already taken.");
+            throw new HttpResponseException(
+                    409,
+                    "Email is already registered.",
+                    Map.of("email", "Email is already registered.")
+            );
         }
         String role = StringUtils.hasText(request.role()) ? request.role().trim().toUpperCase(Locale.ROOT) : "CONTRIBUTOR";
         AuthUser user = new AuthUser();
         user.setUserId(UUID.randomUUID());
         user.setFullName(request.fullName().trim());
         user.setEmail(request.email().trim());
-        user.setUsername(request.username().trim());
         user.setRole(role);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         AuthUser saved = authUserRepository.save(user);
@@ -64,7 +65,11 @@ public class AuthService {
                 ? authUserRepository.findByEmailIgnoreCase(login).orElse(null)
                 : authUserRepository.findByUsernameIgnoreCase(login).orElse(null);
         if (user == null || !StringUtils.hasText(user.getPasswordHash()) || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
-            throw new HttpResponseException(401, "Invalid credentials.");
+            throw new HttpResponseException(
+                    401,
+                    "Email or password is incorrect.",
+                    Map.of("password", "Email or password is incorrect.")
+            );
         }
         return toAuthResponse(user);
     }
@@ -93,16 +98,8 @@ public class AuthService {
     public AuthResponse updateMe(AuthPrincipal principal, UpdateMeRequest request) {
         AuthUser user = authUserRepository.findById(principal.getUserId())
                 .orElseThrow(() -> new HttpResponseException(404, "User not found."));
-        if (StringUtils.hasText(request.username())
-                && !request.username().trim().equalsIgnoreCase(user.getUsername())
-                && authUserRepository.findByUsernameIgnoreCase(request.username().trim()).isPresent()) {
-            throw new HttpResponseException(409, "Username is already taken.");
-        }
         if (StringUtils.hasText(request.fullName())) {
             user.setFullName(request.fullName().trim());
-        }
-        if (StringUtils.hasText(request.username())) {
-            user.setUsername(request.username().trim());
         }
         AuthUser saved = authUserRepository.save(user);
 

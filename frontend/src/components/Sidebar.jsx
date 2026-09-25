@@ -89,7 +89,7 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
           <span className="icon" aria-hidden="true">
             <span>*</span>
           </span>
-          <span className="text">{user?.username || 'Utilities'}</span>
+          <span className="text">{user?.fullName || user?.email || 'Account'}</span>
         </button>
         <button className="navItem" onClick={onLogout} style={{ '--bg': 'var(--ph-red)' }} type="button">
           <span className="icon" aria-hidden="true">

@@ -3,6 +3,13 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const AuthContext = createContext(null)
 
+function createApiError(body, fallbackMessage) {
+  const error = new Error(body?.message || fallbackMessage)
+  error.fieldErrors = body?.fieldErrors || {}
+  error.status = body?.status
+  return error
+}
+
 function readStoredSession() {
   try {
     return JSON.parse(localStorage.getItem('politikapp_auth') || 'null')
@@ -57,7 +64,7 @@ export function AuthProvider({ children }) {
         body: JSON.stringify({ login, password }),
       })
       const body = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(body.message || 'Login failed.')
+      if (!response.ok) throw createApiError(body, 'Login failed.')
       setSession(body)
       return body
     },
@@ -88,7 +95,7 @@ export function AuthProvider({ children }) {
         body: JSON.stringify(payload),
       })
       const body = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(body.message || 'Registration failed.')
+      if (!response.ok) throw createApiError(body, 'Registration failed.')
       setSession(body)
       return body
     },
