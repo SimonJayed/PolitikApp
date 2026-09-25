@@ -24,27 +24,7 @@ async function readApiResponse(response) {
 }
 
 export default function UserProfileMatrixPanel({ token, user }) {
-  const [liveUser, setLiveUser] = useState(null);
-
-  useEffect(() => {
-    let ignore = false;
-    fetch(`${API_BASE_URL}/users/me`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then(readApiResponse)
-      .then((data) => {
-        if (!ignore && data) {
-          setLiveUser(data);
-        }
-      })
-      .catch((err) => console.error('Failed to sync live profile:', err));
-
-    return () => {
-      ignore = true;
-    };
-  }, [token]);
-
-  const actor = liveUser || user;
+  const actor = user;
   const activeRole = actor?.role || 'CONTRIBUTOR';
   const descriptor = roleDescriptor(activeRole);
   const isAdmin = activeRole === 'ADMINISTRATOR' || activeRole === 'ADMIN';
@@ -59,20 +39,21 @@ export default function UserProfileMatrixPanel({ token, user }) {
 
     let ignore = false;
     setLoading(true);
+    setError(null);
 
     const loadData = async () => {
       try {
         if (isAdmin) {
           // Fetch real Admin Curation & Adjudication metrics
-          const [resQueue, resPoliticians] = await Promise.all([
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const [queueData, summaryData] = await Promise.all([
             fetch(`${API_BASE_URL}/api/admin/adjudication/queue`, {
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-            }).catch(() => null),
-            fetch(`${API_BASE_URL}/api/politicians`).catch(() => null),
+              headers,
+            }).then(readApiResponse),
+            fetch(`${API_BASE_URL}/api/admin/adjudication/summary`, {
+              headers,
+            }).then(readApiResponse),
           ]);
-
-          const queueData = resQueue && resQueue.ok ? await resQueue.json().catch(() => []) : [];
-          const politiciansData = resPoliticians && resPoliticians.ok ? await resPoliticians.json().catch(() => []) : [];
 
           if (ignore) return;
 
@@ -83,19 +64,11 @@ export default function UserProfileMatrixPanel({ token, user }) {
           const upheldItems = queueItems.filter((i) => i.queueStatus === 'RESOLVED_UPHELD');
           const dismissedItems = queueItems.filter((i) => i.queueStatus === 'RESOLVED_DISMISSED');
 
-          // Count published timeline records
-          let totalPublished = 0;
-          if (Array.isArray(politiciansData)) {
-            for (const p of politiciansData) {
-              totalPublished += Number(p.billsAuthored || 0) + Number(p.projectCompletions || 0);
-            }
-          }
-
           setDynamicMetrics({
-            adminPendingAdjudications: pendingItems.length,
-            adminCuratedRecords: Math.max(totalPublished, 5),
-            adminUpheldRulings: upheldItems.length,
-            adminDismissedRulings: dismissedItems.length,
+            adminPendingAdjudications: Number(summaryData?.pendingAdjudications ?? pendingItems.length),
+            adminCuratedRecords: Number(summaryData?.totalCuratedRecords ?? 0),
+            adminUpheldRulings: Number(summaryData?.upheldRulings ?? upheldItems.length),
+            adminDismissedRulings: Number(summaryData?.dismissedRulings ?? dismissedItems.length),
             adminPendingQueue: pendingItems,
           });
         } else {
@@ -207,7 +180,6 @@ export default function UserProfileMatrixPanel({ token, user }) {
       {isAdmin && (
         <AdminMatrix
           metrics={activeMetrics || {}}
-          token={token}
           onRefresh={() => {
             // Trigger refresh
           }}
@@ -218,15 +190,13 @@ export default function UserProfileMatrixPanel({ token, user }) {
       {!isAdmin && (
         <CitizenMatrix
           metrics={activeMetrics || {}}
-          token={token}
-          user={actor}
         />
       )}
     </section>
   );
 }
 
-function AdminMatrix({ metrics = {}, token }) {
+function AdminMatrix({ metrics = {} }) {
   const pendingQueue = metrics.adminPendingQueue || [];
 
   return (
@@ -310,7 +280,7 @@ function AdminMatrix({ metrics = {}, token }) {
   );
 }
 
-function CitizenMatrix({ metrics = {}, user }) {
+function CitizenMatrix({ metrics = {} }) {
   const entries = metrics.contributorEntries || [];
 
   return (
