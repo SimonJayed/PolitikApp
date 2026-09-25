@@ -19,7 +19,7 @@
 ## 🗄️ Phase 2: Relational Persistence Layer Deployment
 * [ ] **2.1 Schema Migration Execution**
   * Provision tables natively inside your cloud-hosted Supabase PostgreSQL instance using the exact structural blueprints from `DATABASE_SCHEMA.md`:
-    1. `contributors` (User records, dynamic trust balances, account statuses).
+    1. `users` (User credentials; authorization role is derived for the retained admin account).
     2. `politicians` (Profile parameters, historical timelines, biographical logs).
     3. `profile_edit_submissions` (Evidentiary data payloads, source whitelist indicators).
     4. `moderation_queue` (Community review tickets, velocity markers, escalation trackers).

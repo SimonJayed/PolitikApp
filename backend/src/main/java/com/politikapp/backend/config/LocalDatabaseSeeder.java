@@ -23,7 +23,6 @@ import java.util.UUID;
 @Profile({"local", "supabase"})
 public class LocalDatabaseSeeder implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(LocalDatabaseSeeder.class);
-
     private final AuthUserRepository authUserRepository;
     private final PoliticianRepository politicianRepository;
     private final ProfileEditSubmissionRepository submissionRepository;
@@ -47,51 +46,24 @@ public class LocalDatabaseSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         UUID adminId = UUID.fromString("00000000-0000-0000-0000-000000000001");
-        UUID contributorId = UUID.fromString("00000000-0000-0000-0000-000000000002");
 
-        // 1. Ensure Admin account exists and has valid credentials
-        var existingAdmin = authUserRepository.findByUsernameIgnoreCase("admin")
-                .or(() -> authUserRepository.findByEmailIgnoreCase("admin@politikapp.com"));
+        var existingAdmin = authUserRepository.findByEmailIgnoreCase("admin@politikapp.com");
         if (existingAdmin.isEmpty()) {
             AuthUser admin = new AuthUser();
             admin.setUserId(adminId);
             admin.setFullName("System Administrator");
             admin.setEmail("admin@politikapp.com");
-            admin.setUsername("admin");
             admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
-            admin.setRole("ADMIN");
-            admin.setAccountStatus("ACTIVE");
             authUserRepository.save(admin);
             log.info("Seeded default admin account (admin / Admin123!)");
         } else {
-            adminId = existingAdmin.get().getUserId();
-            if (existingAdmin.get().getPasswordHash() == null || existingAdmin.get().getPasswordHash().isBlank()) {
-                AuthUser admin = existingAdmin.get();
+            AuthUser admin = existingAdmin.get();
+            adminId = admin.getUserId();
+            if (admin.getPasswordHash() == null || admin.getPasswordHash().isBlank()) {
                 admin.setPasswordHash(passwordEncoder.encode("Admin123!"));
-                authUserRepository.save(admin);
                 log.info("Updated admin account with default password (Admin123!)");
             }
-        }
-
-        // 2. Ensure Contributor account exists and has valid credentials
-        var existingContributor = authUserRepository.findByUsernameIgnoreCase("contributor")
-                .or(() -> authUserRepository.findByEmailIgnoreCase("contributor@politikapp.com"));
-        if (existingContributor.isEmpty()) {
-            AuthUser contributor = new AuthUser();
-            contributor.setUserId(contributorId);
-            contributor.setFullName("Civic Contributor");
-            contributor.setEmail("contributor@politikapp.com");
-            contributor.setUsername("contributor");
-            contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
-            contributor.setRole("CONTRIBUTOR");
-            contributor.setAccountStatus("ACTIVE");
-            authUserRepository.save(contributor);
-            log.info("Seeded default contributor account (contributor / Contributor123!)");
-        } else if (existingContributor.get().getPasswordHash() == null || existingContributor.get().getPasswordHash().isBlank()) {
-            AuthUser contributor = existingContributor.get();
-            contributor.setPasswordHash(passwordEncoder.encode("Contributor123!"));
-            authUserRepository.save(contributor);
-            log.info("Updated contributor account with default password (Contributor123!)");
+            authUserRepository.save(admin);
         }
 
         if (politicianRepository.count() > 0) {

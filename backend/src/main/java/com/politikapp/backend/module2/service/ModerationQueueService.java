@@ -69,7 +69,7 @@ public class ModerationQueueService {
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
             "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
-            "LEFT JOIN public.contributors c ON c.contributor_id = pes.contributor_id " +
+            "LEFT JOIN public.users c ON c.contributor_id = pes.contributor_id " +
             "WHERE mq.queue_status IN ('PENDING', 'JURY_REVIEW') " +
             "ORDER BY mq.created_at ASC"
         ).getResultList();
@@ -110,7 +110,7 @@ public class ModerationQueueService {
             "FROM public.moderation_queue mq " +
             "JOIN public.profile_edit_submissions pes ON pes.submission_id = mq.submission_id " +
             "JOIN public.politicians p ON p.politician_id = mq.politician_id " +
-            "LEFT JOIN public.contributors c ON c.contributor_id = pes.contributor_id " +
+            "LEFT JOIN public.users c ON c.contributor_id = pes.contributor_id " +
             "WHERE mq.queue_status IN ('ESCALATED', 'APPEALED_PENDING') " +
             "ORDER BY mq.created_at ASC"
         ).getResultList();

@@ -4,16 +4,13 @@ This document defines the persistent relational data layer schemas deployed on t
 
 ---
 
-## 🧑‍💻 1. Table: `contributors`
-* **Purpose:** Stores user credentials, dynamic reputation track records, authorization token parameters, and sandbox simulator profiles.
+## 🧑‍💻 1. Table: `users`
+* **Purpose:** Stores user credentials and authentication identity.
 * **Columns:**
   * `contributor_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
   * `full_name`: `VARCHAR(150)` (NOT NULL)
   * `email`: `VARCHAR(150)` (NOT NULL, UNIQUE)
-  * `username`: `VARCHAR(80)` (UNIQUE, Case-Insensitive Index)
   * `password_hash`: `VARCHAR(255)` (NOT NULL)
-  * `role`: `VARCHAR(50)` (NOT NULL, Default: 'CONTRIBUTOR') -- 'CONTRIBUTOR', 'PEER', 'ADMIN'
-  * `account_status`: `VARCHAR(50)` (NOT NULL, Default: 'ACTIVE') -- 'ACTIVE', 'LOCKED', 'SUSPENDED'
   * `trust_score`: `DECIMAL(5,2)` (NOT NULL, Default: 100.00, Range: 0.00 – 500.00)
   * `writing_token_status`: `VARCHAR(50)` (Default: 'ACTIVE') -- 'ACTIVE', 'INVALIDATED', 'EXPIRED'
   * `sandbox_profile_metrics`: `JSONB` (NOT NULL, Default: `'{}'::jsonb`)
@@ -45,7 +42,7 @@ This document defines the persistent relational data layer schemas deployed on t
 * **Columns:**
   * `submission_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
   * `politician_id`: `UUID` (Foreign Key -> `politicians.politician_id`, ON DELETE CASCADE)
-  * `contributor_id`: `UUID` (Foreign Key -> `contributors.contributor_id`, ON DELETE RESTRICT)
+  * `contributor_id`: `UUID` (Foreign Key -> `users.contributor_id`, ON DELETE RESTRICT)
   * `source_url`: `TEXT` (NOT NULL) -- Target URL matching approved domains
   * `primary_source_url`: `TEXT` -- Mandatory verified primary citation URL
   * `verification_notes`: `TEXT` -- Curator verification methodology and audit findings
@@ -112,7 +109,7 @@ This document defines the persistent relational data layer schemas deployed on t
 * **Columns:**
   * `vote_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
   * `queue_id`: `UUID` (Foreign Key -> `moderation_queue.queue_id`, ON DELETE CASCADE)
-  * `peer_id`: `UUID` (Foreign Key -> `contributors.contributor_id`, ON DELETE RESTRICT)
+  * `peer_id`: `UUID` (Foreign Key -> `users.contributor_id`, ON DELETE RESTRICT)
   * `vote_type`: `VARCHAR(50)` (NOT NULL) -- 'AGREE', 'DISAGREE', 'FLAG'
   * `vote_weight`: `INTEGER` (NOT NULL, Default: 1)
   * `vote_reason`: `TEXT` (NOT NULL)
@@ -125,7 +122,7 @@ This document defines the persistent relational data layer schemas deployed on t
 * **Purpose:** Audit ledger tracing reviewer trust score increases, deductions, and platform penalties.
 * **Columns:**
   * `log_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
-  * `peer_id`: `UUID` (Foreign Key -> `contributors.contributor_id`, ON DELETE RESTRICT)
+  * `peer_id`: `UUID` (Foreign Key -> `users.contributor_id`, ON DELETE RESTRICT)
   * `queue_id`: `UUID` (Foreign Key -> `moderation_queue.queue_id`, ON DELETE SET NULL)
   * `score_change`: `DECIMAL(5,2)` (NOT NULL)
   * `previous_score`: `DECIMAL(5,2)` (NOT NULL)
@@ -139,7 +136,7 @@ This document defines the persistent relational data layer schemas deployed on t
 * **Purpose:** Stores civic peer reviewer upgrade requests and institutional verification credentials.
 * **Columns:**
   * `application_id`: `UUID` (Primary Key, Default: `gen_random_uuid()`)
-  * `contributor_id`: `UUID` (Foreign Key -> `contributors.contributor_id`, ON DELETE CASCADE)
+  * `contributor_id`: `UUID` (Foreign Key -> `users.contributor_id`, ON DELETE CASCADE)
   * `organization_type`: `VARCHAR(100)` (NOT NULL) -- 'FACULTY', 'RESEARCHER', 'CAMPUS_JOURNALIST', 'CIVIC_VOLUNTEER'
   * `institutional_email`: `VARCHAR(255)` (NOT NULL)
   * `verification_proof_url`: `TEXT` (NOT NULL)

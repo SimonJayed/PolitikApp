@@ -1,6 +1,6 @@
 # Supabase Migration & Connection Guide
 
-This guide describes how to connect the PolitikApp Spring Boot backend to a cloud-hosted Supabase PostgreSQL instance safely, with zero data loss and without breaking changes.
+This guide describes how to connect the PolitikApp Spring Boot backend to a cloud-hosted Supabase PostgreSQL instance. The cleanup migrations retain one admin, remove other users and their dependent submissions, and drop the persisted role, account-status, and username columns.
 
 ---
 
@@ -12,13 +12,15 @@ The complete, production-ready, idempotent schema is located in:
 supabase/migrations/20260906000000_politikapp_supabase_complete_schema.sql
 ```
 
-This file replaces the outdated initial V1 file and consolidates:
-- All 8 core tables: `contributors`, `politicians`, `profile_edit_submissions`, `moderation_queue`, `timeline_entries`, `jury_votes`, `reputation_audit_logs`, `peer_applications`.
+This file replaces the outdated initial V1 file and consolidates the base schema, including:
+- The user and civic data tables: `contributors`, `politicians`, `profile_edit_submissions`, `moderation_queue`, `timeline_entries`, `jury_votes`, `reputation_audit_logs`, `peer_applications`.
 - Legacy attribute preservation: `quantitative_metric` is retained as a nullable column alongside `action_details JSONB`.
 - Safe JSON-to-numeric synchronization trigger with regex filtering and exception handling (zero runtime cast crashes).
 - Harmonized status check constraints supporting both legacy and modern curation lifecycles.
 - Seed data for fallback spoofer admin (`88bc8912-43ba-4abc-882a-ef92481aa323`).
 - Flyway schema history pre-registration (V1 through V15) to prevent the `baseline-version=14` trap.
+
+Apply `supabase/migrations/20260926000000_rename_contributors_to_users.sql` after the consolidated schema, then apply `supabase/migrations/20260926010000_drop_username_from_users.sql`. These migrations rename `contributors` to `users`, retain one admin, remove other users and their dependent records, and drop `role`, `account_status`, and `username`. The backend applies the equivalent changes as Flyway V19 and V20; V18 is already deployed as `add_contributor_and_performance_indexes` and is intentionally not reused.
 
 ---
 
@@ -27,9 +29,9 @@ This file replaces the outdated initial V1 file and consolidates:
 ### Method A: Supabase Dashboard SQL Editor (Recommended)
 1. Open your project on the [Supabase Dashboard](https://supabase.com/dashboard).
 2. Click on **SQL Editor** in the left sidebar.
-3. Open `supabase/migrations/20260906000000_politikapp_supabase_complete_schema.sql` in your editor, copy the entire file contents, and paste it into the Supabase SQL Editor.
-4. Click **Run** (or `Ctrl+Enter`).
-5. Confirm that the query executes with `Success. No rows returned`.
+3. Apply `supabase/migrations/20260906000000_politikapp_supabase_complete_schema.sql` first, then apply `supabase/migrations/20260926000000_rename_contributors_to_users.sql`.
+4. Click **Run** (or `Ctrl+Enter`) for each migration.
+5. Confirm that each query executes with `Success. No rows returned`.
 
 ### Method B: Supabase CLI
 If using the Supabase CLI:

@@ -38,7 +38,6 @@ public class AuthDtos {
             UUID userId,
             String fullName,
             String email,
-            String username,
             String role,
             String accountStatus,
             Instant createdAt

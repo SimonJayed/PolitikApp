@@ -48,17 +48,11 @@ class SecurityHardeningTests {
             AuthUser user = new AuthUser();
             user.setUserId(userId);
             user.setEmail("test.contributor@politikapp.com");
-            user.setUsername("test_contrib");
             user.setFullName("Test Contributor");
             user.setPasswordHash(passwordEncoder.encode("password123"));
-            user.setRole("CONTRIBUTOR");
-            user.setAccountStatus("ACTIVE");
             return authUserRepository.save(user);
         });
 
-        // Ensure role is reset to CONTRIBUTOR before each test
-        contributorUser.setRole("CONTRIBUTOR");
-        contributorUser.setAccountStatus("ACTIVE");
         authUserRepository.save(contributorUser);
 
         contributorToken = jwtService.generateAccessToken(

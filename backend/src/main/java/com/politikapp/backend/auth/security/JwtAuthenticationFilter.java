@@ -44,9 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
                 UUID userId = UUID.fromString(claims.get("uid", String.class));
 
-                // Real-time account lockout check
                 com.politikapp.backend.auth.entity.AuthUser user = authUserRepository.findById(userId).orElse(null);
-                if (user == null || "LOCKED".equals(user.getAccountStatus())) {
+                if (user == null) {
                     jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
                     res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
@@ -56,8 +55,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 AuthPrincipal principal = new AuthPrincipal(
                         userId,
-                        claims.getSubject(),
-                        claims.get("role", String.class)
+                        user.getEmail(),
+                        user.getRole()
                 );
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities())

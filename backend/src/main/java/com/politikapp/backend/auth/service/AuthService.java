@@ -11,7 +11,6 @@ import com.politikapp.backend.auth.repository.AuthUserRepository;
 import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.auth.security.JwtService;
 import com.politikapp.backend.common.HttpResponseException;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.List;
@@ -47,12 +46,10 @@ public class AuthService {
                     Map.of("email", "Email is already registered.")
             );
         }
-        String role = StringUtils.hasText(request.role()) ? request.role().trim().toUpperCase(Locale.ROOT) : "CONTRIBUTOR";
         AuthUser user = new AuthUser();
         user.setUserId(UUID.randomUUID());
         user.setFullName(request.fullName().trim());
         user.setEmail(request.email().trim());
-        user.setRole(role);
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         AuthUser saved = authUserRepository.save(user);
         return toAuthResponse(saved);
@@ -61,9 +58,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public AuthResponse login(LoginRequest request) {
         String login = request.login().trim();
-        AuthUser user = login.contains("@")
-                ? authUserRepository.findByEmailIgnoreCase(login).orElse(null)
-                : authUserRepository.findByUsernameIgnoreCase(login).orElse(null);
+        AuthUser user = authUserRepository.findByEmailIgnoreCase(login).orElse(null);
         if (user == null || !StringUtils.hasText(user.getPasswordHash()) || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new HttpResponseException(
                     401,
@@ -129,7 +124,6 @@ public class AuthService {
                 user.getUserId(),
                 user.getFullName(),
                 user.getEmail(),
-                user.getUsername(),
                 user.getRole(),
                 user.getAccountStatus(),
                 user.getCreatedAt()

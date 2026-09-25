@@ -10,6 +10,4 @@ public interface AuthUserRepository extends JpaRepository<AuthUser, UUID> {
     @Query("select u from AuthUser u where lower(u.email) = lower(?1)")
     Optional<AuthUser> findByEmailIgnoreCase(String email);
 
-    @Query("select u from AuthUser u where lower(u.username) = lower(?1)")
-    Optional<AuthUser> findByUsernameIgnoreCase(String username);
 }

@@ -49,20 +49,17 @@ class EditSubmissionControllerTests {
 
         java.util.UUID contributorId = java.util.UUID.fromString("9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d");
         Integer countCon = jdbcTemplate.queryForObject(
-                "SELECT COUNT(*) FROM public.contributors WHERE contributor_id = ?",
+                "SELECT COUNT(*) FROM public.users WHERE contributor_id = ?",
                 Integer.class,
                 contributorId
         );
         if (countCon == null || countCon == 0) {
             jdbcTemplate.update(
-                    "INSERT INTO public.contributors (contributor_id, full_name, email, username, password_hash, role, account_status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO public.users (contributor_id, full_name, email, password_hash) VALUES (?, ?, ?, ?)",
                     contributorId,
                     "Mock Contributor",
                     "mock.contributor@politikapp.com",
-                    "mock_contributor",
-                    "hash",
-                    "CONTRIBUTOR",
-                    "ACTIVE"
+                    "hash"
             );
         }
 

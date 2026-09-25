@@ -8,7 +8,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "contributors")
+@Table(name = "users")
 public class AuthUser {
     @Id
     @Column(name = "contributor_id", nullable = false)
@@ -20,17 +20,8 @@ public class AuthUser {
     @Column(name = "email", nullable = false, length = 150)
     private String email;
 
-    @Column(name = "username", length = 80)
-    private String username;
-
     @Column(name = "password_hash", length = 255)
     private String passwordHash;
-
-    @Column(name = "role", nullable = false, length = 50)
-    private String role;
-
-    @Column(name = "account_status", nullable = false, length = 50)
-    private String accountStatus = "ACTIVE";
 
     @Column(name = "created_at", updatable = false)
     private Instant createdAt;
@@ -59,14 +50,6 @@ public class AuthUser {
         this.email = email;
     }
 
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
     public String getPasswordHash() {
         return passwordHash;
     }
@@ -76,19 +59,11 @@ public class AuthUser {
     }
 
     public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
+        return "admin@politikapp.com".equalsIgnoreCase(email) ? "ADMIN" : "CONTRIBUTOR";
     }
 
     public String getAccountStatus() {
-        return accountStatus;
-    }
-
-    public void setAccountStatus(String accountStatus) {
-        this.accountStatus = accountStatus;
+        return "ACTIVE";
     }
 
     public Instant getCreatedAt() {
