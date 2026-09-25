@@ -233,18 +233,20 @@ export default function LandingPage({
             ))}
           </div>
 
-          <div style={{ textAlign: 'center', marginTop: '32px' }}>
-            <button
-              className="btn-landing-secondary btn-landing-blue"
-              onClick={() => isAuthenticated ? onExplorePoliticians?.() : requestGuestAccess('preview')}
-              style={{ padding: '12px 28px' }}
-            >
-              <span>{isAuthenticated ? 'View All Officials in Politicians' : 'Sign in to view full database'}</span>
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-              </svg>
-            </button>
-          </div>
+          {isAuthenticated && (
+            <div style={{ textAlign: 'center', marginTop: '32px' }}>
+              <button
+                className="btn-landing-secondary btn-landing-blue"
+                onClick={() => onExplorePoliticians?.()}
+                style={{ padding: '12px 28px' }}
+              >
+                <span>View All Officials in Politicians</span>
+                <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </button>
+            </div>
+          )}
         </section>
       )}
 
@@ -278,8 +280,9 @@ export default function LandingPage({
             </div>
 
             <button
-              className="btn-methodology btn-methodology-blue"
+              className="btn-methodology"
               onClick={onMethodologyClick}
+              style={{ background: '#0a1d42', color: '#ffffff', boxShadow: '0 6px 16px rgba(10, 29, 66, 0.24)' }}
             >
               <span>Inspect WGI Scoring Formula</span>
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">

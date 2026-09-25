@@ -287,21 +287,21 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                 marginTop: '6px',
                 padding: '12px 20px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, #0f766e 0%, #0d9488 100%)',
+                background: 'var(--ph-blue)',
                 color: '#ffffff',
                 fontWeight: '700',
                 fontSize: '14px',
                 border: 'none',
                 cursor: state.loading ? 'not-allowed' : 'pointer',
                 opacity: state.loading ? 0.7 : 1,
-                boxShadow: '0 4px 14px rgba(13, 148, 136, 0.3)',
+                boxShadow: '0 4px 14px rgba(10, 29, 66, 0.28)',
                 transition: 'all 0.15s ease',
               }}
             >
               {state.loading
                 ? 'Verifying...'
                 : mode === 'login'
-                ? 'Sign In to Console'
+                ? 'sign in'
                 : 'Create Citizen Account'}
             </button>
           </form>
