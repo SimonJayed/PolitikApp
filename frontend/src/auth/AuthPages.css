@@ -9,7 +9,7 @@
     linear-gradient(135deg, #eef4fb 0%, #f8fafc 52%, #e2e8f0 100%);
   color: #0f172a;
   font-family: var(--display, 'Poppins', system-ui, -apple-system, sans-serif);
-  overflow: auto;
+  overflow: hidden;
 }
 
 .authModernPanel {
@@ -24,8 +24,11 @@
   align-items: center;
   justify-content: center;
   padding: clamp(32px, 4vw, 56px);
+  min-height: 100vh;
+  min-height: 100dvh;
+  align-self: stretch;
   background:
-    linear-gradient(145deg, #0a1d42 0%, #152c5e 54%, #a80020 100%);
+    linear-gradient(145deg, var(--ph-blue) 0%, var(--ph-blue-mid) 52%, var(--ph-blue-light) 82%, #dbeafe 100%);
   color: #ffffff;
 }
 
@@ -56,7 +59,7 @@
   height: 96px;
   right: 18%;
   bottom: 12%;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .authBrandBlock {
@@ -97,9 +100,12 @@
 
 .authFormSection {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 0;
+  padding: clamp(104px, 14vh, 152px) 0;
+  box-sizing: border-box;
+  max-height: 100vh;
+  max-height: 100dvh;
   overflow-y: auto;
   width: 100%;
 }
@@ -107,7 +113,7 @@
 .authFormWrapper {
   width: 460px;
   max-width: calc(100% - 64px);
-  margin: auto 0;
+  margin: 0;
 }
 
 .authBackLink {
@@ -209,7 +215,7 @@
 }
 
 .authModeTabs.is-register button.active {
-  background: linear-gradient(135deg, var(--ph-red) 0%, var(--ph-red-soft) 100%) !important;
+  background: linear-gradient(135deg, #8f001b 0%, #b42318 100%) !important;
   color: #ffffff;
   box-shadow: 0 10px 24px rgba(168, 0, 32, 0.18);
 }
@@ -299,6 +305,75 @@
   font-size: 0.76rem;
   font-weight: 600;
   line-height: 1.35;
+}
+
+.authPasswordChecklist {
+  margin-top: -2px;
+  padding: 12px 14px;
+  border: 1px solid #dbe4ef;
+  border-radius: 14px;
+  background: #f8fbff;
+}
+
+.authChecklistTitle {
+  margin: 0 0 9px;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.authPasswordChecklist ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.authRequirementItem {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.authRequirementItem.isMet {
+  color: #0f5132;
+}
+
+.authRequirementIndicator {
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #94a3b8;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  background: #ffffff;
+}
+
+.authRequirementItem.isMet .authRequirementIndicator {
+  border-color: #15803d;
+  background: #15803d;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .authPasswordToggle {
@@ -401,7 +476,7 @@
   .authModernShell {
     grid-template-columns: 1fr;
     justify-content: stretch;
-    overflow: visible;
+    overflow: auto;
   }
 
   .authModernVisual {
@@ -419,6 +494,7 @@
   }
 
   .authFormSection {
+    max-height: none;
     overflow: visible;
     width: 100%;
   }
@@ -430,7 +506,7 @@
   }
 
   .authFormSection {
-    padding: 28px 16px;
+    padding: 72px 16px;
   }
 
   .authModernForm {

@@ -14,6 +14,8 @@ import { activeHeaders, guestRestrictedViews, headerTitleHiddenFor } from './con
 import { emptySubmission, normalizeActionDetails } from './features/submissions/submissionForm'
 import AppRoutes from './routes/AppRoutes'
 
+const legacyProfileViews = new Set(['account', 'history'])
+
 function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate, token }) {
   const [resolvedUser, setResolvedUser] = useState(currentUser || null)
   const wasAuthenticated = useRef(isAuthenticated)
@@ -22,10 +24,11 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), [])
   const initialViewParam = initialParams.get('view')
+  const normalizedInitialView = legacyProfileViews.has(initialViewParam) ? 'profileMatrix' : initialViewParam
   const initialPoliticianParam = initialParams.get('id') || initialParams.get('politicianId')
 
   const [activeView, setActiveView] = useState(() => {
-    if (initialViewParam) return initialViewParam
+    if (normalizedInitialView) return normalizedInitialView
     return isAuthenticated ? 'dashboard' : 'landing'
   })
   const [politiciansState, setPoliticiansState] = useState({
@@ -187,16 +190,17 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   }
 
   const navigateTo = useCallback((viewKey, politicianId = null, replace = false) => {
+    const targetView = legacyProfileViews.has(viewKey) ? 'profileMatrix' : viewKey
     setNotFoundNotice('')
-    setActiveView(viewKey)
+    setActiveView(targetView)
     if (politicianId !== null) {
       setSelectedPoliticianId(politicianId)
     }
 
     try {
       const url = new URL(window.location.href)
-      if (viewKey && viewKey !== 'landing') {
-        url.searchParams.set('view', viewKey)
+      if (targetView && targetView !== 'landing') {
+        url.searchParams.set('view', targetView)
       } else {
         url.searchParams.delete('view')
       }
@@ -210,9 +214,9 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       }
 
       if (replace) {
-        window.history.replaceState({ view: viewKey, id: politicianId }, '', url.toString())
+        window.history.replaceState({ view: targetView, id: politicianId }, '', url.toString())
       } else {
-        window.history.pushState({ view: viewKey, id: politicianId }, '', url.toString())
+        window.history.pushState({ view: targetView, id: politicianId }, '', url.toString())
       }
     } catch {
       // Ignore URL manipulation failures
@@ -230,16 +234,17 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   }, [isAuthenticated, navigateTo, triggerAuthPrompt])
 
   useEffect(() => {
-    if (!isAuthenticated && initialViewParam && guestRestrictedViews.has(initialViewParam)) {
+    if (!isAuthenticated && normalizedInitialView && guestRestrictedViews.has(normalizedInitialView)) {
       navigateTo('landing', null, true)
       return
     }
     function handlePopState() {
       const params = new URLSearchParams(window.location.search)
       const requestedView = params.get('view')
-      const v = !isAuthenticated && guestRestrictedViews.has(requestedView)
+      const normalizedView = legacyProfileViews.has(requestedView) ? 'profileMatrix' : requestedView
+      const v = !isAuthenticated && guestRestrictedViews.has(normalizedView)
         ? 'landing'
-        : requestedView || (isAuthenticated ? 'dashboard' : 'landing')
+        : normalizedView || (isAuthenticated ? 'dashboard' : 'landing')
       const id = params.get('id') || params.get('politicianId') || ''
       setActiveView(v)
       if (id) {
@@ -250,14 +255,14 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [initialViewParam, isAuthenticated, navigateTo])
+  }, [normalizedInitialView, isAuthenticated, navigateTo])
 
   const coldLoadHandled = useRef(false)
   useEffect(() => {
     if (coldLoadHandled.current || politiciansState.status !== 'success') return
     coldLoadHandled.current = true
 
-    if (initialViewParam === 'profile' && initialPoliticianParam) {
+    if (normalizedInitialView === 'profile' && initialPoliticianParam) {
       const found = politiciansState.data.some((p) => p.politicianId === initialPoliticianParam)
       if (found) {
         setSelectedPoliticianId(initialPoliticianParam)
@@ -268,7 +273,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         navigateTo('politicians', '', true)
       }
     }
-  }, [politiciansState.status, politiciansState.data, initialViewParam, initialPoliticianParam, navigateTo])
+  }, [politiciansState.status, politiciansState.data, normalizedInitialView, initialPoliticianParam, navigateTo])
 
   useEffect(() => {
     if (isAuthenticated && (activeView === 'auth' || activeView === 'landing')) {

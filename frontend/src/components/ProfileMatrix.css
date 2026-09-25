@@ -1,30 +1,33 @@
 .profileMatrixWorkspace {
   display: grid;
   font-family: var(--sans);
-  gap: 18px;
+  gap: 22px;
   min-width: 0;
-  padding: clamp(18px, 3vw, 32px);
-  background: #f4f7fb;
+  padding: clamp(18px, 3vw, 34px);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(10, 29, 66, 0.06), transparent 26%),
+    linear-gradient(180deg, #f8fbff 0%, #f1f5fb 100%);
 }
 
 .profileMatrixHero {
   align-items: center;
-  background: linear-gradient(135deg, #102a56 0%, #174e70 58%, #0b766e 100%);
+  background: linear-gradient(135deg, var(--ph-blue) 0%, var(--ph-blue-mid) 54%, var(--ph-blue-light) 100%);
   border: 1px solid rgba(16, 42, 86, 0.12);
-  border-radius: 18px;
-  box-shadow: 0 18px 44px rgba(16, 42, 86, 0.18);
+  border-radius: 8px;
+  box-shadow: 0 18px 42px rgba(10, 29, 66, 0.18);
   color: #fff;
-  display: flex;
-  gap: 24px;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   justify-content: space-between;
-  min-height: 184px;
+  min-height: 178px;
   overflow: hidden;
   padding: clamp(22px, 4vw, 36px);
   position: relative;
 }
 
 .profileMatrixHero.admin {
-  background: linear-gradient(135deg, #102a56 0%, #3b376f 58%, #a44a36 100%);
+  background: linear-gradient(135deg, var(--ph-blue) 0%, #17366f 58%, #384f86 100%);
 }
 
 .profileMatrixHero::after {
@@ -47,22 +50,46 @@
   min-width: 0;
 }
 
+.profileMatrixHeroAvatar {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  display: flex;
+  flex: 0 0 auto;
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 800;
+  height: clamp(70px, 9vw, 92px);
+  justify-content: center;
+  width: clamp(70px, 9vw, 92px);
+}
+
 .profileMatrixHeroTitle {
   color: #fff;
   font-family: var(--display);
-  font-size: clamp(1.55rem, 3vw, 2.45rem);
-  font-weight: 700;
-  letter-spacing: -0.035em;
+  font-size: clamp(1.9rem, 3vw, 2.75rem);
+  font-weight: 800;
+  letter-spacing: 0;
   line-height: 1.08;
   margin: 12px 0 8px;
 }
 
 .profileMatrixHeroText {
   color: rgba(240, 249, 255, 0.82);
-  font-size: 13px;
+  font-size: 0.95rem;
+  font-weight: 600;
   line-height: 1.6;
   margin: 0;
   max-width: 620px;
+}
+
+.profileMatrixHeroSubtext {
+  color: rgba(240, 249, 255, 0.7);
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin: 4px 0 0;
 }
 
 .profileMatrixRoleBadge,
@@ -95,7 +122,7 @@
   align-items: flex-end;
   background: rgba(6, 19, 42, 0.32);
   border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   flex: 0 0 auto;
@@ -114,17 +141,17 @@
 
 .profileMatrixMetrics {
   display: grid;
-  gap: 12px;
+  gap: 14px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
 .profileMatrixMetric {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
   box-shadow: 0 5px 18px rgba(15, 23, 42, 0.05);
   min-width: 0;
-  padding: 16px;
+  padding: 18px;
 }
 
 .profileMatrixMetricLabel {
@@ -148,13 +175,94 @@
   line-height: 1;
 }
 
+.profileMatrixPrimaryGrid {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(360px, 0.95fr) minmax(0, 1.05fr);
+}
+
 .profileMatrixPanel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #dbe4ef;
+  border-radius: 8px;
   box-shadow: 0 8px 26px rgba(15, 23, 42, 0.05);
   min-width: 0;
   padding: clamp(18px, 3vw, 26px);
+}
+
+.profileMatrixUnifiedSection {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.profileMatrixSectionHeader {
+  background: transparent;
+  border-left: 4px solid var(--ph-blue);
+  display: grid;
+  gap: 4px;
+  padding-left: 14px;
+}
+
+.profileMatrixSectionKicker {
+  color: #64748b;
+  font-size: 10px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.profileMatrixSectionTitle {
+  color: #102a56;
+  font-family: var(--display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.embeddedProfileDetails.settingsWorkspace,
+.embeddedHistoryWorkspace.historyWorkspace {
+  background: transparent;
+  padding: 0;
+}
+
+.embeddedProfileDetails .settingsCard,
+.embeddedHistoryWorkspace .historyShell {
+  border-color: #dbe4ef;
+  border-radius: 8px;
+  box-shadow: 0 8px 26px rgba(15, 23, 42, 0.05);
+}
+
+.embeddedProfileDetails .settingsLayout {
+  margin: 0;
+  max-width: none;
+  grid-template-columns: 1fr;
+}
+
+.embeddedProfileDetails .settingsFormFields {
+  grid-template-columns: 1fr;
+}
+
+.embeddedProfileDetails .settingsCard {
+  padding: 22px;
+}
+
+.embeddedProfileDetails .settingsInfoCard {
+  gap: 14px;
+}
+
+.embeddedHistoryWorkspace .historyShell {
+  margin: 0;
+  padding: 22px;
+}
+
+.embeddedHistoryWorkspace .historyHeader {
+  display: none;
 }
 
 .profileMatrixPanelHeader {
@@ -207,7 +315,7 @@
   align-items: center;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 9px;
+  border-radius: 8px;
   display: flex;
   gap: 14px;
   justify-content: space-between;
@@ -253,6 +361,16 @@
 }
 
 @media (max-width: 820px) {
+  .profileMatrixHero,
+  .profileMatrixPrimaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .profileMatrixHeroScore {
+    align-items: flex-start;
+    width: 100%;
+  }
+
   .profileMatrixMetrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -266,14 +384,8 @@
 
   .profileMatrixHero {
     align-items: stretch;
-    flex-direction: column;
     gap: 18px;
     min-height: 0;
-  }
-
-  .profileMatrixHeroScore {
-    align-items: flex-start;
-    width: 100%;
   }
 
   .profileMatrixMetrics {

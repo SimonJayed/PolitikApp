@@ -19,7 +19,7 @@ function initialsFor(name = '') {
   return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'U'
 }
 
-export default function Account({ token, user }) {
+export default function Account({ embedded = false, token, user }) {
   const { updateSession } = useAuth()
   const [profile, setProfile] = useState(null)
   const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
@@ -66,14 +66,16 @@ export default function Account({ token, user }) {
   }
 
   return (
-    <section className="workspace settingsWorkspace">
-      <header className="settingsHeader">
-        <div className="settingsHeaderCopy">
-          <p className="ty-page-kicker">Account settings</p>
-          <h2 className="ty-page-title">Manage your profile</h2>
-          <p className="ty-body">Keep your public identity and account details up to date.</p>
-        </div>
-      </header>
+    <section className={embedded ? 'settingsWorkspace embeddedProfileDetails' : 'workspace settingsWorkspace'}>
+      {!embedded && (
+        <header className="settingsHeader">
+          <div className="settingsHeaderCopy">
+            <p className="ty-page-kicker">Profile</p>
+            <h2 className="ty-page-title">Manage your profile</h2>
+            <p className="ty-body">Keep your public identity and account details up to date.</p>
+          </div>
+        </header>
+      )}
 
       <div className="settingsLayout">
         <form className="settingsCard settingsForm" onSubmit={onSave}>

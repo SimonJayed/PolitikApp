@@ -1,11 +1,9 @@
 import ModerationPanel from '../components/ModerationPanel'
 import RestrictedModerationAccess from '../components/moderation/RestrictedModerationAccess'
-import Account from '../pages/Account/Account'
 import Authentication from '../pages/Authentication/Authentication'
 import ComparisonPanel from '../pages/Compare/Compare'
 import MyContributionsPanel from '../pages/Contributions/Contributions'
 import Dashboard from '../pages/Dashboard/Dashboard'
-import History from '../pages/History/History'
 import Landing from '../pages/Landing/Landing'
 import PoliticiansLoaderPanel from '../pages/Politicians/Politicians'
 import PoliticianProfilePage from '../pages/Profile/Profile'
@@ -208,14 +206,6 @@ export default function AppRoutes({
     return currentRole === 'CONTRIBUTOR'
       ? <RestrictedModerationAccess />
       : <ModerationPanel token={token} user={activeUser} />
-  }
-
-  if (activeView === 'account') {
-    return <Account token={token} user={activeUser} />
-  }
-
-  if (activeView === 'history') {
-    return <History token={token} />
   }
 
   return null

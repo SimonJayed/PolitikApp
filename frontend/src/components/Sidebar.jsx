@@ -81,15 +81,15 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
 
       <div className="bottom">
         <button
-          className={activeView === 'account' ? 'navItem active' : 'navItem'}
-          onClick={() => onSelectView('account')}
+          className={activeView === 'profileMatrix' ? 'navItem active' : 'navItem'}
+          onClick={() => onSelectView('profileMatrix')}
           style={{ '--bg': 'var(--ph-blue)' }}
           type="button"
         >
           <span className="icon" aria-hidden="true">
             <span>*</span>
           </span>
-          <span className="text">{user?.fullName || user?.email || 'Account'}</span>
+          <span className="text">{user?.fullName || user?.email || 'Profile'}</span>
         </button>
         <button className="navItem" onClick={onLogout} style={{ '--bg': 'var(--ph-red)' }} type="button">
           <span className="icon" aria-hidden="true">

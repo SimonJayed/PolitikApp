@@ -15,7 +15,7 @@ function changeTone(value) {
   return { label: 'Updated', className: 'text-slate-700 bg-slate-100 border-slate-200' }
 }
 
-export default function UserHistoryPage({ token }) {
+export default function UserHistoryPage({ embedded = false, token }) {
   const [state, setState] = useState({ status: 'loading', message: 'Loading history...' })
   const [entries, setEntries] = useState([])
   const [query, setQuery] = useState('')
@@ -68,10 +68,10 @@ export default function UserHistoryPage({ token }) {
   ]
 
   return (
-    <section className="workspace historyWorkspace">
+    <section className={embedded ? 'historyWorkspace embeddedHistoryWorkspace' : 'workspace historyWorkspace'}>
       <section className="historyShell">
         <div className="historyHeader">
-          <p className="eyebrow ty-page-kicker">History</p>
+          <p className="eyebrow ty-page-kicker">Activity / History</p>
           <h2 className="ty-section-title">Account Events</h2>
           <p className="ty-body">Track account-related decisions and their context.</p>
         </div>

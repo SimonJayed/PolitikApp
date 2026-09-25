@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CircleCheckIcon, FileTextIcon, ScaleIcon } from './icons/Lucide';
+import UserHistoryPage from './UserHistoryPage';
+import Account from '../pages/Account/Account';
 import './ProfileMatrix.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -115,6 +117,15 @@ export default function UserProfileMatrixPanel({ token, user }) {
   }, [actor?.userId, activeRole, token, isAdmin]);
 
   const activeMetrics = dynamicMetrics;
+  const displayName = actor?.name || actor?.fullName || 'Your profile';
+  const displayEmail = actor?.email || 'Email unavailable';
+  const displayInitials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join('')
+    .toUpperCase() || 'U';
 
   const headerTone = useMemo(() => {
     if (isAdmin) return 'matrixHero admin';
@@ -154,12 +165,12 @@ export default function UserProfileMatrixPanel({ token, user }) {
   return (
     <section className="workspace profileMatrixWorkspace">
       <header className={headerTone.replace('matrixHero', 'profileMatrixHero')}>
+        <div className="profileMatrixHeroAvatar" aria-hidden="true">{displayInitials}</div>
         <div className="profileMatrixHeroCopy">
           <span className="profileMatrixRoleBadge">{isAdmin ? 'ADMIN CURATOR' : 'CITIZEN'}</span>
-          <h2 className="profileMatrixHeroTitle">{descriptor}</h2>
-          <p className="profileMatrixHeroText">
-            {actor?.name || actor?.fullName || 'User'} is connected to the Centralized Evidence-Based Curation Pipeline.
-          </p>
+          <h2 className="profileMatrixHeroTitle">{displayName}</h2>
+          <p className="profileMatrixHeroText">{descriptor}</p>
+          <p className="profileMatrixHeroSubtext">{displayEmail}</p>
         </div>
         <div className="profileMatrixHeroScore">
           <span className="profileMatrixHeroScoreLabel">Account status</span>
@@ -176,22 +187,46 @@ export default function UserProfileMatrixPanel({ token, user }) {
         ))}
       </div>
 
-      {/* Admin Matrix Layout */}
-      {isAdmin && (
-        <AdminMatrix
-          metrics={activeMetrics || {}}
-          onRefresh={() => {
-            // Trigger refresh
-          }}
-        />
-      )}
+      <div className="profileMatrixPrimaryGrid">
+        <section className="profileMatrixUnifiedSection" aria-labelledby="profile-details-heading">
+          <header className="profileMatrixSectionHeader">
+            <p className="profileMatrixSectionKicker">Profile</p>
+            <h3 id="profile-details-heading" className="profileMatrixSectionTitle">User information</h3>
+            <p className="profileMatrixPanelDescription">
+              Manage your public identity and account status.
+            </p>
+          </header>
+          <Account embedded token={token} user={actor} />
+        </section>
 
-      {/* Contributor / Citizen Matrix Layout */}
-      {!isAdmin && (
-        <CitizenMatrix
-          metrics={activeMetrics || {}}
-        />
-      )}
+        {/* Admin Matrix Layout */}
+        {isAdmin && (
+          <AdminMatrix
+            metrics={activeMetrics || {}}
+            onRefresh={() => {
+              // Trigger refresh
+            }}
+          />
+        )}
+
+        {/* Contributor / Citizen Matrix Layout */}
+        {!isAdmin && (
+          <CitizenMatrix
+            metrics={activeMetrics || {}}
+          />
+        )}
+      </div>
+
+      <section className="profileMatrixUnifiedSection" aria-labelledby="profile-history-heading">
+        <header className="profileMatrixSectionHeader">
+          <p className="profileMatrixSectionKicker">Activity / History</p>
+          <h3 id="profile-history-heading" className="profileMatrixSectionTitle">Account event ledger</h3>
+          <p className="profileMatrixPanelDescription">
+            Browse account decisions, status changes, and moderation outcomes tied to your profile.
+          </p>
+        </header>
+        <UserHistoryPage embedded token={token} />
+      </section>
     </section>
   );
 }

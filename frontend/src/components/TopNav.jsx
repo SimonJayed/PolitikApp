@@ -8,7 +8,6 @@ import {
   LayoutDashboardIcon,
   LogOutIcon,
   MenuIcon,
-  SettingsIcon,
   SunIcon,
   UserCircleIcon,
   UsersIcon,
@@ -202,23 +201,6 @@ function TopNav({
                             <span>My Profile</span>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => navigate('account')}
-                            className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
-                          >
-                            <SettingsIcon size={24} />
-                            <span>Settings</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => navigate('history')}
-                            className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
-                          >
-                            <HistoryIcon size={21} />
-                            <span>History</span>
-                          </button>
                         </div>
                       </div>
                     )}
@@ -283,20 +265,6 @@ function TopNav({
                       icon={UserCircleIcon}
                       label="My Profile"
                       onClick={() => navigate('profileMatrix')}
-                    />
-
-                    <MobileMenuItem
-                      active={activeView === 'account'}
-                      icon={SettingsIcon}
-                      label="Settings"
-                      onClick={() => navigate('account')}
-                    />
-
-                    <MobileMenuItem
-                      active={activeView === 'history'}
-                      icon={HistoryIcon}
-                      label="History"
-                      onClick={() => navigate('history')}
                     />
 
                     <button

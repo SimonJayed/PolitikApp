@@ -56,15 +56,49 @@ const fieldErrorAliases = {
   confirmPassword: 'confirmPassword',
 }
 
+const passwordRequirementDefinitions = [
+  {
+    id: 'length',
+    label: 'At least 8 characters',
+    test: (password) => password.length >= 8,
+  },
+  {
+    id: 'uppercase',
+    label: 'At least one uppercase letter (A-Z)',
+    test: (password) => /[A-Z]/.test(password),
+  },
+  {
+    id: 'lowercase',
+    label: 'At least one lowercase letter (a-z)',
+    test: (password) => /[a-z]/.test(password),
+  },
+  {
+    id: 'number',
+    label: 'At least one number (0-9)',
+    test: (password) => /\d/.test(password),
+  },
+  {
+    id: 'special',
+    label: 'At least one special character (e.g. !, @, #, $, %, &)',
+    test: (password) => /[^A-Za-z0-9\s]/.test(password),
+  },
+]
+
+function getPasswordRequirements(password) {
+  return passwordRequirementDefinitions.map((requirement) => ({
+    ...requirement,
+    met: requirement.test(password),
+  }))
+}
+
+function hasValidRegistrationPassword(password) {
+  return getPasswordRequirements(password).every((requirement) => requirement.met)
+}
+
 function validateRegistrationPassword(password) {
   if (!password) return 'Password is required.'
-  if (password.length < 8) return 'Password must be at least 8 characters.'
   if (password.length > 120) return 'Password must be 120 characters or fewer.'
-  if (/\s/.test(password)) return 'Password cannot contain spaces.'
-  if (!/[a-z]/.test(password)) return 'Password must include a lowercase letter.'
-  if (!/[A-Z]/.test(password)) return 'Password must include an uppercase letter.'
-  if (!/\d/.test(password)) return 'Password must include a number.'
-  if (!/[^A-Za-z0-9\s]/.test(password)) return 'Password must include a special character.'
+  if (!hasValidRegistrationPassword(password)) return 'Review the password requirements below.'
   return ''
 }
 
@@ -155,6 +189,18 @@ function AuthField({ autoComplete, error, icon, id, label, onChange, placeholder
   )
 }
 
+function RequirementItem({ met, children }) {
+  return (
+    <li className={`authRequirementItem${met ? ' isMet' : ''}`}>
+      <span className="authRequirementIndicator" aria-hidden="true">
+        {met && <CircleCheckIcon size={13} />}
+      </span>
+      <span>{children}</span>
+      <span className="srOnly">{met ? ' completed' : ' not completed'}</span>
+    </li>
+  )
+}
+
 export default function AuthPages({ initialMode = 'login', onBack }) {
   const { login, register } = useAuth()
   const [mode, setMode] = useState(initialMode)
@@ -164,6 +210,8 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const isLogin = mode === 'login'
+  const passwordRequirements = getPasswordRequirements(form.password)
+  const passwordsMatch = Boolean(form.password && form.confirmPassword && form.password === form.confirmPassword)
 
   useEffect(() => {
     setMode(initialMode)
@@ -204,8 +252,11 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
 
   function validateForm() {
     const errors = validateAuthForm(form, isLogin)
+    if (!isLogin && errors.password === 'Review the password requirements below.') {
+      delete errors.password
+    }
     setFieldErrors(errors)
-    return Object.keys(errors).length === 0
+    return Object.keys(errors).length === 0 && (isLogin || hasValidRegistrationPassword(form.password))
   }
 
   async function handleSubmit(event) {
@@ -322,7 +373,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
 
             <label className="authField" htmlFor="auth-password-input">
               <span className="authFieldLabel">Password</span>
-              <span className={`authFieldControl${fieldErrors.password ? ' hasError' : ''}`}>
+              <span className={`authFieldControl${fieldErrors.password && isLogin ? ' hasError' : ''}`}>
                 <span className="authFieldIcon"><KeyIcon size={20} /></span>
                 <input
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
@@ -332,8 +383,8 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                   required
                   type={showPassword ? 'text' : 'password'}
                   value={form.password}
-                  aria-invalid={Boolean(fieldErrors.password)}
-                  aria-describedby={fieldErrors.password ? 'auth-password-input-error' : undefined}
+                  aria-invalid={Boolean(fieldErrors.password && isLogin)}
+                  aria-describedby={fieldErrors.password && isLogin ? 'auth-password-input-error' : undefined}
                 />
                 <button
                   type="button"
@@ -344,13 +395,15 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                   <EyeIcon hidden={showPassword} />
                 </button>
               </span>
-              {fieldErrors.password && <span className="authFieldError" id="auth-password-input-error">{fieldErrors.password}</span>}
+              {fieldErrors.password && isLogin && (
+                <span className="authFieldError" id="auth-password-input-error">{fieldErrors.password}</span>
+              )}
             </label>
 
             {!isLogin && (
               <label className="authField" htmlFor="auth-confirm-password-input">
                 <span className="authFieldLabel">Confirm Password</span>
-                <span className={`authFieldControl${fieldErrors.confirmPassword ? ' hasError' : ''}`}>
+                <span className="authFieldControl">
                   <span className="authFieldIcon"><KeyIcon size={20} /></span>
                   <input
                     autoComplete="new-password"
@@ -359,10 +412,9 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                   placeholder="Confirm your password"
                   required
                     type={showConfirmPassword ? 'text' : 'password'}
-                  value={form.confirmPassword}
-                  aria-invalid={Boolean(fieldErrors.confirmPassword)}
-                  aria-describedby={fieldErrors.confirmPassword ? 'auth-confirm-password-input-error' : undefined}
-                />
+                    value={form.confirmPassword}
+                    aria-invalid="false"
+                  />
                 <button
                   type="button"
                   className="authPasswordToggle"
@@ -370,12 +422,25 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
                   aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
                 >
                   <EyeIcon hidden={showConfirmPassword} />
-                </button>
-              </span>
-                {fieldErrors.confirmPassword && (
-                  <span className="authFieldError" id="auth-confirm-password-input-error">{fieldErrors.confirmPassword}</span>
-                )}
+                  </button>
+                </span>
               </label>
+            )}
+
+            {!isLogin && (
+              <div className="authPasswordChecklist" aria-live="polite">
+                <p className="authChecklistTitle">Password requirements</p>
+                <ul>
+                  {passwordRequirements.map((requirement) => (
+                    <RequirementItem key={requirement.id} met={requirement.met}>
+                      {requirement.label}
+                    </RequirementItem>
+                  ))}
+                  <RequirementItem met={passwordsMatch}>
+                    Passwords match
+                  </RequirementItem>
+                </ul>
+              </div>
             )}
 
             {state.error && (

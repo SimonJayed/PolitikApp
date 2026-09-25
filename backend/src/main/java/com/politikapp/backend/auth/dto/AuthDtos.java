@@ -17,8 +17,7 @@ public class AuthDtos {
                     @Pattern(regexp = ".*[a-z].*", message = "password must include a lowercase letter."),
                     @Pattern(regexp = ".*[A-Z].*", message = "password must include an uppercase letter."),
                     @Pattern(regexp = ".*\\d.*", message = "password must include a number."),
-                    @Pattern(regexp = ".*[^A-Za-z0-9\\s].*", message = "password must include a special character."),
-                    @Pattern(regexp = "^\\S+$", message = "password cannot contain spaces.")
+                    @Pattern(regexp = ".*[^A-Za-z0-9\\s].*", message = "password must include a special character.")
             })
             String password,
             @Size(max = 50) String role
