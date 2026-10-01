@@ -2,6 +2,59 @@ export function SkeletonLine({ width = '100%', height = 12, className = '' }) {
   return <span className={`appSkeleton ${className}`.trim()} style={{ width, height }} aria-hidden="true" />
 }
 
+export function ProfileMatrixSkeleton() {
+  return (
+    <section className="workspace profileMatrixWorkspace" aria-label="Loading profile" aria-busy="true">
+      <div className="profileMatrixHero">
+        <SkeletonLine width={92} height={92} className="rounded-lg" />
+        <div className="profileMatrixHeroCopy">
+          <SkeletonLine width={116} height={22} className="rounded-full" />
+          <SkeletonLine width="48%" height={32} className="mt-3" />
+          <SkeletonLine width="72%" height={14} className="mt-3" />
+          <SkeletonLine width="38%" height={12} className="mt-2" />
+        </div>
+        <div className="profileMatrixHeroScore">
+          <SkeletonLine width={92} height={11} />
+          <SkeletonLine width={108} height={24} className="rounded-full" />
+        </div>
+      </div>
+
+      <div className="profileMatrixMetrics" aria-hidden="true">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div className="profileMatrixMetric" key={`profile-metric-skeleton-${index}`}>
+            <SkeletonLine width="62%" height={11} />
+            <SkeletonLine width="42%" height={28} className="mt-3" />
+          </div>
+        ))}
+      </div>
+
+      <div className="profileMatrixUnifiedSection">
+        <div className="profileMatrixSectionHeader">
+          <SkeletonLine width={76} height={10} />
+          <SkeletonLine width={190} height={22} className="mt-2" />
+          <SkeletonLine width={290} height={12} className="mt-2" />
+        </div>
+        <div className="profileMatrixPrimaryGrid" aria-hidden="true">
+          <ProfileCardSkeleton />
+          <ProfileCardSkeleton />
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function ProfileCardSkeleton() {
+  return (
+    <div className="profileMatrixPanel">
+      <SkeletonLine width="48%" height={18} />
+      <SkeletonLine width="82%" height={12} className="mt-3" />
+      <SkeletonLine width="68%" height={12} className="mt-2" />
+      <SkeletonLine width="100%" height={52} className="mt-5" />
+      <SkeletonLine width="72%" height={14} className="mt-4" />
+    </div>
+  )
+}
+
 export function RankingRowsSkeleton({ rows = 6 }) {
   return (
     <div className="rankingPanelTable" aria-hidden="true">

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
+import { SkeletonLine } from '../../components/Skeletons'
 import './Account.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
@@ -19,15 +20,28 @@ function initialsFor(name = '') {
   return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'U'
 }
 
+function AccountCardSkeleton() {
+  return (
+    <div className="settingsCard accountCardSkeleton" aria-hidden="true">
+      <SkeletonLine width="42%" height={18} />
+      <SkeletonLine width="78%" height={12} className="mt-3" />
+      <SkeletonLine width="100%" height={46} className="mt-5" />
+      <SkeletonLine width="34%" height={42} className="mt-5" />
+    </div>
+  )
+}
+
 export default function Account({ embedded = false, token, user }) {
   const { updateSession } = useAuth()
   const [profile, setProfile] = useState(null)
-  const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [state, setState] = useState({ status: 'idle', message: '' })
   const [form, setForm] = useState({ fullName: '' })
 
   useEffect(() => {
     let cancelled = false
-    setState({ status: 'loading', message: 'Loading profile...' })
+    setProfileLoading(true)
+    setState({ status: 'idle', message: '' })
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
         if (res.status === 401 || res.status === 403) {
@@ -45,12 +59,15 @@ export default function Account({ embedded = false, token, user }) {
       .catch((error) => {
         if (!cancelled) setState({ status: 'error', message: error.message || 'Failed to load profile.' })
       })
+      .finally(() => {
+        if (!cancelled) setProfileLoading(false)
+      })
     return () => { cancelled = true }
   }, [token, updateSession])
 
   async function onSave(event) {
     event.preventDefault()
-    setState({ status: 'loading', message: 'Saving profile...' })
+    setState({ status: 'saving', message: '' })
     try {
       const data = await fetch(`${API_BASE_URL}/users/me`, {
         method: 'PUT',
@@ -78,7 +95,12 @@ export default function Account({ embedded = false, token, user }) {
       )}
 
       <div className="settingsLayout">
-        <form className="settingsCard settingsForm" onSubmit={onSave}>
+        {profileLoading && !profile ? (
+          <>
+            <AccountCardSkeleton />
+            <AccountCardSkeleton />
+          </>
+        ) : <form className="settingsCard settingsForm" onSubmit={onSave}>
           <div className="settingsCardHeader">
             <h3>Profile details</h3>
             <p>These details are used across your civic contribution activity.</p>
@@ -88,11 +110,13 @@ export default function Account({ embedded = false, token, user }) {
           </div>
           <div className="settingsFormFooter">
             <StatusLine state={state} />
-            <button type="submit" disabled={state.status === 'loading'}>{state.status === 'loading' ? 'Saving...' : 'Save Changes'}</button>
+            <button type="submit" disabled={profileLoading || state.status === 'saving'}>
+              {state.status === 'saving' ? 'Saving...' : 'Save Changes'}
+            </button>
           </div>
-        </form>
+        </form>}
 
-        <aside className="settingsCard settingsInfoCard" aria-label="Account overview">
+        {!profileLoading && <aside className="settingsCard settingsInfoCard" aria-label="Account overview">
           <div className="settingsIdentity">
             <span className="settingsAvatar" aria-hidden="true">{initialsFor(profile?.fullName || user?.fullName)}</span>
             <div className="settingsIdentityText">
@@ -107,7 +131,7 @@ export default function Account({ embedded = false, token, user }) {
               <div className="settingsInfoRow"><dt>Status</dt><dd><span className="settingsStatus">{profile?.accountStatus || profile?.status || 'Active'}</span></dd></div>
             </dl>
           </div>
-        </aside>
+        </aside>}
       </div>
     </section>
   )

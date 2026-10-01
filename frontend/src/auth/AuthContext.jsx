@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const AuthContext = createContext(null)
@@ -20,6 +20,15 @@ function readStoredSession() {
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(() => readStoredSession())
+
+  const updateSession = useCallback((newSession) => {
+    setSession((prev) => {
+      if (!newSession) return null
+      if (newSession.token && newSession.user) return newSession
+      if (prev) return { ...prev, user: { ...prev.user, ...newSession } }
+      return prev
+    })
+  }, [])
 
   useEffect(() => {
     if (session) {
@@ -99,23 +108,12 @@ export function AuthProvider({ children }) {
       setSession(body)
       return body
     },
-    updateSession(newSession) {
-      setSession((prev) => {
-        if (!newSession) return null;
-        if (newSession.token && newSession.user) {
-          return newSession;
-        }
-        if (prev) {
-          return { ...prev, user: { ...prev.user, ...newSession } };
-        }
-        return prev;
-      });
-    },
+    updateSession,
     logout() {
       localStorage.removeItem('politikapp_auth')
       setSession(null)
     },
-  }), [session])
+  }), [session, updateSession])
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

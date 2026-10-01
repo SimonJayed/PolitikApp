@@ -5,7 +5,7 @@ import {
   AlertTriangleIcon,
   ArrowLeftIcon,
   CircleCheckIcon,
-  KeyIcon,
+  LockIcon,
 } from '../components/icons/Lucide'
 
 function MailIcon({ size = 20 }) {
@@ -206,7 +206,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
   const [mode, setMode] = useState(initialMode)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [state, setState] = useState({ loading: false, error: '', success: '' })
+  const [state, setState] = useState({ loading: false, error: '' })
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '' })
   const [fieldErrors, setFieldErrors] = useState({})
   const isLogin = mode === 'login'
@@ -219,14 +219,14 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
 
   function switchMode(nextMode) {
     setMode(nextMode)
-    setState({ loading: false, error: '', success: '' })
+    setState({ loading: false, error: '' })
     setFieldErrors({})
     setShowPassword(false)
     setShowConfirmPassword(false)
   }
 
   function updateField(field, value) {
-    setState((current) => ({ ...current, error: '', success: '' }))
+    setState((current) => ({ ...current, error: '' }))
     setForm((current) => {
       const nextForm = { ...current, [field]: value }
       setFieldErrors((currentErrors) => {
@@ -262,7 +262,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
   async function handleSubmit(event) {
     event.preventDefault()
     if (!validateForm()) return
-    setState({ loading: true, error: '', success: '' })
+    setState({ loading: true, error: '' })
     try {
       if (isLogin) {
         await login(form.email.trim(), form.password)
@@ -273,7 +273,6 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
           password: form.password,
           role: 'CONTRIBUTOR',
         })
-        setState({ loading: false, error: '', success: 'Registration successful. Signing you in...' })
       }
     } catch (error) {
       const serverFieldErrors = mapServerFieldErrors(error)
@@ -285,7 +284,6 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
         error: Object.keys(serverFieldErrors).length > 0
           ? ''
           : sanitizeServerMessage(error.message, isLogin ? 'Sign in failed.' : 'Registration failed.'),
-        success: '',
       })
       return
     }
@@ -374,7 +372,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
             <label className="authField" htmlFor="auth-password-input">
               <span className="authFieldLabel">Password</span>
               <span className={`authFieldControl${fieldErrors.password && isLogin ? ' hasError' : ''}`}>
-                <span className="authFieldIcon"><KeyIcon size={20} /></span>
+                <span className="authFieldIcon"><LockIcon size={20} /></span>
                 <input
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   id="auth-password-input"
@@ -404,7 +402,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
               <label className="authField" htmlFor="auth-confirm-password-input">
                 <span className="authFieldLabel">Confirm Password</span>
                 <span className="authFieldControl">
-                  <span className="authFieldIcon"><KeyIcon size={20} /></span>
+                  <span className="authFieldIcon"><LockIcon size={20} /></span>
                   <input
                     autoComplete="new-password"
                   id="auth-confirm-password-input"
@@ -450,15 +448,12 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
               </div>
             )}
 
-            {state.success && (
-              <div className="authAlert success">
-                <CircleCheckIcon size={16} />
-                <span>{state.success}</span>
-              </div>
-            )}
-
             <button id="auth-submit-btn" className="authSubmitButton" type="submit" disabled={state.loading}>
-              {state.loading ? 'Verifying...' : isLogin ? 'Sign In' : 'Create Account'}
+              {state.loading ? (
+                <span className="authSubmitLoading" aria-label={isLogin ? 'Signing in' : 'Creating account'}>
+                  <span className="authSubmitSpinner" aria-hidden="true" />
+                </span>
+              ) : isLogin ? 'Sign In' : 'Create Account'}
             </button>
 
             <p className="authFormFooter">

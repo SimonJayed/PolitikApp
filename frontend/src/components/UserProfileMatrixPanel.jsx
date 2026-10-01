@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { CircleCheckIcon, FileTextIcon, ScaleIcon } from './icons/Lucide';
 import UserHistoryPage from './UserHistoryPage';
 import Account from '../pages/Account/Account';
+import { ProfileMatrixSkeleton } from './Skeletons';
 import './ProfileMatrix.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
@@ -133,11 +134,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
   }, [isAdmin]);
 
   if (!activeMetrics && loading) {
-    return (
-      <section className="workspace profileMatrixWorkspace">
-        <div className="profileMatrixState">Loading your profile metrics...</div>
-      </section>
-    );
+    return <ProfileMatrixSkeleton />;
   }
 
   if (!activeMetrics && error) {
@@ -187,35 +184,34 @@ export default function UserProfileMatrixPanel({ token, user }) {
         ))}
       </div>
 
-      <div className="profileMatrixPrimaryGrid">
-        <section className="profileMatrixUnifiedSection" aria-labelledby="profile-details-heading">
-          <header className="profileMatrixSectionHeader">
-            <p className="profileMatrixSectionKicker">Profile</p>
-            <h3 id="profile-details-heading" className="profileMatrixSectionTitle">User information</h3>
-            <p className="profileMatrixPanelDescription">
-              Manage your public identity and account status.
-            </p>
-          </header>
+      <section className="profileMatrixUnifiedSection" aria-labelledby="profile-details-heading">
+        <header className="profileMatrixSectionHeader">
+          <p className="profileMatrixSectionKicker">Profile</p>
+          <h3 id="profile-details-heading" className="profileMatrixSectionTitle">User information</h3>
+          <p className="profileMatrixPanelDescription">
+            Manage your public identity and account status.
+          </p>
+        </header>
+
+        <div className="profileMatrixPrimaryGrid">
           <Account embedded token={token} user={actor} />
-        </section>
 
-        {/* Admin Matrix Layout */}
-        {isAdmin && (
-          <AdminMatrix
-            metrics={activeMetrics || {}}
-            onRefresh={() => {
-              // Trigger refresh
-            }}
-          />
-        )}
+          {isAdmin && (
+            <AdminMatrix
+              metrics={activeMetrics || {}}
+              onRefresh={() => {
+                // Trigger refresh
+              }}
+            />
+          )}
 
-        {/* Contributor / Citizen Matrix Layout */}
-        {!isAdmin && (
-          <CitizenMatrix
-            metrics={activeMetrics || {}}
-          />
-        )}
-      </div>
+          {!isAdmin && (
+            <CitizenMatrix
+              metrics={activeMetrics || {}}
+            />
+          )}
+        </div>
+      </section>
 
       <section className="profileMatrixUnifiedSection" aria-labelledby="profile-history-heading">
         <header className="profileMatrixSectionHeader">

@@ -446,6 +446,25 @@
   transform: none;
 }
 
+.authSubmitLoading {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.authSubmitSpinner {
+  animation: authSubmitSpin 0.75s linear infinite;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  border-top-color: #ffffff;
+  height: 18px;
+  width: 18px;
+}
+
+@keyframes authSubmitSpin {
+  to { transform: rotate(360deg); }
+}
+
 .authFormFooter {
   margin: 2px 0 0;
   text-align: center;

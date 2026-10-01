@@ -200,20 +200,22 @@ function TopNav({
                             <UserCircleIcon size={21} />
                             <span>My Profile</span>
                           </button>
-
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setUserMenuOpen(false)
+                              onLogout()
+                            }}
+                            className="ty-nav mt-1 flex w-full items-center gap-3 rounded-xl border-t border-white/10 px-3 py-2.5 pt-3 text-left text-red-200 transition hover:bg-[color:var(--ph-red)]/20 hover:text-white"
+                          >
+                            <LogOutIcon size={21} />
+                            <span>Log Out</span>
+                          </button>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={onLogout}
-                    className="ty-nav inline-flex h-14 items-center gap-3 rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[color:var(--ph-red)]/80 hover:text-white"
-                  >
-                    <LogOutIcon size={22} />
-                    <span className="hidden font-semibold sm:inline">Logout</span>
-                  </button>
                 </>
               ) : (
                 <div className="flex items-center gap-3">
