@@ -79,6 +79,14 @@ const SORT_OPTIONS = [
   },
 ]
 
+const OFFICE_OPTIONS = [
+  { value: 'ALL', label: 'All Office Types' },
+  { value: 'MAYOR', label: 'Mayor' },
+  { value: 'PRESIDENT', label: 'President' },
+  { value: 'SENATOR', label: 'Senator' },
+  { value: 'VICE_MAYOR', label: 'Vice Mayor' },
+]
+
 function resolveWgiScore(politician) {
   if (Number.isFinite(Number(politician.wgiCompositeScore)) && Number(politician.wgiCompositeScore) > 0) {
     return Number(politician.wgiCompositeScore)
@@ -98,13 +106,9 @@ function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politic
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [officeFilter, setOfficeFilter] = useState('ALL')
   const [pages, setPages] = useState({ CEBU_CITY: 1, NATIONAL: 1 })
-  const pageSize = 10
+  const pageSize = 5
 
   const activeSortOption = SORT_OPTIONS.find((opt) => opt.key === sortBy) || SORT_OPTIONS[0]
-
-  const officeOptions = useMemo(() => {
-    return Array.from(new Set(politicians.map((p) => p.position).filter(Boolean))).sort()
-  }, [politicians])
 
   function handleSortChange(e) {
     const next = e.target.value
@@ -182,9 +186,8 @@ function PoliticianRankingPanel({ isLoading = false, onSelectPolitician, politic
               setPages({ CEBU_CITY: 1, NATIONAL: 1 })
             }}
           >
-            <option value="ALL">All Office Types</option>
-            {officeOptions.map((pos) => (
-              <option key={pos} value={pos}>{formatPosition(pos)}</option>
+            {OFFICE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>{option.label}</option>
             ))}
           </select>
         </label>

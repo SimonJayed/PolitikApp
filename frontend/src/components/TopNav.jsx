@@ -12,36 +12,22 @@ import {
   UserCircleIcon,
   UsersIcon,
 } from './icons/Lucide'
+import './TopNav.css'
 
 function CenterNavItem({ active, icon: Icon, label, onClick }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={[
-        'ty-nav group relative flex h-16 w-[130px] flex-col items-center justify-center gap-2 rounded-xl px-5 !bg-transparent',
-        'transition-all duration-200 ease-out',
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--ph-gold)]/70',
-        active
-          ? 'text-white font-bold'
-          : 'text-[#E2E8F0] hover:!bg-white/5 hover:text-white',
-      ].join(' ')}
+      aria-label={label}
+      className={`ty-nav hoverNavItem${active ? ' isActive' : ''}`}
     >
-      <Icon
-        size={19}
-        className={`transition-all duration-200 ${active ? 'text-[color:var(--ph-gold)]' : 'text-current'}`}
-      />
-
-      <span className="text-[13px] font-medium leading-none text-current transition-all duration-200">
+      <span className="hoverNavItemIcon">
+        <Icon size={21} />
+      </span>
+      <span className="hoverNavItemLabel">
         {label}
       </span>
-
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute bottom-0 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full bg-[color:var(--ph-gold)] shadow-[0_0_8px_rgba(255,191,0,0.5)]"
-        />
-      )}
     </button>
   )
 }
@@ -113,32 +99,32 @@ function TopNav({
 
   return (
     <div
-      className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8"
+      className="pointer-events-none fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6 lg:px-8 xl:pt-4"
       style={hideTopNav ? { visibility: 'hidden' } : undefined}
       aria-hidden={hideTopNav}
     >
-      <div className="pointer-events-auto mx-auto w-full max-w-[1880px]">
+      <div className="topNavFrame pointer-events-auto mx-auto">
         <div
-          className="rounded-[30px] border border-white/10 shadow-[0_24px_60px_rgba(10,29,66,0.45)] backdrop-blur-xl"
+          className="topNavShell border border-white/10 shadow-[0_24px_60px_rgba(10,29,66,0.45)] backdrop-blur-xl"
           style={{
             background:
               'linear-gradient(160deg, rgba(10,29,66,0.98) 0%, rgba(7,16,40,0.98) 55%, rgba(10,29,66,0.94) 100%)',
           }}
         >
-          <div className="flex min-h-[96px] items-center justify-between gap-5 px-6 py-4 md:px-8">
-            <div className="flex min-w-[240px] items-center gap-4">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[rgba(18,42,88,0.72)] ring-1 ring-white/10">
+          <div className="topNavRow relative flex min-h-[96px] items-center justify-between gap-5 px-6 py-4 md:px-8 xl:min-h-[72px] xl:gap-4 xl:px-8 xl:py-2">
+            <div className="flex min-w-[240px] items-center gap-4 xl:min-w-[175px] xl:gap-3">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[rgba(18,42,88,0.72)] ring-1 ring-white/10 xl:h-10 xl:w-10 xl:rounded-xl">
                 <SunIcon size={24} className="text-[color:var(--ph-gold)]" />
               </div>
 
               <div className="min-w-0">
-                <div className="ty-nav truncate text-[18px] font-extrabold text-white">
+                <div className="ty-nav truncate text-[18px] font-extrabold text-white xl:text-[16px]">
                   {title}
                 </div>
               </div>
             </div>
 
-            <nav aria-label="Primary" className="hidden flex-1 items-center justify-center gap-2 xl:flex">
+            <nav aria-label="Primary" className="hoverNav hidden xl:flex">
               {navItems.map((item) => (
                 <CenterNavItem
                   key={item.key}
@@ -167,14 +153,15 @@ function TopNav({
                     <button
                       type="button"
                       onClick={() => setUserMenuOpen((v) => !v)}
-                      className="ty-nav inline-flex h-14 items-center gap-3 rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
+                      className="ty-nav inline-flex h-14 items-center gap-3 rounded-2xl bg-[rgba(18,42,88,0.72)] px-4 text-white/90 ring-1 ring-white/10 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white xl:h-12 xl:gap-2 xl:rounded-xl xl:px-3"
                       aria-expanded={userMenuOpen}
+                      aria-haspopup="menu"
                       aria-label="User menu"
                     >
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-[color:var(--ph-red)]/90 text-white">
+                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-[color:var(--ph-red)]/90 text-white xl:h-8 xl:w-8 xl:rounded-lg">
                         <UserCircleIcon size={22} />
                       </span>
-                      <span className="max-w-[140px] truncate font-semibold">
+                      <span className="max-w-[140px] truncate font-semibold xl:max-w-[120px]">
                         {user?.fullName || user?.email || 'User'}
                       </span>
                       <ChevronDownIcon size={17} className="text-white/70" />

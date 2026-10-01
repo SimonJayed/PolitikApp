@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { useAuth } from './auth/AuthContext'
 import TopNav from './components/TopNav'
+import SiteFooter from './components/SiteFooter'
 import AuthPromptModal from './components/AuthPromptModal'
 import WgiMethodologyModal from './components/governance/WgiMethodologyModal'
 import AppPageHeader from './components/layout/AppPageHeader'
@@ -370,7 +371,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       <section
         className={isAuthView
           ? 'authPageContent'
-          : `${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`}
+          : `${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28 xl:pt-20'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`}
       >
         {!isAuthView && !isAnyModalOpen && showHeaderTitles && <AppPageHeader activeHeader={activeHeader} />}
         <NoticeBanner message={notFoundNotice} onDismiss={() => setNotFoundNotice('')} />
@@ -411,6 +412,16 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           updateActionDetail={updateActionDetail}
         />
       </section>
+
+      {!isAuthView && !isAnyModalOpen && activeView !== 'landing' && (
+        <SiteFooter
+          isAuthenticated={isAuthenticated}
+          onAuthPrompt={triggerAuthPrompt}
+          onExplorePoliticians={() => selectView('politicians')}
+          onExploreDashboard={() => selectView('dashboard')}
+          onCompare={() => selectView('compare')}
+        />
+      )}
 
       <AuthPromptModal
         isOpen={authModalConfig.isOpen}

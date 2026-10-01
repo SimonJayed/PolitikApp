@@ -1,11 +1,10 @@
 import React, { useMemo } from 'react';
 import './LandingPage.css';
+import SiteFooter from './SiteFooter';
 import { formatPosition, formatJurisdiction } from './governance/positionConfig';
 import {
   BanIcon,
-  GitCompareIcon,
   LandmarkIcon,
-  LayoutDashboardIcon,
   LockIcon,
   ScaleIcon,
   ScrollTextIcon,
@@ -287,33 +286,13 @@ export default function LandingPage({
         </div>
       </section>
 
-      {/* 6. Footer */}
-      <footer className="landing-footer">
-        <div className="landing-footer-inner">
-          <div className="landing-footer-brand">
-            <span>PolitikApp</span>
-          </div>
-
-          <div className="landing-footer-copy">
-            Philippine Civic Transparency &amp; Primary-Source Public Official Audit Platform.
-          </div>
-
-          <div className="landing-footer-links">
-            <button className="ty-nav" onClick={() => isAuthenticated ? onExplorePoliticians?.() : requestGuestAccess('preview')}>
-              <UsersIcon size={17} />
-              <span>Politicians</span>
-            </button>
-            <button className="ty-nav" onClick={() => isAuthenticated ? onExploreDashboard?.() : requestGuestAccess('preview')}>
-              <LayoutDashboardIcon size={17} />
-              <span>Dashboard</span>
-            </button>
-            <button className="ty-nav" onClick={() => isAuthenticated ? onCompare?.() : requestGuestAccess('preview')}>
-              <GitCompareIcon size={17} />
-              <span>Compare</span>
-            </button>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter
+        isAuthenticated={isAuthenticated}
+        onAuthPrompt={requestGuestAccess}
+        onExplorePoliticians={onExplorePoliticians}
+        onExploreDashboard={onExploreDashboard}
+        onCompare={onCompare}
+      />
     </div>
   );
 }

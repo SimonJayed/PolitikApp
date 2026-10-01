@@ -5,9 +5,7 @@ import {
   FolderIcon,
   BarChart3Icon,
   KeyIcon,
-  UsersIcon,
   FileTextIcon,
-  ScaleIcon,
 } from '../icons/Lucide';
 
 /**
@@ -121,15 +119,6 @@ export default function PoliticianDashboard({
 
   const actions = [
     {
-      key: 'politicians',
-      icon: UsersIcon,
-      title: 'Explore Politicians',
-      sub: 'Browse all politician profiles',
-      description: 'Open the searchable profile list to inspect biography, jurisdiction, party details, and audit-linked records before taking action.',
-      hint: 'Best starting point for profile discovery.',
-      accent: 'var(--ph-blue)',
-    },
-    {
       key: 'submit',
       icon: FileTextIcon,
       title: 'File Evidence',
@@ -137,15 +126,6 @@ export default function PoliticianDashboard({
       description: 'Create a structured contribution using approved source domains and categorized action details so it can enter moderation.',
       hint: 'Prepare source URL + impact summary first.',
       accent: 'var(--ph-gold)',
-    },
-    {
-      key: 'compare',
-      icon: ScaleIcon,
-      title: 'Compare Profiles',
-      sub: 'Side-by-side candidate analysis',
-      description: 'Review two candidates in parallel with aligned records and metrics to identify policy, budget, and audit differences faster.',
-      hint: 'Use filters to narrow by jurisdiction.',
-      accent: 'var(--info)',
     },
   ];
 
@@ -259,7 +239,7 @@ export default function PoliticianDashboard({
         </div>
       </section>
 
-      <section className="dashboardSectionBlock">
+      <section className="dashboardSectionBlock performanceRankingSection">
         <h2 className="ty-section-title" style={{ margin: '0 0 14px' }}>Performance Ranking</h2>
         <PoliticianRankingPanel isLoading={isLoading} onSelectPolitician={onOpenProfile} politicians={politicians} />
       </section>

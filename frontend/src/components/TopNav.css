@@ -1,0 +1,98 @@
+.topNavFrame {
+  width: calc(100% - 2rem);
+}
+
+.topNavShell {
+  border-radius: var(--radius-xl);
+}
+
+@media (min-width: 1280px) {
+  .topNavFrame {
+    max-width: 780px;
+  }
+}
+
+.hoverNav {
+  align-items: center;
+  background: rgba(18, 42, 88, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(4, 13, 31, 0.24);
+  display: flex;
+  gap: 3px;
+  left: 50%;
+  padding: 5px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.hoverNavItem {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: #e2e8f0;
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 40px;
+  gap: 8px;
+  height: 44px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 9px;
+  transition: background-color 220ms var(--ease-out), color 220ms var(--ease-out), flex-basis 280ms var(--ease-out), justify-content 220ms var(--ease-out);
+  white-space: nowrap;
+}
+
+.hoverNavItem:hover,
+.hoverNavItem:focus-visible {
+  background: rgba(42, 68, 120, 0.95);
+  color: #ffffff;
+  flex-basis: 138px;
+  justify-content: flex-start;
+  outline: none;
+}
+
+.hoverNavItem.isActive,
+.hoverNavItem.isActive:hover,
+.hoverNavItem.isActive:focus-visible {
+  color: var(--ph-gold-light);
+}
+
+.hoverNavItem.isActive:hover,
+.hoverNavItem.isActive:focus-visible {
+  background: rgba(184, 150, 42, 0.22);
+}
+
+.hoverNavItemIcon {
+  align-items: center;
+  display: inline-flex;
+  flex: 0 0 22px;
+  justify-content: center;
+}
+
+.hoverNavItemLabel {
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 700;
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateX(-5px);
+  transition: max-width 220ms var(--ease-out), opacity 160ms ease, transform 220ms var(--ease-out);
+}
+
+.hoverNavItem:hover .hoverNavItemLabel,
+.hoverNavItem:focus-visible .hoverNavItemLabel {
+  max-width: 94px;
+  opacity: 1;
+  transform: translateX(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hoverNavItem,
+  .hoverNavItemLabel {
+    transition: none;
+  }
+}

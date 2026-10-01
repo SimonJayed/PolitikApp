@@ -195,6 +195,21 @@
   margin: 0;
 }
 
+.dashboardWorkspace:has(> .dashboardHeaderBlock + .dashboardFilterBar) .directoryHeaderRow > div {
+  display: none;
+}
+
+.dashboardWorkspace:has(> .dashboardHeaderBlock + .dashboardFilterBar) > .dashboardHeaderBlock {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.dashboardWorkspace:has(> .dashboardHeaderBlock + .dashboardFilterBar) > .dashboardHeaderBlock:not(:has(.directoryAddButton)) {
+  display: none;
+}
+
 /* ── Filter bar ────────────────────────────────────────────────────── */
 .dashboardFilterBar {
   align-items: end;
@@ -239,6 +254,14 @@
 .dashboardHeroBanner,
 .dashboardSectionBlock {
   width: 100%;
+}
+
+.performanceRankingSection {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 18px;
 }
 
 @media (min-width: 640px) {
