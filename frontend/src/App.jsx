@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { useAuth } from './auth/AuthContext'
 import TopNav from './components/TopNav'
-import SiteFooter from './components/SiteFooter'
 import AuthPromptModal from './components/AuthPromptModal'
 import WgiMethodologyModal from './components/governance/WgiMethodologyModal'
 import AppPageHeader from './components/layout/AppPageHeader'
@@ -412,16 +411,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           updateActionDetail={updateActionDetail}
         />
       </section>
-
-      {!isAuthView && !isAnyModalOpen && activeView !== 'landing' && (
-        <SiteFooter
-          isAuthenticated={isAuthenticated}
-          onAuthPrompt={triggerAuthPrompt}
-          onExplorePoliticians={() => selectView('politicians')}
-          onExploreDashboard={() => selectView('dashboard')}
-          onCompare={() => selectView('compare')}
-        />
-      )}
 
       <AuthPromptModal
         isOpen={authModalConfig.isOpen}
