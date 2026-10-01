@@ -10,6 +10,25 @@
   .topNavFrame {
     max-width: 780px;
   }
+
+  .topNavRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .topNavRow > .hoverNav {
+    grid-column: 2;
+    justify-self: center;
+    left: auto;
+    position: static;
+    top: auto;
+    transform: none;
+  }
+
+  .topNavRow > :last-child {
+    grid-column: 3;
+    justify-self: end;
+  }
 }
 
 .hoverNav {
