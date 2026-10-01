@@ -13,12 +13,10 @@ public class AuthDtos {
             @NotBlank(message = "email is required.") @Email(message = "email must be a valid email address.") @Size(max = 150, message = "email must be at most 150 characters.") String email,
             @NotBlank(message = "password is required.")
             @Size(min = 8, max = 120, message = "password must be between 8 and 120 characters.")
-            @Pattern.List({
-                    @Pattern(regexp = ".*[a-z].*", message = "password must include a lowercase letter."),
-                    @Pattern(regexp = ".*[A-Z].*", message = "password must include an uppercase letter."),
-                    @Pattern(regexp = ".*\\d.*", message = "password must include a number."),
-                    @Pattern(regexp = ".*[^A-Za-z0-9\\s].*", message = "password must include a special character.")
-            })
+            @Pattern(
+                    regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9\\s]).*$",
+                    message = "password must include a lowercase letter, uppercase letter, number, and special character."
+            )
             String password,
             @Size(max = 50) String role
     ) {}
