@@ -127,7 +127,7 @@
 .workspace {
   display: grid;
   gap: 22px;
-  padding: 32px 0 56px;
+  padding: 36px clamp(12px, 1.5vw, 24px) 88px;
   animation: fadeUp var(--duration-base) var(--ease-out) both;
 }
 
@@ -140,6 +140,10 @@
 
 .dashboardWorkspace {
   align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 36px clamp(12px, 1.5vw, 24px) 88px;
   width: 100%;
 }
 
@@ -246,7 +250,7 @@
 
 .dashboardRowGrid {
   display: grid;
-  gap: 14px;
+  gap: 18px;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   width: 100%;
 }
@@ -261,7 +265,7 @@
   border: 1px solid var(--line-soft);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
-  padding: 18px;
+  padding: 24px;
 }
 
 @media (min-width: 640px) {

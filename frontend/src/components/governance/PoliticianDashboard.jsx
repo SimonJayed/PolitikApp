@@ -130,7 +130,7 @@ export default function PoliticianDashboard({
   ];
 
   return (
-    <section className="workspace dashboardWorkspace" style={{ gap: '20px', display: 'flex', flexDirection: 'column' }}>
+    <section className="workspace dashboardWorkspace">
       <div className="dashboardHeroBanner" style={{
         background: 'linear-gradient(148deg, var(--ph-blue) 0%, #0c1e4a 55%, #06102a 100%)',
         borderRadius: 'var(--radius-xl)',
