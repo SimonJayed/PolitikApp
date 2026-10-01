@@ -1,6 +1,7 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '../components/icons/Lucide'
 import KPIWidget from '../components/governance/KPIWidget'
 import TimelineLedgerDecoupled from '../components/governance/TimelineLedger'
+import { SkeletonLine } from '../components/Skeletons'
 
 export function initialsFor(name = '') {
   return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
@@ -36,7 +37,7 @@ export function PaginationMini({ page, totalPages, onChange }) {
 
 export function StatusLine({ state }) {
   if (!state?.message) return null
-  if (state.status === 'loading') return <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-600 shadow-xs"><div className="flex items-center gap-3"><span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" /><span className="sr-only">{state.message}</span><div className="h-2 w-40 rounded-full bg-slate-100 animate-pulse" aria-hidden="true" /></div></div>
+  if (state.status === 'loading') return <div className="pageLoadingSkeleton" aria-label={state.message} aria-live="polite"><SkeletonLine width="38%" height={14} /><SkeletonLine width="82%" height={10} /><SkeletonLine width="64%" height={10} /></div>
   return <p className={`statusLine ${state.status}`}>{state.message}</p>
 }
 
@@ -49,7 +50,7 @@ export function ProfileSkeleton() {
 }
 
 export function PageSectionLoader() {
-  return <section className="flex min-h-[120px] items-center justify-center rounded-2xl border border-slate-100 bg-white p-6 shadow-xs" aria-live="polite"><div className="flex items-center gap-3 text-slate-400"><span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-500" aria-hidden="true" /><span className="text-sm font-semibold tracking-wide">Loading content</span></div></section>
+  return <section className="pageSectionSkeleton" aria-label="Loading content" aria-live="polite"><SkeletonLine width="42%" height={18} /><SkeletonLine width="78%" height={12} /><SkeletonLine width="92%" height={12} /><SkeletonLine width="68%" height={12} /></section>
 }
 
 export function KpiGrid(props) { return <KPIWidget {...props} /> }

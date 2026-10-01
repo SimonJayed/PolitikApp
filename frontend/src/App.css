@@ -100,6 +100,27 @@
   padding-inline: clamp(16px, 2vw, 32px);
 }
 
+.profileBackLink {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  display: inline-flex;
+  font-family: var(--display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 8px;
+  margin: 0 0 16px;
+  min-height: 36px;
+  padding: 6px 8px;
+}
+
+.profileBackLink:hover,
+.profileBackLink:focus-visible {
+  background: var(--bg-inset);
+  color: var(--ph-blue);
+}
+
 /* ── Top bar ───────────────────────────────────────────────────────── */
 .topBar {
   align-items: center;
@@ -147,6 +168,16 @@
   width: 100%;
 }
 
+.dashboardWorkspace .pageLoadingSkeleton,
+.dashboardWorkspace .pageSectionSkeleton {
+  display: none;
+}
+
+.dashboardWorkspace:has(.dashboardCardGrid) > .flex.items-center.justify-between {
+  margin-bottom: -10px;
+  margin-top: -12px;
+}
+
 .compareWorkspace {
   padding-bottom: 32px;
 }
@@ -178,7 +209,7 @@
 .dashboardHeaderBlock {
   display: grid;
   gap: 10px;
-  padding: 24px 26px;
+  padding: 28px 30px;
 }
 
 .dashboardHeaderBlock h2 {
@@ -218,9 +249,9 @@
 .dashboardFilterBar {
   align-items: end;
   display: grid;
-  gap: 14px;
+  gap: 18px;
   grid-template-columns: minmax(220px, 1.1fr) minmax(180px, 0.9fr) minmax(170px, 220px);
-  padding: 18px 20px;
+  padding: 22px 24px;
 }
 
 .dashboardQuickLoad,
@@ -344,6 +375,178 @@
   justify-content: center;
   overflow: hidden;
   letter-spacing: -0.02em;
+}
+
+.politicianProfileWorkspace {
+  gap: 24px;
+}
+
+.politicianProfileHero {
+  align-items: center;
+  background: linear-gradient(135deg, var(--ph-blue) 0%, var(--ph-blue-mid) 58%, var(--ph-blue-light) 100%);
+  border: 1px solid rgba(10, 29, 66, 0.18);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 40px rgba(10, 29, 66, 0.2);
+  color: var(--text-inverse);
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  min-height: 188px;
+  overflow: hidden;
+  padding: 28px 32px;
+  position: relative;
+}
+
+.politicianProfileHero::after {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+  content: '';
+  height: 260px;
+  position: absolute;
+  right: -80px;
+  top: -140px;
+  width: 260px;
+}
+
+.politicianProfileHero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.politicianProfilePortrait {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-lg);
+  display: flex;
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 800;
+  height: 112px;
+  justify-content: center;
+  overflow: hidden;
+  width: 112px;
+}
+
+.politicianProfilePortrait img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.politicianProfileIdentity h1 {
+  color: #fff;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin: 8px 0 12px;
+}
+
+.politicianProfileIdentity .ty-page-kicker {
+  color: var(--ph-gold-light);
+}
+
+.politicianProfileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.politicianProfileMeta span {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-full);
+  color: rgba(240, 249, 255, 0.9);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 7px 11px;
+}
+
+.politicianProfileStatus {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.politicianProfileStatus .ty-label {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.politicianProfileStatus strong {
+  background: #d7f7e9;
+  border-radius: var(--radius-full);
+  color: #087443;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+}
+
+.politicianProfileActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.politicianProfileBody {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+}
+
+.politicianProfileBody .biographyBlock,
+.politicianProfileDetails {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 26px;
+}
+
+.politicianProfileBody .biographyBlock {
+  display: grid;
+  gap: 10px;
+  margin-top: 0 !important;
+}
+
+.politicianProfileDetails {
+  display: grid;
+  gap: 14px;
+}
+
+.politicianProfileDetails dl {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.politicianProfileDetails dl div {
+  align-items: baseline;
+  border-bottom: 1px solid var(--line-hairline);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+.politicianProfileDetails dt {
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.politicianProfileDetails dd {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0;
+  text-align: right;
 }
 
 .dashboardCardAvatar { width: 76px; font-size: 1.1rem; }
@@ -600,15 +803,15 @@
 .compareFilterBar {
   align-items: end;
   display: grid;
-  gap: 16px;
+  gap: 18px;
   grid-template-columns: minmax(280px, 1fr) minmax(180px, 240px);
-  padding: 20px;
+  padding: 24px;
 }
 
 .compareSelectionGrid,
 .comparisonGrid {
   display: grid;
-  gap: 20px;
+  gap: 24px;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
 }
@@ -619,7 +822,7 @@
 
 .compareLedgerPair {
   display: grid;
-  gap: 20px;
+  gap: 24px;
   grid-column: 1 / -1;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: start;
@@ -669,6 +872,26 @@
   background: linear-gradient(90deg, #e8edf5 25%, #f2f6fb 50%, #e8edf5 75%);
   background-size: 220% 100%;
   animation: appSkeletonShimmer 1.2s ease-in-out infinite;
+}
+
+.pageLoadingSkeleton,
+.pageSectionSkeleton {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+  display: grid;
+  gap: 10px;
+  padding: 20px 22px;
+}
+
+.pageLoadingSkeleton {
+  min-height: 92px;
+}
+
+.pageSectionSkeleton {
+  min-height: 180px;
+  padding: 24px;
 }
 
 @keyframes appSkeletonShimmer {
@@ -820,7 +1043,7 @@
 
 .compareColumn {
   min-height: 420px;
-  padding: 22px;
+  padding: 24px;
 }
 
 .compareColumn.right { border-left: 1px solid var(--line-hairline); }
@@ -856,10 +1079,10 @@
   align-items: center;
   border-radius: var(--radius-md);
   display: grid;
-  gap: 14px;
+  gap: 16px;
   grid-template-columns: 66px minmax(0, 1fr) auto;
   min-height: 98px;
-  padding: 16px;
+  padding: 18px;
   text-align: left;
 }
 
@@ -1861,10 +2084,10 @@ button:disabled {
 .review-card {
   box-sizing: border-box;
   display: grid;
-  gap: 18px;
+  gap: 20px;
   height: 100%;
   min-height: 100%;
-  padding: 30px;
+  padding: 26px;
   text-align: left;
   transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast) var(--ease-out);
 }
@@ -1877,8 +2100,28 @@ button:disabled {
 
 .myContribGrid {
   display: grid;
-  gap: 16px;
+  gap: 20px;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.workspace:has(.myContribGrid) > .dashboardHeaderBlock {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  padding: 28px 30px;
+}
+
+.workspace:has(.myContribGrid) > .dashboardHeaderBlock h2 {
+  flex: 0 0 100%;
+}
+
+.workspace:has(.myContribGrid) > .dashboardHeaderBlock p {
+  flex: 1 1 280px;
+}
+
+.workspace:has(.myContribGrid) > .dashboardHeaderBlock button {
+  flex: 0 0 auto;
 }
 
 .myContribPagination {
@@ -2670,6 +2913,20 @@ button:disabled {
   .kpiGrid,
   .kpiGrid.compact {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .politicianProfileHero,
+  .politicianProfileBody {
+    grid-template-columns: 1fr;
+  }
+
+  .politicianProfileHero {
+    align-items: start;
+    padding: 24px;
+  }
+
+  .politicianProfileStatus {
+    align-items: flex-start;
   }
 
   .matrixHero,

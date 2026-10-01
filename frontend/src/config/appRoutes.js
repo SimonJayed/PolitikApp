@@ -31,5 +31,6 @@ export const headerTitleHiddenFor = new Set([
   'moderation',
   'landing',
   'auth',
+  'profile',
   'profileMatrix',
 ])

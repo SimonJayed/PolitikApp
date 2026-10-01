@@ -9,7 +9,7 @@ import {
   LogOutIcon,
   MenuIcon,
   SunIcon,
-  UserCircleIcon,
+  UserIcon,
   UsersIcon,
 } from './icons/Lucide'
 import './TopNav.css'
@@ -158,9 +158,7 @@ function TopNav({
                       aria-haspopup="menu"
                       aria-label="User menu"
                     >
-                      <span className="grid h-10 w-10 place-items-center rounded-xl bg-[color:var(--ph-red)]/90 text-white xl:h-8 xl:w-8 xl:rounded-lg">
-                        <UserCircleIcon size={22} />
-                      </span>
+                      <UserIcon size={22} />
                       <span className="max-w-[140px] truncate font-semibold xl:max-w-[120px]">
                         {user?.fullName || user?.email || 'User'}
                       </span>
@@ -184,7 +182,7 @@ function TopNav({
                             onClick={() => navigate('profileMatrix')}
                             className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white"
                           >
-                            <UserCircleIcon size={21} />
+                            <UserIcon size={21} />
                             <span>My Profile</span>
                           </button>
                           <button
@@ -251,7 +249,7 @@ function TopNav({
                   <>
                     <MobileMenuItem
                       active={activeView === 'profileMatrix'}
-                      icon={UserCircleIcon}
+                      icon={UserIcon}
                       label="My Profile"
                       onClick={() => navigate('profileMatrix')}
                     />

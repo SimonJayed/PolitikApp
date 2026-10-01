@@ -3,6 +3,7 @@ import './App.css'
 import { useAuth } from './auth/AuthContext'
 import TopNav from './components/TopNav'
 import AuthPromptModal from './components/AuthPromptModal'
+import { ArrowLeftIcon } from './components/icons/Lucide'
 import WgiMethodologyModal from './components/governance/WgiMethodologyModal'
 import AppPageHeader from './components/layout/AppPageHeader'
 import NoticeBanner from './components/layout/NoticeBanner'
@@ -373,6 +374,12 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           : `${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28 xl:pt-20'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`}
       >
         {!isAuthView && !isAnyModalOpen && showHeaderTitles && <AppPageHeader activeHeader={activeHeader} />}
+        {!isAuthView && !isAnyModalOpen && activeView === 'profile' && currentRole === 'ADMIN' && (
+          <button className="profileBackLink" type="button" onClick={() => navigateTo('politicians')}>
+            <ArrowLeftIcon size={17} />
+            <span>Back to Politicians</span>
+          </button>
+        )}
         <NoticeBanner message={notFoundNotice} onDismiss={() => setNotFoundNotice('')} />
         <AppRoutes
           activeUser={activeUser}
