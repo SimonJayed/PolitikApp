@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,14 +19,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
-    private final com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository
+            JdbcTemplate jdbcTemplate
     ) {
         this.jwtService = jwtService;
-        this.authUserRepository = authUserRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -45,8 +47,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UUID userId = UUID.fromString(claims.get("uid", String.class));
 
                 // Real-time account lockout check
-                com.politikapp.backend.auth.entity.AuthUser user = authUserRepository.findById(userId).orElse(null);
-                if (user == null || "LOCKED".equals(user.getAccountStatus())) {
+                String accountStatus = resolveAccountStatus(userId);
+                if (accountStatus == null || "LOCKED".equals(accountStatus)) {
                     jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
                     res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
@@ -68,5 +70,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    private String resolveAccountStatus(UUID userId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT account_status FROM users WHERE user_id = ?",
+                    String.class,
+                    userId
+            );
+        } catch (EmptyResultDataAccessException exception) {
+            return null;
+        }
     }
 }

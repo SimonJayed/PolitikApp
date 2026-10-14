@@ -9,6 +9,7 @@ import WgiMethodologyModal from './components/governance/WgiMethodologyModal'
 import './components/governance.css'
 import './components/moderation.css'
 import Account from './pages/Account/Account'
+import AdminNews from './pages/AdminNews/AdminNews'
 import Authentication from './pages/Authentication/Authentication'
 import Dashboard from './pages/Dashboard/Dashboard'
 import History from './pages/History/History'
@@ -48,6 +49,7 @@ const guestRestrictedViews = new Set([
   'politicians',
   'compare',
   'contributions',
+  'adminNews',
   'moderation',
   'profile',
   'submit',
@@ -93,10 +95,12 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const currentRole = activeUser?.role || 'CONTRIBUTOR'
 
   const initialParams = useMemo(() => new URLSearchParams(window.location.search), [])
+  const initialPath = useMemo(() => window.location.pathname, [])
   const initialViewParam = initialParams.get('view')
   const initialPoliticianParam = initialParams.get('id') || initialParams.get('politicianId')
 
   const [activeView, setActiveView] = useState(() => {
+    if (initialPath === '/admin/dashboard') return 'adminNews'
     if (initialViewParam) return initialViewParam
     return isAuthenticated ? 'dashboard' : 'landing'
   })
@@ -147,14 +151,19 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       triggerAuthPrompt('preview')
       return
     }
+    if (viewKey === 'adminNews' && currentRole !== 'ADMIN') {
+      navigateTo('dashboard')
+      return
+    }
     navigateTo(viewKey)
-  }, [isAuthenticated, triggerAuthPrompt])
+  }, [currentRole, isAuthenticated, triggerAuthPrompt])
 
   const activeHeader = {
     account: ['Account', 'User Account'],
     auth: ['Authentication', 'Civic Account Access'],
     compare: ['Compare', 'Compare Politicians'],
     contributions: ['Submissions', 'My Contribution Ledger'],
+    adminNews: ['News', 'Admin Verification Queue'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     politicians: ['Politicians', 'Politicians'],
     history: ['History', 'Account Event Ledger'],
@@ -165,7 +174,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'contributions', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
+  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'contributions', 'adminNews', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const loadPoliticians = useCallback(async () => {
@@ -285,9 +294,18 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
     try {
       const url = new URL(window.location.href)
-      if (viewKey && viewKey !== 'landing') {
+      if (viewKey === 'adminNews') {
+        url.pathname = '/admin/dashboard'
+        url.searchParams.delete('view')
+      } else if (viewKey && viewKey !== 'landing') {
+        if (url.pathname === '/admin/dashboard') {
+          url.pathname = '/'
+        }
         url.searchParams.set('view', viewKey)
       } else {
+        if (url.pathname === '/admin/dashboard') {
+          url.pathname = '/'
+        }
         url.searchParams.delete('view')
       }
 
@@ -312,13 +330,14 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   }, [])
 
   useEffect(() => {
-    if (!isAuthenticated && initialViewParam && guestRestrictedViews.has(initialViewParam)) {
+    const initialRestrictedView = initialPath === '/admin/dashboard' ? 'adminNews' : initialViewParam
+    if (!isAuthenticated && initialRestrictedView && guestRestrictedViews.has(initialRestrictedView)) {
       navigateTo('landing', null, true)
       return
     }
     function handlePopState() {
       const params = new URLSearchParams(window.location.search)
-      const requestedView = params.get('view')
+      const requestedView = window.location.pathname === '/admin/dashboard' ? 'adminNews' : params.get('view')
       const v = !isAuthenticated && guestRestrictedViews.has(requestedView)
         ? 'landing'
         : requestedView || (isAuthenticated ? 'dashboard' : 'landing')
@@ -332,7 +351,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [initialViewParam, isAuthenticated, navigateTo])
+  }, [initialPath, initialViewParam, isAuthenticated, navigateTo])
 
   const coldLoadHandled = useRef(false)
   useEffect(() => {
@@ -354,9 +373,13 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
   useEffect(() => {
     if (isAuthenticated && (activeView === 'auth' || activeView === 'landing')) {
+      navigateTo(currentRole === 'ADMIN' ? 'adminNews' : 'dashboard', null, true)
+      return
+    }
+    if (isAuthenticated && activeView === 'adminNews' && currentRole !== 'ADMIN') {
       navigateTo('dashboard', null, true)
     }
-  }, [isAuthenticated, activeView, navigateTo])
+  }, [activeView, currentRole, isAuthenticated, navigateTo])
 
   async function openPoliticianProfile(politicianId) {
     if (!politicianId) return
@@ -614,6 +637,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           )
         )}
         {activeView === 'profileMatrix' && <ProfileMatrix token={token} user={activeUser} />}
+        {activeView === 'adminNews' && <AdminNews token={token} user={activeUser} />}
         {activeView === 'moderation' && (
           currentRole === 'CONTRIBUTOR' ? (
             <section className="workspace">

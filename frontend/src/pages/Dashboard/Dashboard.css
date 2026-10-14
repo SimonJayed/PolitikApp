@@ -1,0 +1,417 @@
+.newsFeedShell {
+  display: grid;
+  grid-template-columns: minmax(170px, 220px) minmax(0, 760px) minmax(220px, 300px);
+  gap: 20px;
+  align-items: start;
+  width: min(1320px, 100%);
+  margin: 0 auto;
+  padding: 36px clamp(12px, 1.5vw, 24px) 88px;
+}
+
+.feedRail {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 14px;
+}
+
+.feedNav,
+.feedRail section {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-surface);
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.feedNav button,
+.politicianSuggestion {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  font: 700 13px/1.2 var(--display);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-base) var(--ease-out), color var(--duration-base) var(--ease-out);
+}
+
+.feedNav button:hover,
+.politicianSuggestion:hover {
+  background: var(--accent-soft);
+  color: var(--ph-blue);
+}
+
+.feedRail section h2 {
+  margin: 0 0 4px;
+  font: 800 14px/1.2 var(--display);
+  color: var(--text-primary);
+}
+
+.feedRail section p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 8px 0;
+  border-top: 1px solid var(--line-hairline);
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.feedRail section p strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.politicianSuggestion span:first-child {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--ph-blue);
+  color: #fff;
+  font-size: 11px;
+}
+
+.feedMain {
+  display: grid;
+  gap: 14px;
+}
+
+.feedHeader,
+.feedControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-surface);
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.feedHeader h1 {
+  margin: 4px 0 0;
+}
+
+.feedSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: min(320px, 100%);
+  border: 1px solid var(--line-soft);
+  background: var(--bg-inset);
+  border-radius: 999px;
+  padding: 10px 13px;
+  color: var(--text-muted);
+}
+
+.feedSearch input,
+.commentPanel input,
+.feedControls select {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: 600 13px/1.3 var(--sans);
+}
+
+.categoryScroller {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.categoryScroller button,
+.feedControls select,
+.feedPager button,
+.commentPanel button {
+  flex: 0 0 auto;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 9px 12px;
+  font: 700 12px/1 var(--display);
+  cursor: pointer;
+}
+
+.categoryScroller button.active,
+.commentPanel button {
+  border-color: var(--ph-blue);
+  background: var(--ph-blue);
+  color: #fff;
+}
+
+.postStack {
+  display: grid;
+  gap: 14px;
+}
+
+.newsPost {
+  display: grid;
+  gap: 16px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-surface);
+  padding: 20px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.newsPost.skeleton {
+  min-height: 230px;
+  background: linear-gradient(90deg, #fff, #eef4f8, #fff);
+  background-size: 240% 100%;
+  animation: feedPulse 1.4s infinite linear;
+}
+
+.postMeta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.postMeta div {
+  display: grid;
+  min-width: 0;
+}
+
+.postMeta strong,
+.postBody h2 {
+  color: var(--text-primary);
+}
+
+.postMeta span,
+.postBody p,
+.keyPoints,
+.feedNotice span {
+  color: var(--text-secondary);
+}
+
+.sourceBadge {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--ph-blue);
+  font: 800 12px/1 var(--display);
+}
+
+.verifiedPill,
+.categoryPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font: 800 11px/1 var(--display);
+}
+
+.categoryPill {
+  border-color: var(--line-hairline);
+  background: var(--bg-inset);
+  color: var(--text-muted);
+}
+
+.postBody {
+  display: grid;
+  gap: 10px;
+}
+
+.postBody h2 {
+  margin: 0;
+  font: 800 clamp(1.15rem, 2vw, 1.45rem)/1.22 var(--display);
+  letter-spacing: -0.015em;
+}
+
+.postBody p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.keyPoints {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+
+.postActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--line-hairline);
+  padding-top: 12px;
+}
+
+.postActions button,
+.postActions a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-inset);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  padding: 8px 11px;
+  text-decoration: none;
+  font: 700 12px/1 var(--display);
+}
+
+.postActions button:not(:disabled),
+.voteButtons button:not(:disabled) {
+  cursor: pointer;
+}
+
+.postActions button:disabled,
+.voteButtons button:disabled {
+  opacity: 0.55;
+}
+
+.commentPanel {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line-hairline);
+  padding-top: 12px;
+}
+
+.commentPanel form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.commentPanel input {
+  border: 1px solid var(--line-hairline);
+  background: var(--bg-inset);
+  border-radius: 999px;
+  padding: 10px 12px;
+}
+
+.commentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-inset);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+
+.commentRow strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.commentRow span,
+.commentRow p {
+  display: block;
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.voteButtons {
+  display: inline-grid;
+  grid-template-columns: repeat(3, auto);
+  align-items: center;
+  gap: 5px;
+}
+
+.voteButtons button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line-hairline);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--text-secondary);
+}
+
+.feedNotice {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  border: 1px solid var(--line-soft);
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.feedNotice.error {
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.feedPager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+@keyframes feedPulse {
+  to { background-position: -240% 0; }
+}
+
+@media (max-width: 1080px) {
+  .newsFeedShell {
+    grid-template-columns: minmax(0, 1fr);
+    padding-top: 24px;
+  }
+
+  .feedRail {
+    position: static;
+  }
+
+  .feedRail.right {
+    display: none;
+  }
+
+  .feedNav {
+    grid-auto-flow: column;
+    overflow-x: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .feedHeader,
+  .feedControls,
+  .postMeta {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .feedSearch {
+    min-width: 0;
+  }
+
+  .newsPost {
+    padding: 14px;
+  }
+}

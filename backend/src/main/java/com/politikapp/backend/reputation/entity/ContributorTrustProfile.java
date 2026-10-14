@@ -7,10 +7,10 @@ import jakarta.persistence.Table;
 import java.util.UUID;
 
 @Entity
-@Table(name = "contributors")
+@Table(name = "users")
 public class ContributorTrustProfile {
     @Id
-    @Column(name = "contributor_id", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private UUID contributorId;
 
     @Column(name = "account_status", nullable = false, length = 50)

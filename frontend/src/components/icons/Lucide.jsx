@@ -114,6 +114,22 @@ export function BellIcon(props) {
   )
 }
 
+export function BookmarkIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </IconBase>
+  )
+}
+
+export function MessageCircleIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.7 8.7 0 0 1-4-.9L3 21l1.9-5.2a8.2 8.2 0 0 1-.9-3.8 8.5 8.5 0 0 1 17-.5z" />
+    </IconBase>
+  )
+}
+
 export function MenuIcon(props) {
   return (
     <IconBase {...props}>

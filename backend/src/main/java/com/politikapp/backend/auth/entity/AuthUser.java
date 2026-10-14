@@ -6,12 +6,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
+import org.hibernate.annotations.CreationTimestamp;
 
 @Entity
-@Table(name = "contributors")
+@Table(name = "users")
 public class AuthUser {
     @Id
-    @Column(name = "contributor_id", nullable = false)
+    @Column(name = "user_id", nullable = false)
     private UUID userId;
 
     @Column(name = "full_name", nullable = false, length = 150)
@@ -32,7 +33,8 @@ public class AuthUser {
     @Column(name = "account_status", nullable = false, length = 50)
     private String accountStatus = "ACTIVE";
 
-    @Column(name = "created_at", updatable = false)
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
     public UUID getUserId() {
@@ -93,5 +95,9 @@ public class AuthUser {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

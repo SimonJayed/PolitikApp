@@ -2944,3 +2944,226 @@ button:disabled {
     justify-content: space-between;
   }
 }
+
+/* Reference UI alignment */
+.authPageContent {
+  min-width: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: transparent;
+}
+
+.profileBackLink {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  display: inline-flex;
+  font-family: var(--display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  gap: 8px;
+  margin: 0 0 16px;
+  min-height: 36px;
+  padding: 6px 8px;
+}
+
+.profileBackLink:hover,
+.profileBackLink:focus-visible {
+  background: var(--bg-inset);
+  color: var(--ph-blue);
+}
+
+@media (min-width: 1280px) {
+  .pageContent.pt-28 {
+    padding-top: 5rem;
+  }
+}
+
+.politicianProfileWorkspace {
+  gap: 24px;
+}
+
+.politicianProfileHero {
+  align-items: center;
+  background: linear-gradient(135deg, var(--ph-blue) 0%, var(--ph-blue-mid) 58%, var(--ph-blue-light) 100%);
+  border: 1px solid rgba(10, 29, 66, 0.18);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 16px 40px rgba(10, 29, 66, 0.2);
+  color: var(--text-inverse);
+  display: grid;
+  gap: 22px;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  min-height: 188px;
+  overflow: hidden;
+  padding: 28px 32px;
+  position: relative;
+}
+
+.politicianProfileHero::after {
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 50%;
+  content: '';
+  height: 260px;
+  position: absolute;
+  right: -80px;
+  top: -140px;
+  width: 260px;
+}
+
+.politicianProfileHero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.politicianProfilePortrait {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--radius-lg);
+  display: flex;
+  font-family: var(--display);
+  font-size: 2rem;
+  font-weight: 800;
+  height: 112px;
+  justify-content: center;
+  overflow: hidden;
+  width: 112px;
+}
+
+.politicianProfilePortrait img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.politicianProfileIdentity h1 {
+  color: #fff;
+  font-family: var(--display);
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
+  margin: 8px 0 12px;
+}
+
+.politicianProfileIdentity .ty-page-kicker {
+  color: var(--ph-gold-light);
+}
+
+.politicianProfileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.politicianProfileMeta span {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: var(--radius-full);
+  color: rgba(240, 249, 255, 0.9);
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 7px 11px;
+}
+
+.politicianProfileStatus {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.politicianProfileStatus .ty-label {
+  color: rgba(226, 232, 240, 0.7);
+}
+
+.politicianProfileStatus strong {
+  background: #d7f7e9;
+  border-radius: var(--radius-full);
+  color: #087443;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  padding: 8px 12px;
+}
+
+.politicianProfileActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.politicianProfileBody {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr);
+}
+
+.politicianProfileBody .biographyBlock,
+.politicianProfileDetails {
+  background: var(--bg-surface);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 26px;
+}
+
+.politicianProfileBody .biographyBlock {
+  display: grid;
+  gap: 10px;
+  margin-top: 0 !important;
+}
+
+.politicianProfileDetails {
+  display: grid;
+  gap: 14px;
+}
+
+.politicianProfileDetails dl {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.politicianProfileDetails dl div {
+  align-items: baseline;
+  border-bottom: 1px solid var(--line-hairline);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding-bottom: 10px;
+}
+
+.politicianProfileDetails dt {
+  color: var(--text-muted);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.politicianProfileDetails dd {
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin: 0;
+  text-align: right;
+}
+
+@media (max-width: 900px) {
+  .politicianProfileHero,
+  .politicianProfileBody {
+    grid-template-columns: 1fr;
+  }
+
+  .politicianProfileHero {
+    align-items: start;
+    padding: 24px;
+  }
+
+  .politicianProfileStatus {
+    align-items: flex-start;
+  }
+}

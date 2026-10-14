@@ -107,11 +107,26 @@ class SecurityHardeningTests {
                                 }
                                 """.formatted(unique, unique)))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isString())
+                .andExpect(jsonPath("$.refreshToken").isString())
                 .andExpect(jsonPath("$.user.role").value("CONTRIBUTOR"));
 
         AuthUser saved = authUserRepository.findByUsernameIgnoreCase("role_injection_" + unique).orElseThrow();
         assertEquals("CONTRIBUTOR", saved.getRole());
         assertNotEquals("Password123!", saved.getPasswordHash());
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "role_injection_%s",
+                                  "password": "Password123!"
+                                }
+                                """.formatted(unique)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isString())
+                .andExpect(jsonPath("$.refreshToken").isString())
+                .andExpect(jsonPath("$.user.username").value("role_injection_" + unique));
     }
 
     @Test
