@@ -40,6 +40,7 @@ public class ModerationQueueController {
         return ResponseEntity.ok(anonymizedQueue);
     }
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @GetMapping("/archive")
     public ResponseEntity<List<com.politikapp.backend.module2.dto.BallotArchiveEntryResponse>> getBallotArchive(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal
@@ -50,6 +51,7 @@ public class ModerationQueueController {
         return ResponseEntity.ok(moderationQueueService.getBallotArchive(principal.getUserId()));
     }
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @PostMapping("/vote")
     public ResponseEntity<com.politikapp.backend.module2.dto.VoteCalculationTrace> processVote(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal,
@@ -68,6 +70,7 @@ public class ModerationQueueController {
         return ResponseEntity.ok(trace);
     }
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @PostMapping("/escalate/trigger")
     public ResponseEntity<Map<String, Object>> triggerEscalation() {
         log.info("Received manual request to trigger deadlock escalation audit");
@@ -81,6 +84,7 @@ public class ModerationQueueController {
         ));
     }
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @GetMapping("/escalated")
     public ResponseEntity<List<com.politikapp.backend.module2.dto.EscalatedQueueCardResponse>> getEscalatedQueue() {
         log.info("Received request for escalated moderation queue");
@@ -88,6 +92,7 @@ public class ModerationQueueController {
         return ResponseEntity.ok(escalatedQueue);
     }
 
+    @Deprecated(since = "2.0", forRemoval = true)
     @PostMapping("/override")
     public ResponseEntity<com.politikapp.backend.module2.dto.VoteCalculationTrace> processOverride(
             @org.springframework.security.core.annotation.AuthenticationPrincipal com.politikapp.backend.auth.security.AuthPrincipal principal,

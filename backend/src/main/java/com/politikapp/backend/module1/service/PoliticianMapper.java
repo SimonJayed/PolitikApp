@@ -24,8 +24,12 @@ public class PoliticianMapper {
     }
 
     public PoliticianResponse toResponse(Politician politician) {
-        List<ProfileEditSubmission> submissions = submissionRepository
+        List<ProfileEditSubmission> rawSubmissions = submissionRepository
                 .findByPoliticianIdAndStatus(politician.getPoliticianId(), "PUBLISHED");
+
+        List<ProfileEditSubmission> submissions = rawSubmissions.stream()
+                .filter(sub -> dashboardMetricsService.isActionAllowedForPosition(sub.getActionIdentifier(), politician.getPosition()))
+                .toList();
 
         long billsAuthored = countByAction(submissions, "SPONSORED_LEGISLATION");
         long projectCompletions = countByAction(submissions, "PROJECT_COMPLETION");
@@ -36,7 +40,6 @@ public class PoliticianMapper {
                 .map(this::allocationAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // Legacy ratio (retained for backward compatibility)
         double efficiencyRatio = 0.0;
         try {
             if (billsAuthored > 0) {
@@ -46,12 +49,16 @@ public class PoliticianMapper {
             efficiencyRatio = 0.0;
         }
 
-        // Position-aware WGI Composite Score
+        double effBills = dashboardMetricsService.sumEffectiveLegislation(submissions);
+        double effProjects = dashboardMetricsService.sumEffectiveProjects(submissions);
+        BigDecimal totalFlagged = dashboardMetricsService.sumFlaggedAmount(submissions);
+
         double wgiScore = dashboardMetricsService.computeWgiCompositeScore(
                 politician.getPosition(),
-                billsAuthored,
-                projectCompletions,
+                effBills,
+                effProjects,
                 totalBudget,
+                totalFlagged,
                 coaDiscrepancies
         );
 

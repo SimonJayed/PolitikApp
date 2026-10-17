@@ -52,12 +52,12 @@ public class VoteService {
     }
 
     /**
-     * Processes anonymous peer ballots. Scales reviewer weight based on database trust scores,
-     * persists the JuryVote, runs the consensus algorithm, and returns the calculation trace.
+     * @deprecated Deprecated in favor of the Centralized Admin-Curator and Public Challenge pipeline.
      */
+    @Deprecated(since = "2.0", forRemoval = true)
     @Transactional
     public VoteCalculationTrace processPeerBallot(@NonNull UUID queueId, UUID peerId, String voteSelection, String voteReason) {
-        log.info("Processing peer ballot: peerId={}, queueId={}, vote={}", peerId, queueId, voteSelection);
+        log.warn("DEPRECATION NOTICE: processPeerBallot called for queueId={}. Peer voting consensus is deprecated in favor of Admin Adjudication.", queueId);
         String normalizedVote = voteSelection == null ? "" : voteSelection.trim().toUpperCase();
         if (!normalizedVote.equals("AGREE") && !normalizedVote.equals("DISAGREE") && !normalizedVote.equals("FLAG")) {
             throw new HttpResponseException(422, "Unprocessable Entity: voteSelection must be AGREE, DISAGREE, or FLAG.");

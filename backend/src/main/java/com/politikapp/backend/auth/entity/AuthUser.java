@@ -44,7 +44,7 @@ public class AuthUser {
     private BigDecimal trustScore = BigDecimal.valueOf(100.00);
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "sandbox_profile_metrics", columnDefinition = "jsonb")
+    @Column(name = "sandbox_profile_metrics")
     private Map<String, Object> sandboxProfileMetrics = new HashMap<>();
 
     @Column(name = "created_at", updatable = false)

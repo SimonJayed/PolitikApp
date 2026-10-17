@@ -1,12 +1,12 @@
 package com.politikapp.backend.module1.service;
 
+import com.politikapp.backend.common.HttpResponseException;
 import java.util.regex.Pattern;
 import org.springframework.stereotype.Service;
 
 /**
  * Source URL validation service.
- * Performs a non-blocking domain approval evaluation — any URL is accepted,
- * but only .gov.ph and .edu.ph domains return isApprovedDomain = true.
+ * Performs a domain approval evaluation — only .gov.ph and .edu.ph domains are accepted.
  * The approval result is stored alongside the submission in actionDetails JSONB.
  */
 @Service
@@ -17,11 +17,14 @@ public class SourceValidationService {
 
     /**
      * Evaluates whether the source URL originates from an approved domain.
-     * Returns true for whitelisted .gov.ph / .edu.ph domains, false otherwise.
-     * Does NOT throw — all URLs are accepted; the flag is stored for reviewer scrutiny.
+     * Returns true for whitelisted .gov.ph / .edu.ph domains.
+     * Throws HttpResponseException if validation fails.
      */
     public boolean validateSourceUrl(String sourceUrl) {
-        return checkApprovedDomain(sourceUrl);
+        if (!checkApprovedDomain(sourceUrl)) {
+            throw new HttpResponseException(422, "Unprocessable Entity: Target domain fails validation rules.");
+        }
+        return true;
     }
 
     /**

@@ -23,10 +23,25 @@ public class ModerationQueue {
     private UUID appealerId;
 
     @Column(name = "queue_status", length = 50)
-    private String queueStatus = "PENDING";
+    private String queueStatus = "SUBMITTED_REQUEST";
 
     @Column(name = "escalation_flag", nullable = false)
     private boolean escalationFlag = false;
+
+    @Column(name = "challenge_target_id")
+    private UUID challengeTargetId;
+
+    @Column(name = "challenge_reason", columnDefinition = "TEXT")
+    private String challengeReason;
+
+    @Column(name = "evidence_url", columnDefinition = "TEXT")
+    private String evidenceUrl;
+
+    @Column(name = "admin_resolution_notes", columnDefinition = "TEXT")
+    private String adminResolutionNotes;
+
+    @Column(name = "resolved_at")
+    private Instant resolvedAt;
 
     @Column(name = "assigned_at")
     @CreationTimestamp
@@ -45,7 +60,7 @@ public class ModerationQueue {
     public ModerationQueue(UUID submissionId, UUID politicianId) {
         this.submissionId = submissionId;
         this.politicianId = politicianId;
-        this.queueStatus = "PENDING";
+        this.queueStatus = "SUBMITTED_REQUEST";
         this.escalationFlag = false;
     }
 
@@ -95,6 +110,46 @@ public class ModerationQueue {
 
     public void setEscalationFlag(boolean escalationFlag) {
         this.escalationFlag = escalationFlag;
+    }
+
+    public UUID getChallengeTargetId() {
+        return challengeTargetId;
+    }
+
+    public void setChallengeTargetId(UUID challengeTargetId) {
+        this.challengeTargetId = challengeTargetId;
+    }
+
+    public String getChallengeReason() {
+        return challengeReason;
+    }
+
+    public void setChallengeReason(String challengeReason) {
+        this.challengeReason = challengeReason;
+    }
+
+    public String getEvidenceUrl() {
+        return evidenceUrl;
+    }
+
+    public void setEvidenceUrl(String evidenceUrl) {
+        this.evidenceUrl = evidenceUrl;
+    }
+
+    public String getAdminResolutionNotes() {
+        return adminResolutionNotes;
+    }
+
+    public void setAdminResolutionNotes(String adminResolutionNotes) {
+        this.adminResolutionNotes = adminResolutionNotes;
+    }
+
+    public Instant getResolvedAt() {
+        return resolvedAt;
+    }
+
+    public void setResolvedAt(Instant resolvedAt) {
+        this.resolvedAt = resolvedAt;
     }
 
     public Instant getAssignedAt() {

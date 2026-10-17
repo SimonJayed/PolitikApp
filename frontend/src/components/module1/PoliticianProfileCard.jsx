@@ -1,4 +1,5 @@
 import React from 'react';
+import { formatPosition, formatJurisdiction } from './positionConfig';
 
 function initialsFor(name) {
   if (!name) return 'P';
@@ -25,9 +26,9 @@ export default function PoliticianProfileCard({ profile, variant = 'details' }) 
           </span>
         )}
         <div className="profile-identity-block">
-          <p className="eyebrow ty-page-kicker">{profile.position || 'UNSPECIFIED POSITION'}</p>
+          <p className="eyebrow ty-page-kicker">{formatPosition(profile.position) || 'UNSPECIFIED POSITION'}</p>
           <h2 className="ty-section-title" style={{ marginTop: '4px', marginBottom: '8px' }}>{profile.fullName}</h2>
-          <p className="ty-body"><strong>Jurisdiction:</strong> {profile.jurisdiction || 'Unspecified'}</p>
+          <p className="ty-body"><strong>Jurisdiction:</strong> {formatJurisdiction(profile.jurisdiction) || 'Unspecified'}</p>
           <p className="ty-body"><strong>Party Affiliation:</strong> {profile.partyAffiliation || 'Party not disclosed'}</p>
           {profile.termStart && profile.termEnd && (
             <p className="ty-meta" style={{ marginTop: '6px' }}>

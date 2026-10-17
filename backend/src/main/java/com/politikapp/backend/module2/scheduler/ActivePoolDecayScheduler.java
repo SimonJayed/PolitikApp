@@ -10,6 +10,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+@Deprecated(since = "2.0", forRemoval = true)
 @Component
 public class ActivePoolDecayScheduler {
     private static final Logger log = LoggerFactory.getLogger(ActivePoolDecayScheduler.class);
@@ -17,14 +18,19 @@ public class ActivePoolDecayScheduler {
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Scheduled(fixedDelayString = "${politikapp.scheduler.active-pool-decay-ms:900000}")
+    /**
+     * Legacy active voting footprint telemetry for peer jury decay.
+     * Deprecated in favor of the Centralized Admin-Curator and Public Challenge Model.
+     */
+    @Deprecated(since = "2.0", forRemoval = true)
     @Transactional(readOnly = true)
     public void auditActiveVotingFootprint() {
+        Instant cutoff = Instant.now().minus(7, java.time.temporal.ChronoUnit.DAYS);
         Object[] telemetry = (Object[]) entityManager.createNativeQuery(
                 "SELECT COUNT(DISTINCT peer_id), COUNT(*), MAX(created_at) " +
                 "FROM public.jury_votes " +
-                "WHERE created_at >= CURRENT_TIMESTAMP - INTERVAL '7 days'"
-        ).getSingleResult();
+                "WHERE created_at >= :cutoff"
+        ).setParameter("cutoff", java.sql.Timestamp.from(cutoff)).getSingleResult();
 
         long activePeers = telemetry[0] == null ? 0L : ((Number) telemetry[0]).longValue();
         long voteFootprints = telemetry[1] == null ? 0L : ((Number) telemetry[1]).longValue();

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { UserCircleIcon, ExternalLinkIcon } from '../icons/Lucide';
 import LifecycleStageStrip from '../LifecycleStageStrip';
+import { formatActionIdentifier, formatJurisdiction } from '../module1/positionConfig';
 
 function parseActionDetails(card) {
   if (card?.actionDetails && typeof card.actionDetails === 'object') return card.actionDetails;
@@ -55,7 +56,7 @@ export default function ReviewQueueEntryDetails({ card }) {
       <div className="review-cardFacts">
         <div className="review-cardFact">
           <span className="review-cardFactLabel">Action</span>
-          <strong>{String(card.actionIdentifier || card.categoryTag || 'Not provided').replaceAll('_', ' ')}</strong>
+          <strong>{card.actionIdentifier ? formatActionIdentifier(card.actionIdentifier) : (card.categoryTag || 'Not provided')}</strong>
         </div>
         <div className="review-cardFact">
           <span className="review-cardFactLabel">Politician</span>
@@ -84,7 +85,7 @@ export default function ReviewQueueEntryDetails({ card }) {
         </div>
         <div className="review-cardFact">
           <span className="review-cardFactLabel">Jurisdiction</span>
-          <strong>{card.jurisdiction || 'Not provided'}</strong>
+          <strong>{formatJurisdiction(card.jurisdiction) || 'Not provided'}</strong>
         </div>
         <div className="review-cardFact">
           <span className="review-cardFactLabel">Submitted Date</span>

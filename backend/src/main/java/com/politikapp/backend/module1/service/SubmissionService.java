@@ -37,8 +37,9 @@ public class SubmissionService {
             throw new HttpResponseException(401, "Authentication required.");
         }
 
-        // Evaluate domain approval — non-blocking, result is stored as a flag
-        boolean isApprovedDomain = sourceValidationService.checkApprovedDomain(payload.sourceUrl());
+        // Evaluate domain approval — blocking, throws exception if invalid
+        sourceValidationService.validateSourceUrl(payload.sourceUrl());
+        boolean isApprovedDomain = true;
 
         // Enrich actionDetails with the domain approval flag for reviewer visibility
         java.util.Map<String, Object> enrichedDetails = new java.util.HashMap<>(

@@ -8,6 +8,8 @@
  *  - POSITION_KPI_CONFIG     — WGI-pillar-mapped KPI definitions per position group
  *  - MOCK_APPROVED_DOMAINS   — regex-driven domain whitelist (simulates DB table)
  *  - getKpisForPosition()    — pure function: maps position + profile → KPI array
+ *  - getActionsForPosition() — pure function: returns allowed actionIdentifiers for a position
+ *  - getPositionGroupLabel() — pure function: returns display group label for a position
  *
  * Geographic Jurisdiction Scope:
  *  - NATIONAL  → Senator, House Representative
@@ -25,6 +27,18 @@
 // ─── Position Dropdown Options ────────────────────────────────────────────────
 
 export const POSITION_OPTIONS = [
+  {
+    value: 'PRESIDENT',
+    label: 'President',
+    jurisdiction: 'NATIONAL',
+    jurisdictionLabel: 'National',
+  },
+  {
+    value: 'VICE_PRESIDENT',
+    label: 'Vice President',
+    jurisdiction: 'NATIONAL',
+    jurisdictionLabel: 'National',
+  },
   {
     value: 'SENATOR',
     label: 'Senator',
@@ -83,13 +97,17 @@ export const MOCK_APPROVED_DOMAINS = [
  * Maps individual position values to a logical group for KPI selection.
  */
 function resolvePositionGroup(position) {
-  switch (position) {
+  if (!position) return 'DEFAULT';
+  switch (position.toUpperCase()) {
+    case 'PRESIDENT':
+    case 'MAYOR':
+      return 'EXECUTIVE';
+    case 'VICE_PRESIDENT':
+    case 'VICE_MAYOR':
+      return 'VICE_EXECUTIVE';
     case 'SENATOR':
     case 'HOUSE_REPRESENTATIVE':
       return 'LEGISLATIVE';
-    case 'MAYOR':
-    case 'VICE_MAYOR':
-      return 'EXECUTIVE';
     case 'CITY_COUNCILOR':
       return 'COUNCIL';
     default:
@@ -169,7 +187,44 @@ const POSITION_KPI_CONFIG = {
       {
         key: 'legislativeEfficiencyRatio',
         label: 'Project Efficiency',
-        wgiPillar: 'Political Stability and Absence of Violence',
+        wgiPillar: 'Rule of Law',
+        format: (v) => `${Number(v || 0).toFixed(1)}%`,
+      },
+    ],
+  },
+
+  VICE_EXECUTIVE: {
+    groupLabel: 'Vice Executive',
+    kpis: [
+      {
+        key: 'billsAuthored',
+        label: 'Ordinances/Policies Filed',
+        wgiPillar: 'Voice and Accountability',
+        format: (v) => v ?? 0,
+      },
+      {
+        key: 'projectCompletions',
+        label: 'Projects Completed',
+        wgiPillar: 'Government Effectiveness',
+        format: (v) => v ?? 0,
+      },
+      {
+        key: 'coaAuditDiscrepancies',
+        label: 'COA Findings',
+        wgiPillar: 'Control of Corruption',
+        format: (v) => v ?? 0,
+        isAlert: (v) => (v ?? 0) > 0,
+      },
+      {
+        key: 'trackedBudgetAllocated',
+        label: 'Budget Tracked',
+        wgiPillar: 'Government Effectiveness',
+        format: (v) => formatCurrency(v),
+      },
+      {
+        key: 'legislativeEfficiencyRatio',
+        label: 'Execution Efficiency',
+        wgiPillar: 'Regulatory Quality',
         format: (v) => `${Number(v || 0).toFixed(1)}%`,
       },
     ],
@@ -273,17 +328,48 @@ export function getPositionGroupLabel(position) {
   return POSITION_KPI_CONFIG[group]?.groupLabel ?? 'Politician'
 }
 
+// ─── Position-Aware Action Filter ─────────────────────────────────────────────
+
+/**
+ * Returns the ordered list of allowed `actionIdentifier` values for a
+ * given politician position. Prevents contributors from filing actions
+ * that are structurally invalid for the selected office.
+ *
+ * Rules (aligned with WGI position group methodology):
+ *   LEGISLATIVE  → SPONSORED_LEGISLATION, BUDGET_ALLOCATION, COA_FINDING
+ *   EXECUTIVE    → PROJECT_COMPLETION, BUDGET_ALLOCATION, COA_FINDING
+ *   VICE_EXECUTIVE → SPONSORED_LEGISLATION, PROJECT_COMPLETION, BUDGET_ALLOCATION, COA_FINDING
+ *   COUNCIL      → SPONSORED_LEGISLATION (ordinances), BUDGET_ALLOCATION, COA_FINDING
+ *   DEFAULT      → All 4 actions (fallback for unknown positions)
+ *
+ * @param {string} position - Politician position value (e.g. 'SENATOR', 'MAYOR')
+ * @returns {string[]} Array of valid actionIdentifier strings
+ */
+export function getActionsForPosition(position) {
+  const group = resolvePositionGroup(position)
+  switch (group) {
+    case 'LEGISLATIVE':
+      return ['SPONSORED_LEGISLATION', 'BUDGET_ALLOCATION', 'COA_FINDING']
+    case 'EXECUTIVE':
+      return ['PROJECT_COMPLETION', 'BUDGET_ALLOCATION', 'COA_FINDING']
+    case 'VICE_EXECUTIVE':
+      return ['SPONSORED_LEGISLATION', 'PROJECT_COMPLETION', 'BUDGET_ALLOCATION', 'COA_FINDING']
+    case 'COUNCIL':
+      return ['SPONSORED_LEGISLATION', 'BUDGET_ALLOCATION', 'COA_FINDING']
+    default:
+      return ['COA_FINDING', 'BUDGET_ALLOCATION', 'PROJECT_COMPLETION', 'SPONSORED_LEGISLATION']
+  }
+}
+
 // ─── WGI Composite Score Engine ───────────────────────────────────────────────
 
 /**
  * WGI normalization reference ceilings.
  * Mirror the constants in DashboardMetricsService.java.
  */
-const WGI_CEILING_BILLS    = 50     // Bills / ordinances reference ceiling
+const WGI_CEILING_BILLS = 50     // Bills / ordinances reference ceiling
 const WGI_CEILING_PROJECTS = 30     // Project completions reference ceiling
-const WGI_CEILING_BUDGET   = 500_000_000  // PHP 500M budget reference ceiling
-const WGI_COA_PENALTY      = 5      // Score deducted per COA finding
-const WGI_COA_MAX_PENALTY  = 40     // Maximum total COA deduction
+const WGI_CEILING_BUDGET = 500_000_000  // PHP 500M budget reference ceiling
 
 /** Clamps a value to [0, 100] */
 function clamp100(v) {
@@ -300,15 +386,11 @@ function normalize(raw, ceiling) {
  * Computes the position-aware WGI Composite Score [0–100] for a politician
  * profile object, mirroring the backend DashboardMetricsService logic.
  *
- * WGI Methodology (Kaufmann, Kraay & Mastruzzi):
- *   - Multiple observed indicators per governance dimension
- *   - Weighted linear aggregation of normalized [0–100] indicator values
- *   - Penalization for negative governance signals (COA findings)
- *
  * @param {string} position              - Politician position value
  * @param {number} billsAuthored         - Count of sponsored legislation
  * @param {number} projectCompletions    - Count of completed projects
  * @param {number} trackedBudgetAllocated - Tracked budget in PHP
+ * @param {number} totalFlagged          - Sum of flagged audit amounts in PHP
  * @param {number} coaAuditDiscrepancies - Number of COA findings
  * @returns {number} WGI composite score clamped to [0, 100]
  */
@@ -317,11 +399,12 @@ export function computeWgiCompositeScore(
   billsAuthored = 0,
   projectCompletions = 0,
   trackedBudgetAllocated = 0,
+  totalFlagged = 0,
   coaAuditDiscrepancies = 0,
 ) {
-  const normBills    = normalize(billsAuthored, WGI_CEILING_BILLS)
+  const normBills = normalize(billsAuthored, WGI_CEILING_BILLS)
   const normProjects = normalize(projectCompletions, WGI_CEILING_PROJECTS)
-  const normBudget   = normalize(trackedBudgetAllocated, WGI_CEILING_BUDGET)
+  const normBudget = normalize(trackedBudgetAllocated, WGI_CEILING_BUDGET)
 
   const legEfficiency = clamp100(
     billsAuthored > 0
@@ -334,15 +417,15 @@ export function computeWgiCompositeScore(
 
   switch (group) {
     case 'LEGISLATIVE':
-      // billsAuthored(0.35) + budget(0.25) + legislativeEfficiency(0.30)
       rawScore = normBills * 0.35 + normBudget * 0.25 + legEfficiency * 0.30
       break
     case 'EXECUTIVE':
-      // projectCompletions(0.45) + budget(0.30) + deliveryEfficiency(0.20)
       rawScore = normProjects * 0.45 + normBudget * 0.30 + legEfficiency * 0.20
       break
+    case 'VICE_EXECUTIVE':
+      rawScore = normBills * 0.30 + normProjects * 0.20 + normBudget * 0.25 + legEfficiency * 0.25
+      break
     case 'COUNCIL':
-      // ordinancesFiled(0.40) + budget(0.35)
       rawScore = normBills * 0.40 + normBudget * 0.35
       break
     default:
@@ -350,7 +433,76 @@ export function computeWgiCompositeScore(
       break
   }
 
-  const coaPenalty = Math.min(coaAuditDiscrepancies * WGI_COA_PENALTY, WGI_COA_MAX_PENALTY)
+  const freqPenalty = coaAuditDiscrepancies * 2.0;
+  let magPenalty = 0.0;
+  const budget = Number(trackedBudgetAllocated || 0);
+  const flagged = Number(totalFlagged || 0);
+
+  if (flagged > 0) {
+    if (budget > 0) {
+      magPenalty = Math.min(30.0, (flagged / (budget + 1000.0)) * 40.0);
+    } else {
+      magPenalty = Math.min(30.0, coaAuditDiscrepancies * 3.0);
+    }
+  }
+
+  const coaPenalty = Math.min(40.0, freqPenalty + magPenalty);
   return clamp100(rawScore - coaPenalty)
+}
+
+// ─── Visual Text Formatters ───────────────────────────────────────────────────
+
+/**
+ * Returns a human-readable title for a raw position code (e.g. 'HOUSE_REPRESENTATIVE' -> 'House Representative').
+ * @param {string} position
+ * @returns {string}
+ */
+export function formatPosition(position) {
+  if (!position) return '';
+  const opt = POSITION_OPTIONS.find((o) => o.value === position.toUpperCase());
+  if (opt) return opt.label;
+
+  return position
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Returns a human-readable label for a raw jurisdiction code (e.g. 'CEBU_CITY' -> 'Cebu City').
+ * @param {string} jurisdiction
+ * @returns {string}
+ */
+export function formatJurisdiction(jurisdiction) {
+  if (!jurisdiction) return '';
+  const normalized = jurisdiction.toUpperCase();
+  if (normalized === 'NATIONAL') return 'National';
+  if (normalized === 'CEBU_CITY') return 'Cebu City';
+
+  return jurisdiction
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
+ * Returns a human-readable title for a raw action or category (e.g. 'SPONSORED_LEGISLATION' -> 'Sponsored Legislation').
+ * @param {string} action
+ * @returns {string}
+ */
+export function formatActionIdentifier(action) {
+  if (!action) return '';
+  const ACTION_LABELS = {
+    COA_FINDING: 'COA Audit Finding',
+    BUDGET_ALLOCATION: 'Budget Allocation',
+    PROJECT_COMPLETION: 'Project Completion',
+    SPONSORED_LEGISLATION: 'Sponsored Legislation',
+  };
+  if (ACTION_LABELS[action]) return ACTION_LABELS[action];
+
+  return action
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
 }
 

@@ -1,6 +1,7 @@
 package com.politikapp.backend.module1.service;
 
 import com.politikapp.backend.common.HttpResponseException;
+import com.politikapp.backend.module1.dto.CreatePoliticianRequest;
 import com.politikapp.backend.module1.dto.PoliticianResponse;
 import com.politikapp.backend.module1.dto.UpdatePoliticianRequest;
 import com.politikapp.backend.module1.entity.Politician;
@@ -60,6 +61,42 @@ public class PoliticianService {
         politician.setPartyAffiliation(updates.partyAffiliation());
         politician.setProfileImageUrl(updates.profileImageUrl());
         politician.setBiography(updates.biography());
+
+        Politician saved = politicianRepository.save(politician);
+        return politicianMapper.toResponse(saved);
+    }
+
+    @Transactional
+    public PoliticianResponse createPolitician(CreatePoliticianRequest request) {
+        if (request.fullName() == null || request.fullName().isBlank()) {
+            throw new HttpResponseException(400, "Bad Request: Full name is required.");
+        }
+        if (request.position() == null || request.position().isBlank()) {
+            throw new HttpResponseException(400, "Bad Request: Position is required.");
+        }
+        if (request.jurisdiction() == null || request.jurisdiction().isBlank()) {
+            throw new HttpResponseException(400, "Bad Request: Jurisdiction is required.");
+        }
+        if (request.termStart() == null) {
+            throw new HttpResponseException(400, "Bad Request: Term start date is required.");
+        }
+        if (request.termEnd() == null) {
+            throw new HttpResponseException(400, "Bad Request: Term end date is required.");
+        }
+        if (request.termEnd().isBefore(request.termStart())) {
+            throw new HttpResponseException(400, "Bad Request: Term end cannot be before term start.");
+        }
+
+        Politician politician = new Politician();
+        politician.setFullName(request.fullName().trim());
+        politician.setPosition(request.position().trim());
+        politician.setJurisdiction(request.jurisdiction().trim());
+        politician.setPartyAffiliation(request.partyAffiliation() != null ? request.partyAffiliation().trim() : null);
+        politician.setProfileImageUrl(request.profileImageUrl() != null ? request.profileImageUrl().trim() : null);
+        politician.setBiography(request.biography() != null ? request.biography().trim() : null);
+        politician.setStatus(request.status() != null && !request.status().isBlank() ? request.status().trim() : "ACTIVE");
+        politician.setTermStart(request.termStart());
+        politician.setTermEnd(request.termEnd());
 
         Politician saved = politicianRepository.save(politician);
         return politicianMapper.toResponse(saved);
