@@ -131,6 +131,11 @@ public class NewsService {
         }
     }
 
+    @Transactional
+    public void unsavePost(UUID articleId, UUID userId) {
+        savedPostRepository.deleteByIdUserIdAndIdNewsId(userId, articleId);
+    }
+
     @Transactional(readOnly = true)
     public List<UserCommentResponse> userComments(UUID userId) {
             if (userId == null) throw new HttpResponseException(401, "Authentication required.");

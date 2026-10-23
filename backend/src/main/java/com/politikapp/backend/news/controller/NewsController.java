@@ -89,6 +89,12 @@ public class NewsController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/news/{id}/save")
+    public ResponseEntity<Void> unsave(@PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
+        newsService.unsavePost(id, userId(principal));
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping("/me/comments")
     public List<UserCommentResponse> myComments(@AuthenticationPrincipal AuthPrincipal principal) {
         return newsService.userComments(userId(principal));

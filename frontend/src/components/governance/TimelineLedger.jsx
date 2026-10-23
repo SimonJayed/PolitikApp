@@ -79,6 +79,7 @@ export default function TimelineLedger({
   isLoading = false,
   onAppeal,
   onAuthPrompt,
+  allowChallenge = true,
   title = 'Published Timeline Ledger',
   user,
 }) {
@@ -182,33 +183,35 @@ export default function TimelineLedger({
                     <span style={{ fontSize: '11px', color: '#94a3b8' }}>Citation pending</span>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!user && onAuthPrompt) {
-                        onAuthPrompt('challenge');
-                        return;
-                      }
-                      setChallengeModalRecord(entry);
-                    }}
-                    title="Challenge this record with counter-evidence or audit discrepancies"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      border: '1px solid #fecaca',
-                      background: '#fff5f5',
-                      color: '#dc2626',
-                      fontSize: '11px',
-                      fontWeight: '600',
-                      cursor: 'pointer',
-                      transition: 'all 150ms ease'
-                    }}
-                  >
-                    Challenge Record
-                  </button>
+                  {allowChallenge && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!user && onAuthPrompt) {
+                          onAuthPrompt('challenge');
+                          return;
+                        }
+                        setChallengeModalRecord(entry);
+                      }}
+                      title="Challenge this record with counter-evidence or audit discrepancies"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        border: '1px solid #fecaca',
+                        background: '#fff5f5',
+                        color: '#dc2626',
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 150ms ease'
+                      }}
+                    >
+                      Challenge Record
+                    </button>
+                  )}
                 </div>
               </article>
             );

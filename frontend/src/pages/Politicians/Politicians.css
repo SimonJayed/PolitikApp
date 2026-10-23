@@ -234,6 +234,47 @@
   gap: 16px;
 }
 
+.polSkeletonCard {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 12px;
+  min-height: 270px;
+  padding: 28px 22px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--p-radius-lg);
+  background: var(--p-surface);
+  box-shadow: var(--p-shadow-sm);
+}
+
+.polSkeletonAvatar,
+.polSkeletonLine {
+  display: block;
+  background: linear-gradient(90deg, var(--p-inset), var(--p-line), var(--p-inset));
+  background-size: 240% 100%;
+  animation: politicianSkeletonPulse 1.4s infinite linear;
+}
+
+.polSkeletonAvatar {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+}
+
+.polSkeletonLine {
+  height: 12px;
+  border-radius: 999px;
+}
+
+.polSkeletonLine.wide { width: 72%; }
+.polSkeletonLine.medium { width: 52%; }
+.polSkeletonLine.short { width: 38%; }
+
+@keyframes politicianSkeletonPulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
 .politiciansPage .polCard {
   --accent: var(--ph-gold);
   position: relative;

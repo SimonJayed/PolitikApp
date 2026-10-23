@@ -163,7 +163,7 @@ public class NewsAiService {
         article.setAiSummary(content.isBlank()
                 ? "Summary requires admin review because the source feed did not provide article text."
                 : truncate(content, 520));
-        article.setAiKeyPoints("Retrieved from an approved government source.\nNeeds administrator verification before publication.");
+        article.setAiKeyPoints("Retrieved from an approved government source.");
         article.setCategory(classify(article.getOriginalTitle() + " " + content));
         article.setAiModel("mock-" + model);
         article.setAiProcessingStatus("MOCKED");

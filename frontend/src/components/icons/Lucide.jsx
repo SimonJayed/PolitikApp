@@ -1,11 +1,11 @@
 import React from 'react'
 
-function IconBase({ children, size = 18, className = '' }) {
+function IconBase({ children, size = 18, className = '', fill = 'none' }) {
   return (
     <svg
       aria-hidden="true"
       className={className}
-      fill="none"
+      fill={fill}
       height={size}
       stroke="currentColor"
       strokeLinecap="round"
@@ -445,4 +445,3 @@ export function ScrollTextIcon(props) {
     </IconBase>
   )
 }
-

@@ -16,6 +16,16 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 const INSIGHTS_SAMPLE_SIZE = 50
 
+// Boilerplate strings that should never be shown to readers.
+const HIDDEN_TEXT = [
+  'Retrieved from an approved government source.',
+  'Retrieved from an approved government source',
+  'Needs administrator verification before publication.',
+]
+const stripHidden = (text = '') =>
+  HIDDEN_TEXT.reduce((result, phrase) => result.split(phrase).join(''), String(text)).replace(/\s{2,}/g, ' ').trim()
+const isHiddenPoint = (point) => HIDDEN_TEXT.some((phrase) => String(point).trim() === phrase)
+
 // Category colors come from the App.css flag palette (--ph-*), so they follow the theme.
 const categoryColors = {
   Legislation: 'var(--ph-blue)',
@@ -214,7 +224,11 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   }
 
   function vote(commentId, newsId, voteType) {
-    if (!token) return
+    if (!token) {
+      setActionMessage('Sign in to vote on comments.')
+      return
+    }
+    if (busy[`vote-${commentId}`]) return
     return guarded(`vote-${commentId}`, async () => {
       const updated = await fetch(`${API_BASE_URL}/api/comments/${commentId}/vote`, {
         method: 'POST',
@@ -232,17 +246,22 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   }
 
   function savePost(newsId) {
-    if (!token) return
+    if (!token) {
+      setActionMessage('Sign in to save posts.')
+      return
+    }
+    if (busy[`save-${newsId}`]) return
+    const post = feed.items.find((item) => item.id === newsId)
+    const isSaved = Boolean(post?.saved)
     return guarded(`save-${newsId}`, async () => {
       const response = await fetch(`${API_BASE_URL}/api/news/${newsId}/save`, {
-        method: 'POST',
+        method: isSaved ? 'DELETE' : 'POST',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!response.ok) await readApiResponse(response)
-      setFeed((current) => ({
-        ...current,
-        items: current.items.map((item) => item.id === newsId ? { ...item, saved: true } : item),
-      }))
+      const toggle = (item) => item.id === newsId ? { ...item, saved: !isSaved } : item
+      setFeed((current) => ({ ...current, items: current.items.map(toggle) }))
+      setInsights((current) => ({ ...current, items: current.items.map(toggle) }))
     })
   }
 
@@ -359,7 +378,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
 
           {actionMessage && (
             <p className="dashboardActionMessage" role="alert">
-              {actionMessage}
+              <span>{actionMessage}</span>
               <button type="button" onClick={() => setActionMessage('')} aria-label="Dismiss message">×</button>
             </p>
           )}
@@ -408,8 +427,11 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
               const comments = commentsByPost[post.id]
               const open = Boolean(comments?.status && comments.status !== 'idle')
               const isFeatured = index === 0 && page === 0 && sort === 'newest' && !query && activeCategory === 'All'
-              const longSummary = (post.summary || '').length > 240
+              const summaryText = stripHidden(post.summary)
+              const longSummary = summaryText.length > 240
               const isExpanded = Boolean(expanded[post.id])
+              const visiblePoints = (post.keyPoints || []).filter((point) => !isHiddenPoint(point)).slice(0, 3)
+              const saveBusy = Boolean(busy[`save-${post.id}`])
               return (
                 <article
                   className={`newsPost${isFeatured ? ' featured' : ''}`}
@@ -430,7 +452,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                   <div className="postBody">
                     <span className="categoryPill"><i className="categoryDot" />{post.category}</span>
                     <h2>{post.headline}</h2>
-                    <p className={longSummary && !isExpanded ? 'clamped' : ''}>{post.summary}</p>
+                    {summaryText && <p className={longSummary && !isExpanded ? 'clamped' : ''}>{summaryText}</p>}
                     {longSummary && (
                       <button
                         className="readMore"
@@ -441,9 +463,9 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                         {isExpanded ? 'Show less' : 'Show more'}
                       </button>
                     )}
-                    {post.keyPoints?.length > 0 && (
+                    {visiblePoints.length > 0 && (
                       <ul className="keyPoints">
-                        {post.keyPoints.slice(0, 3).map((point) => <li key={point}>{point}</li>)}
+                        {visiblePoints.map((point) => <li key={point}>{point}</li>)}
                       </ul>
                     )}
                   </div>
@@ -453,20 +475,23 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                       <MessageCircleIcon size={17} />
                       <span>{open ? 'Hide comments' : `${post.commentCount ?? 0} comment${post.commentCount === 1 ? '' : 's'}`}</span>
                     </button>
-                    <button
-                      className={post.saved ? 'saved' : ''}
-                      disabled={!token || post.saved || busy[`save-${post.id}`]}
-                      title={token ? undefined : 'Sign in to save posts'}
-                      type="button"
-                      onClick={() => savePost(post.id)}
-                    >
-                      <BookmarkIcon size={17} />
-                      <span>{post.saved ? 'Saved' : 'Save'}</span>
-                    </button>
-                    <a className="sourceLink" href={post.sourceUrl} target="_blank" rel="noreferrer">
-                      <ExternalLinkIcon size={17} />
-                      <span>Read original</span>
-                    </a>
+                    <div className="postActionsEnd">
+                      <a className="sourceLink" href={post.sourceUrl} target="_blank" rel="noreferrer">
+                        <ExternalLinkIcon size={17} />
+                        <span>Read original</span>
+                      </a>
+                      <button
+                        className={`saveIconButton${post.saved ? ' saved' : ''}`}
+                        aria-label={post.saved ? 'Unsave update' : 'Save update'}
+                        aria-pressed={Boolean(post.saved)}
+                        disabled={saveBusy}
+                        title={token ? (post.saved ? 'Unsave update' : 'Save update') : 'Sign in to save posts'}
+                        type="button"
+                        onClick={() => savePost(post.id)}
+                      >
+                        <BookmarkIcon fill={post.saved ? 'currentColor' : 'none'} size={17} />
+                      </button>
+                    </div>
                   </footer>
 
                   {open && (
@@ -501,9 +526,27 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                             <p>{comment.content}</p>
                           </div>
                           <div className="voteButtons">
-                            <button aria-label="Upvote" disabled={!token || busy[`vote-${comment.id}`]} type="button" onClick={() => vote(comment.id, post.id, 'UP')}><ThumbUpIcon size={15} /></button>
+                            <button
+                              className="voteUp"
+                              aria-label="Upvote"
+                              title={token ? 'Upvote' : 'Sign in to vote'}
+                              disabled={busy[`vote-${comment.id}`]}
+                              type="button"
+                              onClick={() => vote(comment.id, post.id, 'UP')}
+                            >
+                              <ThumbUpIcon size={15} />
+                            </button>
                             <strong>{comment.score}</strong>
-                            <button aria-label="Downvote" disabled={!token || busy[`vote-${comment.id}`]} type="button" onClick={() => vote(comment.id, post.id, 'DOWN')}><ThumbDownIcon size={15} /></button>
+                            <button
+                              className="voteDown"
+                              aria-label="Downvote"
+                              title={token ? 'Downvote' : 'Sign in to vote'}
+                              disabled={busy[`vote-${comment.id}`]}
+                              type="button"
+                              onClick={() => vote(comment.id, post.id, 'DOWN')}
+                            >
+                              <ThumbDownIcon size={15} />
+                            </button>
                           </div>
                         </div>
                       ))}

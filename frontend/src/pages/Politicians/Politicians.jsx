@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangleIcon, SearchIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
-import { initialsFor, LoadingSkeletonCards, PageSectionLoader, PaginationMini, StatusLine } from '../pageHelpers'
+import { initialsFor, PaginationMini, StatusLine } from '../pageHelpers'
 import './Politicians.css'
 
 const PAGE_SIZE = 9
@@ -115,8 +115,6 @@ export default function PoliticiansLoaderPanel({
 
       <StatusLine state={politiciansState} />
       <StatusLine state={state} />
-      {isLoading && <PageSectionLoader />}
-
       <div className="polResultsBar">
         <p>
           Showing <strong>{filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)}</strong> of <strong>{filtered.length}</strong>
@@ -125,7 +123,14 @@ export default function PoliticiansLoaderPanel({
       </div>
 
       <section className="polGrid" aria-label="Politicians">
-        {isLoading && <LoadingSkeletonCards count={4} />}
+        {isLoading && Array.from({ length: 6 }).map((_, index) => (
+          <div className="polSkeletonCard" key={`politician-skeleton-${index}`} aria-hidden="true">
+            <span className="polSkeletonAvatar" />
+            <span className="polSkeletonLine wide" />
+            <span className="polSkeletonLine medium" />
+            <span className="polSkeletonLine short" />
+          </div>
+        ))}
 
         {!isLoading && filtered.length === 0 && (
           <div className="polEmpty">

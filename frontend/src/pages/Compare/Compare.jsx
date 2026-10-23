@@ -128,8 +128,8 @@ function ComparisonResult({ comparison }) {
           <div className="cmpMatrixRow" key={row.categoryTag}>
             <h4 className="cmpCategory">{row.categoryTag}</h4>
             <div className="cmpLedgerPair">
-              <TimelineLedger className="comparisonLedgerCard" entries={row.recordsA || []} title={nameA} />
-              <TimelineLedger className="comparisonLedgerCard" entries={row.recordsB || []} title={nameB} />
+              <TimelineLedger allowChallenge={false} className="comparisonLedgerCard" entries={row.recordsA || []} title={nameA} />
+              <TimelineLedger allowChallenge={false} className="comparisonLedgerCard" entries={row.recordsB || []} title={nameB} />
             </div>
           </div>
         ))}

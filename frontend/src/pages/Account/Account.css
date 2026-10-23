@@ -192,10 +192,10 @@
 }
 
 .settingsStatus {
-  background: var(--success-soft);
-  border: 1px solid var(--success-border);
+  background: #dcfce7;
+  border: 1px solid #86efac;
   border-radius: var(--radius-full);
-  color: var(--success);
+  color: #15803d !important;
   display: inline-flex;
   font-family: var(--mono);
   font-size: 0.68rem;
