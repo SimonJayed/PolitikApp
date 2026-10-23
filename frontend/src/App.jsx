@@ -450,22 +450,28 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
   return (
     <main className="appShell">
-      <TopNav
-        activeView={activeView}
-        isCompareModalOpen={isCompareModalOpen}
-        isModalOpen={isAnyModalOpen || authModalConfig.isOpen || isWgiMethodologyOpen}
-        onAuthClick={(mode) => {
-          setAuthMode(mode || 'login')
-          navigateTo('auth')
-        }}
-        onLogout={onLogout}
-        onSelectView={selectView}
-        title="PolitikApp"
-        user={activeUser}
-      />
+      {activeView !== 'auth' && (
+        <TopNav
+          activeView={activeView}
+          isCompareModalOpen={isCompareModalOpen}
+          isModalOpen={isAnyModalOpen || authModalConfig.isOpen || isWgiMethodologyOpen}
+          onAuthClick={(mode) => {
+            setAuthMode(mode || 'login')
+            navigateTo('auth')
+          }}
+          onLogout={onLogout}
+          onSelectView={selectView}
+          title="PolitikApp"
+          user={activeUser}
+        />
+      )}
 
       <section
-        className={`${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`}
+        className={
+          activeView === 'auth'
+            ? 'pageContent authPageContent'
+            : `${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`
+        }
       >
         {!isAnyModalOpen && showHeaderTitles && (
           <header className="topBar">
@@ -532,7 +538,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         {activeView === 'auth' && (
           <Authentication
             initialMode={authMode}
-            onBack={() => navigateTo('politicians')}
+            onBack={() => navigateTo('landing')}
           />
         )}
 
