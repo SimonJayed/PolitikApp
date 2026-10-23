@@ -1,421 +1,484 @@
-.profileMatrixWorkspace {
+/* =========================================================
+   Profile — design tokens (scoped; mirrors the dashboard)
+   Fonts are untouched: everything uses the existing --display / --sans.
+   ========================================================= */
+.profileShell {
+  --d-ink: var(--ph-blue);
+  --d-ink-deep: var(--ph-blue-mid);
+  --d-primary: var(--ph-blue-light);
+  --d-primary-strong: var(--ph-blue-mid);
+  --d-primary-soft: color-mix(in srgb, var(--ph-blue-light) 9%, var(--ph-white));
+  --d-accent: var(--ph-gold);
+  --d-gold-soft: color-mix(in srgb, var(--ph-gold) 14%, var(--ph-white));
+  --d-gold-text: color-mix(in srgb, var(--ph-gold) 62%, var(--ph-blue));
+  --d-surface: var(--ph-white);
+  --d-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
+  --d-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
+  --d-line-soft: color-mix(in srgb, var(--ph-blue) 8%, var(--ph-white));
+  --d-text: var(--ph-blue);
+  --d-text-2: color-mix(in srgb, var(--ph-blue) 78%, var(--ph-white));
+  --d-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
+  --d-danger: var(--ph-red);
+  --d-danger-soft: color-mix(in srgb, var(--ph-red) 7%, var(--ph-white));
+  --d-danger-line: color-mix(in srgb, var(--ph-red) 28%, var(--ph-white));
+  --d-radius-lg: 18px;
+  --d-radius-md: 12px;
+  --d-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
+  --d-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.05), 0 12px 32px rgba(10, 29, 66, 0.09);
+
   display: grid;
-  font-family: var(--sans);
   gap: 18px;
-  min-width: 0;
-  padding: clamp(18px, 3vw, 32px);
-  background: #f4f7fb;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 20px clamp(16px, 3vw, 44px) 88px;
+  background: transparent;
+  color: var(--d-text);
 }
 
-.profileMatrixHero {
-  align-items: center;
-  background: linear-gradient(135deg, #102a56 0%, #174e70 58%, #0b766e 100%);
-  border: 1px solid rgba(16, 42, 86, 0.12);
-  border-radius: 18px;
-  box-shadow: 0 18px 44px rgba(16, 42, 86, 0.18);
-  color: #fff;
-  display: flex;
-  gap: 24px;
-  justify-content: space-between;
-  min-height: 184px;
-  overflow: hidden;
-  padding: clamp(22px, 4vw, 36px);
+.profileShell :is(button, a):focus-visible {
+  outline: 2px solid var(--d-primary);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   Hero
+   ========================================================= */
+.profileHero {
   position: relative;
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  padding: 22px clamp(22px, 2.6vw, 34px);
+  border-radius: var(--d-radius-lg);
+  background:
+    radial-gradient(360px 180px at 100% 0%, color-mix(in srgb, var(--ph-red) 42%, transparent), transparent 70%),
+    radial-gradient(320px 180px at 0% 130%, color-mix(in srgb, var(--ph-gold) 30%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--d-ink), var(--d-ink-deep));
+  color: var(--ph-white);
+  box-shadow: var(--d-shadow-sm);
 }
 
-.profileMatrixHero.admin {
-  background: linear-gradient(135deg, #102a56 0%, #3b376f 58%, #a44a36 100%);
+.profileHeroTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
 }
 
-.profileMatrixHero::after {
-  background: rgba(255, 255, 255, 0.08);
+.profileAvatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 50%;
-  content: '';
-  height: 280px;
-  position: absolute;
-  right: -90px;
-  top: -145px;
-  width: 280px;
-}
-
-.profileMatrixHero > * {
-  position: relative;
-  z-index: 1;
-}
-
-.profileMatrixHeroCopy {
-  min-width: 0;
-}
-
-.profileMatrixHeroTitle {
-  color: #fff;
-  font-family: var(--display);
-  font-size: clamp(1.55rem, 3vw, 2.45rem);
-  font-weight: 700;
-  letter-spacing: -0.035em;
-  line-height: 1.08;
-  margin: 12px 0 8px;
-}
-
-.profileMatrixHeroText {
-  color: rgba(240, 249, 255, 0.82);
-  font-size: 13px;
-  line-height: 1.6;
-  margin: 0;
-  max-width: 620px;
-}
-
-.profileMatrixRoleBadge,
-.profileMatrixStatus {
-  align-items: center;
-  border-radius: 999px;
-  display: inline-flex;
-  font-family: var(--mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.profileMatrixRoleBadge {
   background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  padding: 7px 11px;
+  color: var(--ph-white);
+  font: 800 22px/1 var(--display);
 }
 
-.profileMatrixStatus {
-  background: #d7f7e9;
-  color: #087443;
-  justify-content: center;
-  min-width: 108px;
-  padding: 8px 12px;
-}
-
-.profileMatrixHeroScore {
-  align-items: flex-end;
-  background: rgba(6, 19, 42, 0.32);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  flex: 0 0 auto;
-  gap: 10px;
-  min-width: 132px;
-  padding: 16px;
-}
-
-.profileMatrixHeroScoreLabel {
-  color: rgba(226, 232, 240, 0.72);
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.profileMatrixMetrics {
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.profileMatrixMetric {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.05);
+.profileIdentity {
+  flex: 1 1 180px;
   min-width: 0;
-  padding: 16px;
 }
 
-.profileMatrixMetricLabel {
-  color: #64748b;
-  display: block;
-  font-size: 10px;
-  font-family: var(--mono);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.profileMatrixMetricValue {
-  color: #102a56;
-  display: block;
-  font-family: var(--display);
-  font-size: clamp(1.35rem, 2vw, 1.8rem);
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  line-height: 1;
-}
-
-.profileMatrixPanel {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 14px;
-  box-shadow: 0 8px 26px rgba(15, 23, 42, 0.05);
-  min-width: 0;
-  padding: clamp(18px, 3vw, 26px);
-}
-
-.profileMatrixPanelHeader {
-  align-items: flex-start;
-  border-bottom: 1px solid #edf2f7;
-  display: flex;
-  gap: 16px;
-  justify-content: space-between;
-  margin-bottom: 18px;
-  padding-bottom: 15px;
-}
-
-.profileMatrixPanelTitle {
-  align-items: center;
-  color: #102a56;
-  display: flex;
-  font-family: var(--display);
-  font-size: 16px;
-  font-weight: 700;
-  gap: 8px;
+.profileIdentity h1 {
   margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ph-white);
+  font: 800 clamp(1.25rem, 2.2vw, 1.6rem)/1.15 var(--display);
+  letter-spacing: -0.015em;
 }
 
-.profileMatrixPanelDescription {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.55;
-  margin: 5px 0 0;
-  max-width: 680px;
+.profileIdentity p {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font: 600 13px/1.3 var(--sans);
 }
 
-.profileMatrixQueueCount {
-  background: #e6f4fb;
+.profileStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
-  color: #036b91;
-  flex: 0 0 auto;
-  font-size: 11px;
-  font-weight: 600;
-  padding: 6px 10px;
-  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ph-white);
+  font: 700 12px/1 var(--display);
 }
 
-.profileMatrixList {
+.profileStatus.isInactive {
+  background: var(--d-gold-soft);
+  border-color: var(--d-accent);
+  color: var(--d-gold-text);
+}
+
+.profileStats {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
 }
 
-.profileMatrixListItem {
-  align-items: center;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 9px;
+.profileStat {
   display: flex;
-  gap: 14px;
-  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
-  padding: 13px 14px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--d-radius-md);
+  background: rgba(255, 255, 255, 0.07);
 }
 
-.profileMatrixListItem.challenge {
-  background: #fff8f7;
-  border-color: #fecaca;
+.profileStatIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--ph-red);
+  color: var(--ph-white);
 }
 
-.profileMatrixListCopy {
+.profileStat:nth-child(2) .profileStatIcon {
+  background: var(--ph-gold-light);
+  color: var(--ph-blue);
+}
+
+.profileStat:nth-child(3) .profileStatIcon {
+  background: var(--ph-white);
+  color: var(--ph-blue);
+}
+
+.profileStat div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 8px;
   min-width: 0;
 }
 
-.profileMatrixListTitle {
-  color: #172b4d;
-  display: block;
-  font-size: 13px;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.profileStat strong {
+  color: var(--ph-white);
+  font: 800 1.15rem/1 var(--display);
+  font-variant-numeric: tabular-nums;
 }
 
-.profileMatrixListMeta {
-  color: #64748b;
-  display: block;
-  font-size: 11px;
-  font-weight: 500;
-  margin-top: 3px;
+.profileStat div span {
+  color: rgba(255, 255, 255, 0.72);
+  font: 600 11px/1.3 var(--display);
 }
 
-.profileMatrixState {
-  background: #fff;
-  border: 1px dashed #cbd5e1;
-  border-radius: 10px;
-  color: #64748b;
-  font-size: 13px;
-  padding: 30px 18px;
+/* =========================================================
+   Body layout
+   ========================================================= */
+.profileBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.profileMain {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* =========================================================
+   Tabs (same treatment as the dashboard filters)
+   ========================================================= */
+.profileControls {
+  display: flex;
+  padding: 10px 12px;
+  border: 1px solid var(--d-line);
+  border-radius: var(--d-radius-lg);
+  background: var(--d-surface);
+  box-shadow: var(--d-shadow-sm);
+}
+
+.profileTabs {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.profileTabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* The .profileShell prefix beats the app-wide button styles */
+.profileShell .profileTab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--d-text-2);
+  font: 700 12px/1 var(--display);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.profileShell .profileTab:hover:not(.active) {
+  background: var(--d-primary-soft);
+  color: var(--d-primary-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+.profileShell .profileTab.active {
+  background: var(--ph-blue);
+  color: var(--ph-white);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ph-blue) 30%, transparent);
+}
+
+.profileTabCount {
+  min-width: 20px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font: 800 11px/1 var(--display);
+  font-variant-numeric: tabular-nums;
   text-align: center;
 }
 
-@media (max-width: 820px) {
-  .profileMatrixMetrics {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+/* =========================================================
+   Activity cards (same anatomy as dashboard posts)
+   ========================================================= */
+.profileCardList {
+  display: grid;
+  gap: 16px;
 }
 
-@media (max-width: 620px) {
-  .profileMatrixWorkspace {
-    gap: 14px;
-    padding: 14px;
-  }
-
-  .profileMatrixHero {
-    align-items: stretch;
-    flex-direction: column;
-    gap: 18px;
-    min-height: 0;
-  }
-
-  .profileMatrixHeroScore {
-    align-items: flex-start;
-    width: 100%;
-  }
-
-  .profileMatrixMetrics {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .profileMatrixPanelHeader,
-  .profileMatrixListItem {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .profileMatrixQueueCount {
-    align-self: flex-start;
-  }
-
-  .profileMatrixListTitle {
-    white-space: normal;
-  }
+.profileCard {
+  --cat: var(--d-primary);
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--d-line);
+  border-radius: var(--d-radius-lg);
+  background: var(--d-surface);
+  box-shadow: var(--d-shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.socialProfileHeader {
-  display: flex;
+
+.profileCard.saved {
+  --cat: var(--d-accent);
+}
+
+.profileCard::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--cat);
+}
+
+.profileCard:hover {
+  border-color: color-mix(in srgb, var(--cat) 35%, var(--d-line));
+  box-shadow: var(--d-shadow-md);
+}
+
+.profileCardMeta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 18px;
-  padding: 28px;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-lg);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-sm);
+  gap: 12px;
 }
 
-.socialProfileAvatar {
+.profileCardMeta div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profileCardMeta strong {
+  color: var(--d-text);
+  font: 800 14px/1.3 var(--display);
+}
+
+.profileCardMeta time {
+  color: var(--d-muted);
+  font: 600 12px/1.3 var(--sans);
+}
+
+.profileCardIcon {
   display: grid;
   place-items: center;
-  width: 76px;
-  height: 76px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--ph-blue);
-  color: #fff;
-  font: 800 24px/1 var(--display);
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cat) 12%, var(--ph-white));
+  color: color-mix(in srgb, var(--cat) 72%, var(--ph-blue));
 }
 
-.socialProfileIdentity h1 {
+.profileCardPill {
+  width: max-content;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cat) 11%, var(--ph-white));
+  color: color-mix(in srgb, var(--cat) 72%, var(--ph-blue));
+  font: 800 11px/1 var(--display);
+}
+
+.profileCardTitle {
+  max-width: 62ch;
   margin: 0;
-  color: var(--text-primary);
-  font: 800 26px/1.1 var(--display);
+  overflow-wrap: anywhere;
+  color: var(--d-text);
+  font: 800 clamp(1.1rem, 1.8vw, 1.3rem)/1.25 var(--display);
+  letter-spacing: -0.015em;
 }
 
-.socialProfileIdentity p {
-  margin: 5px 0 10px;
-  color: var(--text-muted);
+.profileCardText {
+  display: -webkit-box;
+  max-width: 72ch;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--d-text-2);
+  font: 400 14px/1.7 var(--sans);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
 }
 
-.profileMatrixStatus {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  color: var(--success);
-  font-size: 12px;
-  font-weight: 700;
+.profileCardQuote {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--d-radius-md);
+  background: var(--d-inset);
+  overflow-wrap: anywhere;
+  color: var(--d-text-2);
+  font: 400 14px/1.65 var(--sans);
 }
 
-.socialProfileTabs {
-  display: flex;
-  gap: 6px;
-  border-bottom: 1px solid var(--line-soft);
+/* ---------- Skeleton ---------- */
+.profileCard.isSkeleton {
+  min-height: 150px;
+  align-content: start;
 }
 
-.socialProfileTabs button {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 12px 14px;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  background: transparent;
-  color: var(--text-muted);
-  font: 700 13px/1.2 var(--display);
+.profileCard.isSkeleton i {
+  display: block;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--d-inset), var(--d-line), var(--d-inset));
+  background-size: 240% 100%;
+  animation: profilePulse 1.4s infinite linear;
+}
+
+/* =========================================================
+   Notices
+   ========================================================= */
+.profileNotice {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 44px 32px;
+  border: 1px dashed var(--d-line);
+  border-radius: var(--d-radius-lg);
+  background: var(--d-surface);
+  color: var(--d-text-2);
+  text-align: center;
+  font: 500 14px/1.5 var(--sans);
+}
+
+.profileNotice strong {
+  color: var(--d-text);
+  font: 800 16px/1.3 var(--display);
+}
+
+.profileNoticeIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--d-primary-soft);
+  color: var(--d-primary-strong);
+}
+
+.profileShell .profileNotice button {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin-top: 6px;
+  padding: 9px 16px;
+  border: 1px solid var(--d-primary);
+  border-radius: 999px;
+  background: var(--d-primary);
+  box-shadow: none;
+  color: var(--ph-white);
+  font: 700 12px/1 var(--display);
   cursor: pointer;
 }
 
-.socialProfileTabs button.active {
-  border-bottom-color: var(--ph-blue);
-  color: var(--ph-blue);
+.profileShell .profileNotice button:hover {
+  background: var(--d-primary-strong);
+  box-shadow: none;
 }
 
-.socialActivityList {
-  display: grid;
-  gap: 12px;
+.profileNotice.error {
+  border-style: solid;
+  border-color: var(--d-danger-line);
+  background: var(--d-danger-soft);
 }
 
-.socialActivityCard {
-  display: flex;
-  gap: 12px;
-  padding: 18px;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-md);
-  background: var(--bg-surface);
-  box-shadow: var(--shadow-xs);
+.profileNotice.error strong,
+.profileNotice.error > span {
+  color: var(--d-danger);
 }
 
-.socialActivityIcon {
-  display: grid;
-  place-items: center;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--accent-soft);
-  color: var(--ph-blue);
+/* =========================================================
+   Motion
+   ========================================================= */
+@keyframes profilePulse {
+  to { background-position: -240% 0; }
 }
 
-.socialActivityCard strong {
-  color: var(--text-primary);
-  font-size: 14px;
+@media (prefers-reduced-motion: reduce) {
+  .profileShell *,
+  .profileShell *::before {
+    animation: none !important;
+    transition: none !important;
+  }
 }
 
-.socialActivityCard p {
-  margin: 6px 0;
-  color: var(--text-secondary);
-  line-height: 1.55;
-}
-
-.socialActivityCard time {
-  color: var(--text-muted);
-  font-size: 12px;
-}
-
-@media (max-width: 640px) {
-  .socialProfileHeader {
-    align-items: flex-start;
-    padding: 20px;
+/* =========================================================
+   Responsive
+   ========================================================= */
+@media (max-width: 760px) {
+  .profileStats {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
-  .socialProfileAvatar {
-    width: 58px;
-    height: 58px;
-    font-size: 19px;
+  .profileCard {
+    padding: 18px;
   }
 
-  .socialProfileIdentity h1 {
-    font-size: 21px;
+  .profileCardMeta {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .profileCardPill {
+    grid-column: 1 / -1;
   }
 }
