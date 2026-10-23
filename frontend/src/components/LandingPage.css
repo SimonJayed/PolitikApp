@@ -751,6 +751,12 @@
   color: #ffffff;
 }
 
+.landing-footer-logo {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+}
+
 .landing-footer-copy {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.62);

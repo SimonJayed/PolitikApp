@@ -9,10 +9,10 @@ import {
   LogOutIcon,
   MenuIcon,
   SettingsIcon,
-  SunIcon,
   UserCircleIcon,
   UsersIcon,
 } from './icons/Lucide'
+import politikappLogo from '../assets/politikapp.png'
 import './TopNav.css'
 
 function CenterNavItem({ active, icon: Icon, label, onClick }) {
@@ -115,7 +115,7 @@ function TopNav({
           <div className="topNavRow relative flex min-h-[96px] items-center justify-between gap-5 px-6 py-4 md:px-8 xl:min-h-[72px] xl:gap-4 xl:px-8 xl:py-2">
             <div className="flex min-w-[240px] items-center gap-4 xl:min-w-[175px] xl:gap-3">
               <div className="grid h-14 w-14 place-items-center rounded-2xl bg-[rgba(18,42,88,0.72)] ring-1 ring-white/10 xl:h-10 xl:w-10 xl:rounded-xl">
-                <SunIcon size={24} className="text-[color:var(--ph-gold)]" />
+                <img src={politikappLogo} alt="" className="topNavLogo" />
               </div>
 
               <div className="min-w-0">

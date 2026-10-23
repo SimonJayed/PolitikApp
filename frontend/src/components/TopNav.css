@@ -6,6 +6,12 @@
   border-radius: var(--radius-xl);
 }
 
+.topNavLogo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
 @media (min-width: 1280px) {
   .topNavFrame {
     max-width: 980px;

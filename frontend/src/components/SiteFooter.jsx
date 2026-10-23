@@ -3,6 +3,7 @@ import {
   LayoutDashboardIcon,
   UsersIcon,
 } from './icons/Lucide'
+import politikappLogo from '../assets/politikapp.png'
 import './LandingPage.css'
 
 export default function SiteFooter({
@@ -20,6 +21,7 @@ export default function SiteFooter({
     <footer className="landing-footer">
       <div className="landing-footer-inner">
         <div className="landing-footer-brand">
+          <img src={politikappLogo} alt="" className="landing-footer-logo" />
           <span>PolitikApp</span>
         </div>
 
