@@ -13,18 +13,18 @@ import {
 import './Dashboard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-const categories = ['All', 'Latest', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
+const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 const INSIGHTS_SAMPLE_SIZE = 50
 
-// Category palette: one hue per topic, used for stripes, pills, chart segments and dots.
+// Category colors come from the App.css flag palette (--ph-*), so they follow the theme.
 const categoryColors = {
-  Legislation: '#4f46e5',
-  'Government Projects': '#0891b2',
-  'Public Spending': '#f59e0b',
-  'Audit Reports': '#db2777',
-  'Government Announcements': '#16a34a',
+  Legislation: 'var(--ph-blue)',
+  'Government Projects': 'var(--ph-gold)',
+  'Public Spending': 'var(--ph-red)',
+  'Audit Reports': 'var(--ph-gold-light)',
+  'Government Announcements': 'var(--ph-blue-light)',
 }
-const colorFor = (category) => categoryColors[category] || '#64748b'
+const colorFor = (category) => categoryColors[category] || 'var(--ph-blue-light)'
 
 async function readApiResponse(response) {
   const body = await response.json().catch(() => ({}))
@@ -342,10 +342,19 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                 </button>
               ))}
             </div>
-            <select aria-label="Sort news" value={sort} onChange={(event) => changeSort(event.target.value)}>
-              <option value="newest">Newest first</option>
-              <option value="oldest">Oldest first</option>
-            </select>
+            <div className="sortToggle" role="group" aria-label="Sort news">
+              {[['newest', 'Newest'], ['oldest', 'Oldest']].map(([value, label]) => (
+                <button
+                  className={sort === value ? 'active' : ''}
+                  key={value}
+                  type="button"
+                  aria-pressed={sort === value}
+                  onClick={() => changeSort(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {actionMessage && (
