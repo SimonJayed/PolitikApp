@@ -1,19 +1,176 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangleIcon } from '../../components/icons/Lucide'
+import { AlertTriangleIcon, SearchIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { initialsFor, LoadingSkeletonCards, PageSectionLoader, PaginationMini, StatusLine } from '../pageHelpers'
+import './Politicians.css'
 
-export default function PoliticiansLoaderPanel({ dbUser, onViewProfile, politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token }) {
+const PAGE_SIZE = 9
+
+export default function PoliticiansLoaderPanel({
+  dbUser,
+  onViewProfile,
+  politicians,
+  politiciansState,
+  state,
+  onModalOpenChange,
+  onPoliticianUpdate,
+  onPoliticianCreate,
+  token,
+}) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [positionFilter, setPositionFilter] = useState('ALL')
   const [page, setPage] = useState(1)
-  const pageSize = 9
-  const filtered = useMemo(() => { const q = query.trim().toLowerCase(); return politicians.filter((politician) => matchesJurisdiction(politician.jurisdiction, jurisdictionFilter) && (positionFilter === 'ALL' || politician.position === positionFilter) && (!q || politician.fullName.toLowerCase().includes(q) || (politician.position || '').toLowerCase().includes(q))) }, [jurisdictionFilter, politicians, positionFilter, query])
-  const positions = useMemo(() => Array.from(new Set(politicians.map((politician) => politician.position).filter(Boolean))).sort((left, right) => left.localeCompare(right)), [politicians])
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return politicians.filter((politician) =>
+      matchesJurisdiction(politician.jurisdiction, jurisdictionFilter)
+      && (positionFilter === 'ALL' || politician.position === positionFilter)
+      && (!q || politician.fullName.toLowerCase().includes(q) || (politician.position || '').toLowerCase().includes(q)))
+  }, [jurisdictionFilter, politicians, positionFilter, query])
+
+  const positions = useMemo(
+    () => Array.from(new Set(politicians.map((politician) => politician.position).filter(Boolean))).sort((left, right) => left.localeCompare(right)),
+    [politicians],
+  )
+
   useEffect(() => setPage(1), [query, jurisdictionFilter, positionFilter])
-  useEffect(() => { onModalOpenChange?.(false); return () => onModalOpenChange?.(false) }, [onModalOpenChange])
-  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize)); const safePage = Math.min(page, totalPages); const pageItems = filtered.slice((safePage - 1) * pageSize, safePage * pageSize)
-  return <section className="workspace dashboardWorkspace"><section className="dashboardHeaderBlock"><div className="directoryHeaderRow"><div><h2 className="ty-section-title">Politicians</h2><p className="ty-body">Browse and select a politician to load their performance profile instantly.</p></div>{dbUser?.role === 'ADMIN' && <button type="button" className="directoryAddButton" onClick={() => onPoliticianCreate?.()}>Add Politician</button>}</div></section><section className="dashboardFilterBar" aria-label="Politician filters"><label>Search<input name="dashboardSearch" onChange={(event) => setQuery(event.target.value)} placeholder="Search by name or position" type="text" value={query} /></label><label>Position<select name="dashboardPosition" onChange={(event) => setPositionFilter(event.target.value)} value={positionFilter}><option value="ALL">All Positions</option>{positions.map((position) => <option key={position} value={position}>{formatPosition(position)}</option>)}</select></label><label>Jurisdiction<select name="dashboardJurisdiction" onChange={(event) => setJurisdictionFilter(event.target.value)} value={jurisdictionFilter}><option value="ALL">All</option><option value="NATIONAL">National</option><option value="CEBU_CITY">Cebu City</option></select></label></section><StatusLine state={politiciansState} /><StatusLine state={state} />{state.status === 'loading' && <PageSectionLoader />}<div className="flex items-center justify-between gap-3"><p className="ty-meta text-(--text-muted)">Showing {filtered.length === 0 ? 0 : (safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filtered.length)} of {filtered.length}</p><PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} /></div><section className="dashboardCardGrid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Politicians">{state.status === 'loading' && <LoadingSkeletonCards count={4} />}{state.status !== 'loading' && filtered.length === 0 && <p className="emptyState" style={{ gridColumn: '1/-1', padding: '40px', textAlign: 'center' }}>No politicians found matching your search.</p>}{pageItems.map((politician) => <button className="dashboardCard" key={politician.politicianId} onClick={() => onViewProfile(politician.politicianId)} type="button"><span className="dashboardCardAvatar">{politician.profileImageUrl ? <img alt={politician.fullName} src={politician.profileImageUrl} /> : initialsFor(politician.fullName)}</span><span className="dashboardCardBody"><strong className="ty-card-title">{politician.fullName}</strong><small className="ty-meta">{formatPosition(politician.position) || 'UNKNOWN'}</small><small className="ty-meta">{formatJurisdiction(politician.jurisdiction) || 'Unspecified'}</small><small className="ty-meta">{politician.partyAffiliation || 'Party not disclosed'}</small>{politician.coaAuditDiscrepancies > 0 && <span className="statusLine warning"><AlertTriangleIcon size={14} /> COA Findings ({politician.coaAuditDiscrepancies})</span>}</span></button>)}</section></section>
+  useEffect(() => {
+    onModalOpenChange?.(false)
+    return () => onModalOpenChange?.(false)
+  }, [onModalOpenChange])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
+  const isLoading = state.status === 'loading'
+  const filtersActive = query.trim() !== '' || jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL'
+  const isAdmin = dbUser?.role === 'ADMIN'
+
+  const resetFilters = () => {
+    setQuery('')
+    setJurisdictionFilter('ALL')
+    setPositionFilter('ALL')
+  }
+
+  return (
+    <section className="workspace politiciansPage">
+      <header className="polHero">
+        <div className="polHeroText">
+          <h1>Politicians</h1>
+          <p>Browse and select a politician to load their performance profile instantly.</p>
+        </div>
+        <div className="polHeroSide">
+          <span className="polCountChip">
+            <strong>{politicians.length}</strong> profile{politicians.length === 1 ? '' : 's'}
+          </span>
+          {isAdmin && (
+            <button type="button" className="polAddButton" onClick={() => onPoliticianCreate?.()}>
+              + Add Politician
+            </button>
+          )}
+        </div>
+      </header>
+
+      <section className="polFilters" aria-label="Politician filters">
+        <label className="polField polSearch">
+          <span>Search</span>
+          <div>
+            <SearchIcon size={16} />
+            <input
+              name="dashboardSearch"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by name or position"
+              type="text"
+              value={query}
+            />
+          </div>
+        </label>
+
+        <label className="polField">
+          <span>Position</span>
+          <select name="dashboardPosition" onChange={(event) => setPositionFilter(event.target.value)} value={positionFilter}>
+            <option value="ALL">All Positions</option>
+            {positions.map((position) => (
+              <option key={position} value={position}>{formatPosition(position)}</option>
+            ))}
+          </select>
+        </label>
+
+        <label className="polField">
+          <span>Jurisdiction</span>
+          <select name="dashboardJurisdiction" onChange={(event) => setJurisdictionFilter(event.target.value)} value={jurisdictionFilter}>
+            <option value="ALL">All</option>
+            <option value="NATIONAL">National</option>
+            <option value="CEBU_CITY">Cebu City</option>
+          </select>
+        </label>
+
+        {filtersActive && (
+          <button className="polReset" type="button" onClick={resetFilters}>Reset filters</button>
+        )}
+      </section>
+
+      <StatusLine state={politiciansState} />
+      <StatusLine state={state} />
+      {isLoading && <PageSectionLoader />}
+
+      <div className="polResultsBar">
+        <p>
+          Showing <strong>{filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)}</strong> of <strong>{filtered.length}</strong>
+        </p>
+        <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />
+      </div>
+
+      <section className="polGrid" aria-label="Politicians">
+        {isLoading && <LoadingSkeletonCards count={4} />}
+
+        {!isLoading && filtered.length === 0 && (
+          <div className="polEmpty">
+            <SearchIcon size={28} />
+            <strong>No politicians found</strong>
+            <span>Try a different name, position or jurisdiction.</span>
+            {filtersActive && <button type="button" onClick={resetFilters}>Reset filters</button>}
+          </div>
+        )}
+
+        {pageItems.map((politician) => {
+          const isNational = String(politician.jurisdiction || '').toUpperCase().includes('NATIONAL')
+          return (
+            <button
+              className={`polCard${isNational ? ' national' : ''}`}
+              key={politician.politicianId}
+              onClick={() => onViewProfile(politician.politicianId)}
+              type="button"
+            >
+              <span className="polCardBanner" aria-hidden="true" />
+              <span className="polCardAvatar">
+                {politician.profileImageUrl
+                  ? <img alt={politician.fullName} src={politician.profileImageUrl} />
+                  : initialsFor(politician.fullName)}
+              </span>
+
+              <span className="polCardBody">
+                <strong className="polName">{politician.fullName}</strong>
+                <span className="polPosition">{formatPosition(politician.position) || 'UNKNOWN'}</span>
+                <span className="polMetaList">
+                  <small>{formatJurisdiction(politician.jurisdiction) || 'Unspecified'}</small>
+                  <small>{politician.partyAffiliation || 'Party not disclosed'}</small>
+                </span>
+                {politician.coaAuditDiscrepancies > 0 && (
+                  <span className="polCoaChip">
+                    <AlertTriangleIcon size={14} /> COA Findings ({politician.coaAuditDiscrepancies})
+                  </span>
+                )}
+              </span>
+
+              <span className="polCardFooter">View profile <i aria-hidden="true">→</i></span>
+            </button>
+          )
+        })}
+      </section>
+    </section>
+  )
 }
