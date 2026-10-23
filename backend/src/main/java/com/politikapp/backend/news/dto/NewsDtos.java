@@ -35,6 +35,21 @@ public class NewsDtos {
             int score
     ) {}
 
+    public record UserCommentResponse(
+            UUID id,
+            UUID articleId,
+            String articleTitle,
+            String content,
+            Instant createdAt,
+            int score
+    ) {}
+
+    public record DashboardSummaryResponse(
+            long legislativeRecordsTracked,
+            long recentGovernmentUpdates,
+            long activeCitizenDiscussions
+    ) {}
+
     public record CreateCommentRequest(
             @NotBlank @Size(max = 1000) String content
     ) {}

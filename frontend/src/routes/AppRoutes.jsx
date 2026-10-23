@@ -6,7 +6,6 @@ import Authentication from '../pages/Authentication/Authentication'
 import ComparisonPanel from '../pages/Compare/Compare'
 import MyContributionsPanel from '../pages/Contributions/Contributions'
 import Dashboard from '../pages/Dashboard/Dashboard'
-import History from '../pages/History/History'
 import Landing from '../pages/Landing/Landing'
 import PoliticiansLoaderPanel from '../pages/Politicians/Politicians'
 import PoliticianProfilePage from '../pages/Profile/Profile'
@@ -215,9 +214,6 @@ export default function AppRoutes({
     return <Account token={token} user={activeUser} />
   }
 
-  if (activeView === 'history') {
-    return <History token={token} />
-  }
 
   if (activeView === 'moderation') {
     return currentRole === 'CONTRIBUTOR'

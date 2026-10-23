@@ -12,7 +12,6 @@ import Account from './pages/Account/Account'
 import AdminNews from './pages/AdminNews/AdminNews'
 import Authentication from './pages/Authentication/Authentication'
 import Dashboard from './pages/Dashboard/Dashboard'
-import History from './pages/History/History'
 import Landing from './pages/Landing/Landing'
 import ProfileMatrix from './pages/ProfileMatrix/ProfileMatrix'
 import SubmitContribution from './pages/SubmitContribution/SubmitContribution'
@@ -53,7 +52,6 @@ const guestRestrictedViews = new Set([
   'moderation',
   'profile',
   'submit',
-  'history',
   'account',
   'profileMatrix',
 ])
@@ -166,7 +164,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     adminNews: ['News', 'Admin Verification Queue'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     politicians: ['Politicians', 'Politicians'],
-    history: ['History', 'Account Event Ledger'],
     landing: ['Home', 'Verifiable Governance Platform'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
@@ -681,7 +678,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           )
         )}
         {activeView === 'account' && <Account token={token} user={activeUser} />}
-        {activeView === 'history' && <History token={token} />}
       </section>
 
       <AuthPromptModal

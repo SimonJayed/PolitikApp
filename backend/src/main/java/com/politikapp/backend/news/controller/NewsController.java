@@ -4,11 +4,17 @@ import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.news.dto.NewsDtos.CreateCommentRequest;
 import com.politikapp.backend.news.dto.NewsDtos.NewsArticleResponse;
 import com.politikapp.backend.news.dto.NewsDtos.NewsCommentResponse;
+import com.politikapp.backend.news.dto.NewsDtos.UserCommentResponse;
+import com.politikapp.backend.news.dto.NewsDtos.DashboardSummaryResponse;
 import com.politikapp.backend.news.dto.NewsDtos.VoteRequest;
 import com.politikapp.backend.news.service.NewsService;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.temporal.TemporalAdjusters;
+import java.time.DayOfWeek;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -81,6 +87,27 @@ public class NewsController {
     public ResponseEntity<Void> save(@PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
         newsService.savePost(id, userId(principal));
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me/comments")
+    public List<UserCommentResponse> myComments(@AuthenticationPrincipal AuthPrincipal principal) {
+        return newsService.userComments(userId(principal));
+    }
+
+    @GetMapping("/me/saved-posts")
+    public List<NewsArticleResponse> mySavedPosts(@AuthenticationPrincipal AuthPrincipal principal) {
+        return newsService.savedPosts(userId(principal));
+    }
+
+    @GetMapping("/news/summary")
+    public DashboardSummaryResponse summary() {
+        Instant fourteenDaysAgo = Instant.now().minusSeconds(14 * 24 * 60 * 60);
+        Instant weekStart = java.time.ZonedDateTime.now(ZoneOffset.UTC)
+                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .toLocalDate()
+                .atStartOfDay(ZoneOffset.UTC)
+                .toInstant();
+        return newsService.summary(fourteenDaysAgo, weekStart);
     }
 
     private UUID userId(AuthPrincipal principal) {

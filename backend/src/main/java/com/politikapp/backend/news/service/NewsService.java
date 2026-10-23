@@ -6,6 +6,8 @@ import com.politikapp.backend.common.HttpResponseException;
 import com.politikapp.backend.news.dto.NewsDtos.CreateCommentRequest;
 import com.politikapp.backend.news.dto.NewsDtos.NewsArticleResponse;
 import com.politikapp.backend.news.dto.NewsDtos.NewsCommentResponse;
+import com.politikapp.backend.news.dto.NewsDtos.UserCommentResponse;
+import com.politikapp.backend.news.dto.NewsDtos.DashboardSummaryResponse;
 import com.politikapp.backend.news.dto.NewsDtos.VoteRequest;
 import com.politikapp.backend.news.entity.CommentVote;
 import com.politikapp.backend.news.entity.NewsArticle;
@@ -18,6 +20,7 @@ import com.politikapp.backend.news.repository.SavedPostRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.Set;
 import jakarta.persistence.criteria.Expression;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -126,6 +129,47 @@ public class NewsService {
         if (!savedPostRepository.existsByIdUserIdAndIdNewsId(userId, articleId)) {
             savedPostRepository.save(new SavedPost(userId, article));
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserCommentResponse> userComments(UUID userId) {
+            if (userId == null) throw new HttpResponseException(401, "Authentication required.");
+            return commentRepository.findByUserUserIdAndHiddenFalseAndDeletedAtIsNullOrderByCreatedAtDesc(userId).stream()
+                    .filter(comment -> "PUBLISHED".equals(comment.getArticle().getStatus()))
+                    .map(comment -> new UserCommentResponse(
+                            comment.getId(),
+                            comment.getArticle().getId(),
+                            comment.getArticle().getSuggestedTitle() != null
+                                    ? comment.getArticle().getSuggestedTitle()
+                                    : comment.getArticle().getOriginalTitle(),
+                            comment.getContent(),
+                            comment.getCreatedAt(),
+                            0
+                    ))
+                    .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<NewsArticleResponse> savedPosts(UUID userId) {
+            if (userId == null) throw new HttpResponseException(401, "Authentication required.");
+            return savedPostRepository.findByIdUserIdOrderByCreatedAtDesc(userId).stream()
+                    .map(saved -> saved.getArticle())
+                    .filter(article -> "PUBLISHED".equals(article.getStatus()))
+                    .map(article -> mapper.toArticleResponse(article, true))
+                    .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public DashboardSummaryResponse summary(Instant fourteenDaysAgo, Instant weekStart) {
+            long records = articleRepository.countByPublishedCategories(
+                    "PUBLISHED",
+                    Set.of("Legislation", "Bills", "Resolutions", "Audit Reports", "COA Audit Reports")
+            );
+            return new DashboardSummaryResponse(
+                    records,
+                    articleRepository.countPublishedSince("PUBLISHED", fourteenDaysAgo),
+                    commentRepository.countPublishedSince("PUBLISHED", weekStart)
+            );
     }
 
     private AuthUser user(UUID userId) {

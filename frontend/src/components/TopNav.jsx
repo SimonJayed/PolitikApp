@@ -185,10 +185,6 @@ function TopNav({
                           <SettingsIcon size={21} />
                           <span>Settings</span>
                         </button>
-                        <button type="button" onClick={() => navigate('history')} className="ty-nav flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-white/90 transition hover:bg-[rgba(42,68,120,0.95)] hover:text-white">
-                          <HistoryIcon size={21} />
-                          <span>History</span>
-                        </button>
                         <button type="button" onClick={onLogout} className="ty-nav mt-1 flex w-full items-center gap-3 rounded-xl border-t border-white/10 px-3 py-2.5 pt-3 text-left text-red-200 transition hover:bg-[color:var(--ph-red)]/20 hover:text-white">
                           <LogOutIcon size={21} />
                           <span>Log Out</span>
@@ -244,7 +240,6 @@ function TopNav({
                   <>
                     <MobileMenuItem active={activeView === 'profileMatrix'} icon={UserCircleIcon} label="My Profile" onClick={() => navigate('profileMatrix')} />
                     <MobileMenuItem active={activeView === 'account'} icon={SettingsIcon} label="Settings" onClick={() => navigate('account')} />
-                    <MobileMenuItem active={activeView === 'history'} icon={HistoryIcon} label="History" onClick={() => navigate('history')} />
                     <button
                       type="button"
                       onClick={() => {

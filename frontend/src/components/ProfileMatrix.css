@@ -294,3 +294,128 @@
     white-space: normal;
   }
 }
+.socialProfileHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.socialProfileAvatar {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--ph-blue);
+  color: #fff;
+  font: 800 24px/1 var(--display);
+}
+
+.socialProfileIdentity h1 {
+  margin: 0;
+  color: var(--text-primary);
+  font: 800 26px/1.1 var(--display);
+}
+
+.socialProfileIdentity p {
+  margin: 5px 0 10px;
+  color: var(--text-muted);
+}
+
+.profileMatrixStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--success);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.socialProfileTabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.socialProfileTabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 14px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font: 700 13px/1.2 var(--display);
+  cursor: pointer;
+}
+
+.socialProfileTabs button.active {
+  border-bottom-color: var(--ph-blue);
+  color: var(--ph-blue);
+}
+
+.socialActivityList {
+  display: grid;
+  gap: 12px;
+}
+
+.socialActivityCard {
+  display: flex;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.socialActivityIcon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--ph-blue);
+}
+
+.socialActivityCard strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.socialActivityCard p {
+  margin: 6px 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.socialActivityCard time {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .socialProfileHeader {
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  .socialProfileAvatar {
+    width: 58px;
+    height: 58px;
+    font-size: 19px;
+  }
+
+  .socialProfileIdentity h1 {
+    font-size: 21px;
+  }
+}
