@@ -11,21 +11,6 @@ export function formatDate(value) {
   return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
 }
 
-export function formatCurrency(value) {
-  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0))
-}
-
-export function formatActionMetric(actionDetails, actionIdentifier) {
-  if (!actionDetails) return 'N/A'
-  switch (actionIdentifier) {
-    case 'COA_FINDING': return formatCurrency(actionDetails.flaggedAmount)
-    case 'BUDGET_ALLOCATION': return formatCurrency(actionDetails.allocationAmount)
-    case 'PROJECT_COMPLETION': return `${Number(actionDetails.completionPercentage || 0).toLocaleString('en-PH')}% Completed`
-    case 'SPONSORED_LEGISLATION': return [actionDetails.legislationTitle, actionDetails.legislativeStatus, formatDate(actionDetails.dateFiled)].filter(Boolean).join(' | ') || 'Legislation details'
-    default: return actionDetails.metric !== undefined ? String(actionDetails.metric) : 'View Details'
-  }
-}
-
 export function PaginationMini({ page, totalPages, onChange }) {
   return <nav className="paginationMini" aria-label="Pagination">
     <button type="button" disabled={page <= 1} onClick={() => onChange((current) => Math.max(1, current - 1))} className="paginationButton" aria-label="Previous page"><ArrowLeftIcon size={17} strokeWidth={2.4} /></button>

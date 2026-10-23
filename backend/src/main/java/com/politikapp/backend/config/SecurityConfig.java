@@ -60,7 +60,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/politicians/**").authenticated()
                         .requestMatchers("/api/politicians/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/submissions").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/submissions/contributor/*").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/moderation/appeal").authenticated()
                         .requestMatchers("/api/moderation/**").hasAnyRole("CONTRIBUTOR", "ADMIN", "ADMINISTRATOR")
                         .requestMatchers("/api/submissions/**", "/users/**").authenticated()

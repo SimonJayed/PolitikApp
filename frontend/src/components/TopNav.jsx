@@ -4,7 +4,6 @@ import {
   FileTextIcon,
   GitCompareIcon,
   GavelIcon,
-  HistoryIcon,
   HomeIcon,
   LayoutDashboardIcon,
   LogOutIcon,
@@ -79,7 +78,6 @@ function TopNav({
     }
 
     if (isAuthenticated) {
-      items.push({ key: 'contributions', label: 'Contributions', icon: HistoryIcon })
       if (currentRole !== 'CONTRIBUTOR') {
         items.push({ key: 'moderation', label: 'Moderation', icon: GavelIcon })
       }

@@ -4,7 +4,6 @@ import AdminNews from '../pages/AdminNews/AdminNews'
 import Account from '../pages/Account/Account'
 import Authentication from '../pages/Authentication/Authentication'
 import ComparisonPanel from '../pages/Compare/Compare'
-import MyContributionsPanel from '../pages/Contributions/Contributions'
 import Dashboard from '../pages/Dashboard/Dashboard'
 import Landing from '../pages/Landing/Landing'
 import PoliticiansLoaderPanel from '../pages/Politicians/Politicians'
@@ -33,16 +32,6 @@ function AuthRequiredSubmit({ onSignIn }) {
         >
           Sign In to Submit Evidence
         </button>
-      </div>
-    </section>
-  )
-}
-
-function AuthRequiredContributions() {
-  return (
-    <section className="workspace">
-      <div style={{ textAlign: 'center', padding: '48px 32px' }}>
-        <p className="ty-body">Please sign in to view your contribution history.</p>
       </div>
     </section>
   )
@@ -189,14 +178,6 @@ export default function AppRoutes({
         politiciansState={politiciansState}
         state={comparisonState}
       />
-    )
-  }
-
-  if (activeView === 'contributions') {
-    return isAuthenticated ? (
-      <MyContributionsPanel onNavigateToSubmit={() => navigateTo('submit')} user={activeUser} />
-    ) : (
-      <AuthRequiredContributions />
     )
   }
 

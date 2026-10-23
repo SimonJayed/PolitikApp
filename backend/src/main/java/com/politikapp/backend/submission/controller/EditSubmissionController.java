@@ -51,10 +51,4 @@ public class EditSubmissionController {
         return ResponseEntity.ok(submissionService.getSubmissionsByContributor(principal.getUserId()));
     }
 
-    @GetMapping("/contributor/{contributorId}")
-    public ResponseEntity<java.util.List<SubmissionResponse>> getSubmissionsByContributor(
-            @PathVariable("contributorId") UUID contributorId
-    ) {
-        return ResponseEntity.ok(submissionService.getSubmissionsByContributor(contributorId));
-    }
 }

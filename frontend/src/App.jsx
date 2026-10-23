@@ -18,7 +18,6 @@ import SubmitContribution from './pages/SubmitContribution/SubmitContribution'
 import PoliticiansLoaderPanelExtracted from './pages/Politicians/Politicians'
 import PoliticianProfilePageExtracted from './pages/Profile/Profile'
 import ComparisonPanelExtracted from './pages/Compare/Compare'
-import MyContributionsPanelExtracted from './pages/Contributions/Contributions'
 import {
   AlertTriangleIcon,
   ArrowLeftIcon,
@@ -47,7 +46,6 @@ const guestRestrictedViews = new Set([
   'dashboard',
   'politicians',
   'compare',
-  'contributions',
   'adminNews',
   'moderation',
   'profile',
@@ -160,7 +158,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     account: ['Account', 'User Account'],
     auth: ['Authentication', 'Civic Account Access'],
     compare: ['Compare', 'Compare Politicians'],
-    contributions: ['Submissions', 'My Contribution Ledger'],
     adminNews: ['News', 'Admin Verification Queue'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     politicians: ['Politicians', 'Politicians'],
@@ -171,7 +168,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'contributions', 'adminNews', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
+  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'adminNews', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const loadPoliticians = useCallback(async () => {
@@ -627,17 +624,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
             politiciansState={politiciansState}
             state={comparisonState}
           />
-        )}
-        {activeView === 'contributions' && (
-          !isAuthenticated ? (
-            <section className="workspace">
-              <div style={{ textAlign: 'center', padding: '48px 32px' }}>
-                <p className="ty-body">Please sign in to view your contribution history.</p>
-              </div>
-            </section>
-          ) : (
-            <MyContributionsPanelExtracted onNavigateToSubmit={() => navigateTo('submit')} user={activeUser} />
-          )
         )}
         {activeView === 'profileMatrix' && <ProfileMatrix token={token} user={activeUser} />}
         {activeView === 'adminNews' && <AdminNews token={token} user={activeUser} />}
@@ -1906,125 +1892,10 @@ function PageSectionLoader() {
   )
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  My Contributions Panel                                                      */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function LegacyMyContributionsPanel({ onNavigateToSubmit, user }) {
-  const [contributions, setContributions] = useState([])
-  const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
-  const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    if (!user?.userId) {
-      setContributions([])
-      setState({ status: 'error', message: 'Unable to load contribution history without a user id.' })
-      return
-    }
-
-    fetch(`${API_BASE_URL}/api/submissions/contributor/${user.userId}`)
-      .then(readApiResponse)
-      .then((data) => {
-        setContributions(Array.isArray(data) ? data : [])
-        setState({ status: 'success', message: '' })
-      })
-      .catch((err) => {
-        setContributions([])
-        setState({ status: 'error', message: err.message })
-      })
-  }, [user?.userId])
-
-  const pageSize = 6
-  const totalPages = Math.max(1, Math.ceil(contributions.length / pageSize))
-  const safePage = Math.min(page, totalPages)
-  const pageItems = contributions.slice((safePage - 1) * pageSize, safePage * pageSize)
-
-  useEffect(() => { setPage(1) }, [contributions.length])
-
-  return (
-    <section className="workspace">
-      <section className="dashboardHeaderBlock">
-        <h2 className="ty-section-title">My Contributions</h2>
-        <p className="ty-body">Track the verification lifecycle of your submitted political records.</p>
-        <div>
-          <button type="button" onClick={() => onNavigateToSubmit?.()}>
-            Submit Official Audit Record
-          </button>
-        </div>
-      </section>
-
-      <StatusLine state={state} />
-
-      <div className="myContribGrid">
-        {state.status === 'loading' && <ContributionCardsSkeleton count={4} />}
-        {state.status !== 'loading' && contributions.length === 0 && (
-          <div className="myContribEmpty">
-            <p className="ty-body" style={{ color: 'var(--text-muted)' }}>No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.</p>
-          </div>
-        )}
-
-        {pageItems.map((item) => {
-          return (
-            <article key={item.submissionId} className="review-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ background: 'var(--info-soft)', color: 'var(--info)', border: '1px solid var(--info-border)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em' }}>#{item.submissionId.substring(0, 8).toUpperCase()}</span>
-                <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
-                {[[ 'Category', item.categoryTag ], [ 'Action Tag', formatActionIdentifier(item.actionIdentifier) ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
-                  <div key={k}>
-                    <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
-                    <strong style={{ fontFamily: 'var(--display)', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{v}</strong>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-hairline)', borderLeft: '3px solid var(--line-strong)', padding: '12px 16px', borderRadius: '0 var(--radius-xs) var(--radius-xs) 0', fontStyle: 'italic', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.65' }}>
-                "{item.impactSummary}"
-              </div>
-
-              <div>
-                <span className="ty-label" style={{ display: 'inline', marginRight: '6px' }}>Source</span>
-                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--mono, monospace)', fontSize: '12px', color: 'var(--info)', fontWeight: '500', textDecoration: 'none', borderBottom: '1px solid var(--info-border)' }}>{item.sourceUrl}</a>
-              </div>
-
-              <LifecycleStageStrip status={item.status} title="Lifecycle Stage" />
-            </article>
-          )
-        })}
-      </div>
-      {contributions.length > pageSize && <div className="myContribPagination"><PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} /></div>}
-    </section>
-  )
-}
 /*  Utilities                                                                   */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function initialsFor(name) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0))
-}
-
-function formatActionMetric(actionDetails, actionIdentifier) {
-  if (!actionDetails) return 'N/A'
-  switch (actionIdentifier) {
-    case 'COA_FINDING':
-      return formatCurrency(actionDetails.flaggedAmount)
-    case 'BUDGET_ALLOCATION':
-      return formatCurrency(actionDetails.allocationAmount)
-    case 'PROJECT_COMPLETION':
-      return `${Number(actionDetails.completionPercentage || 0).toLocaleString('en-PH')}% Completed`
-    case 'SPONSORED_LEGISLATION':
-      return [
-        actionDetails.legislationTitle,
-        actionDetails.legislativeStatus,
-        formatDate(actionDetails.dateFiled),
-      ].filter(Boolean).join(' | ') || 'Legislation details'
-    default:
-      return actionDetails.metric !== undefined ? String(actionDetails.metric) : 'View Details'
-  }
 }
 
 function normalizeActionDetails(actionDetails = {}) {
