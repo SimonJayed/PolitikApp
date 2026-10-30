@@ -13,12 +13,12 @@ import java.time.LocalDate;
  * frontend form, preventing HttpMessageNotReadableException (400 Bad Request).
  */
 public record CreatePoliticianRequest(
-        String fullName,
-        String position,
-        String jurisdiction,
-        String partyAffiliation,
-        String profileImageUrl,
-        String biography,
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 150) String fullName,
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 100) String position,
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max = 100) String jurisdiction,
+        @jakarta.validation.constraints.Size(max = 100) String partyAffiliation,
+        @jakarta.validation.constraints.Size(max = 2048) String profileImageUrl,
+        @jakarta.validation.constraints.Size(max = 10000) String biography,
         String status,
 
         @JsonFormat(pattern = "yyyy-MM-dd")

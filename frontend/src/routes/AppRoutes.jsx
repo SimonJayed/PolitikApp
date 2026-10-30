@@ -1,5 +1,6 @@
 import ModerationPanel from '../components/ModerationPanel'
 import RestrictedModerationAccess from '../components/moderation/RestrictedModerationAccess'
+import OpenCongress from '../pages/OpenCongress/OpenCongress'
 import AdminNews from '../pages/AdminNews/AdminNews'
 import Account from '../pages/Account/Account'
 import Authentication from '../pages/Authentication/Authentication'
@@ -73,6 +74,7 @@ export default function AppRoutes({
   triggerAuthPrompt,
   updateActionDetail,
 }) {
+  if (activeView === 'openCongress') return currentRole === 'ADMIN' ? <OpenCongress token={token} politicians={politiciansState.data} /> : null
   if (activeView === 'landing') {
     return (
       <Landing
@@ -114,7 +116,7 @@ export default function AppRoutes({
   }
 
   if (activeView === 'submit') {
-    return isAuthenticated ? (
+    return currentRole === 'ADMIN' ? (
       <SubmitContribution
         formData={formData}
         onChange={setFormDataField}
@@ -197,7 +199,7 @@ export default function AppRoutes({
 
 
   if (activeView === 'moderation') {
-    return currentRole === 'CONTRIBUTOR'
+    return currentRole !== 'ADMIN'
       ? <RestrictedModerationAccess />
       : <ModerationPanel token={token} user={activeUser} />
   }

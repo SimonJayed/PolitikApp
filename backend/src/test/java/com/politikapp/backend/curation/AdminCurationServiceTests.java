@@ -52,6 +52,11 @@ class AdminCurationServiceTests {
     }
 
     @Test
+    void emptyDatabaseReportsZeroCuratedRecords() {
+        assertEquals(0L, adminCurationService.getAdjudicationSummary().totalCuratedRecords());
+    }
+
+    @Test
     void getAdjudicationSummary_computesCountsDirectly() {
         when(moderationQueueRepository.countByQueueStatusIn(anyList())).thenReturn(4L);
         when(moderationQueueRepository.countByQueueStatus("RESOLVED_UPHELD")).thenReturn(12L);

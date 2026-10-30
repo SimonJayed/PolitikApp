@@ -12,7 +12,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 class NewsAiServiceTests {
     @Test
     void mockModeCreatesPendingReviewArticleWithoutPublishing() {
-        NewsAiService service = new NewsAiService(new ObjectMapper());
+        NewsAiService service = new NewsAiService(new ObjectMapper(), org.mockito.Mockito.mock(com.politikapp.backend.politician.repository.PoliticianRepository.class));
         ReflectionTestUtils.setField(service, "aiEnabled", false);
         ReflectionTestUtils.setField(service, "mockMode", true);
         ReflectionTestUtils.setField(service, "model", "gemini-test");
@@ -31,7 +31,7 @@ class NewsAiServiceTests {
 
     @Test
     void realModeWithoutApiKeyFallsBackToManualReview() {
-        NewsAiService service = new NewsAiService(new ObjectMapper());
+        NewsAiService service = new NewsAiService(new ObjectMapper(), org.mockito.Mockito.mock(com.politikapp.backend.politician.repository.PoliticianRepository.class));
         ReflectionTestUtils.setField(service, "aiEnabled", true);
         ReflectionTestUtils.setField(service, "mockMode", false);
         ReflectionTestUtils.setField(service, "model", "gemini-test");
@@ -50,7 +50,7 @@ class NewsAiServiceTests {
 
     @Test
     void parsesStructuredGeminiJsonInsideCodeFence() throws Exception {
-        NewsAiService service = new NewsAiService(new ObjectMapper());
+        NewsAiService service = new NewsAiService(new ObjectMapper(), org.mockito.Mockito.mock(com.politikapp.backend.politician.repository.PoliticianRepository.class));
         Object result = service.parseGeminiJson("""
                 ```json
                 {
@@ -72,7 +72,7 @@ class NewsAiServiceTests {
 
     @Test
     void rejectsGeminiJsonMissingRequiredFields() {
-        NewsAiService service = new NewsAiService(new ObjectMapper());
+        NewsAiService service = new NewsAiService(new ObjectMapper(), org.mockito.Mockito.mock(com.politikapp.backend.politician.repository.PoliticianRepository.class));
 
         assertThrows(IllegalArgumentException.class, () -> service.parseGeminiJson("{\"summary\":\"Only summary\"}"));
     }

@@ -2,13 +2,11 @@ package com.politikapp.backend.news.controller;
 
 import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.news.dto.NewsDtos.AdminNewsSummaryResponse;
-import com.politikapp.backend.news.dto.NewsDtos.FetchResultResponse;
 import com.politikapp.backend.news.dto.NewsDtos.NewsArticleResponse;
 import com.politikapp.backend.news.dto.NewsDtos.RejectArticleRequest;
 import com.politikapp.backend.news.dto.NewsDtos.ReviewArticleRequest;
 import com.politikapp.backend.news.dto.NewsDtos.SourceResponse;
 import com.politikapp.backend.news.service.AdminNewsService;
-import com.politikapp.backend.news.service.GovernmentNewsRetrievalService;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -31,10 +29,14 @@ import org.springframework.web.bind.annotation.RestController;
 @PreAuthorize("hasRole('ADMIN')")
 public class AdminNewsController {
     private final AdminNewsService adminNewsService;
-    private final GovernmentNewsRetrievalService retrievalService;
+    private final com.politikapp.backend.news.service.NewsRetrievalJob retrievalJob;
+    private final com.politikapp.backend.news.service.GovernmentNewsRetrievalService retrievalService;
 
-    public AdminNewsController(AdminNewsService adminNewsService, GovernmentNewsRetrievalService retrievalService) {
+    public AdminNewsController(AdminNewsService adminNewsService,
+            com.politikapp.backend.news.service.NewsRetrievalJob retrievalJob,
+            com.politikapp.backend.news.service.GovernmentNewsRetrievalService retrievalService) {
         this.adminNewsService = adminNewsService;
+        this.retrievalJob = retrievalJob;
         this.retrievalService = retrievalService;
     }
 
@@ -44,12 +46,12 @@ public class AdminNewsController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return adminNewsService.list(status, PageRequest.of(page, Math.min(size, 50), Sort.by(Sort.Direction.DESC, "retrievedAt")));
+        return adminNewsService.list(status, PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 50)), Sort.by(Sort.Direction.DESC, "retrievedAt")));
     }
 
     @GetMapping("/pending")
     public Page<NewsArticleResponse> pending(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "20") int size) {
-        return adminNewsService.pending(PageRequest.of(page, Math.min(size, 50), Sort.by(Sort.Direction.DESC, "retrievedAt")));
+        return adminNewsService.pending(PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 50)), Sort.by(Sort.Direction.DESC, "retrievedAt")));
     }
 
     @GetMapping("/summary")
@@ -63,8 +65,20 @@ public class AdminNewsController {
     }
 
     @PostMapping("/fetch")
-    public FetchResultResponse fetch() {
-        return retrievalService.fetchLatest();
+    @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.ACCEPTED)
+    public com.politikapp.backend.news.service.NewsRetrievalJob.Status fetch() {
+        return retrievalJob.start();
+    }
+
+    @GetMapping("/fetch-status")
+    public com.politikapp.backend.news.service.NewsRetrievalJob.Status fetchStatus() {
+        return retrievalJob.status();
+    }
+
+    @PostMapping("/submit-url")
+    public com.politikapp.backend.news.dto.NewsDtos.SourceFetchResult submitUrl(
+            @Valid @RequestBody com.politikapp.backend.news.dto.NewsDtos.ManualArticleRequest request) {
+        return retrievalService.submitUrl(request);
     }
 
     @PostMapping("/{id}/process-ai")
@@ -112,5 +126,18 @@ public class AdminNewsController {
 
     private UUID userId(AuthPrincipal principal) {
         return principal == null ? null : principal.getUserId();
+    }
+
+    @PostMapping("/sources")
+    public SourceResponse createSource(@Valid @RequestBody com.politikapp.backend.news.dto.NewsDtos.SourceRequest request,
+            @AuthenticationPrincipal AuthPrincipal principal) {
+        return adminNewsService.saveSource(null, request, userId(principal));
+    }
+
+    @PatchMapping("/sources/{id}")
+    public SourceResponse updateSource(@PathVariable UUID id,
+            @Valid @RequestBody com.politikapp.backend.news.dto.NewsDtos.SourceRequest request,
+            @AuthenticationPrincipal AuthPrincipal principal) {
+        return adminNewsService.saveSource(id, request, userId(principal));
     }
 }

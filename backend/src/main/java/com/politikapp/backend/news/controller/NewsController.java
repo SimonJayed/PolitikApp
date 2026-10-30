@@ -48,7 +48,7 @@ public class NewsController {
             @AuthenticationPrincipal AuthPrincipal principal
     ) {
         Sort.Direction direction = "oldest".equalsIgnoreCase(sort) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return newsService.published(category, q, PageRequest.of(page, Math.min(size, 30), Sort.by(direction, "publishedAt")), userId(principal));
+        return newsService.published(category, q, PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 50)), Sort.by(direction, "publishedAt")), userId(principal));
     }
 
     @GetMapping("/news/{id}")

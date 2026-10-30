@@ -1,14 +1,7 @@
 import { useEffect, useState } from 'react'
+import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import './Account.css'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
-
-async function readApiResponse(response) {
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(body.message || `Request failed with status ${response.status}`)
-  return body
-}
 
 function StatusLine({ state }) {
   if (!state?.message) return null

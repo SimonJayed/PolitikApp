@@ -78,11 +78,12 @@ function TopNav({
     }
 
     if (isAuthenticated) {
-      if (currentRole !== 'CONTRIBUTOR') {
+      if (currentRole === 'ADMIN') {
         items.push({ key: 'moderation', label: 'Moderation', icon: GavelIcon })
       }
       if (currentRole === 'ADMIN') {
         items.push({ key: 'adminNews', label: 'News Admin', icon: FileTextIcon })
+        items.push({ key: 'openCongress', label: 'Congress Data', icon: FileTextIcon })
       }
     }
 

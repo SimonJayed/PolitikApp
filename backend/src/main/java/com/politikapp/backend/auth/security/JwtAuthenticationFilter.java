@@ -48,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 // Real-time account lockout check
                 String accountStatus = resolveAccountStatus(userId);
-                if (accountStatus == null || "LOCKED".equals(accountStatus)) {
+                if (!"ACTIVE".equals(accountStatus)) {
                     jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
                     res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
@@ -59,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 AuthPrincipal principal = new AuthPrincipal(
                         userId,
                         claims.getSubject(),
-                        claims.get("role", String.class)
+                        jdbcTemplate.queryForObject("SELECT role FROM users WHERE user_id = ?", String.class, userId)
                 );
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities())

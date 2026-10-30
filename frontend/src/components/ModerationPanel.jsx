@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import AdminAdjudicationTable from './moderation/AdminAdjudicationTable'
 import { FileTextIcon, RefreshCwIcon, ScaleIcon, ShieldCheckIcon, UsersIcon } from './icons/Lucide'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:8080' : '')).replace(/\/$/, '')
 
 export default function ModerationPanel({ token, user }) {
   // Determine effective user role

@@ -29,6 +29,8 @@ public class AdminNewsService {
     private final AuthUserRepository userRepository;
     private final NewsMapper mapper;
     private final NewsAiService aiService;
+    private final ApprovedSourceClient sourceClient;
+    private final com.politikapp.backend.politician.repository.PoliticianRepository politicians;
 
     public AdminNewsService(
             NewsArticleRepository articleRepository,
@@ -36,7 +38,9 @@ public class AdminNewsService {
             NewsAuditLogRepository auditLogRepository,
             AuthUserRepository userRepository,
             NewsMapper mapper,
-            NewsAiService aiService
+            NewsAiService aiService,
+            ApprovedSourceClient sourceClient,
+            com.politikapp.backend.politician.repository.PoliticianRepository politicians
     ) {
         this.articleRepository = articleRepository;
         this.sourceRepository = sourceRepository;
@@ -44,6 +48,8 @@ public class AdminNewsService {
         this.userRepository = userRepository;
         this.mapper = mapper;
         this.aiService = aiService;
+        this.sourceClient = sourceClient;
+        this.politicians = politicians;
     }
 
     @Transactional(readOnly = true)
@@ -72,7 +78,8 @@ public class AdminNewsService {
 
     @Transactional(readOnly = true)
     public NewsArticleResponse get(UUID id) {
-        return mapper.toArticleResponse(article(id), false);
+        return mapper.toArticleResponse(articleRepository.findById(id)
+                .orElseThrow(() -> new HttpResponseException(404, "News article not found.")), false);
     }
 
     @Transactional(readOnly = true)
@@ -83,6 +90,10 @@ public class AdminNewsService {
     @Transactional
     public NewsArticleResponse processAi(UUID id, UUID adminId) {
         NewsArticle article = article(id);
+        if ("INCOMPLETE".equals(article.getAiProcessingStatus())) {
+            throw new HttpResponseException(409, "Full article text is unavailable; AI processing is not permitted for metadata-only records.");
+        }
+        invalidateApproval(article);
         aiService.processArticle(article);
         log(article, admin(adminId), "PROCESS_AI", "AI processing requested by admin.");
         return mapper.toArticleResponse(articleRepository.save(article), false);
@@ -91,22 +102,37 @@ public class AdminNewsService {
     @Transactional
     public NewsArticleResponse update(UUID id, ReviewArticleRequest request, UUID adminId) {
         NewsArticle article = article(id);
+        if (!List.of("Legislation", "Government Projects", "Public Spending", "Audit Reports", "Government Announcements").contains(request.category())) {
+            throw new HttpResponseException(400, "Unsupported article category.");
+        }
+        if (request.relatedPoliticianIds() != null) {
+            var ids = new java.util.HashSet<>(request.relatedPoliticianIds());
+            var related = politicians.findAllById(ids);
+            if (related.size() != ids.size()) throw new HttpResponseException(400, "Related politician not found.");
+            article.setRelatedPoliticians(new java.util.LinkedHashSet<>(related));
+        }
         article.setSuggestedTitle(request.suggestedTitle().trim());
         article.setAiSummary(request.aiSummary().trim());
+        if (request.keyPoints() != null) article.setAiKeyPoints(String.join("\n", request.keyPoints()));
         article.setCategory(request.category().trim());
         article.setReviewNotes(request.reviewNotes());
-        article.setReviewedBy(admin(adminId));
-        article.setReviewedAt(Instant.now());
-        if ("RETRIEVED".equals(article.getStatus()) || "PROCESSING".equals(article.getStatus())) {
-            article.setStatus("PENDING_REVIEW");
-        }
-        log(article, article.getReviewedBy(), "UPDATE", "Admin edited news article.");
+        invalidateApproval(article);
+        log(article, admin(adminId), "UPDATE", "Admin edited news article; fresh approval required.");
         return mapper.toArticleResponse(articleRepository.save(article), false);
     }
 
     @Transactional
     public NewsArticleResponse approve(UUID id, UUID adminId) {
         NewsArticle article = article(id);
+        if ("INCOMPLETE".equals(article.getAiProcessingStatus())) {
+            throw new HttpResponseException(409, "Metadata-only article cannot be approved without verified full text.");
+        }
+        if (!"PENDING_REVIEW".equals(article.getStatus())) {
+            throw new HttpResponseException(409, "Only pending articles can be approved.");
+        }
+        if (article.getAiSummary() == null || article.getAiSummary().isBlank()) {
+            throw new HttpResponseException(409, "Provide a reviewed summary before approval.");
+        }
         AuthUser admin = admin(adminId);
         article.setReviewedBy(admin);
         article.setReviewedAt(Instant.now());
@@ -123,6 +149,7 @@ public class AdminNewsService {
         article.setReviewedAt(Instant.now());
         article.setReviewNotes(request.reason());
         article.setStatus("REJECTED");
+        article.setPublishedAt(null);
         log(article, admin, "REJECT", request.reason());
         return mapper.toArticleResponse(articleRepository.save(article), false);
     }
@@ -130,7 +157,11 @@ public class AdminNewsService {
     @Transactional
     public NewsArticleResponse publish(UUID id, UUID adminId) {
         NewsArticle article = article(id);
-        if (!List.of("APPROVED", "PENDING_REVIEW", "UNPUBLISHED").contains(article.getStatus())) {
+        if ("INCOMPLETE".equals(article.getAiProcessingStatus())) {
+            throw new HttpResponseException(409, "Metadata-only article cannot be published.");
+        }
+        if (!List.of("APPROVED", "UNPUBLISHED").contains(article.getStatus())
+                || article.getReviewedAt() == null || article.getReviewedBy() == null) {
             throw new HttpResponseException(409, "Only reviewed articles can be published.");
         }
         AuthUser admin = admin(adminId);
@@ -145,19 +176,56 @@ public class AdminNewsService {
     @Transactional
     public NewsArticleResponse unpublish(UUID id, UUID adminId) {
         NewsArticle article = article(id);
+        if (!"PUBLISHED".equals(article.getStatus())) {
+            throw new HttpResponseException(409, "Only published articles can be unpublished.");
+        }
         AuthUser admin = admin(adminId);
         article.setStatus("UNPUBLISHED");
+        article.setPublishedAt(null);
         log(article, admin, "UNPUBLISH", "Article removed from public feed.");
         return mapper.toArticleResponse(articleRepository.save(article), false);
     }
 
     private NewsArticle article(UUID id) {
-        return articleRepository.findById(id).orElseThrow(() -> new HttpResponseException(404, "News article not found."));
+        return articleRepository.findForReview(id).orElseThrow(() -> new HttpResponseException(404, "News article not found."));
+    }
+
+    @Transactional
+    public SourceResponse saveSource(UUID id, com.politikapp.backend.news.dto.NewsDtos.SourceRequest request, UUID adminId) {
+        AuthUser actor = admin(adminId);
+        var source = id == null ? new com.politikapp.backend.news.entity.GovernmentSource()
+                : sourceRepository.findById(id).orElseThrow(() -> new HttpResponseException(404, "Source not found."));
+        source.setName(request.name().trim());
+        source.setBaseUrl(request.baseUrl().trim());
+        source.setFeedUrl(request.feedUrl() == null || request.feedUrl().isBlank() ? null : request.feedUrl().trim());
+        source.setRetrievalType(request.retrievalType());
+        try {
+            sourceClient.validate(source, java.net.URI.create(source.getBaseUrl()));
+            if (source.getFeedUrl() != null) sourceClient.validate(source, java.net.URI.create(source.getFeedUrl()));
+        } catch (IllegalArgumentException exception) {
+            throw new HttpResponseException(400, "Source URLs must use HTTPS and a host explicitly approved in backend configuration.");
+        }
+        source.setActive(request.active());
+        sourceRepository.save(source);
+        log(null, actor, "UPDATE_SOURCE", "Source " + source.getId() + " saved; active=" + source.isActive());
+        return mapper.toSourceResponse(source);
     }
 
     private AuthUser admin(UUID adminId) {
-        if (adminId == null) return null;
-        return userRepository.findById(adminId).orElse(null);
+        if (adminId == null) throw new HttpResponseException(401, "Authentication required.");
+        AuthUser user = userRepository.findById(adminId)
+                .orElseThrow(() -> new HttpResponseException(401, "Account not found."));
+        if (!"ADMIN".equals(user.getRole()) || !"ACTIVE".equals(user.getAccountStatus())) {
+            throw new HttpResponseException(403, "Active administrator access required.");
+        }
+        return user;
+    }
+
+    private void invalidateApproval(NewsArticle article) {
+        article.setStatus("PENDING_REVIEW");
+        article.setReviewedBy(null);
+        article.setReviewedAt(null);
+        article.setPublishedAt(null);
     }
 
     private void log(NewsArticle article, AuthUser admin, String action, String details) {

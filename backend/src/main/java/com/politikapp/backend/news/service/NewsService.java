@@ -56,17 +56,17 @@ public class NewsService {
 
     @Transactional(readOnly = true)
     public Page<NewsArticleResponse> published(String category, String query, Pageable pageable, UUID userId) {
-        String normalizedCategory = category == null || category.equalsIgnoreCase("All") || category.isBlank() ? null : category;
+        String normalizedCategory = category == null || category.equalsIgnoreCase("All") || category.equalsIgnoreCase("Latest") || category.isBlank() ? null : category;
         String normalizedQuery = query == null || query.isBlank() ? null : query.trim();
         return articleRepository.findAll(publishedSpec(normalizedCategory, normalizedQuery), pageable)
-                .map(article -> mapper.toArticleResponse(article, isSaved(userId, article.getId())));
+                .map(article -> mapper.toArticleResponse(article, isSaved(userId, article.getId()), false));
     }
 
     @Transactional(readOnly = true)
     public NewsArticleResponse publishedById(UUID id, UUID userId) {
         NewsArticle article = articleRepository.findByIdAndStatus(id, "PUBLISHED")
                 .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
-        return mapper.toArticleResponse(article, isSaved(userId, article.getId()));
+        return mapper.toArticleResponse(article, isSaved(userId, article.getId()), false);
     }
 
     public List<String> categories() {
@@ -124,6 +124,7 @@ public class NewsService {
 
     @Transactional
     public void savePost(UUID articleId, UUID userId) {
+        user(userId);
         NewsArticle article = articleRepository.findByIdAndStatus(articleId, "PUBLISHED")
                 .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
         if (!savedPostRepository.existsByIdUserIdAndIdNewsId(userId, articleId)) {
@@ -133,6 +134,7 @@ public class NewsService {
 
     @Transactional
     public void unsavePost(UUID articleId, UUID userId) {
+        user(userId);
         savedPostRepository.deleteByIdUserIdAndIdNewsId(userId, articleId);
     }
 
@@ -149,7 +151,7 @@ public class NewsService {
                                     : comment.getArticle().getOriginalTitle(),
                             comment.getContent(),
                             comment.getCreatedAt(),
-                            0
+                            voteRepository.scoreForComment(comment.getId())
                     ))
                     .toList();
     }
@@ -160,7 +162,7 @@ public class NewsService {
             return savedPostRepository.findByIdUserIdOrderByCreatedAtDesc(userId).stream()
                     .map(saved -> saved.getArticle())
                     .filter(article -> "PUBLISHED".equals(article.getStatus()))
-                    .map(article -> mapper.toArticleResponse(article, true))
+                    .map(article -> mapper.toArticleResponse(article, true, false))
                     .toList();
     }
 
@@ -187,7 +189,7 @@ public class NewsService {
     }
 
     private String sanitize(String content) {
-        return content.replace("<", "&lt;").replace(">", "&gt;").trim();
+        return content.trim(); // React renders comments as text, never HTML.
     }
 
     private Specification<NewsArticle> publishedSpec(String category, String query) {

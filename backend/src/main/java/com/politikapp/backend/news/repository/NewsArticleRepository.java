@@ -12,6 +12,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface NewsArticleRepository extends JpaRepository<NewsArticle, UUID>, JpaSpecificationExecutor<NewsArticle> {
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from NewsArticle a where a.id = :id")
+    Optional<NewsArticle> findForReview(@Param("id") UUID id);
+
     boolean existsByCanonicalUrl(String canonicalUrl);
 
     long countByStatus(String status);

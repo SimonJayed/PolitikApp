@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
 import {
   BookmarkIcon,
@@ -11,8 +12,8 @@ import {
   ThumbUpIcon,
 } from '../../components/icons/Lucide'
 import './Dashboard.css'
+import NewsArticleReader from '../../components/NewsArticleReader'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 const INSIGHTS_SAMPLE_SIZE = 50
 
@@ -36,12 +37,6 @@ const categoryColors = {
 }
 const colorFor = (category) => categoryColors[category] || 'var(--ph-blue-light)'
 
-async function readApiResponse(response) {
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(body.message || `Request failed with status ${response.status}`)
-  return body
-}
-
 function localDayKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -51,6 +46,7 @@ function localDayKey(date) {
 export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   const { token } = useAuth()
   const [activeCategory, setActiveCategory] = useState('All')
+  const [readingId, setReadingId] = useState(null)
   const [sort, setSort] = useState('newest')
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
@@ -423,6 +419,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
           )}
 
           <div className="postStack">
+            {readingId && <NewsArticleReader id={readingId} token={token} onClose={() => setReadingId(null)} onOpenProfile={onOpenProfile} />}
             {feed.status !== 'loading' && feed.items.map((post, index) => {
               const comments = commentsByPost[post.id]
               const open = Boolean(comments?.status && comments.status !== 'idle')
@@ -471,6 +468,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                   </div>
 
                   <footer className="postActions">
+                    <button type="button" onClick={() => setReadingId(post.id)}>Read article</button>
                     <button type="button" aria-expanded={open} onClick={() => loadComments(post.id)}>
                       <MessageCircleIcon size={17} />
                       <span>{open ? 'Hide comments' : `${post.commentCount ?? 0} comment${post.commentCount === 1 ? '' : 's'}`}</span>

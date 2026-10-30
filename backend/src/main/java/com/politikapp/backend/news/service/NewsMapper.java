@@ -16,13 +16,19 @@ import org.springframework.stereotype.Component;
 public class NewsMapper {
     private final NewsCommentRepository commentRepository;
     private final CommentVoteRepository voteRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper json;
 
-    public NewsMapper(NewsCommentRepository commentRepository, CommentVoteRepository voteRepository) {
+    public NewsMapper(NewsCommentRepository commentRepository, CommentVoteRepository voteRepository, com.fasterxml.jackson.databind.ObjectMapper json) {
         this.commentRepository = commentRepository;
         this.voteRepository = voteRepository;
+        this.json = json;
     }
 
     public NewsArticleResponse toArticleResponse(NewsArticle article, boolean saved) {
+        return toArticleResponse(article, saved, true);
+    }
+
+    public NewsArticleResponse toArticleResponse(NewsArticle article, boolean saved, boolean admin) {
         return new NewsArticleResponse(
                 article.getId(),
                 firstNonBlank(article.getSuggestedTitle(), article.getOriginalTitle()),
@@ -37,11 +43,18 @@ public class NewsMapper {
                 article.getStatus(),
                 article.getAiProcessingStatus(),
                 article.getOriginalContent(),
-                article.getReviewNotes(),
+                admin ? article.getReviewNotes() : null,
                 commentRepository.countByArticleIdAndHiddenFalseAndDeletedAtIsNull(article.getId()),
                 article.getReviewedAt() != null && "PUBLISHED".equals(article.getStatus()),
-                saved
+                saved,
+                article.getRelatedPoliticians().stream().filter(p -> !"ARCHIVED".equals(p.getStatus())).map(p -> new com.politikapp.backend.news.dto.NewsDtos.RelatedPoliticianResponse(p.getPoliticianId(), p.getFullName())).toList(),
+                extraction(article.getExtractionData())
         );
+    }
+
+    private com.fasterxml.jackson.databind.JsonNode extraction(String value) {
+        try { return value == null ? json.createObjectNode() : json.readTree(value); }
+        catch (com.fasterxml.jackson.core.JsonProcessingException exception) { return json.createObjectNode(); }
     }
 
     public NewsCommentResponse toCommentResponse(NewsComment comment) {

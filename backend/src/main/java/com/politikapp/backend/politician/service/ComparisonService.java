@@ -41,8 +41,10 @@ public class ComparisonService {
         }
 
         Politician politicianA = politicianRepository.findById(idA)
+                .filter(p -> !"ARCHIVED".equals(p.getStatus()))
                 .orElseThrow(() -> missingProfileException());
         Politician politicianB = politicianRepository.findById(idB)
+                .filter(p -> !"ARCHIVED".equals(p.getStatus()))
                 .orElseThrow(() -> missingProfileException());
 
         List<TimelineEntry> streamA = timelineEntryRepository

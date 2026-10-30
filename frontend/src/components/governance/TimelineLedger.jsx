@@ -79,7 +79,7 @@ export default function TimelineLedger({
   isLoading = false,
   onAppeal,
   onAuthPrompt,
-  allowChallenge = true,
+  allowChallenge = false,
   title = 'Published Timeline Ledger',
   user,
 }) {
@@ -128,6 +128,23 @@ export default function TimelineLedger({
                   </span>
                 </div>
                 <p className="ty-body">{entry.summary}</p>
+                {entry.actionDetails?.recordType === 'BILL' && <div className="ty-body">
+                  <strong>{entry.actionDetails.legislationTitle || 'Legislative record'}</strong>
+                  <p>Admin-verified status: {typeof entry.actionDetails.verifiedStatus === 'string'
+                    ? entry.actionDetails.verifiedStatus : 'Not established'}.
+                    A filed bill is not necessarily enacted law.</p>
+                  {Array.isArray(entry.actionDetails.legislativeHistory) && entry.actionDetails.legislativeHistory.length > 0
+                    ? <details><summary>Dataset-reported legislative history</summary><ol>{entry.actionDetails.legislativeHistory.map((step, index) =>
+                      <li key={index}>{step?.date || 'Date unknown'} — {step?.action || step?.description || 'Details unavailable'}</li>)}</ol></details>
+                    : <p>Legislative history unavailable.</p>}
+                  {entry.actionDetails.datasetUrl && <a href={entry.actionDetails.datasetUrl} target="_blank" rel="noreferrer">Dataset record</a>}
+                </div>}
+                {entry.actionDetails?.recordType === 'MEMBERSHIP' && <div className="ty-body">
+                  <p>Congress {entry.actionDetails.congress || 'Unknown'} · {entry.actionDetails.chamber || 'Chamber unknown'} · {entry.actionDetails.position || 'Position unknown'}</p>
+                  <p>Personal term dates: {entry.actionDetails.termStart || 'Unknown'} to {entry.actionDetails.termEnd || 'Unknown'}.</p>
+                  <p>Verification: {entry.actionDetails.verifiedStatus || 'Status not established'}.</p>
+                  {entry.actionDetails.datasetUrl && <a href={entry.actionDetails.datasetUrl} target="_blank" rel="noreferrer">Dataset record</a>}
+                </div>}
 
                 {entry.verificationNotes && (
                   <div style={{

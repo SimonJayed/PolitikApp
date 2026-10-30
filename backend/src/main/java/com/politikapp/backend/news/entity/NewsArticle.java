@@ -24,6 +24,15 @@ import org.hibernate.annotations.UpdateTimestamp;
 @Setter
 @NoArgsConstructor
 public class NewsArticle {
+    @Column(name = "extraction_data", columnDefinition = "TEXT")
+    private String extractionData;
+
+    @jakarta.persistence.ManyToMany
+    @jakarta.persistence.JoinTable(name = "news_politicians",
+            joinColumns = @JoinColumn(name = "news_id"),
+            inverseJoinColumns = @JoinColumn(name = "politician_id"))
+    private java.util.Set<com.politikapp.backend.politician.entity.Politician> relatedPoliticians = new java.util.LinkedHashSet<>();
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;

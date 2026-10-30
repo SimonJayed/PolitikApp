@@ -40,6 +40,21 @@ public class GlobalExceptionHandler {
                 .body(ApiErrorResponse.of(HttpStatus.BAD_REQUEST.value(), exception.getMessage()));
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ResponseEntity<ApiErrorResponse> forbidden(org.springframework.security.access.AccessDeniedException exception) {
+        return ResponseEntity.status(403).body(ApiErrorResponse.of(403, "You do not have permission to perform this action."));
+    }
+
+    @ExceptionHandler({IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
+    public ResponseEntity<ApiErrorResponse> invalidRequest(Exception exception) {
+        return ResponseEntity.badRequest().body(ApiErrorResponse.of(400, "Invalid request. Check the supplied fields."));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> conflict(org.springframework.dao.DataIntegrityViolationException exception) {
+        return ResponseEntity.status(409).body(ApiErrorResponse.of(409, "This change conflicts with an existing record."));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiErrorResponse> handleUnexpectedException(Exception exception) {
         log.error("Unhandled backend exception", exception);

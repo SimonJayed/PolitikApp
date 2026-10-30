@@ -4,6 +4,7 @@ import { matchesJurisdiction } from '../../components/jurisdiction'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { initialsFor, PaginationMini, StatusLine } from '../pageHelpers'
 import './Politicians.css'
+import PoliticianEditor from '../../components/governance/PoliticianEditor'
 
 const PAGE_SIZE = 9
 
@@ -22,11 +23,12 @@ export default function PoliticiansLoaderPanel({
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [positionFilter, setPositionFilter] = useState('ALL')
   const [page, setPage] = useState(1)
+  const [creating, setCreating] = useState(false)
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     return politicians.filter((politician) =>
-      matchesJurisdiction(politician.jurisdiction, jurisdictionFilter)
+      politician.status !== 'ARCHIVED' && matchesJurisdiction(politician.jurisdiction, jurisdictionFilter)
       && (positionFilter === 'ALL' || politician.position === positionFilter)
       && (!q || politician.fullName.toLowerCase().includes(q) || (politician.position || '').toLowerCase().includes(q)))
   }, [jurisdictionFilter, politicians, positionFilter, query])
@@ -38,14 +40,14 @@ export default function PoliticiansLoaderPanel({
 
   useEffect(() => setPage(1), [query, jurisdictionFilter, positionFilter])
   useEffect(() => {
-    onModalOpenChange?.(false)
+    onModalOpenChange?.(creating)
     return () => onModalOpenChange?.(false)
-  }, [onModalOpenChange])
+  }, [onModalOpenChange, creating])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-  const isLoading = state.status === 'loading'
+  const isLoading = politiciansState.status === 'loading'
   const filtersActive = query.trim() !== '' || jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL'
   const isAdmin = dbUser?.role === 'ADMIN'
 
@@ -67,12 +69,13 @@ export default function PoliticiansLoaderPanel({
             <strong>{politicians.length}</strong> profile{politicians.length === 1 ? '' : 's'}
           </span>
           {isAdmin && (
-            <button type="button" className="polAddButton" onClick={() => onPoliticianCreate?.()}>
+            <button type="button" className="polAddButton" onClick={() => setCreating(true)}>
               + Add Politician
             </button>
           )}
         </div>
       </header>
+      {creating && isAdmin && <PoliticianEditor token={token} onClose={() => setCreating(false)} onSaved={onPoliticianCreate} />}
 
       <section className="polFilters" aria-label="Politician filters">
         <label className="polField polSearch">

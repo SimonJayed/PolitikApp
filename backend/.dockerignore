@@ -2,3 +2,6 @@ target/
 .git/
 .mvn/wrapper/maven-wrapper.jar
 *.log
+.env
+.env.*
+!.env.example

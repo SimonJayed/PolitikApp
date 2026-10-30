@@ -82,6 +82,12 @@ public class AdminCurationService {
         TimelineEntry timeline = timelineEntryRepository.findById(timelineId)
                 .orElseThrow(() -> new HttpResponseException(404, "Timeline entry not found: " + timelineId));
 
+        if (!timeline.getPoliticianId().equals(request.politicianId())) {
+            throw new HttpResponseException(400, "A record cannot be moved to another politician.");
+        }
+        if (timeline.getActionDetails() != null && timeline.getActionDetails().containsKey("openCongressId")) {
+            throw new HttpResponseException(409, "Edit imported Congress records through the Congress verification workflow.");
+        }
         timeline.setCategoryTag(request.categoryTag().trim());
         timeline.setActionIdentifier(request.actionIdentifier().trim());
         timeline.setActionDetails(request.actionDetails() != null ? request.actionDetails() : Collections.emptyMap());
@@ -212,7 +218,7 @@ public class AdminCurationService {
                 pendingCount,
                 upheldCount,
                 dismissedCount,
-                Math.max(totalPublished, 5L)
+                totalPublished
         );
     }
 

@@ -7,7 +7,6 @@ import {
   GlobeIcon,
   LandmarkIcon,
   LayoutDashboardIcon,
-  LockIcon,
   MegaphoneIcon,
   ScaleIcon,
   ScrollTextIcon,
@@ -27,30 +26,25 @@ export default function LandingPage({
   onSelectPolitician,
   onCompare,
   onMethodologyClick,
-  isAuthenticated = false,
-  onAuthPrompt,
 }) {
   // Compute telemetry metrics from live data
   const telemetry = useMemo(() => {
-    const totalPoliticians = politicians.length > 0 ? politicians.length : 16;
+    const totalPoliticians = politicians.length;
+    const total = field => politicians.reduce((sum, politician) => sum + (Number(politician[field]) || 0), 0);
     return {
       politiciansCount: totalPoliticians,
-      recordsVerified: '240+',
-      budgetTracked: '₱14.8B+',
-      citationTrust: '100%',
+      recordsVerified: total('billsAuthored') + total('projectCompletions') + total('coaAuditDiscrepancies'),
+      budgetTracked: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', notation: 'compact' }).format(total('trackedBudgetAllocated')),
+      citationTrust: total('coaAuditDiscrepancies'),
     };
   }, [politicians]);
 
   // Featured sample politicians (prioritize Cebu City and National officials)
   const featuredPoliticians = useMemo(() => {
     if (!politicians || politicians.length === 0) return [];
-    // Guests only see a small sample; the full ledger remains behind auth.
+    // Keep the landing page compact; all profiles are available in the directory.
     return politicians.slice(0, 6);
   }, [politicians]);
-
-  function requestGuestAccess(actionType = 'preview') {
-    onAuthPrompt?.(actionType);
-  }
 
   return (
     <div className="landing-container">
@@ -79,7 +73,7 @@ export default function LandingPage({
 
           <div className="telemetry-card">
             <div className="telemetry-value">{telemetry.recordsVerified}</div>
-            <div className="telemetry-label">Verified Empirical Records</div>
+            <div className="telemetry-label">Tracked Bills, Projects & Audit Findings</div>
             <div className="telemetry-subtext">COA Audits & Legislative Ledgers</div>
           </div>
 
@@ -91,8 +85,8 @@ export default function LandingPage({
 
           <div className="telemetry-card">
             <div className="telemetry-value">{telemetry.citationTrust}</div>
-            <div className="telemetry-label">Whitelisted Primary Citations</div>
-            <div className="telemetry-subtext">Strictly .gov.ph & .edu.ph Domains</div>
+            <div className="telemetry-label">Documented Audit Findings</div>
+            <div className="telemetry-subtext">Published profile records</div>
           </div>
         </div>
       </section>
@@ -167,12 +161,8 @@ export default function LandingPage({
               <button
                 type="button"
                 key={politician.politicianId}
-                className={`official-card ${!isAuthenticated ? 'official-card-locked' : ''}`}
+                className="official-card"
                 onClick={() => {
-                  if (!isAuthenticated) {
-                    requestGuestAccess('preview');
-                    return;
-                  }
                   onSelectPolitician?.(politician.politicianId);
                 }}
                 title={`View profile for ${politician.fullName}`}
@@ -200,35 +190,29 @@ export default function LandingPage({
                   <div className="official-stat-item">
                     <span className="official-stat-label">WGI Score</span>
                     <span className="official-stat-val" style={{ color: 'var(--ph-red)' }}>
-                      {politician.wgiScore != null ? Number(politician.wgiScore).toFixed(1) : '85.4'}
+                      {politician.wgiCompositeScore != null ? Number(politician.wgiCompositeScore).toFixed(1) : 'Unavailable'}
                     </span>
                   </div>
                   <div className="official-stat-item">
                     <span className="official-stat-label">Audit Flags</span>
-                    <span className="official-stat-val" style={{ color: politician.coaFlagCount > 0 ? '#dc2626' : '#16a34a' }}>
-                      {politician.coaFlagCount != null ? politician.coaFlagCount : 0} COA
+                    <span className="official-stat-val" style={{ color: politician.coaAuditDiscrepancies > 0 ? '#dc2626' : '#16a34a' }}>
+                      {politician.coaAuditDiscrepancies ?? 'Unavailable'} COA
                     </span>
                   </div>
                   <div className="official-stat-item">
                     <span className="official-stat-label">Bills Filed</span>
                     <span className="official-stat-val">
-                      {politician.sponsoredBillsCount != null ? politician.sponsoredBillsCount : '12'}
+                      {politician.billsAuthored ?? 'Unavailable'}
                     </span>
                   </div>
                 </div>
 
                 <div className="official-footer">
-                  <span>{isAuthenticated ? 'Inspect Audit Trail' : 'Sign in to inspect audit trail'}</span>
+                  <span>Inspect Audit Trail</span>
                   <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
                   </svg>
                 </div>
-                {!isAuthenticated && (
-                  <span className="official-card-lock-overlay" aria-hidden="true">
-                    <LockIcon size={20} />
-                    <span>Preview only | Sign in to unlock</span>
-                  </span>
-                )}
               </button>
             ))}
           </div>
@@ -236,10 +220,10 @@ export default function LandingPage({
           <div style={{ textAlign: 'center', marginTop: '32px' }}>
             <button
               className="btn-landing-secondary btn-landing-blue"
-              onClick={() => isAuthenticated ? onExplorePoliticians?.() : requestGuestAccess('preview')}
+              onClick={() => onExplorePoliticians?.()}
               style={{ padding: '12px 28px' }}
             >
-              <span>{isAuthenticated ? 'View All Officials in Politicians' : 'Sign in to view full database'}</span>
+              <span>View All Officials in Politicians</span>
               <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
               </svg>
@@ -303,15 +287,15 @@ export default function LandingPage({
           </div>
 
           <div className="landing-footer-links">
-            <button className="ty-nav" onClick={() => isAuthenticated ? onExplorePoliticians?.() : requestGuestAccess('preview')}>
+            <button className="ty-nav" onClick={() => onExplorePoliticians?.()}>
               <UsersIcon size={17} />
               <span>Politicians</span>
             </button>
-            <button className="ty-nav" onClick={() => isAuthenticated ? onExploreDashboard?.() : requestGuestAccess('preview')}>
+            <button className="ty-nav" onClick={() => onExploreDashboard?.()}>
               <LayoutDashboardIcon size={17} />
               <span>Dashboard</span>
             </button>
-            <button className="ty-nav" onClick={() => isAuthenticated ? onCompare?.() : requestGuestAccess('preview')}>
+            <button className="ty-nav" onClick={() => onCompare?.()}>
               <GitCompareIcon size={17} />
               <span>Compare</span>
             </button>

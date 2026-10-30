@@ -1,0 +1,38 @@
+.congressPage { display: grid; gap: 18px; }
+.congressPage .adminReviewPanel, .congressRecord { padding: 20px; }
+.congressActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; }
+.congressActions label { display: grid; gap: 5px; }
+.congressActions input, .congressActions select { max-width: 100%; padding: 8px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); }
+.congressActions button, .congressRecord button { padding: 8px 12px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--ph-blue); cursor: pointer; }
+.congressActions button:disabled { opacity: .55; cursor: not-allowed; }
+.congressActions .congressCheckbox { display: flex; align-items: center; gap: 8px; }
+.congressNotice { border-left: 3px solid var(--ph-gold); padding: 10px 14px; background: var(--bg-surface); }
+.congressRecord { overflow-wrap: anywhere; border: 1px solid var(--line-soft); border-radius: var(--radius-lg); background: var(--bg-surface); }
+.congressRecord h3 { margin-top: 24px; }
+.congressRecord ul, .congressRecord ol { padding-left: 24px; }
+.congressRecord li { margin: 8px 0; }
+.congressFacts { display: flex; flex-wrap: wrap; gap: 16px 28px; }
+.congressFacts dt { font-size: 12px; color: var(--text-muted); }
+.congressFacts dd { margin: 4px 0 0; }
+.congressTableWrap { overflow-x: auto; }
+.congressTableWrap table { width: 100%; border-collapse: collapse; }
+.congressTableWrap td, .congressTableWrap th { text-align: left; padding: 10px; border-bottom: 1px solid var(--line-soft); }
+.congressHistory { max-height: 480px; overflow: auto; }
+.congressProfilePanel { margin-top: 24px; }
+.congressProfilePanel .congressRecord { margin-top: 12px; }
+.congressCounts { display: flex; flex-wrap: wrap; gap: 12px; }
+.congressCounts span { padding: 8px; background: var(--accent-soft); border-radius: var(--radius-sm); }
+.congressTabs { display: flex; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid var(--line-soft); padding-bottom: 10px; }
+.congressTabs button { border: 1px solid var(--line-soft); border-radius: var(--radius-sm); padding: 10px 16px; background: var(--bg-surface); color: var(--text-primary); cursor: pointer; }
+.congressTabs button.active { border-color: var(--ph-blue); color: var(--ph-blue); font-weight: 700; }
+.congressGuide { display: grid; gap: 12px; }
+.congressGuide h2, .congressGuide h3, .congressGuide p { margin: 0; }
+.congressGuide > label { display: grid; gap: 5px; max-width: 520px; }
+.congressGuide > label input:not([type='checkbox']) { width: 100%; padding: 9px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); }
+.congressGuide > .congressCheckbox { display: flex; align-items: center; max-width: none; }
+.congressCandidate { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--bg-surface); }
+.congressCandidate p { color: var(--text-muted); margin-top: 4px; }
+.congressCandidate button, .congressGuide > button { width: fit-content; flex-shrink: 0; padding: 9px 14px; border: 1px solid var(--ph-blue); border-radius: var(--radius-sm); background: var(--ph-blue); color: white; cursor: pointer; }
+.congressGuide > button:disabled { opacity: .55; cursor: not-allowed; }
+.congressHelp { color: var(--text-muted); font-size: .9rem; }
+@media (max-width: 640px) { .congressCandidate { align-items: stretch; flex-direction: column; } }

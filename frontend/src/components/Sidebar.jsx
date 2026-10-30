@@ -17,7 +17,7 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
       { key: 'compare', label: 'Compare', icon: 'C', accent: 'var(--ph-gold)' },
     ]
 
-    if (currentRole !== 'CONTRIBUTOR') {
+    if (currentRole === 'ADMIN') {
       featureItems.push({ key: 'moderation', label: 'Moderation', icon: 'M', accent: 'var(--ph-red)' })
     }
 

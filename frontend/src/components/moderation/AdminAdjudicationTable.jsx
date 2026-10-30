@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { AlertTriangleIcon, CircleCheckIcon, CircleXIcon, FileTextIcon, FolderIcon, RefreshCwIcon, ScaleIcon, SearchIcon } from '../icons/Lucide'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:8080' : '')).replace(/\/$/, '')
 
 export default function AdminAdjudicationTable({ token, user, onAdjudicationComplete }) {
   const [queue, setQueue] = useState([])

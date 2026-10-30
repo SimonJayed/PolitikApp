@@ -1,0 +1,9 @@
+services:
+  backend:
+    environment:
+      OPEN_CONGRESS_CHECKOUT: /datasets/open-congress-data
+    volumes:
+      - type: bind
+        source: ${OPEN_CONGRESS_HOST_CHECKOUT:?Set OPEN_CONGRESS_HOST_CHECKOUT to the existing dataset clone}
+        target: /datasets/open-congress-data
+        read_only: true

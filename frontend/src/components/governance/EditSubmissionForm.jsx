@@ -82,11 +82,11 @@ export default function EditSubmissionForm({
           color: '#0369a1',
           lineHeight: '1.5'
         }}>
-          <strong><LandmarkIcon size={16} /> Citizen Metric Proposal:</strong> Propose an evidence-based record or performance update. Submissions enter the <strong>SUBMITTED_REQUEST</strong> queue and are adjudicated directly by Admin Curators against primary sources.
+          <strong><LandmarkIcon size={16} /> Admin record:</strong> Verify the primary source before publishing a government activity, legislative record, budget allocation, or audit finding.
         </div>
         {selectedPolitician && (
           <p className="statusLine success" style={{ marginBottom: '14px' }}>
-            Proposing record for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
+            Managing record for: <strong style={{ marginLeft: '6px' }}>{selectedPolitician.fullName}</strong>
             <small style={{ marginLeft: '8px', color: 'var(--text-muted)', fontWeight: 400 }}>
               ({formatPosition(selectedPolitician.position) || 'UNSPECIFIED'})
             </small>
@@ -141,7 +141,7 @@ export default function EditSubmissionForm({
 
         <div className="formFooter">
           <button disabled={state.status === 'loading'} type="submit">
-            {state.status === 'loading' ? 'Submitting Request...' : 'Propose Metric for Review'}
+            {state.status === 'loading' ? 'Saving...' : 'Publish verified record'}
           </button>
         </div>
 

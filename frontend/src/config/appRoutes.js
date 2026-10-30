@@ -1,16 +1,14 @@
 export const guestRestrictedViews = new Set([
-  'dashboard',
-  'politicians',
-  'compare',
   'adminNews',
+  'openCongress',
   'moderation',
-  'profile',
   'submit',
   'account',
   'profileMatrix',
 ])
 
 export const activeHeaders = {
+  openCongress: ['Congress', 'Source dataset review'],
   auth: ['Authentication', 'Civic Account Access'],
   account: ['Account', 'User Account'],
   compare: ['Compare', 'Compare Politicians'],
@@ -29,6 +27,7 @@ export const headerTitleHiddenFor = new Set([
   'politicians',
   'compare',
   'adminNews',
+  'openCongress',
   'submit',
   'moderation',
   'landing',

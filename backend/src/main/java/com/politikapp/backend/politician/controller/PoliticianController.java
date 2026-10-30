@@ -50,7 +50,7 @@ public class PoliticianController {
 
     @PostMapping
     public ResponseEntity<PoliticianResponse> createPolitician(
-            @RequestBody CreatePoliticianRequest request,
+            @jakarta.validation.Valid @RequestBody CreatePoliticianRequest request,
             Authentication authentication
     ) {
         assertDatabaseAdmin(authentication);
@@ -61,11 +61,18 @@ public class PoliticianController {
     @PutMapping("/{id}")
     public ResponseEntity<PoliticianResponse> updatePolitician(
             @PathVariable UUID id,
-            @RequestBody UpdatePoliticianRequest updates,
+            @jakarta.validation.Valid @RequestBody UpdatePoliticianRequest updates,
             Authentication authentication
     ) {
         assertDatabaseAdmin(authentication);
         return ResponseEntity.ok(politicianService.updatePolitician(id, updates));
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<Void> archivePolitician(@PathVariable UUID id, Authentication authentication) {
+        assertDatabaseAdmin(authentication);
+        politicianService.archivePolitician(id);
+        return ResponseEntity.noContent().build();
     }
 
     private void assertDatabaseAdmin(Authentication authentication) {

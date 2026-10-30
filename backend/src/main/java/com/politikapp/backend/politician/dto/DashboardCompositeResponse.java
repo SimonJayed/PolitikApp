@@ -10,6 +10,8 @@ public record DashboardCompositeResponse(
         String position,
         String jurisdiction,
         String partyAffiliation,
+        java.time.LocalDate termStart,
+        java.time.LocalDate termEnd,
         String profileImageUrl,
         String biography,
         double billsAuthored,
@@ -18,6 +20,9 @@ public record DashboardCompositeResponse(
         int coaAuditDiscrepancies,
         BigDecimal trackedBudgetAllocated,
         double wgiCompositeScore,
-        List<TimelineEntryResponse> publishedTimelineLedger
+        List<TimelineEntryResponse> publishedTimelineLedger,
+        List<ProfileNewsItem> relatedNews
 ) {
+    public record ProfileNewsItem(UUID id, String headline, String sourceName, String sourceUrl,
+                                  String summary, java.time.Instant publishedAt) {}
 }

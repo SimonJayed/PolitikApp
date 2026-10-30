@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { API_BASE_URL, readApiResponse } from './api/client'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import { useAuth } from './auth/AuthContext'
@@ -10,6 +11,7 @@ import './components/governance.css'
 import './components/moderation.css'
 import Account from './pages/Account/Account'
 import AdminNews from './pages/AdminNews/AdminNews'
+import OpenCongress from './pages/OpenCongress/OpenCongress'
 import Authentication from './pages/Authentication/Authentication'
 import Dashboard from './pages/Dashboard/Dashboard'
 import Landing from './pages/Landing/Landing'
@@ -23,7 +25,6 @@ import {
   ArrowLeftIcon,
 } from './components/icons/Lucide'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const emptySubmission = {
   politicianId: '',
@@ -43,12 +44,9 @@ const actionOptions = [
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
 const guestRestrictedViews = new Set([
-  'dashboard',
-  'politicians',
-  'compare',
   'adminNews',
+  'openCongress',
   'moderation',
-  'profile',
   'submit',
   'account',
   'profileMatrix',
@@ -74,14 +72,6 @@ const actionDetailFields = {
       type: 'select',
     },
   ],
-}
-
-async function readApiResponse(response) {
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(body.message || `Request failed with status ${response.status}`)
-  }
-  return body
 }
 
 function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate, token }) {
@@ -147,7 +137,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       triggerAuthPrompt('preview')
       return
     }
-    if (viewKey === 'adminNews' && currentRole !== 'ADMIN') {
+    if (['adminNews', 'openCongress', 'submit', 'moderation'].includes(viewKey) && currentRole !== 'ADMIN') {
       navigateTo('dashboard')
       return
     }
@@ -159,6 +149,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     auth: ['Authentication', 'Civic Account Access'],
     compare: ['Compare', 'Compare Politicians'],
     adminNews: ['News', 'Admin Verification Queue'],
+    openCongress: ['Congress', 'Source dataset review'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     politicians: ['Politicians', 'Politicians'],
     landing: ['Home', 'Verifiable Governance Platform'],
@@ -244,18 +235,17 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     try {
       const payload = {
         ...formData,
-        contributorId: currentUser?.userId,
         actionDetails: normalizeActionDetails(formData.actionDetails),
-        sourceUrl: formData.sourceUrl.trim(),
+        primarySourceUrl: formData.sourceUrl.trim(),
       }
-      const data = await fetch(`${API_BASE_URL}/api/submissions/my`, {
+      const data = await fetch(`${API_BASE_URL}/api/admin/curation/metrics`, {
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         method: 'POST',
       }).then(readApiResponse)
       setFormData(emptySubmission)
       setIsApprovedDomain(false)
-      setSubmissionState({ status: 'success', message: data.message || 'Submission queued.' })
+      setSubmissionState({ status: 'success', message: data.message || 'Verified record published.' })
       // Refresh politician KPIs in the background so ranking data stays current
       loadPoliticians()
     } catch (error) {
@@ -370,7 +360,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       navigateTo(currentRole === 'ADMIN' ? 'adminNews' : 'dashboard', null, true)
       return
     }
-    if (isAuthenticated && activeView === 'adminNews' && currentRole !== 'ADMIN') {
+    if (isAuthenticated && ['adminNews', 'openCongress'].includes(activeView) && currentRole !== 'ADMIN') {
       navigateTo('dashboard', null, true)
     }
   }, [activeView, currentRole, isAuthenticated, navigateTo])
@@ -406,7 +396,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     setPoliticiansState((current) => {
       const nextData = current.data.map((p) =>
         p.politicianId === politicianId ? { ...p, ...updates } : p,
-      )
+      ).filter(p => p.status !== 'ARCHIVED')
       const nextSelected =
         current.selected && current.selected.politicianId === politicianId
           ? { ...current.selected, ...updates }
@@ -550,7 +540,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           />
         )}
         {activeView === 'submit' && (
-          !isAuthenticated ? (
+          currentRole !== 'ADMIN' ? (
             <section className="workspace">
               <div style={{
                 textAlign: 'center',
@@ -561,7 +551,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
               }}>
                 <h2 className="ty-section-title" style={{ margin: '0 0 10px' }}>Authentication Required</h2>
                 <p className="ty-body" style={{ color: 'var(--text-muted)', margin: '0 auto 20px', maxWidth: '460px' }}>
-                  Evidence submission requires an active civic contributor account to maintain provenance and verification records.
+                  Only administrators can manage politician records.
                 </p>
                 <button
                   type="button"
@@ -626,9 +616,10 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
           />
         )}
         {activeView === 'profileMatrix' && <ProfileMatrix token={token} user={activeUser} />}
+        {activeView === 'openCongress' && currentRole === 'ADMIN' && <OpenCongress token={token} politicians={politiciansState.data} />}
         {activeView === 'adminNews' && <AdminNews token={token} user={activeUser} />}
         {activeView === 'moderation' && (
-          currentRole === 'CONTRIBUTOR' ? (
+          currentRole !== 'ADMIN' ? (
             <section className="workspace">
               <div style={{
                 textAlign: 'center',

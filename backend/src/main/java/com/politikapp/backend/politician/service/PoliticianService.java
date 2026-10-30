@@ -42,6 +42,7 @@ public class PoliticianService {
     @Transactional(readOnly = true)
     public PoliticianResponse getPolitician(UUID politicianId) {
         return politicianRepository.findById(politicianId)
+                .filter(p -> !"ARCHIVED".equals(p.getStatus()))
                 .map(politicianMapper::toResponse)
                 .orElseThrow(() -> new HttpResponseException(404, "Not Found: Politician record does not exist."));
     }
@@ -55,6 +56,14 @@ public class PoliticianService {
         return mapPoliticiansWithSubmissions(
                 politicianRepository.findByFullNameContainingIgnoreCaseOrderByFullNameAsc(name.trim())
         );
+    }
+
+    @Transactional
+    public void archivePolitician(UUID id) {
+        Politician politician = politicianRepository.findById(id)
+                .orElseThrow(() -> new HttpResponseException(404, "Politician not found."));
+        politician.setStatus("ARCHIVED");
+        politicianRepository.save(politician);
     }
 
     private List<PoliticianResponse> mapPoliticiansWithSubmissions(List<Politician> politicians) {
@@ -73,6 +82,7 @@ public class PoliticianService {
                 .collect(Collectors.groupingBy(ProfileEditSubmission::getPoliticianId));
 
         return politicians.stream()
+                .filter(p -> !"ARCHIVED".equals(p.getStatus()))
                 .map(p -> politicianMapper.toResponse(
                         p,
                         submissionsByPolitician.getOrDefault(p.getPoliticianId(), Collections.emptyList())
@@ -98,6 +108,9 @@ public class PoliticianService {
 
     @Transactional
     public PoliticianResponse createPolitician(CreatePoliticianRequest request) {
+        if (request.status() != null && !List.of("ACTIVE", "INACTIVE", "ARCHIVED").contains(request.status())) {
+            throw new HttpResponseException(400, "Invalid politician status.");
+        }
         if (request.fullName() == null || request.fullName().isBlank()) {
             throw new HttpResponseException(400, "Bad Request: Full name is required.");
         }

@@ -37,7 +37,6 @@ function BaseModal({
 
   return (
     <div
-      aria-hidden="true"
       className="comparisonModalBackdrop"
       onClick={() => {
         if (!isDismissDisabled) onClose?.()

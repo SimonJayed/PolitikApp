@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { API_BASE_URL, readApiResponse } from '../api/client'
 import { BookmarkIcon, CircleCheckIcon, MessageCircleIcon } from './icons/Lucide'
 import './ProfileMatrix.css'
+import NewsArticleReader from './NewsArticleReader'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const TABS = [
   { id: 'comments', label: 'Comments', Icon: MessageCircleIcon },
@@ -11,9 +12,7 @@ const TABS = [
 
 async function fetchJson(path, token) {
   const response = await fetch(`${API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } })
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(body.message || 'Request failed.')
-  return body
+  return readApiResponse(response)
 }
 
 function initialsFor(user) {
@@ -96,6 +95,19 @@ function Notice({ Icon, title, hint, error, onRetry }) {
 }
 
 export default function UserProfileMatrixPanel({ token, user }) {
+  const [readingId, setReadingId] = useState(null)
+  const [savingId, setSavingId] = useState(null)
+  const [saveError, setSaveError] = useState('')
+  async function unsave(id) {
+    setSavingId(id)
+    setSaveError('')
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/news/${id}/save`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      if (!response.ok) throw new Error('Could not remove saved article. Please try again.')
+      setActivity(current => ({ ...current, saved: current.saved.filter(item => item.id !== id) }))
+    } catch (error) { setSaveError(error.message) }
+    finally { setSavingId(null) }
+  }
   const [profile, setProfile] = useState(user)
   const [tab, setTab] = useState('comments')
   const [reloadKey, setReloadKey] = useState(0)
@@ -178,6 +190,8 @@ export default function UserProfileMatrixPanel({ token, user }) {
       </header>
 
       <div className="profileBody">
+        {readingId && <NewsArticleReader id={readingId} token={token} onClose={() => setReadingId(null)} />}
+        {saveError && <p role="alert">{saveError}</p>}
         <div className="profileMain">
           <div className="profileControls">
             <div className="profileTabs" role="tablist" aria-label="Your activity">
@@ -227,7 +241,11 @@ export default function UserProfileMatrixPanel({ token, user }) {
                     <ActivityCard key={item.id} kind="comment" title={item.articleTitle} body={item.content} date={item.createdAt} />
                   ))
                   : items.map((item) => (
-                    <ActivityCard key={item.id} kind="saved" title={item.headline || item.originalTitle} body={item.summary || 'Saved government update.'} date={item.publishedAt} />
+                    <div key={item.id}>
+                      <ActivityCard kind="saved" title={item.headline || item.originalTitle} body={item.summary || 'Saved government update.'} date={item.publishedAt} />
+                      <button onClick={() => setReadingId(item.id)}>Read article</button>
+                      <button disabled={savingId === item.id} onClick={() => unsave(item.id)}>{savingId === item.id ? 'Removing...' : 'Unsave'}</button>
+                    </div>
                   ))}
               </div>
             )}

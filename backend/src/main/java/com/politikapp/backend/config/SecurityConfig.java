@@ -55,14 +55,11 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/reputation/**", "/api/module3/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.POST, "/api/challenges/**").authenticated()
-                        .requestMatchers("/api/challenges/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/politicians/**").authenticated()
-                        .requestMatchers("/api/politicians/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/submissions").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/api/moderation/appeal").authenticated()
-                        .requestMatchers("/api/moderation/**").hasAnyRole("CONTRIBUTOR", "ADMIN", "ADMINISTRATOR")
-                        .requestMatchers("/api/submissions/**", "/users/**").authenticated()
+                        .requestMatchers("/api/challenges/**", "/api/moderation/appeal").denyAll()
+                        .requestMatchers(HttpMethod.GET, "/api/politicians/**").permitAll()
+                        .requestMatchers("/api/politicians/**").hasRole("ADMIN")
+                        .requestMatchers("/api/submissions/**", "/api/moderation/**").hasRole("ADMIN")
+                        .requestMatchers("/users/**").authenticated()
                         .requestMatchers("/api/**").permitAll()
                         .anyRequest().authenticated()
                 )
@@ -74,7 +71,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.stream(allowedOrigins.split(","))
+        configuration.setAllowedOrigins(Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(origin -> !origin.isBlank())
                 .toList());
