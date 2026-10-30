@@ -23,7 +23,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = "app.security.cors.allowed-origins=http://localhost:5173,http://127.0.0.1:5173,https://*.vercel.app")
 @AutoConfigureMockMvc
 class SecurityHardeningTests {
 
@@ -161,5 +161,14 @@ class SecurityHardeningTests {
                         .header("Origin", "https://evil.example")
                         .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testCorsAllowsWildcardVercelPreviewOrigins() throws Exception {
+        mockMvc.perform(options("/api/politicians")
+                        .header("Origin", "https://politik-mln2jms1a-tap-tone.vercel.app")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://politik-mln2jms1a-tap-tone.vercel.app"));
     }
 }
