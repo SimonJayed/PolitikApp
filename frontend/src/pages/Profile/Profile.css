@@ -85,11 +85,28 @@
   height: clamp(72px, 9vw, 104px);
   border: 3px solid var(--ph-gold-light);
   border-radius: 50%;
+  overflow: hidden;
   background: color-mix(in srgb, var(--ph-white) 12%, transparent);
   color: var(--ph-white);
   font: 800 clamp(1.5rem, 3vw, 2.2rem)/1 var(--display);
   letter-spacing: 0.02em;
   box-shadow: 0 0 0 6px color-mix(in srgb, var(--ph-white) 10%, transparent);
+}
+
+.prAvatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
+.prAvatar img + span {
+  display: none;
+}
+
+.prAvatar img[hidden] + span {
+  display: block;
 }
 
 .prIdentity {

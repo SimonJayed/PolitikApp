@@ -259,7 +259,16 @@ export default function PoliticianProfilePage({
         <>
           <header className="prHero">
             <div className="prHeroMain">
-              <span className="prAvatar" aria-hidden="true">{initials(profile.fullName)}</span>
+              <span className="prAvatar">
+                {profile.profileImageUrl && (
+                  <img
+                    alt={`${profile.fullName} profile`}
+                    onError={(event) => { event.currentTarget.hidden = true }}
+                    src={profile.profileImageUrl}
+                  />
+                )}
+                <span aria-hidden="true">{initials(profile.fullName)}</span>
+              </span>
               <div className="prIdentity">
                 <span className="prPositionPill">{position}</span>
                 <h1>{profile.fullName}</h1>
