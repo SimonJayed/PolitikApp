@@ -510,7 +510,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                       ) : (
                         <p className="ty-meta commentHint">Sign in to join the discussion. Comments are anonymous.</p>
                       )}
-                      {comments.status === 'loading' && <p className="ty-meta commentHint">Loading comments…</p>}
+                      {comments.status === 'loading' && <span className="inlineSkeleton commentSkeleton" aria-label="Loading comments" />}
                       {comments.status === 'error' && <p className="ty-meta commentHint">{comments.message}</p>}
                       {comments.status === 'success' && comments.items?.length === 0 && (
                         <p className="ty-meta commentHint">No comments yet. Start the discussion.</p>

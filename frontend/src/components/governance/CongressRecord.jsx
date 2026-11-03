@@ -23,7 +23,7 @@ function RevisionHistory({ id, token }) {
     return () => controller.abort()
   }, [id, token, offset, refresh])
   return <section aria-label="Retained source revisions">
-    {state.loading && <p role="status">Loading revisions...</p>}
+    {state.loading && <span className="inlineSkeleton" aria-label="Loading revisions" />}
     {state.error && <p role="alert">{state.error} <button onClick={() => setRefresh(value => value + 1)}>Retry revisions</button></p>}
     {!state.loading && !state.error && state.rows.length === 0 && <p>No revisions found.</p>}
     {state.rows.map(row => <details key={row.revision}><summary>{row.title || id} · imported {text(row.imported_at, 'Unknown')}</summary>
@@ -86,7 +86,7 @@ export default function CongressRecord({ record, token, previewId, onSelect, onD
       </table></div>}
       <p>Membership in a Congress does not establish an individual’s exact term dates.</p>
       <h3>Authored bills</h3>
-      {billState.busy && <p role="status">Loading authored bills…</p>}
+      {billState.busy && <span className="inlineSkeleton" aria-label="Loading authored bills" />}
       {billState.error && <p role="alert">{billState.error} <button onClick={() => setBillRefresh(value => value + 1)}>Retry bills</button></p>}
       {!billState.busy && !billState.error && bills.length === 0 && <p>No resolved authorship records in this {previewId ? 'preview scope' : 'import'}.</p>}
       <ul>{bills.map(bill => <li key={bill.id}><button type="button" onClick={() => onSelect(bill.id)}>{bill.title || bill.id}</button> · {bill.subtype?.toUpperCase()} {bill.billNumber} · Congress {bill.congress}</li>)}</ul>

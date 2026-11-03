@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { congressRecordsPath, congressRequest } from '../../api/congress'
 import CongressRecord from '../../components/governance/CongressRecord'
+import { InlineSkeleton, PageSkeleton } from '../pageHelpers'
 import '../AdminNews/AdminNews.css'
 import './OpenCongress.css'
 
@@ -179,7 +180,7 @@ export default function OpenCongress({ token, politicians = [] }) {
     <header className="adminNewsHeader"><div><h1>Congress data</h1><p>Review source records, connect verified identities, and check for dataset changes.</p></div></header>
     {error && <p role="alert">{error}</p>}
     {config?.message && <p>{config.message}</p>}
-    {!config && !error && <p role="status">Loading dataset configuration...</p>}
+    {!config && !error && <PageSkeleton variant="congress" />}
     <nav className="congressTabs" aria-label="Congress data sections">
       <button className={view === 'review' ? 'active' : ''} onClick={() => setView('review')}>Review {candidates.length ? `(${candidates.length})` : ''}</button>
       <button className={view === 'browse' ? 'active' : ''} onClick={() => { setView('browse'); setPreviewId(null) }}>Browse records</button>
@@ -269,11 +270,11 @@ export default function OpenCongress({ token, politicians = [] }) {
     <div className="congressActions"><label>Record type<select value={kind} onChange={e => { setKind(e.target.value); setOffset(0) }}>{['PERSON', 'BILL', 'CONGRESS', 'CHAMBER', 'COMMITTEE'].map(value => <option key={value}>{value}</option>)}</select></label>
       <label>Search names or titles<input value={search} onChange={e => { setSearch(e.target.value); setOffset(0) }} /></label></div>
     <ul>{rows.map(row => <li key={row.id}><button onClick={() => select(row.id)}>{row.title || row.id}</button>{row.billNumber && ` · ${row.subtype} ${row.billNumber} · Congress ${row.congress}`}</li>)}</ul>
-    {listState.loading && <p role="status">Loading records...</p>}
+    {listState.loading && <PageSkeleton variant="records" />}
     {listState.error && <p role="alert">{listState.error} <button onClick={() => setRefresh(value => value + 1)}>Retry records</button></p>}
     {!listState.loading && !listState.error && rows.length === 0 && <p>No records to display. Run a preview or select imported records after an approved import.</p>}
     <div className="congressActions"><button disabled={!offset || listState.loading} onClick={() => setOffset(value => Math.max(0, value - 25))}>Previous</button><button disabled={rows.length < 25 || listState.loading} onClick={() => setOffset(value => value + 25)}>Next</button></div>
-    {detailLoading && <p role="status">Loading source record...</p>}
+    {detailLoading && <InlineSkeleton />}
     {record && <CongressRecord key={`${previewId}:${record.entity_id}`} record={record} token={token} previewId={previewId} onSelect={select}>
       {!previewId && record.kind === 'PERSON' && <div className="congressActions">{record.politicianId ? <p>Linked to politician profile: {record.politicianId}</p> : <><label>Verified existing politician<select value={linkId} onChange={e => setLinkId(e.target.value)}><option value="">Select a matching profile</option>{exactMatches.length > 0 && <optgroup label="Exact name matches">{exactMatches.map(person => <option key={person.politicianId} value={person.politicianId}>{person.fullName}</option>)}</optgroup>}<optgroup label="Other profiles">{politicians.filter(person => !exactMatchIds.has(person.politicianId)).map(person => <option key={person.politicianId} value={person.politicianId}>{person.fullName}</option>)}</optgroup></select></label>{selectedPolitician && <p>Curated profile: {selectedPolitician.fullName} · {selectedPolitician.position || 'Office unknown'} · {selectedPolitician.jurisdiction || 'Jurisdiction unknown'} · term {selectedPolitician.termStart || 'unknown'} to {selectedPolitician.termEnd || 'unknown'}. Compare this with the source memberships above before linking.</p>}<label>Official identity evidence URL<input type="url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} /></label><label>Verification notes<textarea value={verificationNotes} onChange={e => setVerificationNotes(e.target.value)} /></label><button disabled={!linkId || !evidenceUrl || verificationNotes.trim().length < 20 || busy} onClick={link}>Link verified identity</button><p>If no profile exists, create a verified politician in the Politicians page first. Missing personal details must be verified.</p></>}</div>}
     </CongressRecord>}

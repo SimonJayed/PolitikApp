@@ -21,7 +21,7 @@ export function PaginationMini({ page, totalPages, onChange }) {
 
 export function StatusLine({ state }) {
   if (!state?.message) return null
-  if (state.status === 'loading') return <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-600 shadow-xs"><div className="flex items-center gap-3"><span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" /><span className="sr-only">{state.message}</span><div className="h-2 w-40 rounded-full bg-slate-100 animate-pulse" aria-hidden="true" /></div></div>
+  if (state.status === 'loading') return null
   return <p className={`statusLine ${state.status}`}>{state.message}</p>
 }
 
@@ -30,11 +30,43 @@ export function LoadingSkeletonCards({ count = 4 }) {
 }
 
 export function ProfileSkeleton() {
-  return <section className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm"><div className="flex min-h-[180px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50"><div className="flex items-center gap-3 text-slate-400"><span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-400" aria-hidden="true" /><span className="text-sm font-medium">Loading profile</span></div></div></section>
+  return <PageSkeleton variant="profile" />
 }
 
 export function PageSectionLoader() {
-  return <section className="flex min-h-[120px] items-center justify-center rounded-2xl border border-slate-100 bg-white p-6 shadow-xs" aria-live="polite"><div className="flex items-center gap-3 text-slate-400"><span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-500" aria-hidden="true" /><span className="text-sm font-semibold tracking-wide">Loading content</span></div></section>
+  return <PageSkeleton variant="section" />
+}
+
+export function InlineSkeleton() {
+  return <span className="inlineSkeleton" aria-hidden="true" />
+}
+
+export function PageSkeleton({ variant = 'default' }) {
+  const cardCount = variant === 'compare' ? 6 : variant === 'admin' ? 5 : 4
+  return (
+    <section className={`pageSkeleton pageSkeleton-${variant}`} aria-label="Loading page" aria-busy="true">
+      <div className="pageSkeletonHero">
+        <span className="pageSkeletonLine pageSkeletonTitle" />
+        <span className="pageSkeletonLine pageSkeletonSubtitle" />
+      </div>
+      <div className="pageSkeletonToolbar">
+        <span className="pageSkeletonControl pageSkeletonControlWide" />
+        <span className="pageSkeletonControl" />
+      </div>
+      <div className="pageSkeletonGrid">
+        {Array.from({ length: cardCount }).map((_, index) => (
+          <article className="pageSkeletonCard" key={index}>
+            <span className="pageSkeletonAvatar" />
+            <div>
+              <span className="pageSkeletonLine pageSkeletonCardTitle" />
+              <span className="pageSkeletonLine pageSkeletonCardText" />
+              <span className="pageSkeletonLine pageSkeletonCardTextShort" />
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
 }
 
 export function KpiGrid(props) { return <KPIWidget {...props} /> }

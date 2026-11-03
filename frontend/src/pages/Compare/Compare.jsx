@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ScaleIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
-import { initialsFor, KpiGrid, PaginationMini, StatusLine, TimelineLedger } from '../pageHelpers'
+import { initialsFor, KpiGrid, PageSkeleton, PaginationMini, StatusLine, TimelineLedger } from '../pageHelpers'
 import './Compare.css'
 
 const PAGE_SIZE = 5
@@ -236,6 +236,7 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
 
       <StatusLine state={state} />
       <StatusLine state={politiciansState} />
+      {politiciansState.status === 'loading' ? <PageSkeleton variant="compare" /> : <>
 
       <p className="cmpResultMeta">
         <span>{filtered.length} {filtered.length === 1 ? 'candidate' : 'candidates'}{isFiltering ? ' match your filters' : ''}</span>
@@ -294,6 +295,7 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
           </section>
         </div>
       )}
+      </>}
     </section>
   )
 }

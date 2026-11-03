@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import AdminAdjudicationTable from './moderation/AdminAdjudicationTable'
 import { FileTextIcon, RefreshCwIcon, ScaleIcon, ShieldCheckIcon, UsersIcon } from './icons/Lucide'
+import { PageSkeleton } from '../pages/pageHelpers'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? (import.meta.env.DEV ? 'http://localhost:8080' : '')).replace(/\/$/, '')
 
@@ -201,7 +202,7 @@ export default function ModerationPanel({ token, user }) {
             </div>
 
             {citizenLoading ? (
-              <p style={{ color: '#64748b', fontSize: '13px' }}>Fetching records...</p>
+              <PageSkeleton variant="moderation" />
             ) : citizenItems.length === 0 ? (
               <div
                 style={{

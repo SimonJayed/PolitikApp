@@ -80,7 +80,7 @@ export default function CongressProfilePanel({ politicianId, token, onDraftCreat
         <p className="prCardHint">Browse linked Congress data and create private drafts for verification.</p>
       </div>
     </div>
-    {loading && <p className="csStatusLine" role="status">Loading linked Congress records...</p>}
+    {loading && <span className="inlineSkeleton" aria-label="Loading linked Congress records" />}
     {error && <p className="csAlert" role="alert">{error} <button className="prBtn prBtnOutline" type="button" onClick={() => setRefresh(value => value + 1)}>Retry linked records</button></p>}
     {!loading && !record && !error && <p className="csEmpty">No imported identity linked or exact-name suggestion found. Search people in Congress Data.</p>}
     {suggestion && <div className="congressNotice csNotice">

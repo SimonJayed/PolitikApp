@@ -1366,7 +1366,6 @@ function LegacyPoliticianProfilePage({
   return (
     <section className="workspace">
       <StatusLine state={state} />
-      {state.status === 'loading' && <PageSectionLoader />}
       {state.status === 'loading' && !profile && <ProfileSkeleton />}
       {profile && (
         <>
@@ -1846,10 +1845,7 @@ function ProfileSkeleton() {
   return (
     <section className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
       <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
-        <div className="flex items-center gap-3 text-slate-400">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-400" aria-hidden="true" />
-          <span className="text-sm font-medium">Loading profile</span>
-        </div>
+        <div className="h-5 w-48 rounded bg-slate-100 animate-pulse" aria-hidden="true" />
       </div>
       <div className="grid grid-cols-[132px_minmax(0,1fr)] gap-5 max-md:grid-cols-1">
         <div className="h-[132px] w-[132px] rounded-xl bg-slate-100 animate-pulse" />
@@ -1874,11 +1870,8 @@ function ProfileSkeleton() {
 
 function PageSectionLoader() {
   return (
-    <section className="flex min-h-[120px] items-center justify-center rounded-2xl border border-slate-100 bg-white p-6 shadow-xs" aria-live="polite">
-      <div className="flex items-center gap-3 text-slate-400">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-500" aria-hidden="true" />
-        <span className="text-sm font-semibold tracking-wide">Loading content</span>
-      </div>
+    <section className="flex min-h-[120px] items-center rounded-2xl border border-slate-100 bg-white p-6 shadow-xs" aria-busy="true">
+      <div className="h-3 w-full rounded bg-slate-100 animate-pulse" aria-hidden="true" />
     </section>
   )
 }

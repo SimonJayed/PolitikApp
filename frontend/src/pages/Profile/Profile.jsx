@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BarChart3Icon, FolderIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
-import { KpiGrid, PageSectionLoader, ProfileSkeleton, StatusLine, TimelineLedger } from '../pageHelpers'
+import { KpiGrid, ProfileSkeleton, StatusLine, TimelineLedger } from '../pageHelpers'
 import PoliticianEditor from '../../components/governance/PoliticianEditor'
 import EditSubmissionForm from '../../components/governance/EditSubmissionForm'
 import CongressProfilePanel from '../../components/governance/CongressProfilePanel'
@@ -253,7 +253,6 @@ export default function PoliticianProfilePage({
   return (
     <section className="workspace profilePage">
       <StatusLine state={state} />
-      {state.status === 'loading' && <PageSectionLoader />}
       {state.status === 'loading' && !profile && <ProfileSkeleton />}
 
       {profile && (

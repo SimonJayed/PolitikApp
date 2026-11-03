@@ -16,7 +16,7 @@ export default function NewsArticleReader({ id, token, onClose, onOpenProfile })
   return <BaseModal isOpen title="Government news article" onClose={onClose}>
     <button type="button" onClick={onClose}>Close article</button>
     {error && <p role="alert">{error}</p>}
-    {!article && !error && <p role="status">Loading article...</p>}
+    {!article && !error && <div className="articleReaderSkeleton" aria-label="Loading article" aria-busy="true"><span /><span /><span /></div>}
     {article && <article>
       <h1>{article.headline}</h1><p>{article.sourceName} · {article.category}</p>
       <h2>Summary</h2><p>{article.summary}</p>

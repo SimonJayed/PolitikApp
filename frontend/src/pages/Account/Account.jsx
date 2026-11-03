@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
+import { PageSkeleton } from '../pageHelpers'
 import './Account.css'
 
 function StatusLine({ state }) {
@@ -15,12 +16,12 @@ function initialsFor(name = '') {
 export default function Account({ token, user }) {
   const { updateSession } = useAuth()
   const [profile, setProfile] = useState(null)
-  const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
+  const [state, setState] = useState({ status: 'loading', message: '' })
   const [form, setForm] = useState({ fullName: '', username: '' })
 
   useEffect(() => {
     let cancelled = false
-    setState({ status: 'loading', message: 'Loading profile...' })
+    setState({ status: 'loading', message: '' })
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
         if (res.status === 401 || res.status === 403) {
@@ -68,7 +69,7 @@ export default function Account({ token, user }) {
         </div>
       </header>
 
-      <div className="settingsLayout">
+      {state.status === 'loading' ? <PageSkeleton variant="account" /> : <div className="settingsLayout">
         <form className="settingsCard settingsForm" onSubmit={onSave}>
           <div className="settingsCardHeader">
             <h3>Profile details</h3>
@@ -100,7 +101,7 @@ export default function Account({ token, user }) {
             </dl>
           </div>
         </aside>
-      </div>
+      </div>}
     </section>
   )
 }

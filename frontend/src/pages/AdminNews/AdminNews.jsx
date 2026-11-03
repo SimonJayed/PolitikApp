@@ -9,6 +9,7 @@ import {
 } from '../../components/icons/Lucide'
 import './AdminNews.css'
 import SourceManager from './SourceManager'
+import { PageSkeleton } from '../pageHelpers'
 
 const statuses = ['ALL', 'PENDING_REVIEW', 'APPROVED', 'PUBLISHED', 'REJECTED', 'UNPUBLISHED', 'FAILED']
 const categories = ['Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
@@ -298,9 +299,10 @@ export default function AdminNews({ token, user }) {
       </div>
 
       {state.message && <div className={`adminNewsNotice ${state.status}`}>{state.message}</div>}
-      {actionState.message && <div className={`adminNewsNotice ${actionState.status}`}>{actionState.message}</div>}
+      {actionState.message && actionState.status !== 'loading' && <div className={`adminNewsNotice ${actionState.status}`}>{actionState.message}</div>}
 
       <section className="adminArticleTableWrap" aria-label="Administrative article queue">
+        {state.status === 'loading' && <PageSkeleton variant="admin" />}
         {items.length === 0 && state.status !== 'loading' && (
           <div className="adminEmpty">
             <FileTextIcon size={24} />
