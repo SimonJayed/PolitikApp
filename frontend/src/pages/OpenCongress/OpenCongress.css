@@ -1,5 +1,83 @@
-.congressPage { display: grid; gap: 18px; }
-.congressPage .adminReviewPanel, .congressRecord { padding: 20px; }
+.congressPage {
+  display: grid;
+  gap: 18px;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 20px clamp(16px, 3vw, 44px) 72px;
+}
+.congressPage .adminNewsHeader,
+.congressPage .adminReviewPanel,
+.congressRecord {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+}
+.congressPage .adminNewsHeader {
+  position: relative;
+  overflow: hidden;
+  padding: 26px 28px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(184, 150, 42, 0.2), transparent 32%),
+    linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+}
+.congressPage .adminNewsHeader::after {
+  content: 'SOURCE-FIRST REVIEW';
+  position: absolute;
+  right: 28px;
+  bottom: 20px;
+  color: rgba(255, 255, 255, 0.5);
+  font: 700 10px/1 var(--mono);
+  letter-spacing: .14em;
+}
+.congressPage .adminNewsHeader h1,
+.congressPage .adminNewsHeader p { color: var(--ph-white); }
+.congressPage .adminNewsHeader h1 { margin: 0 0 6px; font: 800 clamp(1.35rem, 2.4vw, 1.8rem)/1.1 var(--display); }
+.congressPage .adminNewsHeader p { margin: 0; color: rgba(255,255,255,.72); }
+.congressPage .adminReviewPanel,
+.congressRecord { padding: 24px; }
+.congressPage .congressTabs {
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+}
+.congressPage .congressTabs button {
+  border: 0;
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.congressPage .congressTabs button.active {
+  background: var(--accent-soft);
+  color: var(--ph-blue);
+  box-shadow: inset 0 0 0 1px var(--info-border);
+}
+.congressPage .congressGuide > section,
+.congressPage .congressGuide > details,
+.congressPage .congressCandidate {
+  border-color: var(--line-soft);
+  border-radius: var(--radius-md);
+  background: var(--bg-inset);
+}
+.congressPage .congressGuide > section,
+.congressPage .congressGuide > details { padding: 18px; }
+.congressPage .congressCandidate { padding: 16px 18px; }
+.congressPage .congressCandidate button,
+.congressPage .congressGuide > button {
+  background: var(--ph-blue);
+  border-color: var(--ph-blue);
+  box-shadow: var(--shadow-xs);
+}
+.congressPage .congressCounts span {
+  border: 1px solid var(--info-border);
+  background: var(--info-soft);
+  color: var(--ph-blue);
+  font-weight: 700;
+}
+.congressPage :is(input, select, textarea) { background: var(--bg-inset); }
 .congressActions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; }
 .congressActions label { display: grid; gap: 5px; }
 .congressActions input, .congressActions select { max-width: 100%; padding: 8px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--bg-surface); color: var(--text-primary); }

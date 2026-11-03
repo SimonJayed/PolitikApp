@@ -17,11 +17,34 @@
 }
 
 .adminNewsHeader {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   padding: 22px 24px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(184, 150, 42, 0.16), transparent 30%),
+    linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+}
+
+.adminNewsHeader::after {
+  content: 'CURATED PUBLIC RECORDS';
+  position: absolute;
+  right: 24px;
+  bottom: 14px;
+  color: rgba(255, 255, 255, 0.48);
+  font: 700 10px/1 var(--mono);
+  letter-spacing: .14em;
+}
+
+.adminNewsHeader :is(h1, p) {
+  color: var(--ph-white);
+}
+
+.adminNewsHeader p {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .adminNewsHeader button,

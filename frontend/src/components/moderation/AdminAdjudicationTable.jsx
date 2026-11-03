@@ -215,9 +215,9 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+    <div className="admin-adjudication-console" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Console Header */}
-      <div
+      <div className="adjudication-console-header"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -295,7 +295,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
       </div>
 
       {/* Filter Tabs & Search Bar */}
-      <div
+      <div className="adjudication-console-filters"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -304,7 +304,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
           gap: '12px',
         }}
       >
-        <div style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
+        <div className="adjudication-console-tabs" style={{ display: 'flex', gap: '6px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
           {[
             { key: 'ALL', label: 'All Items', count: counts.all },
             { key: 'CHALLENGES', label: 'Public Challenges', count: counts.challenges },
@@ -350,7 +350,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
           })}
         </div>
 
-        <div style={{ minWidth: '240px' }}>
+        <div className="adjudication-console-search" style={{ minWidth: '240px' }}>
           <input
             type="text"
             placeholder="Search by politician or keyword..."

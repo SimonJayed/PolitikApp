@@ -1,274 +1,222 @@
 /* =========================================================
-   Compare — design tokens (scoped; mirrors the dashboard)
-   Fonts are untouched: everything uses the existing --display / --sans.
+   Compare page
+   Colors come from the :root palette in App.css (--ph-*).
+   Fonts are unchanged: --display and --sans only.
+   Candidate A = blue, Candidate B = red.
    ========================================================= */
-.compareShell {
-  --d-ink: var(--ph-blue);
-  --d-ink-deep: var(--ph-blue-mid);
-  --d-primary: var(--ph-blue-light);
-  --d-primary-strong: var(--ph-blue-mid);
-  --d-primary-soft: color-mix(in srgb, var(--ph-blue-light) 9%, var(--ph-white));
-  --d-accent: var(--ph-gold);
-  --d-gold-soft: color-mix(in srgb, var(--ph-gold) 14%, var(--ph-white));
-  --d-gold-text: color-mix(in srgb, var(--ph-gold) 62%, var(--ph-blue));
-  --d-surface: var(--ph-white);
-  --d-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
-  --d-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
-  --d-line-soft: color-mix(in srgb, var(--ph-blue) 8%, var(--ph-white));
-  --d-text: var(--ph-blue);
-  --d-text-2: color-mix(in srgb, var(--ph-blue) 78%, var(--ph-white));
-  --d-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
-  --d-radius-lg: 18px;
-  --d-radius-md: 12px;
-  --d-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
-  --d-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.05), 0 12px 32px rgba(10, 29, 66, 0.09);
+.comparePage {
+  --p-surface: var(--ph-white);
+  --p-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
+  --p-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
+  --p-line-soft: color-mix(in srgb, var(--ph-blue) 8%, var(--ph-white));
+  --p-text: var(--ph-blue);
+  --p-text-2: color-mix(in srgb, var(--ph-blue) 78%, var(--ph-white));
+  --p-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
+  --a: var(--ph-blue-light);
+  --b: var(--ph-red);
+  --p-radius-lg: 18px;
+  --p-radius-md: 12px;
+  --p-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
+  --p-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.06), 0 14px 32px rgba(10, 29, 66, 0.12);
 
   display: grid;
   gap: 18px;
-  width: min(1440px, 100%);
+  width: min(1240px, 100%);
   margin: 0 auto;
   padding: 20px clamp(16px, 3vw, 44px) 40px;
-  background: transparent;
-  color: var(--d-text);
+  color: var(--p-text);
 }
 
-.compareShell :is(button, a, input, select):focus-visible {
-  outline: 2px solid var(--d-primary);
+.comparePage :is(button, input, select):focus-visible {
+  outline: 2px solid var(--ph-blue-light);
   outline-offset: 2px;
 }
 
-.cmpSrOnly {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
-}
-
-/* =========================================================
-   Hero + filters
-   ========================================================= */
+/* ---------- Hero & steps ---------- */
 .cmpHero {
   position: relative;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 14px 24px;
+  gap: 16px 28px;
   overflow: hidden;
-  padding: 22px clamp(22px, 2.6vw, 34px);
-  border-radius: var(--d-radius-lg);
+  padding: 24px clamp(22px, 3vw, 34px);
+  border-radius: var(--p-radius-lg);
   background:
-    radial-gradient(360px 180px at 100% 0%, color-mix(in srgb, var(--ph-red) 42%, transparent), transparent 70%),
-    radial-gradient(320px 180px at 0% 130%, color-mix(in srgb, var(--ph-gold) 30%, transparent), transparent 70%),
-    linear-gradient(135deg, var(--d-ink), var(--d-ink-deep));
+    radial-gradient(380px 200px at 100% 0%, color-mix(in srgb, var(--ph-red) 40%, transparent), transparent 70%),
+    radial-gradient(320px 200px at 0% 130%, color-mix(in srgb, var(--ph-gold) 30%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
   color: var(--ph-white);
-  box-shadow: var(--d-shadow-sm);
+  box-shadow: var(--p-shadow-sm);
 }
 
 .cmpHeroText h1 {
   margin: 0;
   color: var(--ph-white);
-  font: 800 clamp(1.25rem, 2.2vw, 1.6rem)/1.15 var(--display);
-  letter-spacing: -0.015em;
+  font: 800 clamp(1.5rem, 3vw, 2.1rem)/1.1 var(--display);
+  letter-spacing: -0.02em;
 }
 
 .cmpHeroText p {
-  margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.68);
-  font: 600 12px/1.4 var(--sans);
+  max-width: 52ch;
+  margin: 8px 0 0;
+  color: color-mix(in srgb, var(--ph-white) 76%, transparent);
+  font: 500 14px/1.55 var(--sans);
 }
 
-.cmpFilters {
+.cmpSteps {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  width: min(560px, 100%);
-}
-
-.cmpSearch,
-.cmpSelect {
-  display: flex;
-  align-items: center;
   gap: 8px;
-  padding: 9px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.8);
-  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.cmpSearch {
-  flex: 1 1 240px;
-}
-
-.cmpSelect {
-  flex: 0 1 190px;
-}
-
-.cmpSearch:focus-within,
-.cmpSelect:focus-within {
-  border-color: var(--ph-white);
-  background: rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.14);
-}
-
-.compareShell .cmpSearch input,
-.compareShell .cmpSelect select {
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-  height: auto;
-  min-height: 0;
   margin: 0;
   padding: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--ph-white);
-  font: 600 13px/1.3 var(--sans);
+  list-style: none;
 }
 
-.compareShell .cmpSelect select {
-  cursor: pointer;
+.cmpSteps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 14px 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 22%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ph-white) 8%, transparent);
+  color: color-mix(in srgb, var(--ph-white) 80%, transparent);
+  font: 700 12px/1 var(--display);
 }
 
-.cmpSelect option {
-  color: #0a1d42;
-}
-
-.cmpSearch input::placeholder {
-  color: rgba(255, 255, 255, 0.65);
-}
-
-.cmpSearch input::-webkit-search-cancel-button {
-  display: none;
-}
-
-.compareShell .cmpSearchClear {
+.cmpSteps li span {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  width: 20px;
-  height: 20px;
-  min-height: 0;
-  padding: 0;
-  border: 0;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.25);
-  box-shadow: none;
-  color: var(--ph-white);
-  font-size: 14px;
-  line-height: 1;
-  cursor: pointer;
+  background: color-mix(in srgb, var(--ph-white) 18%, transparent);
+  font-size: 11px;
 }
 
-.cmpResultMeta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin: 0;
-  padding: 0 6px;
-  color: var(--d-muted);
-  font: 600 13px/1.4 var(--sans);
-}
-
-.compareShell .cmpResultMeta button {
-  width: auto;
-  height: auto;
-  min-height: 0;
-  padding: 7px 14px;
-  border: 1px solid color-mix(in srgb, var(--ph-gold) 50%, transparent);
-  border-radius: 999px;
-  background: var(--d-gold-soft);
-  box-shadow: none;
-  color: var(--d-gold-text);
-  font: 800 12px/1 var(--display);
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease;
-}
-
-.compareShell .cmpResultMeta button:hover {
-  background: var(--d-accent);
+.cmpSteps li.done {
+  border-color: var(--ph-gold-light);
   color: var(--ph-white);
 }
 
-/* =========================================================
-   Selection columns
-   ========================================================= */
-.cmpColumns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
-  align-items: start;
-}
-
-.cmpColumn {
-  --side: var(--d-primary);
-  display: grid;
-  gap: 12px;
-  min-width: 0;
-  padding: 16px;
-  border: 1px solid var(--d-line);
-  border-top: 4px solid var(--side);
-  border-radius: var(--d-radius-lg);
-  background: var(--d-surface);
-  box-shadow: var(--d-shadow-sm);
-}
-
-.cmpColumn.right,
-.cmpSlot.right,
-.cmpSummary.right {
-  --side: var(--d-accent);
-}
-
-.cmpColumnHead {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px 12px;
-}
-
-.cmpSideBadge {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  background: var(--side, var(--d-primary));
-  color: var(--ph-white);
-  font: 800 14px/1 var(--display);
-}
-
-.cmpColumn.right .cmpSideBadge,
-.cmpSlot.right .cmpSideBadge {
+.cmpSteps li.done span {
+  background: var(--ph-gold-light);
   color: var(--ph-blue);
 }
 
-.cmpColumnTitle {
+/* ---------- Filters ---------- */
+.cmpFilters {
   display: grid;
-  flex: 1 1 140px;
-  gap: 2px;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--p-radius-lg);
+  background: var(--p-surface);
+  box-shadow: var(--p-shadow-sm);
+}
+
+.comparePage .cmpField {
+  display: grid;
+  gap: 6px;
   min-width: 0;
 }
 
-.cmpColumnTitle strong {
-  color: var(--d-text);
-  font: 800 14px/1.2 var(--display);
+.cmpField > span {
+  color: var(--p-muted);
+  font: 700 11px/1 var(--display);
 }
 
-.cmpColumnTitle span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--d-muted);
+.comparePage .cmpField :is(input, select) {
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--p-line);
+  border-radius: 999px;
+  outline: 0;
+  box-shadow: none;
+  background: var(--p-inset);
+  color: var(--p-text);
+  font: 600 13px/1.3 var(--sans);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.comparePage .cmpField select {
+  cursor: pointer;
+}
+
+.comparePage .cmpField :is(input, select):focus {
+  border-color: var(--ph-blue-light);
+  background: var(--p-surface);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ph-blue-light) 14%, transparent);
+}
+
+/* ---------- Selection columns ---------- */
+.cmpSelectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.cmpColumn {
+  --accent: var(--a);
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--p-line);
+  border-top: 4px solid var(--accent);
+  border-radius: var(--p-radius-lg);
+  background: var(--p-surface);
+  box-shadow: var(--p-shadow-sm);
+}
+
+.cmpColumn.b {
+  --accent: var(--b);
+}
+
+.cmpColumnHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.cmpColumnTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cmpColumnTitle h2 {
+  margin: 0;
+  color: var(--p-text);
+  font: 800 15px/1.2 var(--display);
+}
+
+.cmpColumnTitle p {
+  margin: 3px 0 0;
+  color: var(--p-muted);
   font: 600 12px/1.3 var(--sans);
+  overflow-wrap: anywhere;
+}
+
+.cmpLetter {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--accent, var(--a));
+  color: var(--ph-white);
+  font: 800 15px/1 var(--display);
 }
 
 .cmpCardList {
@@ -276,81 +224,57 @@
   gap: 8px;
 }
 
-.cmpEmpty {
-  padding: 32px 16px;
-  border: 1px dashed var(--d-line);
-  border-radius: var(--d-radius-md);
-  color: var(--d-muted);
-  font: 500 13px/1.5 var(--sans);
+.cmpNoResults {
+  margin: 0;
+  padding: 24px 8px;
+  color: var(--p-muted);
   text-align: center;
+  font: 600 13px/1.5 var(--sans);
 }
 
-/* Candidate cards. The .compareShell prefix beats app-wide button styles. */
-.compareShell .cmpCard {
-  position: relative;
-  display: flex;
+.comparePage .cmpCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 12px;
   width: 100%;
-  height: auto;
   min-height: 0;
+  height: auto;
   padding: 12px 14px;
-  border: 1px solid var(--d-line);
-  border-radius: var(--d-radius-md);
-  background: var(--d-surface);
+  border: 1.5px solid var(--p-line);
+  border-radius: var(--p-radius-md);
+  background: var(--p-surface);
   box-shadow: none;
-  transform: none;
-  color: var(--d-text);
-  font: inherit;
+  color: var(--p-text);
   text-align: left;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
 }
 
-.compareShell .cmpCard:hover:not(:disabled):not(.selected) {
-  border-color: color-mix(in srgb, var(--side, var(--d-primary)) 55%, var(--d-line));
-  background: var(--d-inset);
-  box-shadow: none;
-  transform: none;
+.comparePage .cmpCard:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--p-line));
+  background: var(--p-inset);
 }
 
-.compareShell .cmpColumn .cmpCard.selected {
-  border-color: var(--side);
-  background: color-mix(in srgb, var(--side) 10%, var(--ph-white));
-  box-shadow: 0 0 0 1px var(--side);
+.comparePage .cmpCard.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--ph-white));
 }
 
-.compareShell .cmpCard:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.cmpAvatar {
+.cmpCardAvatar {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  overflow: hidden;
   width: 44px;
   height: 44px;
+  overflow: hidden;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--ph-blue-light), var(--ph-blue));
-  color: var(--ph-white);
-  font: 800 13px/1 var(--display);
+  background: color-mix(in srgb, var(--accent) 14%, var(--ph-white));
+  color: var(--ph-blue);
+  font: 800 14px/1 var(--display);
 }
 
-.cmpAvatar.sm {
-  width: 32px;
-  height: 32px;
-  font-size: 11px;
-}
-
-.cmpAvatar.lg {
-  width: 56px;
-  height: 56px;
-  font-size: 16px;
-}
-
-.cmpAvatar img {
+.cmpCardAvatar img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -358,356 +282,375 @@
 
 .cmpCardBody {
   display: grid;
-  flex: 1;
   gap: 2px;
   min-width: 0;
 }
 
 .cmpCardBody strong {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--d-text);
+  color: var(--p-text);
   font: 800 14px/1.3 var(--display);
+  overflow-wrap: anywhere;
 }
 
 .cmpCardBody small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--d-muted);
-  font: 600 12px/1.3 var(--sans);
+  color: var(--p-muted);
+  font: 600 12px/1.35 var(--sans);
 }
 
-.cmpCardTag {
-  flex: 0 0 auto;
-  padding: 5px 9px;
-  border-radius: 999px;
-  background: var(--d-inset);
-  color: var(--d-muted);
-  font: 800 10px/1 var(--display);
-  white-space: nowrap;
-}
-
-.cmpCardTag.selected {
-  background: var(--side);
+.cmpCardCheck {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--p-line);
+  border-radius: 50%;
   color: var(--ph-white);
+  font: 800 12px/1 var(--display);
 }
 
-.cmpColumn.right .cmpCardTag.selected {
-  color: var(--ph-blue);
+.cmpCard.selected .cmpCardCheck {
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
-/* =========================================================
-   Sticky compare bar
-   ========================================================= */
+/* ---------- Sticky compare bar ---------- */
 .cmpBar {
   position: sticky;
   bottom: 16px;
   z-index: 20;
+  margin-top: 6px;
+}
+
+.cmpBarInner {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
-  border: 1px solid var(--d-line);
-  border-radius: var(--d-radius-lg);
-  background: color-mix(in srgb, var(--ph-white) 92%, transparent);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--d-shadow-md);
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 16%, transparent);
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+  color: var(--ph-white);
+  box-shadow: var(--p-shadow-md);
 }
 
-.cmpSlot {
-  --side: var(--d-primary);
+.cmpBarSide {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
-  padding: 8px 10px;
-  border: 1px dashed var(--d-line);
-  border-radius: var(--d-radius-md);
-}
-
-.cmpSlot.filled {
-  border-style: solid;
-  border-color: color-mix(in srgb, var(--side) 45%, var(--d-line));
-  background: color-mix(in srgb, var(--side) 8%, var(--ph-white));
-}
-
-.cmpSlotText {
-  display: grid;
-  flex: 1;
-  gap: 2px;
+  gap: 12px;
   min-width: 0;
 }
 
-.cmpSlotText small {
-  color: var(--d-muted);
-  font: 600 11px/1 var(--sans);
+.cmpBarSide.b {
+  justify-content: flex-end;
+  text-align: right;
 }
 
-.cmpSlotText strong {
+.cmpBarSide.a .cmpLetter {
+  background: var(--ph-blue-light);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ph-white) 40%, transparent);
+}
+
+.cmpBarSide.b .cmpLetter {
+  background: var(--ph-red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ph-white) 40%, transparent);
+}
+
+.cmpBarSide div {
+  min-width: 0;
+}
+
+.cmpBarSide p {
+  margin: 0;
+  color: color-mix(in srgb, var(--ph-white) 66%, transparent);
+  font: 700 11px/1.2 var(--display);
+}
+
+.cmpBarSide strong {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--d-text);
-  font: 800 13px/1.2 var(--display);
-}
-
-.compareShell .cmpSlotClear {
-  display: grid;
-  place-items: center;
-  flex: 0 0 auto;
-  width: 24px;
-  height: 24px;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--d-line);
-  box-shadow: none;
-  color: var(--d-text);
-  font-size: 15px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.compareShell .cmpSlotClear:hover {
-  background: var(--d-text);
   color: var(--ph-white);
+  font: 800 14px/1.4 var(--display);
 }
 
-.compareShell .cmpSubmit {
+.comparePage .cmpSubmit {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 8px;
   width: auto;
-  height: auto;
   min-height: 0;
+  height: auto;
   padding: 13px 22px;
   border: 0;
   border-radius: 999px;
-  background: var(--ph-blue);
-  box-shadow: 0 2px 6px color-mix(in srgb, var(--ph-blue) 30%, transparent);
-  color: var(--ph-white);
+  background: var(--ph-gold-light);
+  box-shadow: none;
+  color: var(--ph-blue);
   font: 800 13px/1 var(--display);
-  white-space: nowrap;
   cursor: pointer;
+  white-space: nowrap;
   transition: background-color 0.15s ease;
 }
 
-.compareShell .cmpSubmit:hover:not(:disabled) {
-  background: var(--d-primary-strong);
-  transform: none;
+.comparePage .cmpSubmit:hover:not(:disabled) {
+  background: var(--ph-white);
 }
 
-.compareShell .cmpSubmit:disabled {
-  opacity: 0.45;
+.comparePage .cmpSubmit:disabled {
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
-/* =========================================================
-   Result modal
-   ========================================================= */
-.cmpBackdrop {
+/* ---------- Result dialog ---------- */
+.cmpModalBackdrop {
   position: fixed;
   inset: 0;
   z-index: 1000;
   display: grid;
   place-items: center;
   padding: clamp(12px, 3vw, 32px);
-  background: color-mix(in srgb, var(--ph-blue) 55%, transparent);
+  background: color-mix(in srgb, var(--ph-blue) 62%, transparent);
   backdrop-filter: blur(4px);
-  animation: cmpFade 0.18s ease-out;
 }
 
 .cmpModal {
-  --d-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
-  --d-text: var(--ph-blue);
-  --d-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
-  --d-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
-  --d-primary: var(--ph-blue-light);
-  --d-accent: var(--ph-gold);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  width: min(1200px, 100%);
-  max-height: min(92vh, 960px);
+  width: min(1180px, 100%);
+  max-height: 100%;
   overflow: hidden;
-  border-radius: var(--d-radius-lg, 18px);
-  background: var(--ph-white);
-  box-shadow: 0 24px 64px rgba(10, 29, 66, 0.35);
+  border-radius: var(--p-radius-lg);
+  background: var(--p-surface);
+  box-shadow: var(--p-shadow-md);
 }
 
-.cmpModalHead {
+.cmpModalHeader {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
-  padding: 16px 24px;
+  padding: 16px 22px;
   background: linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
   color: var(--ph-white);
 }
 
-.cmpModalHead h2 {
+.cmpModalHeader h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin: 0;
   color: var(--ph-white);
-  font: 800 1.1rem/1.2 var(--display);
+  font: 800 17px/1.2 var(--display);
 }
 
-.cmpModalHead button {
+.comparePage .cmpModalHeader button {
   width: auto;
-  height: auto;
   min-height: 0;
-  padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  height: auto;
+  padding: 9px 16px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 45%, transparent);
   border-radius: 999px;
-  background: transparent;
+  background: color-mix(in srgb, var(--ph-white) 10%, transparent);
   box-shadow: none;
   color: var(--ph-white);
-  font: 700 12px/1 var(--display);
+  font: 800 12px/1 var(--display);
   cursor: pointer;
 }
 
-.cmpModalHead button:hover {
-  background: rgba(255, 255, 255, 0.16);
+.comparePage .cmpModalHeader button:hover {
+  background: color-mix(in srgb, var(--ph-white) 22%, transparent);
 }
 
 .cmpModalBody {
   overflow-y: auto;
-  padding: clamp(16px, 2.4vw, 28px);
-  background: var(--d-inset);
+  padding: 22px;
+  background: var(--p-inset);
 }
 
+/* ---------- Result content ---------- */
 .cmpResult {
   display: grid;
-  gap: 24px;
+  gap: 22px;
 }
 
-.cmpSummaryGrid {
+.cmpCandidates {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
-.cmpSummary {
-  --side: var(--d-primary);
+.cmpCandidate {
+  --accent: var(--a);
   display: grid;
-  gap: 14px;
+  align-content: start;
+  gap: 16px;
   min-width: 0;
-  padding: 18px;
-  border: 1px solid var(--d-line);
-  border-top: 4px solid var(--side);
-  border-radius: var(--d-radius-lg, 18px);
-  background: var(--ph-white);
+  padding: 20px;
+  border: 1px solid var(--p-line);
+  border-top: 5px solid var(--accent);
+  border-radius: var(--p-radius-lg);
+  background: var(--p-surface);
+  box-shadow: var(--p-shadow-sm);
 }
 
-.cmpSummaryTop {
+.cmpCandidate.b {
+  --accent: var(--b);
+}
+
+.cmpCandidateHead {
   display: flex;
   align-items: center;
   gap: 14px;
   min-width: 0;
 }
 
-.cmpSummaryKicker {
-  display: block;
-  color: var(--d-muted);
-  font: 700 12px/1.3 var(--sans);
+.cmpCandidateAvatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, var(--ph-white));
+  box-shadow: 0 0 0 2px var(--accent);
+  color: var(--ph-blue);
+  font: 800 18px/1 var(--display);
 }
 
-.cmpSummary h3 {
-  margin: 2px 0 0;
-  overflow-wrap: anywhere;
-  color: var(--d-text);
-  font: 800 1.2rem/1.2 var(--display);
+.cmpCandidateHead > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cmpSideTag {
+  width: max-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ph-white);
+  font: 800 10px/1 var(--display);
+}
+
+.cmpCandidateHead h2 {
+  margin: 0;
+  color: var(--p-text);
+  font: 800 20px/1.2 var(--display);
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.cmpCandidateHead p {
+  margin: 0;
+  color: var(--p-muted);
+  font: 600 13px/1.4 var(--sans);
 }
 
 .cmpMatrix {
   display: grid;
-  gap: 16px;
+  gap: 18px;
+  padding: 22px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--p-radius-lg);
+  background: var(--p-surface);
+  box-shadow: var(--p-shadow-sm);
 }
 
 .cmpMatrixTitle {
   margin: 0;
-  color: var(--d-text);
-  font: 800 1rem/1.2 var(--display);
+  color: var(--p-text);
+  font: 800 18px/1.2 var(--display);
+}
+
+.cmpMatrixEmpty {
+  margin: 0;
+  color: var(--p-muted);
+  font: 500 14px/1.5 var(--sans);
 }
 
 .cmpMatrixRow {
   display: grid;
-  gap: 10px;
+  gap: 12px;
+  padding-top: 18px;
+  border-top: 1px solid var(--p-line-soft);
 }
 
-.cmpCategory {
-  width: max-content;
-  max-width: 100%;
+.cmpMatrixRow:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.cmpMatrixRow h3 {
   margin: 0;
+}
+
+.cmpMatrixRow h3 span {
+  display: inline-flex;
   padding: 6px 12px;
   border-radius: 999px;
-  background: var(--d-gold-soft, color-mix(in srgb, var(--ph-gold) 14%, var(--ph-white)));
-  color: var(--d-gold-text, var(--ph-blue));
-  font: 800 11px/1 var(--display);
+  background: color-mix(in srgb, var(--ph-gold) 14%, var(--ph-white));
+  color: color-mix(in srgb, var(--ph-gold) 62%, var(--ph-blue));
+  font: 800 12px/1 var(--display);
 }
 
 .cmpLedgerPair {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  align-items: start;
+  gap: 14px;
 }
 
-/* =========================================================
-   Motion
-   ========================================================= */
-@keyframes cmpFade {
-  from { opacity: 0; }
-  to { opacity: 1; }
+.cmpLedgerCell {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--p-line-soft);
+  border-left: 4px solid var(--a);
+  border-radius: var(--p-radius-md);
+  background: var(--p-inset);
 }
 
+.cmpLedgerCell.b {
+  border-left-color: var(--b);
+}
+
+/* ---------- Motion ---------- */
 @media (prefers-reduced-motion: reduce) {
-  .compareShell *,
-  .compareShell *::before,
-  .cmpBackdrop {
-    animation: none !important;
+  .comparePage *,
+  .comparePage *::before {
     transition: none !important;
+    animation: none !important;
   }
 }
 
-/* =========================================================
-   Responsive
-   ========================================================= */
+/* ---------- Responsive ---------- */
 @media (max-width: 900px) {
-  .cmpColumns,
-  .cmpSummaryGrid,
-  .cmpLedgerPair {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .cmpBar {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
-  }
-
-  .cmpSubmit {
-    order: 3;
-  }
-}
-
-@media (max-width: 640px) {
+  .cmpSelectionGrid,
+  .cmpCandidates,
+  .cmpLedgerPair,
   .cmpFilters {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cmpBarInner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    border-radius: var(--p-radius-lg);
+  }
+
+  .cmpBarSide,
+  .cmpBarSide.b {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .cmpBarSide.b {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+  }
+
+  .comparePage .cmpSubmit {
+    justify-content: center;
     width: 100%;
-  }
-
-  .cmpSelect {
-    flex-basis: 100%;
-  }
-
-  .cmpCardTag {
-    display: none;
-  }
-
-  .cmpModalHead {
-    padding: 14px 16px;
   }
 }

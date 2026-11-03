@@ -3,6 +3,7 @@ import { congressRequest } from '../../api/congress'
 import CongressRecord from './CongressRecord'
 import '../../pages/OpenCongress/OpenCongress.css'
 
+// Layout styles for this panel live in Profile.css (classes prefixed "cs" and "pr").
 export default function CongressProfilePanel({ politicianId, token, onDraftCreated }) {
   const [record, setRecord] = useState(null)
   const [person, setPerson] = useState(null)
@@ -72,11 +73,33 @@ export default function CongressProfilePanel({ politicianId, token, onDraftCreat
   }
   const canDraft = Boolean(person && record?.kind === 'BILL' && record?.source_urls?.length
     && record?.relationships?.some(row => row.relationship === 'AUTHORED_BY' && row.target_id === person.entity_id))
-  return <section className="congressProfilePanel"><h2>Congress source records · admin review</h2>
-    {loading && <p role="status">Loading linked Congress records...</p>}
-    {error && <p role="alert">{error} <button onClick={() => setRefresh(value => value + 1)}>Retry linked records</button></p>}
-    {!loading && !record && !error && <p>No imported identity linked or exact-name suggestion found. Search people in Congress Data.</p>}
-    {suggestion && <div className="congressNotice"><p>Possible source match. Compare its memberships and references before connecting it.</p><p>{suggestion.politicianName} · {suggestion.position || 'Office unknown'} · {suggestion.jurisdiction || 'Jurisdiction unknown'} · term {suggestion.termStart} to {suggestion.termEnd}</p><label>Official identity evidence URL<input type="url" value={evidenceUrl} onChange={event => setEvidenceUrl(event.target.value)} /></label><label>Verification notes<textarea value={verificationNotes} onChange={event => setVerificationNotes(event.target.value)} /></label><button disabled={linking || !evidenceUrl || verificationNotes.trim().length < 20} onClick={linkSuggestion}>{linking ? 'Connecting…' : 'Confirm and connect source person'}</button></div>}
-    {record && <><button disabled={loading || !person} onClick={() => { setRecord(person); setError('') }}>Back to linked person</button><CongressRecord key={record.entity_id} record={record} token={token} onSelect={select} onDraftMembership={person && record.kind === 'PERSON' ? draftMembership : undefined}>{canDraft && <button disabled={drafting} onClick={draftBill}>{drafting ? 'Creating draft…' : 'Create private bill draft for review'}</button>}</CongressRecord></>}
+  return <section className="prCard csPanel congressProfilePanel">
+    <div className="prCardHead">
+      <div>
+        <h2 className="prCardTitle">Congress source records · admin review</h2>
+        <p className="prCardHint">Browse linked Congress data and create private drafts for verification.</p>
+      </div>
+    </div>
+    {loading && <p className="csStatusLine" role="status">Loading linked Congress records...</p>}
+    {error && <p className="csAlert" role="alert">{error} <button className="prBtn prBtnOutline" type="button" onClick={() => setRefresh(value => value + 1)}>Retry linked records</button></p>}
+    {!loading && !record && !error && <p className="csEmpty">No imported identity linked or exact-name suggestion found. Search people in Congress Data.</p>}
+    {suggestion && <div className="congressNotice csNotice">
+      <h3 className="csSubTitle">Possible source match</h3>
+      <p>Compare its memberships and references before connecting it.</p>
+      <p className="csNoticeMeta">{suggestion.politicianName} · {suggestion.position || 'Office unknown'} · {suggestion.jurisdiction || 'Jurisdiction unknown'} · term {suggestion.termStart} to {suggestion.termEnd}</p>
+      <label>Official identity evidence URL<input type="url" value={evidenceUrl} onChange={event => setEvidenceUrl(event.target.value)} /></label>
+      <label>Verification notes<textarea value={verificationNotes} onChange={event => setVerificationNotes(event.target.value)} /></label>
+      <div className="csToolbar">
+        <button className="prBtn prBtnPrimaryDark" type="button" disabled={linking || !evidenceUrl || verificationNotes.trim().length < 20} onClick={linkSuggestion}>{linking ? 'Connecting…' : 'Confirm and connect source person'}</button>
+      </div>
+    </div>}
+    {record && <>
+      <div className="csToolbar">
+        <button className="prBtn prBtnOutline" type="button" disabled={loading || !person} onClick={() => { setRecord(person); setError('') }}>← Back to linked person</button>
+      </div>
+      <div className="csRecordWrap">
+        <CongressRecord key={record.entity_id} record={record} token={token} onSelect={select} onDraftMembership={person && record.kind === 'PERSON' ? draftMembership : undefined}>{canDraft && <button className="prBtn prBtnPrimaryDark" type="button" disabled={drafting} onClick={draftBill}>{drafting ? 'Creating draft…' : 'Create private bill draft for review'}</button>}</CongressRecord>
+      </div>
+    </>}
   </section>
 }

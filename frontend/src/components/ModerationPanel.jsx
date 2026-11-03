@@ -44,7 +44,7 @@ export default function ModerationPanel({ token, user }) {
   }
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '16px' }}>
+    <div className="moderation-container">
       {/* Role Banner */}
       <div
         style={{
