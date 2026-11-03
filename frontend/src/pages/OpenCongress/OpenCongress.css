@@ -113,4 +113,78 @@
 .congressCandidate button, .congressGuide > button { width: fit-content; flex-shrink: 0; padding: 9px 14px; border: 1px solid var(--ph-blue); border-radius: var(--radius-sm); background: var(--ph-blue); color: white; cursor: pointer; }
 .congressGuide > button:disabled { opacity: .55; cursor: not-allowed; }
 .congressHelp { color: var(--text-muted); font-size: .9rem; }
+
+/* Shared dashboard hierarchy and interaction polish. */
+.congressPage {
+  gap: 20px;
+  padding-top: 28px;
+}
+
+.congressPage .adminNewsHeader {
+  min-height: 112px;
+  padding: 28px 30px;
+  box-shadow: var(--shadow-md);
+}
+
+.congressPage .adminNewsHeader h1 {
+  letter-spacing: -0.025em;
+}
+
+.congressPage .congressTabs {
+  box-shadow: var(--shadow-sm);
+}
+
+.congressPage .congressTabs button,
+.congressPage .congressActions button,
+.congressPage .congressRecord button {
+  transition: transform var(--duration-fast) var(--ease-out), background-color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.congressPage .congressTabs button:hover,
+.congressPage .congressActions button:hover:not(:disabled),
+.congressPage .congressRecord button:hover:not(:disabled) {
+  border-color: var(--ph-blue);
+  color: var(--ph-blue);
+  transform: translateY(-1px);
+}
+
+.congressPage .congressTabs button.active {
+  transform: none;
+}
+
+.congressPage .adminReviewPanel,
+.congressPage .congressRecord {
+  box-shadow: var(--shadow-md);
+}
+
+.congressPage .congressGuide > section,
+.congressPage .congressGuide > details,
+.congressPage .congressCandidate {
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast), transform var(--duration-fast);
+}
+
+.congressPage .congressGuide > section:hover,
+.congressPage .congressCandidate:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.congressPage :is(input, select, textarea):focus {
+  border-color: var(--line-focus);
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.congressPage .congressActions button,
+.congressPage .congressRecord button {
+  font-weight: 700;
+}
+
+.congressPage .congressTableWrap tbody tr {
+  transition: background-color var(--duration-fast);
+}
+
+.congressPage .congressTableWrap tbody tr:hover {
+  background: var(--bg-inset);
+}
 @media (max-width: 640px) { .congressCandidate { align-items: stretch; flex-direction: column; } }

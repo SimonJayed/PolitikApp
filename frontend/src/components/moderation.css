@@ -470,3 +470,57 @@
 .line-escalated { color: #fdba74; font-weight: 600; }
 .terminal-divider { color: #5b7aa6; margin: 10px 0; }
 .terminal-summary { color: #93c5fd; font-family: var(--mono, monospace); font-size: 0.78rem; }
+
+/* Shared dashboard treatment for the adjudication workspace. */
+.moderation-container {
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: 28px;
+}
+
+.admin-adjudication-console .adjudication-console-header,
+.admin-adjudication-console .adjudication-console-filters,
+.admin-adjudication-console > div:last-child > div {
+  transition: box-shadow var(--duration-fast) var(--ease-out), border-color var(--duration-fast);
+}
+
+.admin-adjudication-console .adjudication-console-filters {
+  min-height: 58px;
+}
+
+.admin-adjudication-console .adjudication-console-tabs button {
+  transition: background-color var(--duration-fast), color var(--duration-fast), box-shadow var(--duration-fast), transform var(--duration-fast);
+}
+
+.admin-adjudication-console .adjudication-console-tabs button:hover {
+  color: var(--ph-blue) !important;
+  transform: translateY(-1px);
+}
+
+.admin-adjudication-console .adjudication-console-search input {
+  color: var(--text-primary);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.admin-adjudication-console .adjudication-console-search input:focus {
+  border-color: var(--line-focus) !important;
+  box-shadow: var(--shadow-focus);
+  outline: none;
+}
+
+.admin-adjudication-console button {
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast), background-color var(--duration-fast);
+}
+
+.admin-adjudication-console button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.admin-adjudication-console .adjudication-console-header button:first-of-type:hover:not(:disabled) {
+  box-shadow: var(--shadow-md);
+}
+
+.admin-adjudication-console > div:last-child > div:hover {
+  border-color: var(--line-strong) !important;
+  box-shadow: var(--shadow-md) !important;
+}

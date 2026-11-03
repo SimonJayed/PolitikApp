@@ -8,7 +8,6 @@ export const guestRestrictedViews = new Set([
 ])
 
 export const activeHeaders = {
-  openCongress: ['Congress', 'Source dataset review'],
   auth: ['Authentication', 'Civic Account Access'],
   account: ['Account', 'User Account'],
   compare: ['Compare', 'Compare Politicians'],

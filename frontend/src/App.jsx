@@ -149,7 +149,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     auth: ['Authentication', 'Civic Account Access'],
     compare: ['Compare', 'Compare Politicians'],
     adminNews: ['News', 'Admin Verification Queue'],
-    openCongress: ['Congress', 'Source dataset review'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
     politicians: ['Politicians', 'Politicians'],
     landing: ['Home', 'Verifiable Governance Platform'],
@@ -159,7 +158,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'adminNews', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
+  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'adminNews', 'openCongress', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const loadPoliticians = useCallback(async () => {

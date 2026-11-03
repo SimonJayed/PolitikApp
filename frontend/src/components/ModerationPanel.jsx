@@ -46,53 +46,50 @@ export default function ModerationPanel({ token, user }) {
 
   return (
     <div className="moderation-container">
-      {/* Role Banner */}
-      <div
-        style={{
-          background: isAdmin ? '#f0f9ff' : '#fafafa',
-          border: `1px solid ${isAdmin ? '#bae6fd' : '#e2e8f0'}`,
-          borderRadius: '10px',
-          padding: '14px 20px',
-          marginBottom: '20px',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '10px',
-        }}
-      >
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {isAdmin ? <ShieldCheckIcon size={18} /> : <UsersIcon size={18} />}
-            <strong style={{ fontSize: '14px', color: '#0f172a' }}>
-              {isAdmin ? 'Admin Curator Console' : 'Citizen Dispute & Request Pipeline'}
-            </strong>
-            <span
-              style={{
-                background: isAdmin ? '#0284c7' : '#64748b',
-                color: '#ffffff',
-                padding: '2px 8px',
-                borderRadius: '9999px',
-                fontSize: '10px',
-                fontWeight: '700',
-              }}
-            >
-              {effectiveRole}
-            </span>
+      {!isAdmin && (
+        <div
+          style={{
+            background: '#fafafa',
+            border: '1px solid #e2e8f0',
+            borderRadius: '10px',
+            padding: '14px 20px',
+            marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '10px',
+          }}
+        >
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <UsersIcon size={18} />
+              <strong style={{ fontSize: '14px', color: '#0f172a' }}>
+                Citizen Dispute & Request Pipeline
+              </strong>
+              <span
+                style={{
+                  background: '#64748b',
+                  color: '#ffffff',
+                  padding: '2px 8px',
+                  borderRadius: '9999px',
+                  fontSize: '10px',
+                  fontWeight: '700',
+                }}
+              >
+                {effectiveRole}
+              </span>
+            </div>
+            <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
+              Community peer voting has been deprecated in favor of evidence-based Admin Curation and Public Disputes.
+            </p>
           </div>
-          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
-            {isAdmin
-              ? 'You have administrative authority to directly curate metrics and adjudicate citizen challenges.'
-              : 'Community peer voting has been deprecated in favor of evidence-based Admin Curation and Public Disputes.'}
-          </p>
-        </div>
 
-        {!isAdmin && (
           <span style={{ fontSize: '12px', color: '#0369a1', fontWeight: '500' }}>
             Evidence Citations Mandatory
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Main Panel Content */}
       {isAdmin ? (

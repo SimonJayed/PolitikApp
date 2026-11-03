@@ -33,6 +33,7 @@ export default function AdminNews({ token, user }) {
   const [summary, setSummary] = useState({ pendingReview: 0, publishedArticles: 0, rejectedArticles: 0 })
   const [items, setItems] = useState([])
   const [selectedId, setSelectedId] = useState(null)
+  const [selectedIds, setSelectedIds] = useState([])
   const [selected, setSelected] = useState(null)
   const [politicians, setPoliticians] = useState([])
   const [page, setPage] = useState(0)
@@ -139,6 +140,7 @@ export default function AdminNews({ token, user }) {
       setItems(nextItems)
       setTotalPages(queueData.totalPages || 1)
       setSelectedId((current) => (current && nextItems.some((item) => item.id === current) ? current : nextItems[0]?.id || null))
+      setSelectedIds((current) => current.filter((id) => nextItems.some((item) => item.id === id)))
       setState({ status: 'success', message: '' })
     } catch (error) {
       setItems([])
@@ -226,6 +228,32 @@ export default function AdminNews({ token, user }) {
     }
   }
 
+  async function runBulkAction(path) {
+      if (!selectedIds.length) return
+      const actionLabel = path === 'process-ai' ? 'process' : path
+      const pastTense = { approve: 'approved', publish: 'published', reject: 'rejected', unpublish: 'unpublished' }[path] || `${actionLabel}ed`
+      setActionState({ status: 'loading', message: `${actionLabel[0].toUpperCase()}${actionLabel.slice(1)}ing ${selectedIds.length} articles...` })
+      const failures = []
+      let completed = 0
+      for (const id of selectedIds) {
+        try {
+          await fetch(`${API_BASE_URL}/api/admin/news/${id}/${path}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
+            body: path === 'reject' ? JSON.stringify({ reason: 'Rejected by admin.' }) : undefined,
+          }).then(readApiResponse)
+          completed += 1
+        } catch (error) {
+          failures.push(`${id}: ${error.message}`)
+      }
+      setSelectedIds([])
+      await loadDashboard()
+      setActionState(failures.length
+        ? { status: 'error', message: `${completed} article${completed === 1 ? '' : 's'} updated; ${failures.length} failed. ${failures.join(' ')}` }
+        : { status: 'success', message: `${completed} article${completed === 1 ? '' : 's'} ${pastTense} successfully.` })
+    }
+  }
+
   if (!isAdmin) {
     return (
       <section className="adminNewsShell">
@@ -310,14 +338,31 @@ export default function AdminNews({ token, user }) {
           </div>
         )}
         {items.length > 0 && (
-          <table className="adminArticleTable">
+          <>
+            <div className="adminBulkToolbar" aria-label="Bulk review actions">
+              <label className="adminSelectAll">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.length === items.length}
+                  onChange={(event) => setSelectedIds(event.target.checked ? items.map((item) => item.id) : [])}
+                  disabled={busy}
+                />
+                Select all on page
+              </label>
+              <span>{selectedIds.length} selected</span>
+              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('approve')}>Approve</button>
+              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('publish')}>Publish</button>
+              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('reject')}>Reject</button>
+              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('unpublish')}>Unpublish</button>
+            </div>
+            <table className="adminArticleTable">
             <thead>
               <tr>
                 <th>Headline</th>
                 <th>Source</th>
                 <th>Date</th>
                 <th>Status</th>
-                <th>Action</th>
+                <th>Batch select</th>
               </tr>
             </thead>
             <tbody>
@@ -327,13 +372,22 @@ export default function AdminNews({ token, user }) {
                   <td>{item.sourceName || 'Government source'}</td>
                   <td>{formatDate(item.originalPublishedAt)}</td>
                   <td><span className="statusPill">{item.aiProcessingStatus === 'INCOMPLETE' ? 'Incomplete · pending review' : displayStatus(item.status)}</span></td>
-                  <td>
-                    <button disabled={busy} type="button" onClick={() => setSelectedId(item.id)}>Review</button>
+                  <td className="adminArticleSelectCell">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${truncate(item.originalTitle || item.headline, 60)}`}
+                      checked={selectedIds.includes(item.id)}
+                      onChange={(event) => setSelectedIds((current) => event.target.checked
+                        ? [...current, item.id]
+                        : current.filter((id) => id !== item.id))}
+                      disabled={busy}
+                    />
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </>
         )}
       </section>
 

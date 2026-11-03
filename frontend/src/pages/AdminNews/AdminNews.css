@@ -372,3 +372,235 @@
     padding-top: 24px;
   }
 }
+
+/* Shared dashboard treatment for the administrative workspace. */
+.adminNewsShell {
+  gap: 20px;
+  padding-top: 28px;
+}
+
+.adminNewsShell > p:not(.adminNewsNotice) {
+  margin: -6px 4px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.adminNewsHeader {
+  min-height: 132px;
+  padding: 28px 30px;
+  box-shadow: var(--shadow-md);
+}
+
+.adminNewsHeader button,
+.reviewActions button,
+.adminReviewPanel form > button,
+.adminReviewPanel form > button[type='submit'] {
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), background-color var(--duration-fast);
+}
+
+.adminNewsHeader button {
+  background: var(--ph-gold);
+  border-color: var(--ph-gold);
+  color: var(--ph-blue);
+  box-shadow: var(--shadow-sm);
+}
+
+.adminNewsHeader button:hover:not(:disabled),
+.reviewActions button:hover:not(:disabled),
+.adminReviewPanel form > button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.adminSummaryGrid article {
+  min-height: 94px;
+  align-content: center;
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.adminSummaryGrid article:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.adminNewsToolbar {
+  box-shadow: var(--shadow-xs);
+}
+
+.adminNewsToolbar button {
+  transition: border-color var(--duration-fast), background-color var(--duration-fast), color var(--duration-fast), transform var(--duration-fast);
+}
+
+.adminNewsToolbar button:hover:not(:disabled) {
+  border-color: var(--info-border);
+  color: var(--ph-blue);
+  transform: translateY(-1px);
+}
+
+.adminArticleTable tbody tr {
+  transition: background-color var(--duration-fast);
+}
+
+.adminArticleTable tbody tr:hover td {
+  background: var(--bg-inset);
+}
+
+.adminArticleTable tr.selected:hover td {
+  background: var(--accent-soft);
+}
+
+.adminArticleTable button {
+  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast);
+}
+
+.adminArticleTable button:hover:not(:disabled) {
+  border-color: var(--ph-blue);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.adminBulkToolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--bg-inset);
+}
+
+.adminBulkToolbar > span {
+  margin-right: auto;
+  color: var(--text-muted);
+  font: 700 11px/1 var(--display);
+}
+
+.adminSelectAll,
+.adminArticleSelectCell {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.adminSelectAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.adminBulkToolbar button {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--ph-blue);
+  padding: 8px 11px;
+  font: 800 11px/1 var(--display);
+  cursor: pointer;
+  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast);
+}
+
+.adminBulkToolbar button:hover:not(:disabled) {
+  border-color: var(--ph-blue);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+}
+
+.adminBulkToolbar button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.adminSelectAll input,
+.adminArticleSelectCell input {
+  accent-color: var(--ph-blue);
+  cursor: pointer;
+  height: 16px;
+  width: 16px;
+}
+
+.adminSelectAll input:disabled,
+.adminArticleSelectCell input:disabled {
+  cursor: not-allowed;
+}
+
+.adminArticleSelectCell {
+  text-align: center !important;
+}
+
+.adminReviewPanel {
+  padding: 24px;
+}
+
+.adminReviewPanel > h2,
+.adminReviewPanel > summary {
+  color: var(--text-primary);
+  font: 800 17px/1.2 var(--display);
+  letter-spacing: -0.015em;
+}
+
+.adminReviewPanel > p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.adminReviewPanel form:not(.reviewForm) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.adminReviewPanel form:not(.reviewForm) label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-muted);
+  font: 800 11px/1 var(--display);
+  text-transform: uppercase;
+}
+
+.adminReviewPanel form:not(.reviewForm) label:first-child {
+  grid-column: 1 / -1;
+}
+
+.adminReviewPanel form:not(.reviewForm) :is(input, select) {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  color: var(--text-primary);
+  padding: 11px 12px;
+  font: 600 13px/1.4 var(--sans);
+}
+
+.adminReviewPanel form:not(.reviewForm) :is(input, select):focus,
+.reviewForm :is(input, textarea, select):focus {
+  border-color: var(--line-focus);
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+
+.adminReviewPanel form:not(.reviewForm) > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--ph-blue);
+  color: var(--ph-white);
+  padding: 11px 16px;
+  font: 800 12px/1 var(--display);
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .adminReviewPanel form:not(.reviewForm) {
+    grid-template-columns: 1fr;
+  }
+
+  .adminReviewPanel form:not(.reviewForm) label:first-child,
+  .adminReviewPanel form:not(.reviewForm) > button {
+    grid-column: auto;
+  }
+}
