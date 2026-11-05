@@ -281,15 +281,6 @@ export default function AdminNews({ token, user }) {
     )
   }
 
-  // The one action the admin most likely needs next gets the solid, high-emphasis style.
-  const primaryAction = !selected ? null
-    : dirty ? 'save'
-      : selected.status === 'PENDING_REVIEW' ? 'approve'
-        : ['APPROVED', 'UNPUBLISHED'].includes(selected.status) ? 'publish'
-          : selected.status === 'PUBLISHED' ? 'unpublish'
-            : null
-  const emphasis = (name) => (primaryAction === name ? ' isPrimary' : '')
-
   const summaryTiles = [
     { label: 'Pending Review', value: summary.pendingReview ?? 0, tone: 'pending', Icon: FileTextIcon },
     { label: 'Published Articles', value: summary.publishedArticles ?? 0, tone: 'published', Icon: ShieldCheckIcon },
@@ -304,7 +295,7 @@ export default function AdminNews({ token, user }) {
           <h1>News Review</h1>
           <p>Fetch recent articles from approved government sources. New articles enter Pending Review; nothing is published until an admin approves and publishes it.</p>
         </div>
-        <button className="adminBtn adminBtnGold" disabled={busy || retrieving} type="button" onClick={fetchLatest}>
+        <button className={`adminBtn adminBtnGold${retrieving ? ' isBusy' : ''}`} disabled={busy || retrieving} type="button" onClick={fetchLatest}>
           <span className={retrieving ? 'adminSpin' : undefined}><RefreshCwIcon size={17} /></span>
           <span>{retrieving ? 'Fetching…' : 'Fetch Latest News'}</span>
         </button>
@@ -359,7 +350,7 @@ export default function AdminNews({ token, user }) {
         ))}
       </div>
 
-      {state.message && <div className={`adminNewsNotice ${state.status}`}>{state.message}</div>}
+      {state.status === 'error' && state.message && <div className={`adminNewsNotice ${state.status}`}>{state.message}</div>}
       {actionState.message && actionState.status !== 'loading' && <div className={`adminNewsNotice ${actionState.status}`}>{actionState.message}</div>}
 
       <section className="adminArticleTableWrap" aria-label="Administrative article queue">
@@ -414,7 +405,7 @@ export default function AdminNews({ token, user }) {
                         aria-pressed={item.id === selectedId}
                         onClick={() => setSelectedId(item.id)}
                       >
-                        {item.id === selectedId ? '✓ Reviewing' : 'Review'}
+                        {item.id === selectedId ? 'Reviewing' : 'Review'}
                       </button>
                     </td>
                     <td className="adminArticleSelectCell">
@@ -520,18 +511,12 @@ export default function AdminNews({ token, user }) {
             </div>
 
             <footer className="reviewActions">
-              <button className={`adminBtn adminBtnSave${emphasis('save')}`} disabled={busy} type="button" onClick={saveEdits}>Save Edits</button>
+              <button className="adminBtn adminBtnSave" disabled={busy} type="button" onClick={saveEdits}>Save Edits</button>
               <button className="adminBtn adminBtnAi" disabled={busy || isDeterministic || isIncomplete} type="button" onClick={() => runAction('process-ai', { loading: 'Processing article with AI...', success: 'AI processing completed. Review the result before publishing.' })}>Process with AI</button>
-              <button className={`adminBtn adminBtnApprove${emphasis('approve')}`} disabled={busy || dirty || isIncomplete || selected.status !== 'PENDING_REVIEW'} type="button" onClick={() => runAction('approve', { success: 'Article approved. Publish separately when ready.' })}>
-                <ShieldCheckIcon size={16} />
-                Approve
-              </button>
-              <button className={`adminBtn adminBtnPublish${emphasis('publish')}`} disabled={busy || dirty || isIncomplete || !['APPROVED', 'UNPUBLISHED'].includes(selected.status)} type="button" onClick={() => runAction('publish', { success: 'Article published.' })}>Publish</button>
-              <button className={`adminBtn adminBtnUnpublish${emphasis('unpublish')}`} disabled={busy || selected.status !== 'PUBLISHED'} type="button" onClick={() => runAction('unpublish', { success: 'Article unpublished.' })}>Unpublish</button>
-              <button className="adminBtn adminBtnReject" disabled={busy} type="button" onClick={() => runAction('reject', { body: { reason: draft.reviewNotes || 'Rejected by admin.' }, success: 'Article rejected.' })}>
-                <CircleXIcon size={16} />
-                Reject
-              </button>
+              <button className="adminBtn adminBtnApprove" disabled={busy || dirty || isIncomplete || selected.status !== 'PENDING_REVIEW'} type="button" onClick={() => runAction('approve', { success: 'Article approved. Publish separately when ready.' })}>Approve</button>
+              <button className="adminBtn adminBtnPublish" disabled={busy || dirty || isIncomplete || !['APPROVED', 'UNPUBLISHED'].includes(selected.status)} type="button" onClick={() => runAction('publish', { success: 'Article published.' })}>Publish</button>
+              <button className="adminBtn adminBtnUnpublish" disabled={busy || selected.status !== 'PUBLISHED'} type="button" onClick={() => runAction('unpublish', { success: 'Article unpublished.' })}>Unpublish</button>
+              <button className="adminBtn adminBtnReject" disabled={busy} type="button" onClick={() => runAction('reject', { body: { reason: draft.reviewNotes || 'Rejected by admin.' }, success: 'Article rejected.' })}>Reject</button>
             </footer>
 
             {selectedIndex >= 0 && <p className="adminMeta">Article {selectedIndex + 1} of {items.length}</p>}

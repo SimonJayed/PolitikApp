@@ -18,7 +18,7 @@
 
   display: grid;
   gap: 18px;
-  width: min(1240px, 100%);
+  width: min(1440px, 100%);
   margin: 0 auto;
   padding: 20px clamp(16px, 3vw, 44px) 88px;
   color: var(--p-text);

@@ -23,6 +23,7 @@
   --a-green: #1b7a47;
   --a-green-soft: color-mix(in srgb, var(--a-green) 11%, var(--ph-white));
   --a-btn-radius: 999px;
+  --a-btn-border: color-mix(in srgb, var(--ph-blue) 24%, var(--ph-white));
   --a-radius-lg: 18px;
   --a-radius-md: 12px;
   --a-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
@@ -62,11 +63,11 @@
   min-height: 0;
   height: auto;
   padding: 11px 18px;
-  border: 1.5px solid color-mix(in srgb, var(--btn) 40%, var(--ph-white));
+  border: 1.5px solid var(--a-btn-border);
   border-radius: var(--a-btn-radius);
   background: var(--a-surface);
   box-shadow: none;
-  color: var(--btn-ink);
+  color: var(--a-text);
   font: 700 13px/1 var(--admin-font);
   white-space: nowrap;
   cursor: pointer;
@@ -78,13 +79,16 @@
   font-size: 12px;
 }
 
+/* The action's own color shows up on hover and press, not at rest */
 .adminNewsShell .adminBtn:hover:not(:disabled) {
   border-color: var(--btn);
   background: color-mix(in srgb, var(--btn) 10%, var(--ph-white));
+  color: var(--btn-ink);
 }
 
 .adminNewsShell .adminBtn:active:not(:disabled) {
   background: color-mix(in srgb, var(--btn) 18%, var(--ph-white));
+  color: var(--btn-ink);
   transform: translateY(1px);
 }
 
@@ -120,10 +124,6 @@
   --btn-ink: var(--ph-red);
 }
 
-.adminNewsShell .adminBtnSecondary {
-  background: color-mix(in srgb, var(--btn) 7%, var(--ph-white));
-}
-
 /* High emphasis: the suggested next step, plus generic primary buttons */
 .adminNewsShell .adminBtn.isPrimary,
 .adminNewsShell .adminBtnPrimary {
@@ -143,6 +143,42 @@
   background: color-mix(in srgb, var(--btn) 68%, var(--ph-blue));
 }
 
+.adminNewsShell .adminBtnSave {
+  border-color: var(--a-blue-line);
+  background: var(--a-blue-soft);
+  color: var(--ph-blue-light);
+}
+
+.adminNewsShell .adminBtnAi {
+  border-color: color-mix(in srgb, var(--ph-blue-mid) 30%, var(--ph-white));
+  background: color-mix(in srgb, var(--ph-blue-mid) 9%, var(--ph-white));
+  color: var(--ph-blue-mid);
+}
+
+.adminNewsShell .adminBtnApprove {
+  border-color: color-mix(in srgb, var(--a-green) 30%, var(--ph-white));
+  background: var(--a-green-soft);
+  color: var(--a-green);
+}
+
+.adminNewsShell .adminBtnPublish {
+  border-color: var(--a-blue-line);
+  background: var(--a-blue-soft);
+  color: var(--ph-blue);
+}
+
+.adminNewsShell .adminBtnUnpublish {
+  border-color: color-mix(in srgb, var(--ph-gold) 34%, var(--ph-white));
+  background: var(--a-gold-soft);
+  color: var(--a-gold-text);
+}
+
+.adminNewsShell .adminBtnReject {
+  border-color: var(--a-red-line);
+  background: var(--a-red-soft);
+  color: var(--ph-red);
+}
+
 .adminNewsShell .adminBtnUnpublish.isPrimary {
   border-color: var(--ph-gold-light);
   background: var(--ph-gold-light);
@@ -155,19 +191,26 @@
 
 /* Gold: hero action on the navy banner */
 .adminNewsShell .adminBtnGold {
-  --btn: var(--ph-gold-light);
+  --btn: var(--ph-gold);
+  border-color: var(--ph-gold);
+  background: var(--ph-gold);
+  color: var(--ph-blue);
+}
+
+.adminNewsShell .adminBtnGold:hover:not(:disabled) {
   border-color: var(--ph-gold-light);
   background: var(--ph-gold-light);
   color: var(--ph-blue);
 }
 
-.adminNewsShell .adminBtnGold:hover:not(:disabled) {
-  border-color: var(--ph-white);
-  background: var(--ph-white);
+.adminNewsShell .adminBtnGold:active:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ph-gold) 80%, var(--ph-blue));
+  background: color-mix(in srgb, var(--ph-gold) 80%, var(--ph-blue));
+  color: var(--ph-white);
 }
 
-.adminNewsShell .adminBtnGold:active:not(:disabled) {
-  background: color-mix(in srgb, var(--ph-white) 86%, var(--ph-gold-light));
+.adminNewsShell .adminBtnGold:focus-visible {
+  box-shadow: 0 0 0 3px var(--ph-blue), 0 0 0 5px var(--ph-gold-light);
 }
 
 /* Disabled: neutral grey for every button, so state is obvious at a glance */
@@ -178,6 +221,63 @@
   color: var(--a-muted);
   opacity: 1;
   cursor: not-allowed;
+}
+
+.adminNewsShell .adminBtnGold:disabled {
+  border-color: color-mix(in srgb, var(--ph-white) 26%, transparent);
+  background: color-mix(in srgb, var(--ph-white) 14%, transparent);
+  color: color-mix(in srgb, var(--ph-white) 66%, transparent);
+}
+
+/* While a fetch is running the button stays gold, with the spinner */
+.adminNewsShell .adminBtnGold.isBusy:disabled {
+  border-color: var(--ph-gold-light);
+  background: var(--ph-gold-light);
+  color: var(--ph-blue);
+  cursor: progress;
+}
+
+/* Keep enabled action colors visible against the white review surface. */
+.adminNewsShell .adminBtnGold:not(:disabled) {
+  border-color: var(--ph-gold);
+  background-color: var(--ph-gold);
+  color: var(--ph-blue);
+}
+
+.adminNewsShell .adminBtnSave:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ph-blue-light) 44%, var(--ph-white));
+  background-color: color-mix(in srgb, var(--ph-blue-light) 16%, var(--ph-white));
+  color: var(--ph-blue-light);
+}
+
+.adminNewsShell .adminBtnAi:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ph-blue-mid) 42%, var(--ph-white));
+  background-color: color-mix(in srgb, var(--ph-blue-mid) 15%, var(--ph-white));
+  color: var(--ph-blue-mid);
+}
+
+.adminNewsShell .adminBtnApprove:not(:disabled) {
+  border-color: color-mix(in srgb, var(--a-green) 44%, var(--ph-white));
+  background-color: color-mix(in srgb, var(--a-green) 16%, var(--ph-white));
+  color: var(--a-green);
+}
+
+.adminNewsShell .adminBtnPublish:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ph-blue) 42%, var(--ph-white));
+  background-color: color-mix(in srgb, var(--ph-blue) 14%, var(--ph-white));
+  color: var(--ph-blue);
+}
+
+.adminNewsShell .adminBtnUnpublish:not(:disabled):not(.isPrimary) {
+  border-color: color-mix(in srgb, var(--ph-gold) 48%, var(--ph-white));
+  background-color: color-mix(in srgb, var(--ph-gold) 18%, var(--ph-white));
+  color: var(--a-gold-text);
+}
+
+.adminNewsShell .adminBtnReject:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ph-red) 42%, var(--ph-white));
+  background-color: color-mix(in srgb, var(--ph-red) 13%, var(--ph-white));
+  color: var(--ph-red);
 }
 
 /* Arrow buttons (pagination) */
@@ -453,7 +553,10 @@
 
 .adminUrlForm > button {
   grid-column: 1 / -1;
+  align-self: end;
   justify-self: start;
+  padding-top: 13px;
+  padding-bottom: 13px;
 }
 
 .adminNewsShell :is(.adminUrlForm, .reviewForm) label {
