@@ -1,187 +1,921 @@
+/* =========================================================
+   Admin News
+   Colors come from the :root palette in App.css (--ph-*).
+   Typography: Poppins.
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
 .adminNewsShell {
+  --admin-font: 'Poppins', var(--sans, system-ui), sans-serif;
+  --a-surface: var(--ph-white);
+  --a-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
+  --a-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
+  --a-line-soft: color-mix(in srgb, var(--ph-blue) 8%, var(--ph-white));
+  --a-text: var(--ph-blue);
+  --a-text-2: color-mix(in srgb, var(--ph-blue) 78%, var(--ph-white));
+  --a-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
+  --a-gold-soft: color-mix(in srgb, var(--ph-gold) 14%, var(--ph-white));
+  --a-gold-text: color-mix(in srgb, var(--ph-gold) 62%, var(--ph-blue));
+  --a-red-soft: color-mix(in srgb, var(--ph-red) 7%, var(--ph-white));
+  --a-red-line: color-mix(in srgb, var(--ph-red) 28%, var(--ph-white));
+  --a-blue-soft: color-mix(in srgb, var(--ph-blue-light) 9%, var(--ph-white));
+  --a-blue-line: color-mix(in srgb, var(--ph-blue-light) 32%, var(--ph-white));
+  --a-green: #1b7a47;
+  --a-green-soft: color-mix(in srgb, var(--a-green) 11%, var(--ph-white));
+  --a-btn-radius: 999px;
+  --a-radius-lg: 18px;
+  --a-radius-md: 12px;
+  --a-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
+  --a-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.06), 0 14px 32px rgba(10, 29, 66, 0.12);
+
   display: grid;
   gap: 18px;
-  width: min(1320px, 100%);
+  width: min(1440px, 100%);
   margin: 0 auto;
-  padding: 36px clamp(12px, 1.5vw, 24px) 88px;
+  padding: 20px clamp(16px, 3vw, 44px) 88px;
+  color: var(--a-text);
+  font-family: var(--admin-font);
 }
 
-.adminNewsHeader,
-.adminNewsToolbar,
-.adminArticleTableWrap,
-.adminReviewPanel {
-  border: 1px solid var(--line-soft);
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+.adminNewsShell :is(button, input, select, textarea) {
+  font-family: var(--admin-font);
 }
 
-.adminNewsHeader {
-  position: relative;
-  overflow: hidden;
-  display: flex;
+.adminNewsShell :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--ph-blue-light);
+  outline-offset: 2px;
+}
+
+/* ---------- Buttons ----------
+   One shape (pill) and one structure for every action button.
+   Each action has its own color. The next likely step is "isPrimary" (solid);
+   everything else is an outline. Disabled buttons are always neutral grey. */
+.adminNewsShell .adminBtn {
+  --btn: var(--ph-blue-light);
+  --btn-ink: var(--ph-blue-light);
+  --btn-solid-ink: var(--ph-white);
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 24px;
-  background:
-    radial-gradient(circle at 100% 0%, rgba(184, 150, 42, 0.16), transparent 30%),
-    linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-height: 0;
+  height: auto;
+  padding: 11px 18px;
+  border: 1.5px solid color-mix(in srgb, var(--btn) 40%, var(--ph-white));
+  border-radius: var(--a-btn-radius);
+  background: var(--a-surface);
+  box-shadow: none;
+  color: var(--btn-ink);
+  font: 700 13px/1 var(--admin-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
 }
 
-.adminNewsHeader::after {
-  content: 'CURATED PUBLIC RECORDS';
-  position: absolute;
-  right: 24px;
-  bottom: 14px;
-  color: rgba(255, 255, 255, 0.48);
-  font: 700 10px/1 var(--mono);
-  letter-spacing: .14em;
+.adminNewsShell .adminBtnSm {
+  padding: 8px 14px;
+  font-size: 12px;
 }
 
-.adminNewsHeader :is(h1, p) {
+.adminNewsShell .adminBtn:hover:not(:disabled) {
+  border-color: var(--btn);
+  background: color-mix(in srgb, var(--btn) 10%, var(--ph-white));
+}
+
+.adminNewsShell .adminBtn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--btn) 18%, var(--ph-white));
+  transform: translateY(1px);
+}
+
+.adminNewsShell .adminBtn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--ph-white), 0 0 0 5px var(--btn);
+}
+
+/* Per-action colors */
+.adminNewsShell :is(.adminBtnApprove, .adminBtnSave, .adminBtnReview, .adminBtnPrimary, .adminBtnSecondary) {
+  --btn: var(--ph-blue-light);
+  --btn-ink: var(--ph-blue-light);
+}
+
+.adminNewsShell .adminBtnPublish {
+  --btn: var(--ph-blue);
+  --btn-ink: var(--ph-blue);
+}
+
+.adminNewsShell .adminBtnAi {
+  --btn: var(--ph-blue-mid);
+  --btn-ink: var(--ph-blue-mid);
+}
+
+.adminNewsShell .adminBtnUnpublish {
+  --btn: var(--ph-gold);
+  --btn-ink: var(--a-gold-text);
+  --btn-solid-ink: var(--ph-blue);
+}
+
+.adminNewsShell .adminBtnReject {
+  --btn: var(--ph-red);
+  --btn-ink: var(--ph-red);
+}
+
+.adminNewsShell .adminBtnSecondary {
+  background: color-mix(in srgb, var(--btn) 7%, var(--ph-white));
+}
+
+/* High emphasis: the suggested next step, plus generic primary buttons */
+.adminNewsShell .adminBtn.isPrimary,
+.adminNewsShell .adminBtnPrimary {
+  border-color: var(--btn);
+  background: var(--btn);
+  color: var(--btn-solid-ink);
+}
+
+.adminNewsShell .adminBtn.isPrimary:hover:not(:disabled),
+.adminNewsShell .adminBtnPrimary:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--btn) 82%, var(--ph-blue));
+  background: color-mix(in srgb, var(--btn) 82%, var(--ph-blue));
+}
+
+.adminNewsShell .adminBtn.isPrimary:active:not(:disabled),
+.adminNewsShell .adminBtnPrimary:active:not(:disabled) {
+  background: color-mix(in srgb, var(--btn) 68%, var(--ph-blue));
+}
+
+.adminNewsShell .adminBtnUnpublish.isPrimary {
+  border-color: var(--ph-gold-light);
+  background: var(--ph-gold-light);
+}
+
+.adminNewsShell .adminBtnUnpublish.isPrimary:hover:not(:disabled) {
+  border-color: var(--ph-gold);
+  background: var(--ph-gold);
+}
+
+/* Gold: hero action on the navy banner */
+.adminNewsShell .adminBtnGold {
+  --btn: var(--ph-gold-light);
+  border-color: var(--ph-gold-light);
+  background: var(--ph-gold-light);
+  color: var(--ph-blue);
+}
+
+.adminNewsShell .adminBtnGold:hover:not(:disabled) {
+  border-color: var(--ph-white);
+  background: var(--ph-white);
+}
+
+.adminNewsShell .adminBtnGold:active:not(:disabled) {
+  background: color-mix(in srgb, var(--ph-white) 86%, var(--ph-gold-light));
+}
+
+/* Disabled: neutral grey for every button, so state is obvious at a glance */
+.adminNewsShell .adminBtn:disabled {
+  border-color: var(--a-line);
+  background: var(--a-inset);
+  box-shadow: none;
+  color: var(--a-muted);
+  opacity: 1;
+  cursor: not-allowed;
+}
+
+/* Arrow buttons (pagination) */
+.adminNewsShell .adminArrowBtn {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  min-height: 0;
+  padding: 0;
+  border: 1.5px solid var(--a-blue-line);
+  border-radius: var(--a-btn-radius);
+  background: var(--a-surface);
+  box-shadow: none;
+  color: var(--ph-blue-light);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+
+.adminNewsShell .adminArrowBtn:hover:not(:disabled) {
+  border-color: var(--ph-blue-light);
+  background: var(--ph-blue-light);
   color: var(--ph-white);
 }
 
-.adminNewsHeader p {
-  color: rgba(255, 255, 255, 0.72);
+.adminNewsShell .adminArrowBtn:active:not(:disabled) {
+  border-color: var(--ph-blue-mid);
+  background: var(--ph-blue-mid);
+  transform: translateY(1px);
 }
 
-.adminNewsHeader button,
-.reviewActions button {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 1px solid var(--line-hairline);
-  background: var(--ph-blue);
-  color: #fff;
-  border-radius: 999px;
-  padding: 10px 14px;
-  font: 800 12px/1 var(--display);
-  cursor: pointer;
+.adminNewsShell .adminArrowBtn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--ph-white), 0 0 0 5px var(--ph-blue-light);
 }
 
-.adminNewsHeader button:disabled,
-.reviewActions button:disabled {
+.adminNewsShell .adminArrowBtn:disabled {
+  border-color: var(--a-line);
+  background: var(--a-inset);
+  color: var(--a-muted);
   cursor: not-allowed;
-  opacity: 0.64;
 }
 
+.adminSpin {
+  display: inline-grid;
+  animation: adminSpin 1s linear infinite;
+}
+
+@keyframes adminSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ---------- Hero ---------- */
+.adminHero {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px 28px;
+  overflow: hidden;
+  padding: 24px clamp(22px, 3vw, 34px);
+  border-radius: var(--a-radius-lg);
+  background:
+    radial-gradient(380px 200px at 100% 0%, color-mix(in srgb, var(--ph-red) 40%, transparent), transparent 70%),
+    radial-gradient(320px 200px at 0% 130%, color-mix(in srgb, var(--ph-gold) 30%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+  color: var(--ph-white);
+  box-shadow: var(--a-shadow-sm);
+}
+
+.adminHeroText {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  min-width: 0;
+  max-width: 62ch;
+}
+
+.adminHeroKicker {
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 25%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ph-white) 10%, transparent);
+  color: color-mix(in srgb, var(--ph-white) 86%, transparent);
+  font: 600 11px/1 var(--admin-font);
+}
+
+.adminHeroText h1 {
+  margin: 0;
+  color: var(--ph-white);
+  font: 800 clamp(1.5rem, 3vw, 2.1rem)/1.1 var(--admin-font);
+  letter-spacing: -0.02em;
+}
+
+.adminHeroText p {
+  margin: 0;
+  color: color-mix(in srgb, var(--ph-white) 76%, transparent);
+  font: 400 14px/1.6 var(--admin-font);
+}
+
+/* ---------- Summary tiles ---------- */
 .adminSummaryGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
-.adminSummaryGrid article {
+.adminStat {
+  --tone: var(--ph-gold);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 22px;
+  border: 1px solid var(--a-line);
+  border-left: 5px solid var(--tone);
+  border-radius: var(--a-radius-lg);
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-sm);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.adminStat:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--a-shadow-md);
+}
+
+.adminStat.published {
+  --tone: var(--ph-blue-light);
+}
+
+.adminStat.rejected {
+  --tone: var(--ph-red);
+}
+
+.adminStatIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--tone) 14%, var(--ph-white));
+  color: color-mix(in srgb, var(--tone) 78%, var(--ph-blue));
+}
+
+.adminStat div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.adminStat strong {
+  color: var(--a-text);
+  font: 800 28px/1 var(--admin-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.adminStat div span {
+  color: var(--a-muted);
+  font: 600 12px/1.3 var(--admin-font);
+}
+
+/* ---------- Cards ---------- */
+.adminReviewPanel,
+.adminArticleTableWrap {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--a-line);
+  border-left: 5px solid var(--ph-blue-light);
+  border-radius: var(--a-radius-lg);
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-sm);
+}
+
+.adminArticleTableWrap {
+  gap: 0;
+  padding: 0;
+  overflow: auto;
+}
+
+.adminReviewPanel h2,
+.adminReviewPanel > summary {
+  margin: 0;
+  color: var(--a-text);
+  font: 800 16px/1.25 var(--admin-font);
+}
+
+.adminReviewPanel > p {
+  margin: 0;
+  color: var(--a-text-2);
+  font: 400 14px/1.6 var(--admin-font);
+}
+
+.adminNote {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--a-radius-md);
+  background: var(--a-gold-soft);
+  color: var(--a-gold-text);
+  font: 500 13px/1.55 var(--admin-font);
+  overflow-wrap: anywhere;
+}
+
+.adminMeta {
+  margin: 0;
+  color: var(--a-muted);
+  font: 500 12px/1.5 var(--admin-font);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Fetch results ---------- */
+.adminResultList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adminResultList > li {
   display: grid;
   gap: 8px;
-  border: 1px solid var(--line-soft);
-  background: var(--bg-surface);
-  border-radius: var(--radius-lg);
-  padding: 16px;
-  box-shadow: var(--shadow-sm);
+  padding: 14px 16px;
+  border: 1px solid var(--a-line-soft);
+  border-radius: var(--a-radius-md);
+  background: var(--a-inset);
+  color: var(--a-text-2);
+  font: 400 13px/1.6 var(--admin-font);
 }
 
-.adminSummaryGrid span {
-  color: var(--text-muted);
-  font: 800 11px/1 var(--display);
-  text-transform: uppercase;
+.adminResultList strong {
+  color: var(--a-text);
+  font-weight: 700;
 }
 
-.adminSummaryGrid strong {
-  color: var(--text-primary);
-  font: 900 30px/1 var(--display);
+.adminResultList details {
+  border: 1px solid var(--a-line-soft);
+  border-radius: var(--a-radius-md);
+  background: var(--a-surface);
 }
 
+.adminResultList summary {
+  padding: 10px 14px;
+  color: var(--a-text);
+  font: 700 12px/1.3 var(--admin-font);
+  cursor: pointer;
+}
+
+.adminResultList details ul {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 4px 14px 14px 32px;
+  color: var(--a-text-2);
+  font: 400 12px/1.55 var(--admin-font);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Forms ---------- */
+.adminUrlForm {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.adminUrlForm label:first-child {
+  grid-column: 1 / -1;
+}
+
+.adminUrlForm > button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.adminNewsShell :is(.adminUrlForm, .reviewForm) label {
+  display: grid;
+  gap: 6px;
+  color: var(--a-muted);
+  font: 600 12px/1.3 var(--admin-font);
+}
+
+.adminNewsShell :is(.adminUrlForm, .reviewForm) :is(input:not([type='checkbox']), textarea, select) {
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 1px solid var(--a-line);
+  border-radius: var(--a-radius-md);
+  outline: 0;
+  box-shadow: none;
+  background: var(--a-inset);
+  color: var(--a-text);
+  font: 500 14px/1.5 var(--admin-font);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.adminNewsShell :is(.adminUrlForm, .reviewForm) :is(input:not([type='checkbox']), textarea, select):focus {
+  border-color: var(--ph-blue-light);
+  background: var(--a-surface);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ph-blue-light) 14%, transparent);
+}
+
+.adminNewsShell .reviewForm textarea {
+  resize: vertical;
+}
+
+.adminNewsShell .reviewForm select[multiple] {
+  min-height: 150px;
+}
+
+/* ---------- Source manager ---------- */
+.admSrcManager {
+  gap: 0;
+}
+
+.admSrcManager > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admSrcManager > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admSrcManager > summary::before {
+  content: '▸';
+  color: var(--ph-gold);
+  transition: transform 0.15s ease;
+}
+
+.admSrcManager[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.admSrcCount {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--a-gold-soft);
+  color: var(--a-gold-text);
+  font: 700 11px/1 var(--admin-font);
+}
+
+.admSrcBody {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.admSrcList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.admSrcRow {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--a-line-soft);
+  border-radius: var(--a-radius-md);
+  background: var(--a-inset);
+}
+
+.admSrcRowMain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admSrcStatus,
+.admSrcType {
+  padding: 5px 11px;
+  border-radius: 999px;
+  font: 700 11px/1 var(--admin-font);
+}
+
+.admSrcStatus.active {
+  background: var(--a-blue-soft);
+  color: var(--ph-blue-light);
+}
+
+.admSrcStatus.inactive {
+  background: var(--a-surface);
+  border: 1px solid var(--a-line);
+  color: var(--a-muted);
+}
+
+.admSrcStatus.paused {
+  background: var(--a-gold-soft);
+  color: var(--a-gold-text);
+}
+
+.admSrcType {
+  background: var(--a-surface);
+  border: 1px solid var(--a-line-soft);
+  color: var(--a-text-2);
+}
+
+.admSrcForm {
+  padding: 18px;
+  border: 1px solid var(--a-line-soft);
+  border-radius: var(--a-radius-md);
+  background: var(--a-surface);
+}
+
+.admSrcForm h3 {
+  margin: 0;
+  color: var(--a-text);
+  font: 800 15px/1.3 var(--admin-font);
+}
+
+.adminNewsShell .reviewForm label.admCheckLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--a-text);
+  font: 600 13px/1.4 var(--admin-font);
+}
+
+.adminNewsShell .admCheckLabel input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ph-blue-light);
+}
+
+.admFormActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- Status filter tabs ---------- */
 .adminNewsToolbar {
   display: flex;
   gap: 8px;
   overflow-x: auto;
   padding: 12px;
+  border: 1px solid var(--a-line);
+  border-radius: var(--a-radius-lg);
+  background: var(--a-surface);
+  box-shadow: var(--a-shadow-sm);
+  scrollbar-width: none;
 }
 
-.adminNewsToolbar button {
+.adminNewsToolbar::-webkit-scrollbar {
+  display: none;
+}
+
+.adminNewsShell .adminNewsToolbar button {
   flex: 0 0 auto;
-  border: 1px solid var(--line-soft);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
+  min-height: 0;
+  height: auto;
+  padding: 9px 15px;
+  border: 1px solid transparent;
   border-radius: 999px;
-  padding: 9px 12px;
-  font: 800 11px/1 var(--display);
+  background: transparent;
+  box-shadow: none;
+  color: var(--a-text-2);
+  font: 700 12px/1 var(--admin-font);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.adminNewsShell .adminNewsToolbar button:hover:not(:disabled):not(.active) {
+  background: var(--a-blue-soft);
+  color: var(--ph-blue-mid);
+}
+
+.adminNewsShell .adminNewsToolbar button.active {
+  background: var(--ph-blue);
+  color: var(--ph-white);
+}
+
+.adminNewsShell .adminNewsToolbar button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- Notices ---------- */
+.adminNewsNotice {
+  padding: 14px 18px;
+  border: 1px solid var(--a-blue-line);
+  border-radius: var(--a-radius-md);
+  background: var(--a-blue-soft);
+  color: var(--ph-blue-mid);
+  font: 600 13px/1.55 var(--admin-font);
+}
+
+.adminNewsNotice.error {
+  border-color: var(--a-red-line);
+  background: var(--a-red-soft);
+  color: var(--ph-red);
+}
+
+.adminNewsNotice.success {
+  border-color: var(--a-blue-line);
+  background: var(--a-blue-soft);
+  color: var(--ph-blue-light);
+}
+
+.adminNewsNotice.success::before {
+  content: '✓ ';
+}
+
+.adminEmpty {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  min-height: 160px;
+  padding: 24px;
+  border: 1px dashed var(--a-line);
+  border-radius: var(--a-radius-md);
+  background: var(--a-inset);
+  color: var(--a-muted);
+  text-align: center;
+  font: 600 13px/1.5 var(--admin-font);
+}
+
+.adminArticleTableWrap .adminEmpty {
+  margin: 24px;
+}
+
+/* ---------- Bulk toolbar & table ---------- */
+.adminBulkToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--a-line-soft);
+  background: var(--a-inset);
+}
+
+.adminBulkToolbar > span {
+  margin-right: auto;
+  color: var(--a-muted);
+  font: 600 12px/1 var(--admin-font);
+}
+
+.adminSelectAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--a-text-2);
+  font: 600 12px/1 var(--admin-font);
+}
+
+.adminSelectAll input,
+.adminArticleSelectCell input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ph-blue-light);
   cursor: pointer;
 }
 
-.adminNewsToolbar button.active {
-  border-color: var(--ph-blue);
-  background: var(--accent-soft);
-  color: var(--ph-blue);
-}
-
-.adminArticleTableWrap {
-  overflow: auto;
+.adminSelectAll input:disabled,
+.adminArticleSelectCell input:disabled {
+  cursor: not-allowed;
 }
 
 .adminArticleTable {
   width: 100%;
-  min-width: 760px;
+  min-width: 860px;
   border-collapse: collapse;
 }
 
 .adminArticleTable th,
 .adminArticleTable td {
-  border-bottom: 1px solid var(--line-hairline);
-  padding: 14px 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--a-line-soft);
   text-align: left;
   vertical-align: middle;
 }
 
 .adminArticleTable th {
-  color: var(--text-muted);
-  font: 800 11px/1 var(--display);
+  color: var(--a-muted);
+  font: 700 11px/1 var(--admin-font);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .adminArticleTable td {
-  color: var(--text-secondary);
-  font-size: 13px;
+  color: var(--a-text-2);
+  font: 500 13px/1.5 var(--admin-font);
+}
+
+.adminArticleTable .adminHeadlineCell {
+  max-width: 340px;
+  color: var(--a-text);
+  font-weight: 600;
+}
+
+.adminArticleTable tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.adminArticleTable tbody tr:hover td {
+  background: var(--a-inset);
 }
 
 .adminArticleTable tr.selected td {
-  background: var(--accent-soft);
+  background: var(--a-blue-soft);
 }
 
-.adminArticleTable button {
-  border: 1px solid var(--line-soft);
-  background: var(--bg-surface);
-  color: var(--ph-blue);
-  border-radius: var(--radius-sm);
-  padding: 8px 11px;
-  font: 800 11px/1 var(--display);
-  cursor: pointer;
+.adminArticleTable tr.selected td:first-child {
+  box-shadow: inset 4px 0 0 var(--ph-gold);
 }
 
+.adminArticleTable .adminArticleSelectCell {
+  text-align: center;
+}
+
+.adminArticleTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* ---------- Status colors ----------
+   Pending = gold, Approved = blue, Published = green, Rejected = red,
+   Failed = solid red, Unpublished = grey. */
 .statusPill,
 .reviewMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   width: max-content;
+  padding: 6px 12px;
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--ph-blue);
-  padding: 4px 8px;
-  font: 800 10px/1 var(--display);
+  background: var(--a-inset);
+  color: var(--a-text-2);
+  font: 700 11px/1 var(--admin-font);
+}
+
+.statusPill::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.statusPill.pending {
+  border-color: color-mix(in srgb, var(--ph-gold) 45%, var(--ph-white));
+  background: var(--a-gold-soft);
+  color: var(--a-gold-text);
+}
+
+.statusPill.approved {
+  border-color: var(--a-blue-line);
+  background: var(--a-blue-soft);
+  color: var(--ph-blue-light);
+}
+
+.statusPill.published {
+  border-color: color-mix(in srgb, var(--a-green) 38%, var(--ph-white));
+  background: var(--a-green-soft);
+  color: var(--a-green);
+}
+
+.statusPill.rejected {
+  border-color: var(--a-red-line);
+  background: var(--a-red-soft);
+  color: var(--ph-red);
+}
+
+.statusPill.failed {
+  border-color: var(--ph-red);
+  background: var(--ph-red);
+  color: var(--ph-white);
+}
+
+.statusPill.muted {
+  border-color: var(--a-line);
+  background: var(--a-inset);
+  color: var(--a-muted);
 }
 
 .reviewMeta .mockPill {
-  background: #fef3c7;
-  color: #92400e;
+  border-color: color-mix(in srgb, var(--ph-gold) 45%, var(--ph-white));
+  background: var(--a-gold-soft);
+  color: var(--a-gold-text);
 }
 
-.adminReviewPanel {
-  display: grid;
-  gap: 16px;
-  padding: 20px;
+.statusDot {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--a-muted);
 }
 
+.statusDot.pending { background: var(--ph-gold); }
+.statusDot.approved { background: var(--ph-blue-light); }
+.statusDot.published { background: var(--a-green); }
+.statusDot.rejected { background: var(--ph-red); }
+.statusDot.failed { background: var(--ph-red); box-shadow: 0 0 0 2px color-mix(in srgb, var(--ph-red) 28%, var(--ph-white)); }
+.statusDot.muted { background: var(--a-muted); }
+
+.adminNewsShell .adminNewsToolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.adminNewsShell .adminNewsToolbar button.active .statusDot {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ph-white) 85%, transparent);
+}
+
+/* ---------- Pager ---------- */
+.adminPager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+}
+
+.adminPager span {
+  min-width: 110px;
+  color: var(--a-text);
+  text-align: center;
+  font: 700 12px/1 var(--admin-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Review panel ---------- */
 .reviewMeta {
   display: flex;
   flex-wrap: wrap;
@@ -193,44 +927,82 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--ph-blue);
-  font-weight: 800;
+  margin-left: auto;
+  color: var(--ph-blue-light);
+  font: 700 12px/1 var(--admin-font);
   text-decoration: none;
-  font-size: 12px;
+}
+
+.reviewMeta a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .adminReviewSplit {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 14px;
+  gap: 16px;
+}
+
+.sourcePreview,
+.reviewForm {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--a-line-soft);
+  border-radius: var(--a-radius-md);
 }
 
 .sourcePreview {
-  display: grid;
-  gap: 8px;
-  border: 1px solid var(--line-soft);
-  background: var(--bg-inset);
-  border-radius: var(--radius-md);
-  padding: 16px;
+  background: var(--a-inset);
+}
+
+.reviewForm {
+  background: var(--a-surface);
 }
 
 .panelKicker {
   margin: 0;
-  color: var(--text-muted);
-  font: 800 11px/1 var(--display);
+  color: var(--a-muted);
+  font: 700 11px/1 var(--admin-font);
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .sourcePreview h2 {
+  color: var(--a-text);
+  font: 800 clamp(1.1rem, 2vw, 1.35rem)/1.3 var(--admin-font);
+  letter-spacing: -0.01em;
+}
+
+.sourcePreview h3 {
+  margin: 6px 0 0;
+  color: var(--a-text);
+  font: 700 13px/1.3 var(--admin-font);
+}
+
+.sourcePreview ul {
+  display: grid;
+  gap: 6px;
   margin: 0;
-  color: var(--text-primary);
-  font: 800 clamp(1.15rem, 2vw, 1.45rem)/1.25 var(--display);
-  letter-spacing: -0.015em;
+  padding-left: 18px;
+  color: var(--a-text-2);
+  font: 400 13px/1.6 var(--admin-font);
+}
+
+.sourcePreview > p:not(.panelKicker) {
+  max-height: 220px;
+  overflow: auto;
+  margin: 0;
+  color: var(--a-text-2);
+  font: 400 13px/1.7 var(--admin-font);
 }
 
 .articleFacts {
   display: grid;
-  gap: 7px;
+  gap: 10px;
   margin: 2px 0 4px;
 }
 
@@ -240,367 +1012,91 @@
 }
 
 .articleFacts dt {
-  color: var(--text-muted);
-  font: 800 10px/1 var(--display);
-  text-transform: uppercase;
+  color: var(--a-muted);
+  font: 700 11px/1 var(--admin-font);
 }
 
 .articleFacts dd {
   margin: 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-  line-height: 1.45;
+  color: var(--a-text-2);
+  font: 500 12px/1.5 var(--admin-font);
   overflow-wrap: anywhere;
 }
 
 .articleFacts a {
-  color: var(--ph-blue);
+  color: var(--ph-blue-light);
   text-decoration: none;
 }
 
-.sourcePreview > p:not(.panelKicker) {
-  max-height: 220px;
-  overflow: auto;
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.reviewForm {
-  display: grid;
-  gap: 12px;
-  border: 1px solid var(--line-soft);
-  background: var(--bg-surface);
-  border-radius: var(--radius-md);
-  padding: 16px;
-}
-
-.reviewForm label {
-  display: grid;
-  gap: 6px;
-  color: var(--text-muted);
-  font: 800 11px/1 var(--display);
-  text-transform: uppercase;
-}
-
-.reviewForm input,
-.reviewForm textarea,
-.reviewForm select {
-  width: 100%;
-  border: 1px solid var(--line-soft);
-  background: var(--bg-surface);
-  border-radius: var(--radius-sm);
-  color: var(--text-primary);
-  padding: 11px 12px;
-  font: 600 13px/1.5 var(--sans);
+.articleFacts a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .keyPointPreview {
   display: grid;
-  gap: 7px;
-  border: 1px solid var(--line-soft);
-  background: var(--bg-inset);
-  border-radius: var(--radius-sm);
-  padding: 12px;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--a-line-soft);
+  border-radius: var(--a-radius-md);
+  background: var(--a-inset);
 }
 
 .keyPointPreview span {
-  color: var(--text-muted);
-  font: 800 11px/1 var(--display);
-  text-transform: uppercase;
+  color: var(--a-muted);
+  font: 700 11px/1 var(--admin-font);
 }
 
 .keyPointPreview ul {
   margin: 0;
   padding-left: 18px;
-  color: var(--text-secondary);
-  font-size: 13px;
-  line-height: 1.55;
+  color: var(--a-text-2);
+  font: 400 13px/1.6 var(--admin-font);
 }
 
 .reviewActions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--a-line-soft);
 }
 
-.reviewActions button:nth-child(4),
-.reviewActions button:nth-child(6) {
-  background: var(--ph-red);
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .adminNewsShell *,
+  .adminNewsShell *::before {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .adminStat:hover {
+    transform: none;
+  }
 }
 
-.adminNewsNotice,
-.adminEmpty {
-  border: 1px solid var(--line-soft);
-  background: var(--bg-surface);
-  color: var(--text-secondary);
-  border-radius: var(--radius-lg);
-  padding: 14px;
-  font-size: 13px;
-}
-
-.adminNewsNotice.error {
-  border-color: var(--danger-border);
-  background: var(--danger-soft);
-  color: var(--danger);
-}
-
-.adminNewsNotice.success {
-  border-color: #bbf7d0;
-  background: #f0fdf4;
-  color: #166534;
-}
-
-.adminEmpty {
-  display: grid;
-  place-items: center;
-  gap: 8px;
-  min-height: 160px;
-  text-align: center;
-}
-
-@media (max-width: 860px) {
-  .adminNewsHeader,
+/* ---------- Responsive ---------- */
+@media (max-width: 960px) {
   .adminSummaryGrid,
   .adminReviewSplit {
-    grid-template-columns: 1fr;
-    display: grid;
+    grid-template-columns: minmax(0, 1fr);
   }
-
-  .adminNewsShell {
-    padding-top: 24px;
-  }
-}
-
-/* Shared dashboard treatment for the administrative workspace. */
-.adminNewsShell {
-  gap: 20px;
-  padding-top: 28px;
-}
-
-.adminNewsShell > p:not(.adminNewsNotice) {
-  margin: -6px 4px 0;
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.65;
-}
-
-.adminNewsHeader {
-  min-height: 132px;
-  padding: 28px 30px;
-  box-shadow: var(--shadow-md);
-}
-
-.adminNewsHeader button,
-.reviewActions button,
-.adminReviewPanel form > button,
-.adminReviewPanel form > button[type='submit'] {
-  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out), background-color var(--duration-fast);
-}
-
-.adminNewsHeader button {
-  background: var(--ph-gold);
-  border-color: var(--ph-gold);
-  color: var(--ph-blue);
-  box-shadow: var(--shadow-sm);
-}
-
-.adminNewsHeader button:hover:not(:disabled),
-.reviewActions button:hover:not(:disabled),
-.adminReviewPanel form > button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-
-.adminSummaryGrid article {
-  min-height: 94px;
-  align-content: center;
-  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.adminSummaryGrid article:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-}
-
-.adminNewsToolbar {
-  box-shadow: var(--shadow-xs);
-}
-
-.adminNewsToolbar button {
-  transition: border-color var(--duration-fast), background-color var(--duration-fast), color var(--duration-fast), transform var(--duration-fast);
-}
-
-.adminNewsToolbar button:hover:not(:disabled) {
-  border-color: var(--info-border);
-  color: var(--ph-blue);
-  transform: translateY(-1px);
-}
-
-.adminArticleTable tbody tr {
-  transition: background-color var(--duration-fast);
-}
-
-.adminArticleTable tbody tr:hover td {
-  background: var(--bg-inset);
-}
-
-.adminArticleTable tr.selected:hover td {
-  background: var(--accent-soft);
-}
-
-.adminArticleTable button {
-  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast);
-}
-
-.adminArticleTable button:hover:not(:disabled) {
-  border-color: var(--ph-blue);
-  background: var(--accent-soft);
-  transform: translateY(-1px);
-}
-
-.adminBulkToolbar {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--line-soft);
-  background: var(--bg-inset);
-}
-
-.adminBulkToolbar > span {
-  margin-right: auto;
-  color: var(--text-muted);
-  font: 700 11px/1 var(--display);
-}
-
-.adminSelectAll,
-.adminArticleSelectCell {
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-
-.adminSelectAll {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 700;
-}
-
-.adminBulkToolbar button {
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-sm);
-  background: var(--bg-surface);
-  color: var(--ph-blue);
-  padding: 8px 11px;
-  font: 800 11px/1 var(--display);
-  cursor: pointer;
-  transition: background-color var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast);
-}
-
-.adminBulkToolbar button:hover:not(:disabled) {
-  border-color: var(--ph-blue);
-  background: var(--accent-soft);
-  transform: translateY(-1px);
-}
-
-.adminBulkToolbar button:disabled {
-  cursor: not-allowed;
-  opacity: .5;
-}
-
-.adminSelectAll input,
-.adminArticleSelectCell input {
-  accent-color: var(--ph-blue);
-  cursor: pointer;
-  height: 16px;
-  width: 16px;
-}
-
-.adminSelectAll input:disabled,
-.adminArticleSelectCell input:disabled {
-  cursor: not-allowed;
-}
-
-.adminArticleSelectCell {
-  text-align: center !important;
-}
-
-.adminReviewPanel {
-  padding: 24px;
-}
-
-.adminReviewPanel > h2,
-.adminReviewPanel > summary {
-  color: var(--text-primary);
-  font: 800 17px/1.2 var(--display);
-  letter-spacing: -0.015em;
-}
-
-.adminReviewPanel > p {
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.6;
-}
-
-.adminReviewPanel form:not(.reviewForm) {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-  padding-top: 4px;
-}
-
-.adminReviewPanel form:not(.reviewForm) label {
-  display: grid;
-  gap: 6px;
-  color: var(--text-muted);
-  font: 800 11px/1 var(--display);
-  text-transform: uppercase;
-}
-
-.adminReviewPanel form:not(.reviewForm) label:first-child {
-  grid-column: 1 / -1;
-}
-
-.adminReviewPanel form:not(.reviewForm) :is(input, select) {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--line-soft);
-  border-radius: var(--radius-sm);
-  background: var(--bg-inset);
-  color: var(--text-primary);
-  padding: 11px 12px;
-  font: 600 13px/1.4 var(--sans);
-}
-
-.adminReviewPanel form:not(.reviewForm) :is(input, select):focus,
-.reviewForm :is(input, textarea, select):focus {
-  border-color: var(--line-focus);
-  outline: none;
-  box-shadow: var(--shadow-focus);
-}
-
-.adminReviewPanel form:not(.reviewForm) > button {
-  grid-column: 1 / -1;
-  justify-self: start;
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--ph-blue);
-  color: var(--ph-white);
-  padding: 11px 16px;
-  font: 800 12px/1 var(--display);
-  cursor: pointer;
 }
 
 @media (max-width: 640px) {
-  .adminReviewPanel form:not(.reviewForm) {
-    grid-template-columns: 1fr;
+  .adminUrlForm {
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .adminReviewPanel form:not(.reviewForm) label:first-child,
-  .adminReviewPanel form:not(.reviewForm) > button {
-    grid-column: auto;
+  .adminHero > .adminBtn {
+    width: 100%;
+  }
+
+  .adminReviewPanel {
+    padding: 18px;
+  }
+
+  .reviewMeta a {
+    margin-left: 0;
   }
 }

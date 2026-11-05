@@ -23,6 +23,24 @@ function displayStatus(status) {
   return String(status || 'PENDING_REVIEW').replaceAll('_', ' ')
 }
 
+function statusTone(status) {
+  const value = String(status || '').toUpperCase()
+  if (value === 'PUBLISHED') return 'published'
+  if (value === 'APPROVED') return 'approved'
+  if (value === 'REJECTED') return 'rejected'
+  if (value === 'FAILED') return 'failed'
+  if (value === 'UNPUBLISHED') return 'muted'
+  return 'pending'
+}
+
+function Chevron({ direction }) {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={direction === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
+    </svg>
+  )
+}
+
 function truncate(value, max = 92) {
   if (!value) return 'Untitled article'
   return value.length > max ? `${value.slice(0, max - 1).trim()}...` : value
@@ -229,29 +247,30 @@ export default function AdminNews({ token, user }) {
   }
 
   async function runBulkAction(path) {
-      if (!selectedIds.length) return
-      const actionLabel = path === 'process-ai' ? 'process' : path
-      const pastTense = { approve: 'approved', publish: 'published', reject: 'rejected', unpublish: 'unpublished' }[path] || `${actionLabel}ed`
-      setActionState({ status: 'loading', message: `${actionLabel[0].toUpperCase()}${actionLabel.slice(1)}ing ${selectedIds.length} articles...` })
-      const failures = []
-      let completed = 0
-      for (const id of selectedIds) {
-        try {
-          await fetch(`${API_BASE_URL}/api/admin/news/${id}/${path}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
-            body: path === 'reject' ? JSON.stringify({ reason: 'Rejected by admin.' }) : undefined,
-          }).then(readApiResponse)
-          completed += 1
-        } catch (error) {
-          failures.push(`${id}: ${error.message}`)
+    if (!selectedIds.length) return
+    const actionLabel = path === 'process-ai' ? 'process' : path
+    const pastTense = { approve: 'approved', publish: 'published', reject: 'rejected', unpublish: 'unpublished' }[path] || `${actionLabel}ed`
+    setActionState({ status: 'loading', message: `${actionLabel[0].toUpperCase()}${actionLabel.slice(1)}ing ${selectedIds.length} articles...` })
+    const failures = []
+    let completed = 0
+    for (const id of selectedIds) {
+      try {
+        await fetch(`${API_BASE_URL}/api/admin/news/${id}/${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
+          body: path === 'reject' ? JSON.stringify({ reason: 'Rejected by admin.' }) : undefined,
+        }).then(readApiResponse)
+        completed += 1
+      } catch (error) {
+        failures.push(`${id}: ${error.message}`)
       }
-      setSelectedIds([])
-      await loadDashboard()
-      setActionState(failures.length
-        ? { status: 'error', message: `${completed} article${completed === 1 ? '' : 's'} updated; ${failures.length} failed. ${failures.join(' ')}` }
-        : { status: 'success', message: `${completed} article${completed === 1 ? '' : 's'} ${pastTense} successfully.` })
     }
+    // These run once, after every selected article has been processed.
+    setSelectedIds([])
+    await loadDashboard()
+    setActionState(failures.length
+      ? { status: 'error', message: `${completed} article${completed === 1 ? '' : 's'} updated; ${failures.length} failed. ${failures.join(' ')}` }
+      : { status: 'success', message: `${completed} article${completed === 1 ? '' : 's'} ${pastTense} successfully.` })
   }
 
   if (!isAdmin) {
@@ -262,24 +281,52 @@ export default function AdminNews({ token, user }) {
     )
   }
 
+  // The one action the admin most likely needs next gets the solid, high-emphasis style.
+  const primaryAction = !selected ? null
+    : dirty ? 'save'
+      : selected.status === 'PENDING_REVIEW' ? 'approve'
+        : ['APPROVED', 'UNPUBLISHED'].includes(selected.status) ? 'publish'
+          : selected.status === 'PUBLISHED' ? 'unpublish'
+            : null
+  const emphasis = (name) => (primaryAction === name ? ' isPrimary' : '')
+
+  const summaryTiles = [
+    { label: 'Pending Review', value: summary.pendingReview ?? 0, tone: 'pending', Icon: FileTextIcon },
+    { label: 'Published Articles', value: summary.publishedArticles ?? 0, tone: 'published', Icon: ShieldCheckIcon },
+    { label: 'Rejected Articles', value: summary.rejectedArticles ?? 0, tone: 'rejected', Icon: CircleXIcon },
+  ]
+
   return (
     <section className="adminNewsShell">
-      <header className="adminNewsHeader">
-        <div>
-          <p className="ty-page-kicker">Administrator dashboard</p>
-          <h1 className="ty-page-title">News Review</h1>
+      <header className="adminHero">
+        <div className="adminHeroText">
+          <span className="adminHeroKicker">Administrator dashboard</span>
+          <h1>News Review</h1>
+          <p>Fetch recent articles from approved government sources. New articles enter Pending Review; nothing is published until an admin approves and publishes it.</p>
         </div>
-        <button disabled={busy || retrieving} type="button" onClick={fetchLatest}>
-          <RefreshCwIcon size={17} />
-          <span>Fetch Latest News</span>
+        <button className="adminBtn adminBtnGold" disabled={busy || retrieving} type="button" onClick={fetchLatest}>
+          <span className={retrieving ? 'adminSpin' : undefined}><RefreshCwIcon size={17} /></span>
+          <span>{retrieving ? 'Fetching…' : 'Fetch Latest News'}</span>
         </button>
       </header>
-      <p>Fetch recent articles from approved government sources. New articles enter Pending Review; nothing is published until an admin approves and publishes it.</p>
+
+      <section className="adminSummaryGrid" aria-label="News review summary">
+        {summaryTiles.map(({ label, value, tone, Icon }) => (
+          <article className={`adminStat ${tone}`} key={label}>
+            <span className="adminStatIcon"><Icon size={20} /></span>
+            <div>
+              <strong>{value}</strong>
+              <span>{label}</span>
+            </div>
+          </article>
+        ))}
+      </section>
+
       {fetchResult?.sources?.length > 0 && <section className="adminReviewPanel" aria-label="Retrieval results by source">
         <h2>Latest fetch by source</h2>
-        <ul>{fetchResult.sources.map(source => <li key={source.source}>
+        <ul className="adminResultList">{fetchResult.sources.map(source => <li key={source.source}>
           <strong>{source.source}</strong>: {source.retrieved} complete new, {source.incomplete} incomplete new, {source.irrelevant || 0} outside news focus, {source.duplicates} duplicates, {source.blocked} access-denied requests, {source.notRetried} not retried, {source.failed} failed, {Math.max(0, source.skipped - source.duplicates)} older skipped.
-          {source.error && <p role="status">{source.error}</p>}
+          {source.error && <p className="adminNote" role="status">{source.error}</p>}
           {source.issues?.length > 0 && <details><summary>URLs and retrieval stages ({source.issues.length})</summary><ul>{source.issues.map((issue, index) =>
             <li key={`${issue.url}-${index}`}><strong>{issue.stage} · {issue.outcome}</strong>: {issue.url} — {issue.detail}</li>)}</ul></details>}
         </li>)}</ul>
@@ -288,32 +335,17 @@ export default function AdminNews({ token, user }) {
       <section className="adminReviewPanel" aria-label="Submit official article URL">
         <h2>Submit an article URL</h2>
         <p>Use a URL from an active approved government source. If its page blocks extraction, a title you provide can be saved as incomplete metadata for review.</p>
-        <form onSubmit={submitArticleUrl}>
+        <form className="adminUrlForm" onSubmit={submitArticleUrl}>
           <label>Government source <select required value={manualSourceId} onChange={event => setManualSourceId(event.target.value)}>
             {manualSources.map(source => <option key={source.id} value={source.id}>{source.name}</option>)}
           </select></label>
           <label>Official article URL <input required type="url" value={manualUrl} onChange={event => setManualUrl(event.target.value)} placeholder="https://..." /></label>
           <label>Article title, if known <input value={manualTitle} onChange={event => setManualTitle(event.target.value)} /></label>
           <label>Publication date, if known <input type="date" value={manualDate} onChange={event => setManualDate(event.target.value)} /></label>
-          <button disabled={busy || !manualSourceId} type="submit">Check and add to review</button>
+          <button className="adminBtn adminBtnPrimary" disabled={busy || !manualSourceId} type="submit">Check and add to review</button>
         </form>
-        {manualResult && <p role="status">{manualResult.retrieved} complete, {manualResult.incomplete} incomplete, {manualResult.irrelevant || 0} outside news focus, {manualResult.duplicates} duplicate, {manualResult.blocked} access-denied requests, {manualResult.notRetried} not retried, {manualResult.failed} failed.</p>}
-        {manualResult?.issues?.map((issue, index) => <p key={index}>{issue.stage} · {issue.outcome}: {issue.url} — {issue.detail}</p>)}
-      </section>
-
-      <section className="adminSummaryGrid" aria-label="News review summary">
-        <article>
-          <span>Pending Review</span>
-          <strong>{summary.pendingReview ?? 0}</strong>
-        </article>
-        <article>
-          <span>Published Articles</span>
-          <strong>{summary.publishedArticles ?? 0}</strong>
-        </article>
-        <article>
-          <span>Rejected Articles</span>
-          <strong>{summary.rejectedArticles ?? 0}</strong>
-        </article>
+        {manualResult && <p className="adminNote" role="status">{manualResult.retrieved} complete, {manualResult.incomplete} incomplete, {manualResult.irrelevant || 0} outside news focus, {manualResult.duplicates} duplicate, {manualResult.blocked} access-denied requests, {manualResult.notRetried} not retried, {manualResult.failed} failed.</p>}
+        {manualResult?.issues?.map((issue, index) => <p className="adminNote" key={index}>{issue.stage} · {issue.outcome}: {issue.url} — {issue.detail}</p>)}
       </section>
 
       <SourceManager token={token} refreshSignal={sourceRefresh} />
@@ -321,6 +353,7 @@ export default function AdminNews({ token, user }) {
       <div className="adminNewsToolbar" aria-label="Article status filter">
         {statuses.map((item) => (
           <button disabled={busy} className={status === item ? 'active' : ''} key={item} onClick={() => { setStatus(item); setPage(0) }} type="button">
+            {item !== 'ALL' && <i className={`statusDot ${statusTone(item)}`} aria-hidden="true" />}
             {displayStatus(item)}
           </button>
         ))}
@@ -350,59 +383,71 @@ export default function AdminNews({ token, user }) {
                 Select all on page
               </label>
               <span>{selectedIds.length} selected</span>
-              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('approve')}>Approve</button>
-              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('publish')}>Publish</button>
-              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('reject')}>Reject</button>
-              <button disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('unpublish')}>Unpublish</button>
+              <button className="adminBtn adminBtnSm adminBtnApprove" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('approve')}>Approve</button>
+              <button className="adminBtn adminBtnSm adminBtnPublish" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('publish')}>Publish</button>
+              <button className="adminBtn adminBtnSm adminBtnUnpublish" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('unpublish')}>Unpublish</button>
+              <button className="adminBtn adminBtnSm adminBtnReject" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('reject')}>Reject</button>
             </div>
             <table className="adminArticleTable">
-            <thead>
-              <tr>
-                <th>Headline</th>
-                <th>Source</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Batch select</th>
-              </tr>
-            </thead>
-            <tbody>
-              {items.map((item) => (
-                <tr className={item.id === selectedId ? 'selected' : ''} key={item.id}>
-                  <td>{truncate(item.originalTitle || item.headline)}</td>
-                  <td>{item.sourceName || 'Government source'}</td>
-                  <td>{formatDate(item.originalPublishedAt)}</td>
-                  <td><span className="statusPill">{item.aiProcessingStatus === 'INCOMPLETE' ? 'Incomplete · pending review' : displayStatus(item.status)}</span></td>
-                  <td className="adminArticleSelectCell">
-                    <input
-                      type="checkbox"
-                      aria-label={`Select ${truncate(item.originalTitle || item.headline, 60)}`}
-                      checked={selectedIds.includes(item.id)}
-                      onChange={(event) => setSelectedIds((current) => event.target.checked
-                        ? [...current, item.id]
-                        : current.filter((id) => id !== item.id))}
-                      disabled={busy}
-                    />
-                  </td>
+              <thead>
+                <tr>
+                  <th>Headline</th>
+                  <th>Source</th>
+                  <th>Date</th>
+                  <th>Status</th>
+                  <th>Review</th>
+                  <th>Batch select</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {items.map((item) => (
+                  <tr className={item.id === selectedId ? 'selected' : ''} key={item.id}>
+                    <td className="adminHeadlineCell">{truncate(item.originalTitle || item.headline)}</td>
+                    <td>{item.sourceName || 'Government source'}</td>
+                    <td>{formatDate(item.originalPublishedAt)}</td>
+                    <td><span className={`statusPill ${item.aiProcessingStatus === 'INCOMPLETE' ? 'pending' : statusTone(item.status)}`}>{item.aiProcessingStatus === 'INCOMPLETE' ? 'Incomplete · pending review' : displayStatus(item.status)}</span></td>
+                    <td>
+                      <button
+                        className={`adminBtn adminBtnSm adminBtnReview${item.id === selectedId ? ' isPrimary' : ''}`}
+                        type="button"
+                        disabled={busy}
+                        aria-pressed={item.id === selectedId}
+                        onClick={() => setSelectedId(item.id)}
+                      >
+                        {item.id === selectedId ? '✓ Reviewing' : 'Review'}
+                      </button>
+                    </td>
+                    <td className="adminArticleSelectCell">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${truncate(item.originalTitle || item.headline, 60)}`}
+                        checked={selectedIds.includes(item.id)}
+                        onChange={(event) => setSelectedIds((current) => event.target.checked
+                          ? [...current, item.id]
+                          : current.filter((id) => id !== item.id))}
+                        disabled={busy}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </>
         )}
       </section>
 
-      <nav className="adminNewsToolbar" aria-label="Review queue pages">
-        <button disabled={busy || page === 0} onClick={() => setPage(page - 1)}>Previous</button>
+      <nav className="adminPager" aria-label="Review queue pages">
+        <button className="adminArrowBtn" type="button" aria-label="Previous page" title="Previous page" disabled={busy || page === 0} onClick={() => setPage(page - 1)}><Chevron direction="left" /></button>
         <span>Page {page + 1} of {totalPages}</span>
-        <button disabled={busy || page + 1 >= totalPages} onClick={() => setPage(page + 1)}>Next</button>
+        <button className="adminArrowBtn" type="button" aria-label="Next page" title="Next page" disabled={busy || page + 1 >= totalPages} onClick={() => setPage(page + 1)}><Chevron direction="right" /></button>
       </nav>
 
-      <main className="adminReviewPanel">
+      <section className="adminReviewPanel" aria-label="Article review">
         {!selected && <div className="adminEmpty">Select an article to review.</div>}
         {selected && (
           <>
             <div className="reviewMeta">
-              <span>{displayStatus(selected.status)}</span>
+              <span className={`statusPill ${statusTone(selected.status)}`}>{displayStatus(selected.status)}</span>
               <span>AI: {selected.aiProcessingStatus || 'Not processed'}</span>
               {isMockOutput && <span className="mockPill">Mock-generated</span>}
               {isDeterministic && <span className="mockPill">Deterministic source excerpt · no AI</span>}
@@ -475,24 +520,24 @@ export default function AdminNews({ token, user }) {
             </div>
 
             <footer className="reviewActions">
-              <button disabled={busy} type="button" onClick={saveEdits}>Save Edits</button>
-              <button disabled={busy || isDeterministic || isIncomplete} type="button" onClick={() => runAction('process-ai', { loading: 'Processing article with AI...', success: 'AI processing completed. Review the result before publishing.' })}>Process with AI</button>
-              <button disabled={busy || dirty || isIncomplete || selected.status !== 'PENDING_REVIEW'} type="button" onClick={() => runAction('approve', { success: 'Article approved. Publish separately when ready.' })}>
+              <button className={`adminBtn adminBtnSave${emphasis('save')}`} disabled={busy} type="button" onClick={saveEdits}>Save Edits</button>
+              <button className="adminBtn adminBtnAi" disabled={busy || isDeterministic || isIncomplete} type="button" onClick={() => runAction('process-ai', { loading: 'Processing article with AI...', success: 'AI processing completed. Review the result before publishing.' })}>Process with AI</button>
+              <button className={`adminBtn adminBtnApprove${emphasis('approve')}`} disabled={busy || dirty || isIncomplete || selected.status !== 'PENDING_REVIEW'} type="button" onClick={() => runAction('approve', { success: 'Article approved. Publish separately when ready.' })}>
                 <ShieldCheckIcon size={16} />
                 Approve
               </button>
-              <button disabled={busy} type="button" onClick={() => runAction('reject', { body: { reason: draft.reviewNotes || 'Rejected by admin.' }, success: 'Article rejected.' })}>
+              <button className={`adminBtn adminBtnPublish${emphasis('publish')}`} disabled={busy || dirty || isIncomplete || !['APPROVED', 'UNPUBLISHED'].includes(selected.status)} type="button" onClick={() => runAction('publish', { success: 'Article published.' })}>Publish</button>
+              <button className={`adminBtn adminBtnUnpublish${emphasis('unpublish')}`} disabled={busy || selected.status !== 'PUBLISHED'} type="button" onClick={() => runAction('unpublish', { success: 'Article unpublished.' })}>Unpublish</button>
+              <button className="adminBtn adminBtnReject" disabled={busy} type="button" onClick={() => runAction('reject', { body: { reason: draft.reviewNotes || 'Rejected by admin.' }, success: 'Article rejected.' })}>
                 <CircleXIcon size={16} />
                 Reject
               </button>
-              <button disabled={busy || dirty || isIncomplete || !['APPROVED', 'UNPUBLISHED'].includes(selected.status)} type="button" onClick={() => runAction('publish', { success: 'Article published.' })}>Publish</button>
-              <button disabled={busy || selected.status !== 'PUBLISHED'} type="button" onClick={() => runAction('unpublish', { success: 'Article unpublished.' })}>Unpublish</button>
             </footer>
 
-            {selectedIndex >= 0 && <p className="ty-meta">Article {selectedIndex + 1} of {items.length}</p>}
+            {selectedIndex >= 0 && <p className="adminMeta">Article {selectedIndex + 1} of {items.length}</p>}
           </>
         )}
-      </main>
+      </section>
     </section>
   )
 }
