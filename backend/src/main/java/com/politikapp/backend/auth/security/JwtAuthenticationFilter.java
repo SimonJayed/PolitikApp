@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,14 +19,14 @@ import org.springframework.web.filter.OncePerRequestFilter;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
-    private final com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public JwtAuthenticationFilter(
             JwtService jwtService,
-            com.politikapp.backend.auth.repository.AuthUserRepository authUserRepository
+            JdbcTemplate jdbcTemplate
     ) {
         this.jwtService = jwtService;
-        this.authUserRepository = authUserRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
@@ -44,41 +46,41 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
                 UUID userId = UUID.fromString(claims.get("uid", String.class));
 
-                // Real-time JWT invalidation / lockout check
-                com.politikapp.backend.auth.entity.AuthUser user = authUserRepository.findById(userId).orElse(null);
-                if (user == null || "LOCKED".equals(user.getAccountStatus()) || "INVALIDATED".equals(user.getWritingTokenStatus())) {
+                // Real-time account lockout check
+                String accountStatus = resolveAccountStatus(userId);
+                if (!"ACTIVE".equals(accountStatus)) {
                     jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
                     res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
-                    res.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Token has been invalidated or user account is locked.\"}");
-                    return; // Halt filter execution path cleanly
-                }
-
-                String role = claims.get("role", String.class);
-                String sandboxRoleOverride = request.getHeader("X-Sandbox-Role-Override");
-                if (org.springframework.util.StringUtils.hasText(sandboxRoleOverride)) {
-                    if ("JUDICIAL_REVIEWER".equalsIgnoreCase(sandboxRoleOverride)) {
-                        role = "PEER";
-                    } else if ("ADMINISTRATOR".equalsIgnoreCase(sandboxRoleOverride) || "ADMIN".equalsIgnoreCase(sandboxRoleOverride)) {
-                        role = "ADMIN";
-                    } else {
-                        role = sandboxRoleOverride.toUpperCase();
-                    }
+                    res.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Account is locked or user no longer exists.\"}");
+                    return;
                 }
 
                 AuthPrincipal principal = new AuthPrincipal(
                         userId,
                         claims.getSubject(),
-                        role
+                        jdbcTemplate.queryForObject("SELECT role FROM users WHERE user_id = ?", String.class, userId)
                 );
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities())
                 );
-            } catch (Exception ignored) {
-                logger.error("JWT authentication failed: " + ignored.getMessage(), ignored);
+            } catch (Exception exception) {
+                logger.debug("JWT authentication failed: " + exception.getClass().getSimpleName());
                 SecurityContextHolder.clearContext();
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    private String resolveAccountStatus(UUID userId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT account_status FROM users WHERE user_id = ?",
+                    String.class,
+                    userId
+            );
+        } catch (EmptyResultDataAccessException exception) {
+            return null;
+        }
     }
 }

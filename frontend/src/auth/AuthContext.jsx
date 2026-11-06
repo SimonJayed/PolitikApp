@@ -1,49 +1,66 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { API_BASE_URL, readApiResponse } from '../api/client'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 const AuthContext = createContext(null)
-
-function readStoredSession() {
+function expiry(session) {
   try {
-    return JSON.parse(localStorage.getItem('politikapp_auth') || 'null')
-  } catch {
-    return null
-  }
+    const segment = session.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return JSON.parse(atob(segment)).exp * 1000
+  } catch { return 0 }
+}
+function storedSession() {
+  try { return JSON.parse(localStorage.getItem('politikapp_auth') || 'null') }
+  catch { return null }
+}
+async function authRequest(path, payload) {
+  return fetch(`${API_BASE_URL}/auth/${path}`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload),
+  }).then(readApiResponse)
 }
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(() => readStoredSession())
+  const [session, setSession] = useState(storedSession)
+  const [ready, setReady] = useState(() => { const saved = storedSession(); return !saved || expiry(saved) > Date.now() })
+  const logout = useCallback(() => {
+    localStorage.removeItem('politikapp_auth')
+    setSession(null)
+    setReady(true)
+  }, [])
+  const updateSession = useCallback(next => {
+    setSession(previous => {
+      if (!next) return null
+      if (next.token && next.user) return next
+      if (!previous) return null
+      const user = { ...previous.user, ...next }
+      return JSON.stringify(user) === JSON.stringify(previous.user) ? previous : { ...previous, user }
+    })
+  }, [])
 
   useEffect(() => {
-    if (session) {
-      localStorage.setItem('politikapp_auth', JSON.stringify(session))
-    } else {
-      localStorage.removeItem('politikapp_auth')
-    }
+    if (session) localStorage.setItem('politikapp_auth', JSON.stringify(session))
+    else localStorage.removeItem('politikapp_auth')
   }, [session])
 
   useEffect(() => {
-    if (!session?.refreshToken || !session?.expiresInSeconds) return undefined
-    const refreshInMs = Math.max((Number(session.expiresInSeconds) - 120) * 1000, 30_000)
+    if (!session) { setReady(true); return }
+    let cancelled = false
+    const delay = Math.max(0, expiry(session) - Date.now() - 120000)
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refreshToken: session.refreshToken }),
-        })
-        const body = await response.json().catch(() => ({}))
-        if (!response.ok) {
-          setSession(null)
-          return
-        }
-        setSession((prev) => ({ ...(prev || {}), ...body, user: body.user || prev?.user || null }))
-      } catch {
-        setSession(null)
-      }
-    }, refreshInMs)
-    return () => window.clearTimeout(timer)
-  }, [session?.expiresInSeconds, session?.refreshToken])
+        if (!session.refreshToken) throw new Error('Session expired.')
+        const body = await authRequest('refresh', { refreshToken: session.refreshToken })
+        if (!cancelled) setSession(previous => previous?.refreshToken === session.refreshToken ? { ...previous, ...body } : previous)
+      } catch { if (!cancelled) setSession(null) }
+      finally { if (!cancelled) setReady(true) }
+    }, delay)
+    return () => { cancelled = true; window.clearTimeout(timer) }
+  }, [session?.token, session?.refreshToken])
+
+  useEffect(() => {
+    const sync = event => { if (event.key === 'politikapp_auth') { const next = storedSession(); setSession(next); setReady(!next || expiry(next) > Date.now()) } }
+    window.addEventListener('storage', sync)
+    return () => window.removeEventListener('storage', sync)
+  }, [])
 
   const value = useMemo(() => ({
     token: session?.token || null,
@@ -51,65 +68,31 @@ export function AuthProvider({ children }) {
     user: session?.user || null,
     isAuthenticated: Boolean(session?.token && session?.user),
     async login(login, password) {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login, password }),
-      })
-      const body = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(body.message || 'Login failed.')
-      setSession(body)
-      return body
-    },
-    async refreshAuthToken() {
-      const currentRefreshToken = session?.refreshToken
-      if (!currentRefreshToken) throw new Error('No refresh token available.')
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: currentRefreshToken }),
-      })
-      const body = await response.json().catch(() => ({}))
-      if (!response.ok) {
-        setSession(null)
-        throw new Error(body.message || 'Session refresh failed.')
-      }
-      setSession((prev) => ({
-        ...(prev || {}),
-        ...body,
-        user: body.user || prev?.user || null,
-      }))
+      const body = await authRequest('login', { login, password })
+      setSession(body); setReady(true)
       return body
     },
     async register(payload) {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      const body = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(body.message || 'Registration failed.')
-      setSession(body)
+      const body = await authRequest('register', payload)
+      setSession(body); setReady(true)
       return body
     },
-    updateSession(newSession) {
-      setSession((prev) => {
-        if (!newSession) return null;
-        if (newSession.token && newSession.user) {
-          return newSession;
-        }
-        if (prev) {
-          return { ...prev, user: { ...prev.user, ...newSession } };
-        }
-        return prev;
-      });
+    async refreshAuthToken() {
+      const current = session?.refreshToken
+      if (!current) throw new Error('No refresh token available.')
+      try {
+        const body = await authRequest('refresh', { refreshToken: current })
+        setSession(previous => previous?.refreshToken === current ? { ...previous, ...body } : previous)
+        return body
+      } catch (error) {
+        setSession(previous => previous?.refreshToken === current ? null : previous)
+        throw error
+      }
     },
-    logout() {
-      setSession(null)
-    },
-  }), [session])
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    updateSession,
+    logout,
+  }), [session, updateSession, logout])
+  return <AuthContext.Provider value={value}>{ready ? children : <p role="status">Restoring your session...</p>}</AuthContext.Provider>
 }
 
 export function useAuth() {

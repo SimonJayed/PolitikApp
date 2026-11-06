@@ -1,14 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useDeveloperSandbox } from '../developer/DeveloperSandboxContext'
 import './Sidebar.css'
 
 function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', user }) {
   const [isOpen, setIsOpen] = useState(true)
 
-  const sandboxContext = useDeveloperSandbox()
-  const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
-  const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
-  const currentRole = isDevModeActive && manipulatedUser ? manipulatedUser.role : (user?.role || 'CONTRIBUTOR')
+  const currentRole = user?.role || 'CONTRIBUTOR'
 
   useEffect(() => {
     document.documentElement.style.setProperty('--sidebar-width', isOpen ? '320px' : '92px')
@@ -17,12 +13,11 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
 
   const navSections = useMemo(() => {
     const featureItems = [
-      { key: 'directory', label: 'Politicians', icon: 'R', accent: 'var(--ph-blue)' },
+      { key: 'politicians', label: 'Politicians', icon: 'R', accent: 'var(--ph-blue)' },
       { key: 'compare', label: 'Compare', icon: 'C', accent: 'var(--ph-gold)' },
-      { key: 'contributions', label: 'My Contributions', icon: 'H', accent: 'var(--ph-gold)' }
     ]
 
-    if (currentRole !== 'CONTRIBUTOR') {
+    if (currentRole === 'ADMIN') {
       featureItems.push({ key: 'moderation', label: 'Moderation', icon: 'M', accent: 'var(--ph-red)' })
     }
 
@@ -107,4 +102,3 @@ function Sidebar({ activeView, onLogout, onSelectView, title = 'PolitikApp', use
 }
 
 export default Sidebar
-

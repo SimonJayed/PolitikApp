@@ -1,7 +1,9 @@
 package com.politikapp.backend.config;
 
 import java.util.List;
+import java.util.Arrays;
 import com.politikapp.backend.auth.security.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,32 +18,52 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
+@org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 public class SecurityConfig {
+    @Value("${app.security.cors.allowed-origins:http://localhost:5173,http://127.0.0.1:5173}")
+    private String allowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             CorsConfigurationSource corsConfigurationSource,
-            JwtAuthenticationFilter jwtAuthenticationFilter
+            JwtAuthenticationFilter jwtAuthenticationFilter,
+            RateLimitingFilter rateLimitingFilter
     ) throws Exception {
         return http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
+                .headers(headers -> headers
+                        .frameOptions(frame -> frame.deny())
+                        .contentTypeOptions(contentType -> {})
+                        .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"))
+                        .referrerPolicy(referrer -> referrer.policy(
+                                org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN
+                        ))
+                        .permissionsPolicyHeader(permissions -> permissions.policy("camera=(), microphone=(), geolocation=()"))
+                )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Unauthorized\", \"message\": \"Authentication required.\"}");
+                        })
+                )
                 .authorizeHttpRequests(requests -> requests
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.PUT, "/api/politicians/**").authenticated()
-                        .requestMatchers("/api/politicians/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/submissions").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/submissions/contributor/*").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/moderation/appeal").authenticated()
-                        .requestMatchers("/api/moderation/override", "/api/moderation/escalate/trigger").hasRole("ADMIN")
-                        .requestMatchers("/api/moderation/**").hasAnyRole("PEER", "ADMIN")
-                        .requestMatchers("/api/peer-applications/submit", "/api/peer-applications/my").hasAnyRole("CONTRIBUTOR", "PEER")
-                        .requestMatchers("/api/peer-applications/admin/**").hasRole("ADMIN")
-                        .requestMatchers("/api/submissions/**", "/users/**").authenticated()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        .requestMatchers("/api/reputation/**", "/api/module3/**").hasRole("ADMIN")
+                        .requestMatchers("/api/challenges/**", "/api/moderation/appeal").denyAll()
+                        .requestMatchers(HttpMethod.GET, "/api/politicians/**").permitAll()
+                        .requestMatchers("/api/politicians/**").hasRole("ADMIN")
+                        .requestMatchers("/api/submissions/**", "/api/moderation/**").hasRole("ADMIN")
+                        .requestMatchers("/users/**").authenticated()
                         .requestMatchers("/api/**").permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(rateLimitingFilter, org.springframework.security.web.authentication.logout.LogoutFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -49,30 +71,13 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:*",
-                "http://127.0.0.1:*",
-                "http://192.168.*.*:*",
-                "http://10.*.*.*:*",
-                "http://172.16.*.*:*",
-                "http://172.17.*.*:*",
-                "http://172.18.*.*:*",
-                "http://172.19.*.*:*",
-                "http://172.20.*.*:*",
-                "http://172.21.*.*:*",
-                "http://172.22.*.*:*",
-                "http://172.23.*.*:*",
-                "http://172.24.*.*:*",
-                "http://172.25.*.*:*",
-                "http://172.26.*.*:*",
-                "http://172.27.*.*:*",
-                "http://172.28.*.*:*",
-                "http://172.29.*.*:*",
-                "http://172.30.*.*:*",
-                "http://172.31.*.*:*"
-        ));
+        configuration.setAllowedOriginPatterns(Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(origin -> !origin.isBlank())
+                .toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        configuration.setAllowCredentials(false);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

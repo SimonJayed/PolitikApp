@@ -4,21 +4,17 @@ import com.politikapp.backend.auth.dto.AuthDtos.AuthResponse;
 import com.politikapp.backend.auth.dto.AuthDtos.LoginRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.RefreshRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.RegisterRequest;
-import com.politikapp.backend.auth.dto.AuthDtos.ReputationHistoryEntry;
 import com.politikapp.backend.auth.dto.AuthDtos.UpdateMeRequest;
 import com.politikapp.backend.auth.dto.AuthDtos.UserResponse;
 import com.politikapp.backend.auth.entity.AuthUser;
-import com.politikapp.backend.auth.repository.AuthUserRepository;
 import com.politikapp.backend.auth.security.AuthPrincipal;
 import com.politikapp.backend.auth.security.JwtService;
 import com.politikapp.backend.common.HttpResponseException;
-import java.util.Locale;
 import java.util.UUID;
 import java.util.List;
-import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import jakarta.persistence.EntityManager;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,43 +25,49 @@ import org.springframework.util.StringUtils;
 
 @Service
 public class AuthService {
-    private static final BigDecimal MIN_TRUST_SCORE = BigDecimal.ZERO;
-    private static final BigDecimal MAX_TRUST_SCORE = BigDecimal.valueOf(500.00);
-
-    private final AuthUserRepository authUserRepository;
+    private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final EntityManager entityManager;
+    private static final RowMapper<AuthUser> AUTH_USER_ROW_MAPPER = (rs, rowNum) -> {
+        AuthUser user = new AuthUser();
+        user.setUserId(rs.getObject("user_id", UUID.class));
+        user.setFullName(rs.getString("full_name"));
+        user.setEmail(rs.getString("email"));
+        user.setUsername(rs.getString("username"));
+        user.setPasswordHash(rs.getString("password_hash"));
+        user.setRole(rs.getString("role"));
+        user.setAccountStatus(rs.getString("account_status"));
+        return user;
+    };
 
     public AuthService(
-            AuthUserRepository authUserRepository,
+            JdbcTemplate jdbcTemplate,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService,
-            EntityManager entityManager
+            JwtService jwtService
     ) {
-        this.authUserRepository = authUserRepository;
+        this.jdbcTemplate = jdbcTemplate;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-        this.entityManager = entityManager;
     }
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (authUserRepository.findByEmailIgnoreCase(request.email().trim()).isPresent()) {
+        if (findByEmail(request.email().trim()) != null) {
             throw new HttpResponseException(409, "Email is already registered.");
         }
-        if (authUserRepository.findByUsernameIgnoreCase(request.username().trim()).isPresent()) {
+        if (findByUsername(request.username().trim()) != null) {
             throw new HttpResponseException(409, "Username is already taken.");
         }
-        String role = StringUtils.hasText(request.role()) ? request.role().trim().toUpperCase(Locale.ROOT) : "CONTRIBUTOR";
         AuthUser user = new AuthUser();
         user.setUserId(UUID.randomUUID());
         user.setFullName(request.fullName().trim());
         user.setEmail(request.email().trim());
         user.setUsername(request.username().trim());
-        user.setRole(role);
+        user.setRole("CONTRIBUTOR");
         user.setPasswordHash(passwordEncoder.encode(request.password()));
-        AuthUser saved = authUserRepository.save(user);
+        user.setAccountStatus("ACTIVE");
+        insertUser(user);
+        AuthUser saved = findById(user.getUserId());
         return toAuthResponse(saved);
     }
 
@@ -73,8 +75,8 @@ public class AuthService {
     public AuthResponse login(LoginRequest request) {
         String login = request.login().trim();
         AuthUser user = login.contains("@")
-                ? authUserRepository.findByEmailIgnoreCase(login).orElse(null)
-                : authUserRepository.findByUsernameIgnoreCase(login).orElse(null);
+                ? findByEmail(login)
+                : findByUsername(login);
         if (user == null || !StringUtils.hasText(user.getPasswordHash()) || !passwordEncoder.matches(request.password(), user.getPasswordHash())) {
             throw new HttpResponseException(401, "Invalid credentials.");
         }
@@ -89,25 +91,31 @@ public class AuthService {
             throw new HttpResponseException(401, "Invalid refresh token.");
         }
         UUID userId = UUID.fromString(claims.get("uid", String.class));
-        AuthUser user = authUserRepository.findById(userId)
-                .orElseThrow(() -> new HttpResponseException(401, "Invalid refresh token."));
+        AuthUser user = findById(userId);
+        if (user == null) {
+            throw new HttpResponseException(401, "Invalid refresh token.");
+        }
         return toAuthResponse(user);
     }
 
     @Transactional(readOnly = true)
     public UserResponse me(AuthPrincipal principal) {
-        AuthUser user = authUserRepository.findById(principal.getUserId())
-                .orElseThrow(() -> new HttpResponseException(404, "User not found."));
+        AuthUser user = findById(principal.getUserId());
+        if (user == null) {
+            throw new HttpResponseException(404, "User not found.");
+        }
         return toSafeUser(user);
     }
 
     @Transactional
     public AuthResponse updateMe(AuthPrincipal principal, UpdateMeRequest request) {
-        AuthUser user = authUserRepository.findById(principal.getUserId())
-                .orElseThrow(() -> new HttpResponseException(404, "User not found."));
+        AuthUser user = findById(principal.getUserId());
+        if (user == null) {
+            throw new HttpResponseException(404, "User not found.");
+        }
         if (StringUtils.hasText(request.username())
                 && !request.username().trim().equalsIgnoreCase(user.getUsername())
-                && authUserRepository.findByUsernameIgnoreCase(request.username().trim()).isPresent()) {
+                && findByUsername(request.username().trim()) != null) {
             throw new HttpResponseException(409, "Username is already taken.");
         }
         if (StringUtils.hasText(request.fullName())) {
@@ -116,46 +124,18 @@ public class AuthService {
         if (StringUtils.hasText(request.username())) {
             user.setUsername(request.username().trim());
         }
-        if (StringUtils.hasText(request.role())) {
-            String targetRole = request.role().trim().toUpperCase(Locale.ROOT);
-            if ("JUDICIAL_REVIEWER".equals(targetRole)) {
-                targetRole = "PEER";
-            } else if ("ADMINISTRATOR".equals(targetRole)) {
-                targetRole = "ADMIN";
-            }
-            if (!"CONTRIBUTOR".equals(targetRole) && !"PEER".equals(targetRole) && !"ADMIN".equals(targetRole)) {
-                throw new HttpResponseException(400, "Invalid role name: " + request.role());
-            }
-            user.setRole(targetRole);
-        }
-        if (request.trustScore() != null) {
-            user.setTrustScore(clampTrustScore(request.trustScore()));
-        }
-        if (StringUtils.hasText(request.accountStatus())) {
-            String accountStatus = request.accountStatus().trim().toUpperCase(Locale.ROOT);
-            if (!"ACTIVE".equals(accountStatus) && !"LOCKED".equals(accountStatus) && !"SUSPENDED".equals(accountStatus)) {
-                throw new HttpResponseException(400, "Invalid account status: " + request.accountStatus());
-            }
-            user.setAccountStatus(accountStatus);
-        }
-        if (StringUtils.hasText(request.writingTokenStatus())) {
-            String tokenStatus = request.writingTokenStatus().trim().toUpperCase(Locale.ROOT);
-            if (!"ACTIVE".equals(tokenStatus) && !"INVALIDATED".equals(tokenStatus) && !"EXPIRED".equals(tokenStatus)) {
-                throw new HttpResponseException(400, "Invalid writing token status: " + request.writingTokenStatus());
-            }
-            user.setWritingTokenStatus(tokenStatus);
-        }
-        if (request.sandboxProfileMetrics() != null) {
-            user.setSandboxProfileMetrics(request.sandboxProfileMetrics());
-        }
-        
-        AuthUser saved = authUserRepository.save(user);
+        jdbcTemplate.update(
+                "UPDATE users SET full_name = ?, username = ? WHERE user_id = ?",
+                user.getFullName(),
+                user.getUsername(),
+                user.getUserId()
+        );
+        AuthUser saved = findById(user.getUserId());
 
-        // Map database role to standard Spring security authority string (e.g., "ROLE_ADMIN")
+        // Retain verified database role in the active security context container in-memory
         String securityRole = "ROLE_" + saved.getRole();
         List<SimpleGrantedAuthority> newAuthorities = List.of(new SimpleGrantedAuthority(securityRole));
 
-        // Re-authenticate the active security context container in-memory
         UsernamePasswordAuthenticationToken newAuth = new UsernamePasswordAuthenticationToken(
             new AuthPrincipal(saved.getUserId(), saved.getEmail(), saved.getRole()),
             SecurityContextHolder.getContext().getAuthentication() != null ?
@@ -167,21 +147,50 @@ public class AuthService {
         return toAuthResponse(saved);
     }
 
-    @Transactional(readOnly = true)
-    public List<ReputationHistoryEntry> getReputationHistory(AuthPrincipal principal) {
-        @SuppressWarnings("unchecked")
-        List<Object[]> rows = entityManager.createNativeQuery(
-                "SELECT log_id, queue_id, score_change, previous_score, new_score, reason, created_at " +
-                "FROM public.reputation_audit_logs " +
-                "WHERE peer_id = :userId " +
-                "ORDER BY created_at DESC"
-        )
-                .setParameter("userId", principal.getUserId())
-                .getResultList();
+    private AuthUser findByEmail(String email) {
+        return findOne(
+                "SELECT user_id, full_name, email, username, password_hash, role, account_status FROM users WHERE lower(email) = lower(?)",
+                email
+        );
+    }
 
-        return rows.stream()
-                .map(this::toHistoryEntry)
-                .toList();
+    private AuthUser findByUsername(String username) {
+        return findOne(
+                "SELECT user_id, full_name, email, username, password_hash, role, account_status FROM users WHERE lower(username) = lower(?)",
+                username
+        );
+    }
+
+    private AuthUser findById(UUID userId) {
+        return findOne(
+                "SELECT user_id, full_name, email, username, password_hash, role, account_status FROM users WHERE user_id = ?",
+                userId
+        );
+    }
+
+    private AuthUser findOne(String sql, Object parameter) {
+        try {
+            return jdbcTemplate.queryForObject(sql, AUTH_USER_ROW_MAPPER, parameter);
+        } catch (EmptyResultDataAccessException exception) {
+            return null;
+        }
+    }
+
+    private void insertUser(AuthUser user) {
+        jdbcTemplate.update(
+                """
+                        INSERT INTO users
+                            (user_id, full_name, email, username, password_hash, role, account_status, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                        """,
+                user.getUserId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getPasswordHash(),
+                user.getRole(),
+                user.getAccountStatus()
+        );
     }
 
     private AuthResponse toAuthResponse(AuthUser user) {
@@ -198,34 +207,8 @@ public class AuthService {
                 user.getUsername(),
                 user.getRole(),
                 user.getAccountStatus(),
-                user.getWritingTokenStatus(),
-                user.getTrustScore(),
-                user.getSandboxProfileMetrics(),
                 user.getCreatedAt()
         );
     }
 
-    private BigDecimal clampTrustScore(BigDecimal trustScore) {
-        return trustScore.max(MIN_TRUST_SCORE).min(MAX_TRUST_SCORE);
-    }
-
-    private ReputationHistoryEntry toHistoryEntry(Object[] row) {
-        UUID logId = row[0] != null ? UUID.fromString(row[0].toString()) : null;
-        UUID queueId = row[1] != null ? UUID.fromString(row[1].toString()) : null;
-        BigDecimal scoreChange = (BigDecimal) row[2];
-        BigDecimal previousScore = (BigDecimal) row[3];
-        BigDecimal newScore = (BigDecimal) row[4];
-        String reason = row[5] != null ? row[5].toString() : null;
-        Instant createdAt = row[6] instanceof Timestamp ts ? ts.toInstant() : null;
-
-        return new ReputationHistoryEntry(
-                logId,
-                queueId,
-                scoreChange,
-                previousScore,
-                newScore,
-                reason,
-                createdAt
-        );
-    }
 }

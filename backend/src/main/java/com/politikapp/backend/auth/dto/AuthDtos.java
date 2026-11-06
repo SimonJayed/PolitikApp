@@ -2,34 +2,32 @@ package com.politikapp.backend.auth.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Map;
 import java.util.UUID;
 
 public class AuthDtos {
     public record RegisterRequest(
             @NotBlank(message = "full_name is required.") @Size(max = 150, message = "full_name must be at most 150 characters.") String fullName,
             @NotBlank(message = "email is required.") @Email(message = "email must be a valid email address.") @Size(max = 150, message = "email must be at most 150 characters.") String email,
-            @NotBlank(message = "username is required.") @Size(min = 3, max = 80, message = "username must be between 3 and 80 characters.") String username,
-            @NotBlank(message = "password is required.") @Size(min = 8, max = 120, message = "password must be between 8 and 120 characters.") String password,
-            @Size(max = 50) String role
+            @NotBlank(message = "username is required.")
+            @Size(min = 3, max = 80, message = "username must be between 3 and 80 characters.")
+            @Pattern(regexp = "^[A-Za-z0-9_.-]+$", message = "username may only contain letters, numbers, dots, underscores, and hyphens.")
+            String username,
+            @NotBlank(message = "password is required.") @Size(min = 8, max = 120, message = "password must be between 8 and 120 characters.") String password
     ) {}
 
     public record LoginRequest(
-            @NotBlank String login,
-            @NotBlank String password
+            @NotBlank @Size(max = 150) String login,
+            @NotBlank @Size(max = 120) String password
     ) {}
 
     public record UpdateMeRequest(
             @Size(max = 150) String fullName,
-            @Size(max = 80) String username,
-            @Size(max = 50) String role,
-            BigDecimal trustScore,
-            @Size(max = 50) String accountStatus,
-            @Size(max = 50) String writingTokenStatus,
-            Map<String, Object> sandboxProfileMetrics
+            @Size(min = 3, max = 80)
+            @Pattern(regexp = "^[A-Za-z0-9_.-]+$", message = "username may only contain letters, numbers, dots, underscores, and hyphens.")
+            String username
     ) {}
 
     public record UserResponse(
@@ -39,9 +37,6 @@ public class AuthDtos {
             String username,
             String role,
             String accountStatus,
-            String writingTokenStatus,
-            BigDecimal trustScore,
-            Map<String, Object> sandboxProfileMetrics,
             Instant createdAt
     ) {}
 
@@ -53,16 +48,6 @@ public class AuthDtos {
     ) {}
 
     public record RefreshRequest(
-            @NotBlank String refreshToken
-    ) {}
-
-    public record ReputationHistoryEntry(
-            UUID logId,
-            UUID queueId,
-            BigDecimal scoreChange,
-            BigDecimal previousScore,
-            BigDecimal newScore,
-            String reason,
-            Instant createdAt
+            @NotBlank @Size(max = 4096) String refreshToken
     ) {}
 }

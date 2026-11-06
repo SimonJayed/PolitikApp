@@ -21,33 +21,6 @@ export function RankingRowsSkeleton({ rows = 6 }) {
   )
 }
 
-export function ContributionCardsSkeleton({ count = 4 }) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, index) => (
-        <article className="review-card" key={`contrib-s-${index}`} aria-hidden="true">
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <SkeletonLine width={120} height={22} className="rounded-full" />
-            <SkeletonLine width={90} height={12} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
-            <SkeletonLine width="80%" height={42} />
-            <SkeletonLine width="85%" height={42} />
-            <SkeletonLine width="78%" height={42} />
-          </div>
-          <SkeletonLine width="100%" height={64} />
-          <SkeletonLine width="65%" height={16} />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, minmax(0, 1fr))', gap: '6px' }}>
-            {Array.from({ length: 5 }).map((__, stageIndex) => (
-              <SkeletonLine key={`stage-s-${index}-${stageIndex}`} width="100%" height={24} className="rounded-full" />
-            ))}
-          </div>
-        </article>
-      ))}
-    </>
-  )
-}
-
 export function TimelineCardsSkeleton({ count = 6 }) {
   return (
     <div className="timelineGrid" aria-hidden="true">

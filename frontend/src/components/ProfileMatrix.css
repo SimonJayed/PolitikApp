@@ -1,0 +1,484 @@
+/* =========================================================
+   Profile — design tokens (scoped; mirrors the dashboard)
+   Fonts are untouched: everything uses the existing --display / --sans.
+   ========================================================= */
+.profileShell {
+  --d-ink: var(--ph-blue);
+  --d-ink-deep: var(--ph-blue-mid);
+  --d-primary: var(--ph-blue-light);
+  --d-primary-strong: var(--ph-blue-mid);
+  --d-primary-soft: color-mix(in srgb, var(--ph-blue-light) 9%, var(--ph-white));
+  --d-accent: var(--ph-gold);
+  --d-gold-soft: color-mix(in srgb, var(--ph-gold) 14%, var(--ph-white));
+  --d-gold-text: color-mix(in srgb, var(--ph-gold) 62%, var(--ph-blue));
+  --d-surface: var(--ph-white);
+  --d-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
+  --d-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
+  --d-line-soft: color-mix(in srgb, var(--ph-blue) 8%, var(--ph-white));
+  --d-text: var(--ph-blue);
+  --d-text-2: color-mix(in srgb, var(--ph-blue) 78%, var(--ph-white));
+  --d-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
+  --d-danger: var(--ph-red);
+  --d-danger-soft: color-mix(in srgb, var(--ph-red) 7%, var(--ph-white));
+  --d-danger-line: color-mix(in srgb, var(--ph-red) 28%, var(--ph-white));
+  --d-radius-lg: 18px;
+  --d-radius-md: 12px;
+  --d-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
+  --d-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.05), 0 12px 32px rgba(10, 29, 66, 0.09);
+
+  display: grid;
+  gap: 18px;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 20px clamp(16px, 3vw, 44px) 88px;
+  background: transparent;
+  color: var(--d-text);
+}
+
+.profileShell :is(button, a):focus-visible {
+  outline: 2px solid var(--d-primary);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   Hero
+   ========================================================= */
+.profileHero {
+  position: relative;
+  display: grid;
+  gap: 18px;
+  overflow: hidden;
+  padding: 22px clamp(22px, 2.6vw, 34px);
+  border-radius: var(--d-radius-lg);
+  background:
+    radial-gradient(360px 180px at 100% 0%, color-mix(in srgb, var(--ph-red) 42%, transparent), transparent 70%),
+    radial-gradient(320px 180px at 0% 130%, color-mix(in srgb, var(--ph-gold) 30%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--d-ink), var(--d-ink-deep));
+  color: var(--ph-white);
+  box-shadow: var(--d-shadow-sm);
+}
+
+.profileHeroTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+}
+
+.profileAvatar {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--ph-white);
+  font: 800 22px/1 var(--display);
+}
+
+.profileIdentity {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.profileIdentity h1 {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ph-white);
+  font: 800 clamp(1.25rem, 2.2vw, 1.6rem)/1.15 var(--display);
+  letter-spacing: -0.015em;
+}
+
+.profileIdentity p {
+  margin: 4px 0 0;
+  color: rgba(255, 255, 255, 0.68);
+  font: 600 13px/1.3 var(--sans);
+}
+
+.profileStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--ph-white);
+  font: 700 12px/1 var(--display);
+}
+
+.profileStatus.isInactive {
+  background: var(--d-gold-soft);
+  border-color: var(--d-accent);
+  color: var(--d-gold-text);
+}
+
+.profileStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.profileStat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--d-radius-md);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.profileStatIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--ph-red);
+  color: var(--ph-white);
+}
+
+.profileStat:nth-child(2) .profileStatIcon {
+  background: var(--ph-gold-light);
+  color: var(--ph-blue);
+}
+
+.profileStat:nth-child(3) .profileStatIcon {
+  background: var(--ph-white);
+  color: var(--ph-blue);
+}
+
+.profileStat div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.profileStat strong {
+  color: var(--ph-white);
+  font: 800 1.15rem/1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.profileStat div span {
+  color: rgba(255, 255, 255, 0.72);
+  font: 600 11px/1.3 var(--display);
+}
+
+/* =========================================================
+   Body layout
+   ========================================================= */
+.profileBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.profileMain {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+/* =========================================================
+   Tabs (same treatment as the dashboard filters)
+   ========================================================= */
+.profileControls {
+  display: flex;
+  padding: 10px 12px;
+  border: 1px solid var(--d-line);
+  border-radius: var(--d-radius-lg);
+  background: var(--d-surface);
+  box-shadow: var(--d-shadow-sm);
+}
+
+.profileTabs {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.profileTabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* The .profileShell prefix beats the app-wide button styles */
+.profileShell .profileTab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+  width: auto;
+  height: auto;
+  min-height: 0;
+  padding: 9px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  transform: none;
+  color: var(--d-text-2);
+  font: 700 12px/1 var(--display);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.profileShell .profileTab:hover:not(.active) {
+  background: var(--d-primary-soft);
+  color: var(--d-primary-strong);
+  box-shadow: none;
+  transform: none;
+}
+
+.profileShell .profileTab.active {
+  background: var(--ph-blue);
+  color: var(--ph-white);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--ph-blue) 30%, transparent);
+}
+
+.profileTabCount {
+  min-width: 20px;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, currentColor 14%, transparent);
+  font: 800 11px/1 var(--display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+/* =========================================================
+   Activity cards (same anatomy as dashboard posts)
+   ========================================================= */
+.profileCardList {
+  display: grid;
+  gap: 16px;
+}
+
+.profileCard {
+  --cat: var(--d-primary);
+  position: relative;
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--d-line);
+  border-radius: var(--d-radius-lg);
+  background: var(--d-surface);
+  box-shadow: var(--d-shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.profileCard.saved {
+  --cat: var(--d-accent);
+}
+
+.profileCard::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--cat);
+}
+
+.profileCard:hover {
+  border-color: color-mix(in srgb, var(--cat) 35%, var(--d-line));
+  box-shadow: var(--d-shadow-md);
+}
+
+.profileCardMeta {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.profileCardMeta div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profileCardMeta strong {
+  color: var(--d-text);
+  font: 800 14px/1.3 var(--display);
+}
+
+.profileCardMeta time {
+  color: var(--d-muted);
+  font: 600 12px/1.3 var(--sans);
+}
+
+.profileCardIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--cat) 12%, var(--ph-white));
+  color: color-mix(in srgb, var(--cat) 72%, var(--ph-blue));
+}
+
+.profileCardPill {
+  width: max-content;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cat) 11%, var(--ph-white));
+  color: color-mix(in srgb, var(--cat) 72%, var(--ph-blue));
+  font: 800 11px/1 var(--display);
+}
+
+.profileCardTitle {
+  max-width: 62ch;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--d-text);
+  font: 800 clamp(1.1rem, 1.8vw, 1.3rem)/1.25 var(--display);
+  letter-spacing: -0.015em;
+}
+
+.profileCardText {
+  display: -webkit-box;
+  max-width: 72ch;
+  margin: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--d-text-2);
+  font: 400 14px/1.7 var(--sans);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+.profileCardQuote {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--d-radius-md);
+  background: var(--d-inset);
+  overflow-wrap: anywhere;
+  color: var(--d-text-2);
+  font: 400 14px/1.65 var(--sans);
+}
+
+/* ---------- Skeleton ---------- */
+.profileCard.isSkeleton {
+  min-height: 150px;
+  align-content: start;
+}
+
+.profileCard.isSkeleton i {
+  display: block;
+  height: 14px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--d-inset), var(--d-line), var(--d-inset));
+  background-size: 240% 100%;
+  animation: profilePulse 1.4s infinite linear;
+}
+
+/* =========================================================
+   Notices
+   ========================================================= */
+.profileNotice {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 44px 32px;
+  border: 1px dashed var(--d-line);
+  border-radius: var(--d-radius-lg);
+  background: var(--d-surface);
+  color: var(--d-text-2);
+  text-align: center;
+  font: 500 14px/1.5 var(--sans);
+}
+
+.profileNotice strong {
+  color: var(--d-text);
+  font: 800 16px/1.3 var(--display);
+}
+
+.profileNoticeIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--d-primary-soft);
+  color: var(--d-primary-strong);
+}
+
+.profileShell .profileNotice button {
+  width: auto;
+  height: auto;
+  min-height: 0;
+  margin-top: 6px;
+  padding: 9px 16px;
+  border: 1px solid var(--d-primary);
+  border-radius: 999px;
+  background: var(--d-primary);
+  box-shadow: none;
+  color: var(--ph-white);
+  font: 700 12px/1 var(--display);
+  cursor: pointer;
+}
+
+.profileShell .profileNotice button:hover {
+  background: var(--d-primary-strong);
+  box-shadow: none;
+}
+
+.profileNotice.error {
+  border-style: solid;
+  border-color: var(--d-danger-line);
+  background: var(--d-danger-soft);
+}
+
+.profileNotice.error strong,
+.profileNotice.error > span {
+  color: var(--d-danger);
+}
+
+/* =========================================================
+   Motion
+   ========================================================= */
+@keyframes profilePulse {
+  to { background-position: -240% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .profileShell *,
+  .profileShell *::before {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+@media (max-width: 760px) {
+  .profileStats {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .profileCard {
+    padding: 18px;
+  }
+
+  .profileCardMeta {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .profileCardPill {
+    grid-column: 1 / -1;
+  }
+}

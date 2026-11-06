@@ -1,0 +1,174 @@
+package com.politikapp.backend.auth;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import com.politikapp.backend.auth.entity.AuthUser;
+import com.politikapp.backend.auth.repository.AuthUserRepository;
+import com.politikapp.backend.auth.security.JwtService;
+import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.web.servlet.MockMvc;
+
+@SpringBootTest(properties = "app.security.cors.allowed-origins=http://localhost:5173,http://127.0.0.1:5173,https://*.vercel.app")
+@AutoConfigureMockMvc
+class SecurityHardeningTests {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private AuthUserRepository authUserRepository;
+
+    @Autowired
+    private JwtService jwtService;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    private AuthUser contributorUser;
+    private String contributorToken;
+
+    @BeforeEach
+    void setupUser() {
+        UUID userId = UUID.fromString("11111111-2222-3333-4444-555555555555");
+        contributorUser = authUserRepository.findById(userId).orElseGet(() -> {
+            AuthUser user = new AuthUser();
+            user.setUserId(userId);
+            user.setEmail("test.contributor@politikapp.com");
+            user.setUsername("test_contrib");
+            user.setFullName("Test Contributor");
+            user.setPasswordHash(passwordEncoder.encode("password123"));
+            user.setRole("CONTRIBUTOR");
+            user.setAccountStatus("ACTIVE");
+            return authUserRepository.save(user);
+        });
+
+        // Ensure role is reset to CONTRIBUTOR before each test
+        contributorUser.setRole("CONTRIBUTOR");
+        contributorUser.setAccountStatus("ACTIVE");
+        authUserRepository.save(contributorUser);
+
+        contributorToken = jwtService.generateAccessToken(
+                contributorUser.getUserId(),
+                contributorUser.getEmail(),
+                contributorUser.getRole()
+        );
+    }
+
+    @Test
+    void testPutUsersMeCannotSelfPromoteRoleOrAccountStatus() throws Exception {
+        mockMvc.perform(put("/users/me")
+                        .header("Authorization", "Bearer " + contributorToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Updated Contributor",
+                                  "role": "ADMIN",
+                                  "accountStatus": "SUSPENDED"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.user.fullName").value("Updated Contributor"))
+                .andExpect(jsonPath("$.user.role").value("CONTRIBUTOR"))
+                .andExpect(jsonPath("$.user.accountStatus").value("ACTIVE"));
+
+        AuthUser refreshed = authUserRepository.findById(contributorUser.getUserId()).orElseThrow();
+        assertEquals("CONTRIBUTOR", refreshed.getRole());
+        assertEquals("ACTIVE", refreshed.getAccountStatus());
+    }
+
+    @Test
+    void testRegisterIgnoresClientSuppliedRole() throws Exception {
+        String unique = UUID.randomUUID().toString().substring(0, 8);
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "fullName": "Role Injection Attempt",
+                                  "email": "role-injection-%s@politikapp.com",
+                                  "username": "role_injection_%s",
+                                  "password": "Password123!",
+                                  "role": "ADMIN"
+                                }
+                                """.formatted(unique, unique)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isString())
+                .andExpect(jsonPath("$.refreshToken").isString())
+                .andExpect(jsonPath("$.user.role").value("CONTRIBUTOR"));
+
+        AuthUser saved = authUserRepository.findByUsernameIgnoreCase("role_injection_" + unique).orElseThrow();
+        assertEquals("CONTRIBUTOR", saved.getRole());
+        assertNotEquals("Password123!", saved.getPasswordHash());
+
+        mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "login": "role_injection_%s",
+                                  "password": "Password123!"
+                                }
+                                """.formatted(unique)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").isString())
+                .andExpect(jsonPath("$.refreshToken").isString())
+                .andExpect(jsonPath("$.user.username").value("role_injection_" + unique));
+    }
+
+    @Test
+    void testContributorCannotTriggerReputationEvaluation() throws Exception {
+        mockMvc.perform(post("/api/reputation/contributors/{contributorId}/reputation/evaluate", contributorUser.getUserId())
+                        .header("Authorization", "Bearer " + contributorToken))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testSandboxRoleOverrideIsIgnoredByDefault() throws Exception {
+        // Contributor attempts to access admin-only endpoint using X-Sandbox-Role-Override header
+        mockMvc.perform(get("/api/admin/adjudication/queue")
+                        .header("Authorization", "Bearer " + contributorToken)
+                        .header("X-Sandbox-Role-Override", "ADMIN"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testSecurityResponseHeadersArePresent() throws Exception {
+        mockMvc.perform(get("/api/politicians"))
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "DENY"))
+                .andExpect(header().string("Referrer-Policy", "strict-origin-when-cross-origin"))
+                .andExpect(header().exists("Content-Security-Policy"))
+                .andExpect(header().exists("Permissions-Policy"));
+    }
+
+    @Test
+    void testCorsRejectsUnconfiguredOrigins() throws Exception {
+        mockMvc.perform(options("/api/politicians")
+                        .header("Origin", "https://evil.example")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void testCorsAllowsWildcardVercelPreviewOrigins() throws Exception {
+        mockMvc.perform(options("/api/politicians")
+                        .header("Origin", "https://politik-mln2jms1a-tap-tone.vercel.app")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "https://politik-mln2jms1a-tap-tone.vercel.app"));
+    }
+}

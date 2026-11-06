@@ -1,45 +1,30 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { API_BASE_URL, readApiResponse } from './api/client'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
-import UserProfileMatrixPanel from './components/UserProfileMatrixPanel'
-import TrustScoreMeter from './components/TrustScoreMeter'
-import ConfirmActionModal from './components/ConfirmActionModal'
-import PoliticianRankingPanel from './components/PoliticianRankingPanel'
-import LifecycleStageStrip from './components/LifecycleStageStrip'
-import { matchesJurisdiction } from './components/jurisdiction'
-import { ContributionCardsSkeleton, TimelineCardsSkeleton } from './components/Skeletons'
-import { clampTrustScore } from './components/trustScore'
-import { DeveloperSandboxProvider } from './developer/DeveloperSandboxProvider'
-import { useDeveloperSandbox } from './developer/DeveloperSandboxContext'
-import DeveloperOptionsPanel from './developer/DeveloperOptionsPanel'
 import { useAuth } from './auth/AuthContext'
-import AuthPages from './auth/AuthPages'
 import TopNav from './components/TopNav'
-import UserHistoryPage from './components/UserHistoryPage'
+import AuthPromptModal from './components/AuthPromptModal'
+import WgiMethodologyModal from './components/governance/WgiMethodologyModal'
 
-// Decoupled Module 1 Components
-import EditSubmissionForm from './components/module1/EditSubmissionForm'
-import PoliticianDashboard from './components/module1/PoliticianDashboard'
-import TimelineLedgerDecoupled from './components/module1/TimelineLedger'
-import KPIWidget from './components/module1/KPIWidget'
-import { POSITION_OPTIONS } from './components/module1/positionConfig'
-import './components/module1/Module1.css'
+import './components/governance.css'
+import './components/moderation.css'
+import Account from './pages/Account/Account'
+import AdminNews from './pages/AdminNews/AdminNews'
+import OpenCongress from './pages/OpenCongress/OpenCongress'
+import Authentication from './pages/Authentication/Authentication'
+import Dashboard from './pages/Dashboard/Dashboard'
+import Landing from './pages/Landing/Landing'
+import ProfileMatrix from './pages/ProfileMatrix/ProfileMatrix'
+import SubmitContribution from './pages/SubmitContribution/SubmitContribution'
+import PoliticiansLoaderPanelExtracted from './pages/Politicians/Politicians'
+import PoliticianProfilePageExtracted from './pages/Profile/Profile'
+import ComparisonPanelExtracted from './pages/Compare/Compare'
 import {
   AlertTriangleIcon,
-  BarChart3Icon,
   ArrowLeftIcon,
-  ArrowRightIcon,
-  ExternalLinkIcon,
-  FileTextIcon,
-  FolderIcon,
-  KeyIcon,
-  ScaleIcon,
-  ShieldCheckIcon,
-  UserPlusIcon,
-  UsersIcon,
 } from './components/icons/Lucide'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
 
 const emptySubmission = {
   politicianId: '',
@@ -58,6 +43,14 @@ const actionOptions = [
 ]
 
 const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
+const guestRestrictedViews = new Set([
+  'adminNews',
+  'openCongress',
+  'moderation',
+  'submit',
+  'account',
+  'profileMatrix',
+])
 
 const actionDetailFields = {
   COA_FINDING: [
@@ -81,23 +74,22 @@ const actionDetailFields = {
   ],
 }
 
-async function readApiResponse(response) {
-  const body = await response.json().catch(() => ({}))
-  if (!response.ok) {
-    throw new Error(body.message || `Request failed with status ${response.status}`)
-  }
-  return body
-}
-
-function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
-  const sandboxContext = useDeveloperSandbox()
-  const isDevModeActive = sandboxContext ? sandboxContext.isDevModeActive : false
-  const manipulatedUser = sandboxContext ? sandboxContext.manipulatedUser : null
+function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate, token }) {
   const [resolvedUser, setResolvedUser] = useState(currentUser || null)
-  const activeUser = isDevModeActive && manipulatedUser ? manipulatedUser : resolvedUser
-  const currentRole = activeUser?.role || 'CONTRIBUTOR';
+  const wasAuthenticated = useRef(isAuthenticated)
+  const activeUser = isAuthenticated ? resolvedUser : null
+  const currentRole = activeUser?.role || 'CONTRIBUTOR'
 
-  const [activeView, setActiveView] = useState('dashboard')
+  const initialParams = useMemo(() => new URLSearchParams(window.location.search), [])
+  const initialPath = useMemo(() => window.location.pathname, [])
+  const initialViewParam = initialParams.get('view')
+  const initialPoliticianParam = initialParams.get('id') || initialParams.get('politicianId')
+
+  const [activeView, setActiveView] = useState(() => {
+    if (initialPath === '/admin/dashboard') return 'adminNews'
+    if (initialViewParam) return initialViewParam
+    return isAuthenticated ? 'dashboard' : 'landing'
+  })
   const [politiciansState, setPoliticiansState] = useState({
     data: [],
     message: '',
@@ -108,31 +100,65 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
   const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' })
   const [dashboardId, setDashboardId] = useState('')
   const [dashboardState, setDashboardState] = useState({ status: 'idle', message: '', data: null })
-  const [selectedPoliticianId, setSelectedPoliticianId] = useState('')
+  const [selectedPoliticianId, setSelectedPoliticianId] = useState(() => initialPoliticianParam || '')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false)
-  const [isDirectoryModalOpen, setIsDirectoryModalOpen] = useState(false)
+  const [isPoliticiansModalOpen, setIsPoliticiansModalOpen] = useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
   const [isApprovedDomain, setIsApprovedDomain] = useState(false)
+  const [authMode, setAuthMode] = useState('login')
+  const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, actionType: 'general' })
+  const [isWgiMethodologyOpen, setIsWgiMethodologyOpen] = useState(false)
+  const [notFoundNotice, setNotFoundNotice] = useState('')
+
+  useEffect(() => {
+    setResolvedUser(currentUser || null)
+
+    if (!isAuthenticated && wasAuthenticated.current) {
+      setActiveView('landing')
+      setAuthModalConfig({ isOpen: false, actionType: 'general' })
+      setIsCompareModalOpen(false)
+      setIsAppealModalOpen(false)
+      setIsPoliticiansModalOpen(false)
+      setIsProfileModalOpen(false)
+    }
+
+    wasAuthenticated.current = isAuthenticated
+  }, [currentUser, isAuthenticated])
+
+  const triggerAuthPrompt = useCallback((actionType = 'general') => {
+    setAuthModalConfig({ isOpen: true, actionType })
+  }, [])
+
+  const selectView = useCallback((viewKey) => {
+    if (!isAuthenticated && guestRestrictedViews.has(viewKey)) {
+      triggerAuthPrompt('preview')
+      return
+    }
+    if (['adminNews', 'openCongress', 'submit', 'moderation'].includes(viewKey) && currentRole !== 'ADMIN') {
+      navigateTo('dashboard')
+      return
+    }
+    navigateTo(viewKey)
+  }, [currentRole, isAuthenticated, triggerAuthPrompt])
 
   const activeHeader = {
     account: ['Account', 'User Account'],
+    auth: ['Authentication', 'Civic Account Access'],
     compare: ['Compare', 'Compare Politicians'],
-    contributions: ['Submissions', 'My Contribution Ledger'],
+    adminNews: ['News', 'Admin Verification Queue'],
     dashboard: ['Dashboard', 'Source-First Profile Aggregator'],
-    directory: ['Directory', 'Politician Directory'],
-    history: ['History', 'Reputation Change Ledger'],
+    politicians: ['Politicians', 'Politicians'],
+    landing: ['Home', 'Verifiable Governance Platform'],
     moderation: ['Moderation', 'Judicial Moderation Engine'],
     profile: ['Profiles', 'Published Profile Dashboard'],
-    profileMatrix: isDevModeActive
-      ? ['Developer Sandbox', 'Core Profile Metrics Matrix']
-      : ['My Profile', 'Contribution Metrics'],
+    profileMatrix: ['My Profile', 'Contribution Metrics'],
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const headerTitleHiddenFor = new Set(['dashboard', 'directory', 'compare', 'contributions', 'submit', 'moderation'])
+  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'adminNews', 'openCongress', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const loadPoliticians = useCallback(async () => {
@@ -149,11 +175,27 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     loadPoliticians()
   }, [loadPoliticians])
 
+  // Re-fetch politician list whenever the dashboard view becomes active so that
+  // KPIs (billsAuthored, projectCompletions, WGI score, etc.) reflect any
+  // submissions that were approved/published since the initial page load.
+  useEffect(() => {
+    if (activeView === 'dashboard') {
+      loadPoliticians()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeView])
+
   useEffect(() => {
     let cancelled = false
     if (!token) return () => { cancelled = true }
     fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(readApiResponse)
+      .then((res) => {
+        if (res.status === 401 || res.status === 403) {
+          onLogout?.()
+          throw new Error('Session expired or unauthorized')
+        }
+        return readApiResponse(res)
+      })
       .then((data) => {
         if (cancelled || !data) return
         setResolvedUser(data)
@@ -161,7 +203,7 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
       })
       .catch(() => null)
     return () => { cancelled = true }
-  }, [token, onUserUpdate])
+  }, [token, onUserUpdate, onLogout])
 
   function updateFormField(event) {
     const { name, value } = event.target
@@ -192,18 +234,19 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     try {
       const payload = {
         ...formData,
-        contributorId: currentUser?.userId,
         actionDetails: normalizeActionDetails(formData.actionDetails),
-        sourceUrl: formData.sourceUrl.trim(),
+        primarySourceUrl: formData.sourceUrl.trim(),
       }
-      const data = await fetch(`${API_BASE_URL}/api/submissions`, {
+      const data = await fetch(`${API_BASE_URL}/api/admin/curation/metrics`, {
         body: JSON.stringify(payload),
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         method: 'POST',
       }).then(readApiResponse)
       setFormData(emptySubmission)
       setIsApprovedDomain(false)
-      setSubmissionState({ status: 'success', message: data.message || 'Submission queued.' })
+      setSubmissionState({ status: 'success', message: data.message || 'Verified record published.' })
+      // Refresh politician KPIs in the background so ranking data stays current
+      loadPoliticians()
     } catch (error) {
       setSubmissionState({ status: 'error', message: error.message })
     }
@@ -225,26 +268,134 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     }
   }
 
+  const navigateTo = useCallback((viewKey, politicianId = null, replace = false) => {
+    setNotFoundNotice('')
+    setActiveView(viewKey)
+    if (politicianId !== null) {
+      setSelectedPoliticianId(politicianId)
+    }
+
+    try {
+      const url = new URL(window.location.href)
+      if (viewKey === 'adminNews') {
+        url.pathname = '/admin/dashboard'
+        url.searchParams.delete('view')
+      } else if (viewKey && viewKey !== 'landing') {
+        if (url.pathname === '/admin/dashboard') {
+          url.pathname = '/'
+        }
+        url.searchParams.set('view', viewKey)
+      } else {
+        if (url.pathname === '/admin/dashboard') {
+          url.pathname = '/'
+        }
+        url.searchParams.delete('view')
+      }
+
+      if (politicianId) {
+        url.searchParams.set('id', politicianId)
+        url.searchParams.delete('politicianId')
+      } else if (politicianId === '') {
+        url.searchParams.delete('id')
+        url.searchParams.delete('politicianId')
+      }
+
+      if (replace) {
+        window.history.replaceState({ view: viewKey, id: politicianId }, '', url.toString())
+      } else {
+        window.history.pushState({ view: viewKey, id: politicianId }, '', url.toString())
+      }
+    } catch {
+      // Ignore URL manipulation failures
+    }
+
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
+  useEffect(() => {
+    const initialRestrictedView = initialPath === '/admin/dashboard' ? 'adminNews' : initialViewParam
+    if (!isAuthenticated && initialRestrictedView && guestRestrictedViews.has(initialRestrictedView)) {
+      navigateTo('landing', null, true)
+      return
+    }
+    function handlePopState() {
+      const params = new URLSearchParams(window.location.search)
+      const requestedView = window.location.pathname === '/admin/dashboard' ? 'adminNews' : params.get('view')
+      const v = !isAuthenticated && guestRestrictedViews.has(requestedView)
+        ? 'landing'
+        : requestedView || (isAuthenticated ? 'dashboard' : 'landing')
+      const id = params.get('id') || params.get('politicianId') || ''
+      setActiveView(v)
+      if (id) {
+        setSelectedPoliticianId(id)
+        setDashboardId(id)
+        loadDashboardById(id)
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [initialPath, initialViewParam, isAuthenticated, navigateTo])
+
+  const coldLoadHandled = useRef(false)
+  useEffect(() => {
+    if (coldLoadHandled.current || politiciansState.status !== 'success') return
+    coldLoadHandled.current = true
+
+    if (initialViewParam === 'profile' && initialPoliticianParam) {
+      const found = politiciansState.data.some((p) => p.politicianId === initialPoliticianParam)
+      if (found) {
+        setSelectedPoliticianId(initialPoliticianParam)
+        setDashboardId(initialPoliticianParam)
+        loadDashboardById(initialPoliticianParam)
+      } else {
+        setNotFoundNotice(`Politician profile "${initialPoliticianParam}" was not found. Redirected to Politicians.`)
+        navigateTo('politicians', '', true)
+      }
+    }
+  }, [politiciansState.status, politiciansState.data, initialViewParam, initialPoliticianParam, navigateTo])
+
+  useEffect(() => {
+    if (isAuthenticated && (activeView === 'auth' || activeView === 'landing')) {
+      navigateTo(currentRole === 'ADMIN' ? 'adminNews' : 'dashboard', null, true)
+      return
+    }
+    if (isAuthenticated && ['adminNews', 'openCongress'].includes(activeView) && currentRole !== 'ADMIN') {
+      navigateTo('dashboard', null, true)
+    }
+  }, [activeView, currentRole, isAuthenticated, navigateTo])
+
   async function openPoliticianProfile(politicianId) {
     if (!politicianId) return
     setSelectedPoliticianId(politicianId)
     setDashboardId(politicianId)
     await loadDashboardById(politicianId)
-    setActiveView('profile')
+    navigateTo('profile', politicianId)
   }
 
   function openSubmitContributionForPolitician(politicianId) {
+    if (!isAuthenticated) {
+      triggerAuthPrompt('propose')
+      return
+    }
     if (!politicianId) return
     setSelectedPoliticianId(politicianId)
-    setFormData((current) => ({ ...current, politicianId }))
-    setActiveView('submit')
+    // Reset the whole form to a clean state for this politician so stale
+    // action details, previous status messages, and invalid actionIdentifier
+    // values from a prior session do not bleed through.
+    setFormData({
+      ...emptySubmission,
+      politicianId,
+    })
+    setSubmissionState({ status: 'idle', message: '' })
+    setIsApprovedDomain(false)
+    navigateTo('submit', politicianId)
   }
 
   function handlePoliticianLocalUpdate(politicianId, updates) {
     setPoliticiansState((current) => {
       const nextData = current.data.map((p) =>
         p.politicianId === politicianId ? { ...p, ...updates } : p,
-      )
+      ).filter(p => p.status !== 'ARCHIVED')
       const nextSelected =
         current.selected && current.selected.politicianId === politicianId
           ? { ...current.selected, ...updates }
@@ -278,52 +429,104 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
     }
   }
 
-  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isDirectoryModalOpen || isProfileModalOpen
+  const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isPoliticiansModalOpen || isProfileModalOpen
 
   return (
     <main className="appShell">
-      <TopNav
-        activeView={activeView}
-        isCompareModalOpen={isCompareModalOpen}
-        isModalOpen={isAnyModalOpen}
-        onLogout={onLogout}
-        onSelectView={setActiveView}
-        title="PolitikApp"
-        user={activeUser}
-      />
+      {activeView !== 'auth' && (
+        <TopNav
+          activeView={activeView}
+          isCompareModalOpen={isCompareModalOpen}
+          isModalOpen={isAnyModalOpen || authModalConfig.isOpen || isWgiMethodologyOpen}
+          onAuthClick={(mode) => {
+            setAuthMode(mode || 'login')
+            navigateTo('auth')
+          }}
+          onLogout={onLogout}
+          onSelectView={selectView}
+          title="PolitikApp"
+          user={activeUser}
+        />
+      )}
 
-      <section className={isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-32 sm:pt-36'}>
-        {!isAnyModalOpen && (
+      <section
+        className={
+          activeView === 'auth'
+            ? 'pageContent authPageContent'
+            : `${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`
+        }
+      >
+        {!isAnyModalOpen && showHeaderTitles && (
           <header className="topBar">
               <div className="flex items-center gap-3">
-                {showHeaderTitles && (
-                  <>
-                    <div className="grid h-9 w-9 place-items-center rounded-2xl bg-[color:var(--accent-soft)] text-[color:var(--ph-blue)] ring-1 ring-black/5">
-                      <span className="ty-nav font-extrabold" aria-hidden="true">
-                        {activeHeader[0]?.slice(0, 1) || 'P'}
-                      </span>
-                    </div>
+                <div className="grid h-9 w-9 place-items-center rounded-2xl bg-(--accent-soft) text-(--ph-blue) ring-1 ring-black/5">
+                  <span className="ty-nav font-extrabold" aria-hidden="true">
+                    {activeHeader[0]?.slice(0, 1) || 'P'}
+                  </span>
+                </div>
 
-                    <div className="min-w-0">
-                      <p className="ty-label">{activeHeader[0]}</p>
-                      <p className="ty-nav truncate text-[color:var(--text-primary)]">{activeHeader[1]}</p>
-                    </div>
-                  </>
-                )}
+                <div className="min-w-0">
+                  <p className="ty-label">{activeHeader[0]}</p>
+                  <p className="ty-nav truncate text-(--text-primary)">{activeHeader[1]}</p>
+                </div>
             </div>
           </header>
         )}
-        {!isAnyModalOpen && activeView !== 'dashboard' && (
-          <div className="backNavRow">
-            <button aria-label="Back to Dashboard" className="appBackButton" onClick={() => setActiveView('dashboard')} type="button">
-              <ArrowLeftIcon size={16} />
-              Back
+        {notFoundNotice && (
+          <div style={{
+            margin: '12px 0 20px',
+            padding: '12px 20px',
+            borderRadius: '12px',
+            background: '#fef3c7',
+            border: '1px solid #f59e0b',
+            color: '#92400e',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            fontSize: '14px',
+            fontWeight: '500',
+          }}>
+            <span><AlertTriangleIcon size={16} /> {notFoundNotice}</span>
+            <button
+              type="button"
+              onClick={() => setNotFoundNotice('')}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: '#92400e',
+                fontSize: '18px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+              }}
+              aria-label="Dismiss notice"
+            >
+              ×
             </button>
           </div>
         )}
 
-        {activeView === 'directory' && (
-          <PoliticianDirectoryLoaderPanel
+        {activeView === 'landing' && (
+          <Landing
+            isAuthenticated={isAuthenticated}
+            politicians={politiciansState.data}
+            onAuthPrompt={triggerAuthPrompt}
+            onExplorePoliticians={() => selectView('politicians')}
+            onExploreDashboard={() => selectView('dashboard')}
+            onSelectPolitician={(id) => openPoliticianProfile(id)}
+            onCompare={() => selectView('compare')}
+            onMethodologyClick={() => setIsWgiMethodologyOpen(true)}
+          />
+        )}
+
+        {activeView === 'auth' && (
+          <Authentication
+            initialMode={authMode}
+            onBack={() => navigateTo('landing')}
+          />
+        )}
+
+        {activeView === 'politicians' && (
+          <PoliticiansLoaderPanelExtracted
             dbUser={currentUser}
             onViewProfile={openPoliticianProfile}
             politicians={politiciansState.data}
@@ -331,30 +534,58 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             state={dashboardState}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onPoliticianCreate={handlePoliticianLocalCreate}
-            onModalOpenChange={setIsDirectoryModalOpen}
+            onModalOpenChange={setIsPoliticiansModalOpen}
             token={token}
           />
         )}
         {activeView === 'submit' && (
-          <SubmissionPanel
-            formData={formData}
-            onChange={updateFormField}
-            onDetailChange={updateActionDetail}
-            onDomainCheck={setIsApprovedDomain}
-            onSubmit={handleSubmission}
-            selectedPoliticianId={selectedPoliticianId}
-            state={submissionState}
-            politicians={politiciansState.data}
-          />
+          currentRole !== 'ADMIN' ? (
+            <section className="workspace">
+              <div style={{
+                textAlign: 'center',
+                padding: '48px 32px',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--info-border)',
+                borderRadius: 'var(--radius-lg)',
+              }}>
+                <h2 className="ty-section-title" style={{ margin: '0 0 10px' }}>Authentication Required</h2>
+                <p className="ty-body" style={{ color: 'var(--text-muted)', margin: '0 auto 20px', maxWidth: '460px' }}>
+                  Only administrators can manage politician records.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('login')
+                    navigateTo('auth')
+                  }}
+                  className="btn-landing-primary"
+                >
+                  Sign In to Submit Evidence
+                </button>
+              </div>
+            </section>
+          ) : (
+            <SubmitContribution
+              formData={formData}
+              onChange={updateFormField}
+              onDetailChange={updateActionDetail}
+              onDomainCheck={setIsApprovedDomain}
+              onSubmit={handleSubmission}
+              selectedPoliticianId={selectedPoliticianId}
+              state={submissionState}
+              politicians={politiciansState.data}
+            />
+          )
         )}
         {activeView === 'profile' && (
-          <PoliticianProfilePage
+          <PoliticianProfilePageExtracted
             onAddContribution={openSubmitContributionForPolitician}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onReload={openPoliticianProfile}
             onUserUpdate={onUserUpdate}
             onAppealModalOpenChange={setIsAppealModalOpen}
             onModalOpenChange={setIsProfileModalOpen}
+            onAuthPrompt={triggerAuthPrompt}
             politicianId={selectedPoliticianId}
             politicians={politiciansState.data}
             state={dashboardState}
@@ -364,16 +595,16 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
           />
         )}
         {activeView === 'dashboard' && (
-          <DashboardPanel
+          <Dashboard
             isLoading={politiciansState.status === 'loading'}
-            onNavigate={setActiveView}
+            onNavigate={navigateTo}
             onOpenProfile={openPoliticianProfile}
             politicians={politiciansState.data}
             user={activeUser}
           />
         )}
         {activeView === 'compare' && (
-          <ComparisonPanel
+          <ComparisonPanelExtracted
             compareIds={compareIds}
             onChange={setCompareIds}
             onModalOpenChange={setIsCompareModalOpen}
@@ -383,10 +614,11 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             state={comparisonState}
           />
         )}
-        {activeView === 'contributions' && <MyContributionsPanel onNavigateToSubmit={() => setActiveView('submit')} user={activeUser} />}
-        {activeView === 'profileMatrix' && <UserProfileMatrixPanel token={token} user={activeUser} />}
+        {activeView === 'profileMatrix' && <ProfileMatrix token={token} user={activeUser} />}
+        {activeView === 'openCongress' && currentRole === 'ADMIN' && <OpenCongress token={token} politicians={politiciansState.data} />}
+        {activeView === 'adminNews' && <AdminNews token={token} user={activeUser} />}
         {activeView === 'moderation' && (
-          currentRole === 'CONTRIBUTOR' ? (
+          currentRole !== 'ADMIN' ? (
             <section className="workspace">
               <div style={{
                 textAlign: 'center',
@@ -421,103 +653,45 @@ function AppInner({ currentUser, onLogout, onUserUpdate, token }) {
             <ModerationPanel token={token} user={activeUser} />
           )
         )}
-        {activeView === 'account' && <UserAccountPage token={token} user={activeUser} />}
-        {activeView === 'history' && <UserHistoryPage token={token} />}
+        {activeView === 'account' && <Account token={token} user={activeUser} />}
       </section>
+
+      <AuthPromptModal
+        isOpen={authModalConfig.isOpen}
+        actionType={authModalConfig.actionType}
+        onClose={() => setAuthModalConfig({ isOpen: false, actionType: 'general' })}
+        onSignIn={() => {
+          setAuthModalConfig({ isOpen: false, actionType: 'general' })
+          setAuthMode('login')
+          navigateTo('auth')
+        }}
+        onRegister={() => {
+          setAuthModalConfig({ isOpen: false, actionType: 'general' })
+          setAuthMode('register')
+          navigateTo('auth')
+        }}
+      />
+
+      <WgiMethodologyModal
+        isOpen={isWgiMethodologyOpen}
+        onClose={() => setIsWgiMethodologyOpen(false)}
+      />
     </main>
   )
 }
 
 function App() {
   const { isAuthenticated, logout, token, updateSession, user } = useAuth()
-  if (!isAuthenticated) return <AuthPages />
-  return (
-    <DeveloperSandboxProvider currentUser={user} token={token}>
-      <AppInner currentUser={user} onLogout={logout} onUserUpdate={updateSession} token={token} />
-      {/* <DeveloperOptionsPanel /> */}
-    </DeveloperSandboxProvider>
-  )
+  return <AppInner
+    currentUser={user}
+    isAuthenticated={isAuthenticated}
+    onLogout={logout}
+    onUserUpdate={updateSession}
+    token={token}
+  />
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Dashboard                                                                  */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function DashboardPanel(props) {
-  return <PoliticianDashboard {...props} />
-}
-function UserAccountPage({ token, user }) {
-  const { updateSession } = useAuth()
-  const [profile, setProfile] = useState(null)
-  const [state, setState] = useState({ status: 'loading', message: 'Loading profile...' })
-  const [form, setForm] = useState({ fullName: '', username: '' })
-
-  useEffect(() => {
-    let cancelled = false
-    setState({ status: 'loading', message: 'Loading profile...' })
-    fetch(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } })
-      .then(readApiResponse)
-      .then((data) => {
-        if (cancelled) return
-        setProfile(data)
-        setForm({ fullName: data.fullName || '', username: data.username || '' })
-        setState({ status: 'success', message: '' })
-      })
-      .catch((error) => {
-        if (cancelled) return
-        setState({ status: 'error', message: error.message || 'Failed to load profile.' })
-      })
-    return () => { cancelled = true }
-  }, [token])
-
-  async function onSave(event) {
-    event.preventDefault()
-    setState({ status: 'loading', message: 'Saving profile...' })
-    try {
-      const data = await fetch(`${API_BASE_URL}/users/me`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form),
-      }).then(readApiResponse)
-      setProfile(data.user || data)
-      updateSession(data)
-      setState({ status: 'success', message: 'Profile updated.' })
-    } catch (error) {
-      setState({ status: 'error', message: error.message })
-    }
-  }
-
-  return (
-    <section className="workspace">
-      <section className="profileSummary">
-        <p className="eyebrow ty-page-kicker">Account</p>
-        <h2 className="ty-section-title">{profile?.fullName || user?.fullName || '—'}</h2>
-        <p className="ty-body">{profile?.email || user?.email || '—'}</p>
-        <p className="ty-body">Role: {profile?.role || user?.role || '—'}</p>
-        <div style={{ marginTop: '16px', maxWidth: '420px' }}>
-          <TrustScoreMeter score={profile?.trustScore ?? user?.trustScore ?? 0} />
-        </div>
-      </section>
-      <form className="editorPanel" onSubmit={onSave}>
-        <label>Full Name<input value={form.fullName} onChange={(e) => setForm((s) => ({ ...s, fullName: e.target.value }))} /></label>
-        <label>Username<input value={form.username} onChange={(e) => setForm((s) => ({ ...s, username: e.target.value }))} /></label>
-        <button type="submit" disabled={state.status === 'loading'}>Save Changes</button>
-      </form>
-      <StatusLine state={state} />
-    </section>
-  )
-}
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Submission Panel                                                            */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function SubmissionPanel(props) {
-  return <EditSubmissionForm {...props} />
-}
-
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  Politician Directory                                                        */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianDirectoryLoaderPanel({
+/* function LegacyPoliticiansLoaderPanel({
   dbUser, onViewProfile,
   politicians, politiciansState, state, onModalOpenChange, onPoliticianUpdate, onPoliticianCreate, token,
 }) {
@@ -759,7 +933,7 @@ function PoliticianDirectoryLoaderPanel({
       <section className="dashboardHeaderBlock">
         <div className="directoryHeaderRow">
           <div>
-            <h2 className="ty-section-title">Politician Directory</h2>
+            <h2 className="ty-section-title">Politicians</h2>
             <p className="ty-body">Browse and select a politician to load their performance profile instantly.</p>
           </div>
           {isDatabaseAdmin && (
@@ -771,7 +945,7 @@ function PoliticianDirectoryLoaderPanel({
         </div>
       </section>
 
-      <section className="dashboardFilterBar" aria-label="Directory filters">
+      <section className="dashboardFilterBar" aria-label="Politician filters">
         <label>
           Search
           <input
@@ -787,7 +961,7 @@ function PoliticianDirectoryLoaderPanel({
           <select name="dashboardPosition" onChange={(e) => setPositionFilter(e.target.value)} value={positionFilter}>
             <option value="ALL">All Positions</option>
             {positionOptions.map((position) => (
-              <option key={position} value={position}>{position}</option>
+              <option key={position} value={position}>{formatPosition(position)}</option>
             ))}
           </select>
         </label>
@@ -807,13 +981,13 @@ function PoliticianDirectoryLoaderPanel({
       {state.status === 'loading' && <PageSectionLoader />}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="ty-meta text-[color:var(--text-muted)]">
+        <p className="ty-meta text-(--text-muted)">
           Showing {filteredPoliticians.length === 0 ? 0 : (safePage - 1) * pageSize + 1}-{Math.min(safePage * pageSize, filteredPoliticians.length)} of {filteredPoliticians.length}
         </p>
         <PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} />
       </div>
 
-      <section className="dashboardCardGrid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Politician directory">
+      <section className="dashboardCardGrid grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3" aria-label="Politicians">
         {state.status === 'loading' && <LoadingSkeletonCards count={4} />}
         {state.status !== 'loading' && filteredPoliticians.length === 0 && (
           <p className="emptyState" style={{ gridColumn: '1/-1', padding: '40px', textAlign: 'center' }}>No politicians found matching your search.</p>
@@ -832,8 +1006,8 @@ function PoliticianDirectoryLoaderPanel({
             </span>
             <span className="dashboardCardBody">
               <strong className="ty-card-title">{politician.fullName}</strong>
-              <small className="ty-meta">{politician.position || 'UNKNOWN'}</small>
-              <small className="ty-meta">{politician.jurisdiction || 'Unspecified'}</small>
+              <small className="ty-meta">{formatPosition(politician.position) || 'UNKNOWN'}</small>
+              <small className="ty-meta">{formatJurisdiction(politician.jurisdiction) || 'Unspecified'}</small>
               <small className="ty-meta">{politician.partyAffiliation || 'Party not disclosed'}</small>
               {politician.coaAuditDiscrepancies > 0 && (
                 <span style={{
@@ -879,8 +1053,8 @@ function PoliticianDirectoryLoaderPanel({
                 </span>
                 <div className="detailsIdentity">
                   <h4 className="ty-section-title">{detailsData.fullName}</h4>
-                  <p className="ty-body">{detailsData.position || 'UNKNOWN'}</p>
-                  <p className="ty-body">{detailsData.jurisdiction || 'Unspecified'}</p>
+                  <p className="ty-body">{formatPosition(detailsData.position) || 'UNKNOWN'}</p>
+                  <p className="ty-body">{formatJurisdiction(detailsData.jurisdiction) || 'Unspecified'}</p>
                   <p className="ty-body">{detailsData.partyAffiliation || 'Party not disclosed'}</p>
                 </div>
               </div>
@@ -913,7 +1087,7 @@ function PoliticianDirectoryLoaderPanel({
                   <select name="position" onChange={updateEditField} required value={editForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
@@ -921,8 +1095,8 @@ function PoliticianDirectoryLoaderPanel({
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
+                    <option value="NATIONAL">{formatJurisdiction('NATIONAL')}</option>
+                    <option value="CEBU_CITY">{formatJurisdiction('CEBU_CITY')}</option>
                   </select>
                   {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
                 </label>
@@ -957,14 +1131,14 @@ function PoliticianDirectoryLoaderPanel({
                   }} required value={createForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {createErrors.position && <span className="fieldError">{createErrors.position}</span>}
                 </label>
                 <label>
                   Jurisdiction
-                  <input name="jurisdiction" readOnly value={createForm.jurisdiction || (POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdictionLabel ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
+                  <input name="jurisdiction" readOnly value={formatJurisdiction(createForm.jurisdiction) || formatJurisdiction(POSITION_OPTIONS.find((o) => o.value === createForm.position)?.jurisdiction ?? '')} style={{ opacity: 0.6, cursor: 'not-allowed' }} />
                   <small style={{ color: 'var(--text-muted)', fontSize: '11px' }}>Auto-derived from position</small>
                   {createErrors.jurisdiction && <span className="fieldError">{createErrors.jurisdiction}</span>}
                 </label>
@@ -999,13 +1173,84 @@ function PoliticianDirectoryLoaderPanel({
 }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
+/*  Civic Data Export Helpers                                                   */
+/* ─────────────────────────────────────────────────────────────────────────── */
+function exportLedgerAsCsv(entries = [], politicianName = 'politician') {
+  const headers = ['Date', 'Category', 'Action Type', 'Summary', 'Source Citation', 'Status', 'Verification Notes']
+  const rows = entries.map((entry) => [
+    entry.createdAt ? new Date(entry.createdAt).toISOString().split('T')[0] : '',
+    entry.categoryTag || '',
+    formatActionIdentifier(entry.actionIdentifier) || '',
+    (entry.summary || entry.impactSummary || '').replace(/"/g, '""'),
+    (entry.sourceUrl || '').replace(/"/g, '""'),
+    entry.status || 'PUBLISHED',
+    (entry.verificationNotes || '').replace(/"/g, '""'),
+  ])
+  const csvContent = [
+    headers.map((h) => `"${h}"`).join(','),
+    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
+  ].join('\r\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${politicianName.toLowerCase().replace(/[^a-z0-9]+/g, '_')}_records.csv`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+function exportLedgerAsJson(entries = [], profile = {}) {
+  const data = {
+    metadata: {
+      politicianId: profile.politicianId,
+      fullName: profile.fullName,
+      position: profile.position,
+      jurisdiction: profile.jurisdiction,
+      partyAffiliation: profile.partyAffiliation,
+      wgiScore: profile.wgiScore,
+      exportedAt: new Date().toISOString(),
+      platform: 'PolitikApp 2.0 Civic Governance Ledger',
+      recordCount: entries.length,
+    },
+    timelineEntries: entries,
+  }
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${(profile.fullName || 'politician').toLowerCase().replace(/[^a-z0-9]+/g, '_')}_records.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+/* ─────────────────────────────────────────────────────────────────────────── */
 /*  Politician Profile Page                                                     */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, onPoliticianUpdate, onReload, onUserUpdate, onAppealModalOpenChange, politicianId, politicians, state, token, user }) {
+function LegacyPoliticianProfilePage({
+  dbUser,
+  onAddContribution,
+  onAppealModalOpenChange,
+  onAuthPrompt,
+  onModalOpenChange,
+  onPoliticianUpdate,
+  onReload,
+  onUserUpdate,
+  politicianId,
+  politicians,
+  state,
+  token,
+  user,
+}) {
   const fallbackProfile = politicians.find((p) => p.politicianId === politicianId) || null
   const profile = state.data || fallbackProfile
   const timelineEntries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
   const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isWgiModalOpen, setIsWgiModalOpen] = useState(false)
   const [appealTarget, setAppealTarget] = useState(null)
   const [appealDetails, setAppealDetails] = useState('')
   const [appealState, setAppealState] = useState({ status: 'idle', message: '' })
@@ -1028,9 +1273,9 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
   }, [isEditOpen])
 
   useEffect(() => {
-    onModalOpenChange?.(isEditOpen)
+    onModalOpenChange?.(isEditOpen || isWgiModalOpen)
     return () => onModalOpenChange?.(false)
-  }, [isEditOpen, onModalOpenChange])
+  }, [isEditOpen, isWgiModalOpen, onModalOpenChange])
 
   function openEditModal() {
     if (!profile || !isDatabaseAdmin) return
@@ -1120,27 +1365,88 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
   return (
     <section className="workspace">
       <StatusLine state={state} />
-      {state.status === 'loading' && <PageSectionLoader />}
       {state.status === 'loading' && !profile && <ProfileSkeleton />}
       {profile && (
         <>
           <section className="profileSummary">
-            <p className="eyebrow ty-page-kicker">{profile.position || 'UNKNOWN'}</p>
+            <p className="eyebrow ty-page-kicker">{formatPosition(profile.position) || 'UNKNOWN'}</p>
             <h2 className="ty-section-title">{profile.fullName}</h2>
-            <p className="ty-body">{profile.jurisdiction || 'Unspecified jurisdiction'}</p>
+            <p className="ty-body">{formatJurisdiction(profile.jurisdiction) || 'Unspecified jurisdiction'}</p>
             <p className="ty-body">{profile.partyAffiliation || 'Party affiliation unavailable'}</p>
           </section>
-          <div style={{ display: 'flex', gap: '10px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
             {isDatabaseAdmin && <button onClick={openEditModal} type="button">Edit Profile</button>}
-            <button onClick={() => onAddContribution(profile.politicianId)} type="button">Add Contribution</button>
+            <button
+              onClick={() => {
+                if (!user && onAuthPrompt) {
+                  onAuthPrompt('propose')
+                  return
+                }
+                onAddContribution(profile.politicianId)
+              }}
+              type="button"
+            >
+              Add Contribution
+            </button>
+            <button
+              type="button"
+              id="export-ledger-csv-btn"
+              onClick={() => exportLedgerAsCsv(timelineEntries, profile?.fullName)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                color: '#0f172a',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
+              title="Download timeline records as CSV for research or journalism"
+            >
+              <BarChart3Icon size={16} /> Export CSV
+            </button>
+            <button
+              type="button"
+              id="export-ledger-json-btn"
+              onClick={() => exportLedgerAsJson(timelineEntries, profile)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                background: '#ffffff',
+                border: '1px solid #cbd5e1',
+                color: '#0f172a',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 150ms ease',
+              }}
+              title="Download timeline records as structured JSON"
+            >
+              <FolderIcon size={16} /> Export JSON
+            </button>
           </div>
-          <KpiGrid profile={profile} />
+          <KpiGrid profile={profile} onModalOpenChange={setIsWgiModalOpen} />
           <section className="biographyBlock" style={{ marginTop: '16px' }}>
             <h2 className="ty-section-title">Biography</h2>
             <p className="ty-body">{profile.biography || 'No biography available.'}</p>
           </section>
           <StatusLine state={appealState} />
-          <TimelineLedger entries={timelineEntries} isLoading={state.status === 'loading'} onAppeal={handleAppeal} title="Published Contribution Timeline" user={user} />
+          <TimelineLedger
+            entries={timelineEntries}
+            isLoading={state.status === 'loading'}
+            onAppeal={handleAppeal}
+            onAuthPrompt={onAuthPrompt}
+            title="Published Contribution Timeline"
+            user={user}
+          />
         </>
       )}
 
@@ -1159,7 +1465,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
                   <select name="position" onChange={updateEditField} required value={editForm.position}>
                     <option value="">Select a position</option>
                     {POSITION_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>{opt.label} — {opt.jurisdictionLabel}</option>
+                      <option key={opt.value} value={opt.value}>{formatPosition(opt.value)} — {formatJurisdiction(opt.jurisdiction)}</option>
                     ))}
                   </select>
                   {editErrors.position && <span className="fieldError">{editErrors.position}</span>}
@@ -1167,8 +1473,8 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
                 <label>
                   Jurisdiction
                   <select name="jurisdiction" onChange={updateEditField} required value={editForm.jurisdiction}>
-                    <option value="NATIONAL">NATIONAL</option>
-                    <option value="CEBU_CITY">CEBU_CITY</option>
+                    <option value="NATIONAL">{formatJurisdiction('NATIONAL')}</option>
+                    <option value="CEBU_CITY">{formatJurisdiction('CEBU_CITY')}</option>
                   </select>
                   {editErrors.jurisdiction && <span className="fieldError">{editErrors.jurisdiction}</span>}
                 </label>
@@ -1187,7 +1493,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
       <ConfirmActionModal
         cancelLabel="Cancel"
         confirmLabel="File Appeal"
-        description="This will immediately deduct 10.00 trust points. If the appeal fails, an additional 20.00 points will be deducted."
+        description="This will reopen the published record for administrative review. If the appeal fails, the original ruling will remain in effect."
         isOpen={Boolean(appealTarget)}
         isSubmitting={appealState.status === 'loading'}
         onCancel={() => {
@@ -1209,7 +1515,7 @@ function PoliticianProfilePage({ dbUser, onAddContribution, onModalOpenChange, o
 /* ─────────────────────────────────────────────────────────────────────────── */
 /*  Comparison Panel                                                            */
 /* ─────────────────────────────────────────────────────────────────────────── */
-function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
+function LegacyComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, politicians, politiciansState, state }) {
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -1320,8 +1626,8 @@ function ComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubmit, po
                     </span>
                     <span className="compareCardBody">
                       <strong className="ty-card-title">{p.fullName}</strong>
-                      <small className="ty-meta">{p.position || 'UNKNOWN'}</small>
-                      <small className="ty-meta">{p.jurisdiction || 'Unspecified'}</small>
+                      <small className="ty-meta">{formatPosition(p.position) || 'UNKNOWN'}</small>
+                      <small className="ty-meta">{formatJurisdiction(p.jurisdiction) || 'Unspecified'}</small>
                     </span>
                     <span className="selectDot" aria-hidden="true" />
                   </button>
@@ -1412,30 +1718,6 @@ function TimelineLedger(props) {
   return <TimelineLedgerDecoupled {...props} />
 }
 
-function TrustDeltaBadge({ entry }) {
-  const status = String(entry.publicationStatus || entry.status || '').toUpperCase()
-  const delta = status === 'PUBLISHED' ? 15 : status === 'REJECTED' ? -20 : 0
-  if (!delta) return null
-  const isPositive = delta > 0
-  return (
-    <span
-      title="Trust score impact indicator"
-      style={{
-        background: isPositive ? 'var(--success-soft)' : 'var(--danger-soft)',
-        border: `1px solid ${isPositive ? 'var(--success-border)' : 'var(--danger-border)'}`,
-        borderRadius: 'var(--radius-full)',
-        fontFamily: 'var(--mono, monospace)',
-        fontSize: '11px',
-        fontWeight: '700',
-        letterSpacing: '0.02em',
-        padding: '2px 8px',
-        color: isPositive ? 'var(--success)' : 'var(--danger)',
-      }}
-    >
-      {isPositive ? `+${delta}` : `${delta}`} Trust
-    </span>
-  )
-}
 function Field({ label, name, onChange, required = true, type = 'text', value }) {
   return (
     <label>
@@ -1562,10 +1844,7 @@ function ProfileSkeleton() {
   return (
     <section className="space-y-5 rounded-2xl border border-slate-100 bg-white p-6 shadow-sm">
       <div className="flex min-h-[180px] items-center justify-center rounded-xl border border-slate-100 bg-slate-50">
-        <div className="flex items-center gap-3 text-slate-400">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-slate-400" aria-hidden="true" />
-          <span className="text-sm font-medium">Loading profile</span>
-        </div>
+        <div className="h-5 w-48 rounded bg-slate-100 animate-pulse" aria-hidden="true" />
       </div>
       <div className="grid grid-cols-[132px_minmax(0,1fr)] gap-5 max-md:grid-cols-1">
         <div className="h-[132px] w-[132px] rounded-xl bg-slate-100 animate-pulse" />
@@ -1590,137 +1869,16 @@ function ProfileSkeleton() {
 
 function PageSectionLoader() {
   return (
-    <section className="flex min-h-[120px] items-center justify-center rounded-2xl border border-slate-100 bg-white p-6 shadow-xs" aria-live="polite">
-      <div className="flex items-center gap-3 text-slate-400">
-        <span className="h-5 w-5 animate-spin rounded-full border-2 border-slate-200 border-t-slate-500" aria-hidden="true" />
-        <span className="text-sm font-semibold tracking-wide">Loading content</span>
-      </div>
+    <section className="flex min-h-[120px] items-center rounded-2xl border border-slate-100 bg-white p-6 shadow-xs" aria-busy="true">
+      <div className="h-3 w-full rounded bg-slate-100 animate-pulse" aria-hidden="true" />
     </section>
   )
 }
 
-/* ─────────────────────────────────────────────────────────────────────────── */
-/*  My Contributions Panel                                                      */
-/* ─────────────────────────────────────────────────────────────────────────── */
-function MyContributionsPanel({ onNavigateToSubmit, user }) {
-  const [contributions, setContributions] = useState([])
-  const [state, setState] = useState({ status: 'loading', message: 'Retrieving your contribution history...' })
-  const [page, setPage] = useState(1)
-
-  useEffect(() => {
-    if (!user?.userId) {
-      setContributions([])
-      setState({ status: 'error', message: 'Unable to load contribution history without a user id.' })
-      return
-    }
-
-    fetch(`${API_BASE_URL}/api/submissions/contributor/${user.userId}`)
-      .then(readApiResponse)
-      .then((data) => {
-        setContributions(Array.isArray(data) ? data : [])
-        setState({ status: 'success', message: '' })
-      })
-      .catch((err) => {
-        setContributions([])
-        setState({ status: 'error', message: err.message })
-      })
-  }, [user?.userId])
-
-  const pageSize = 6
-  const totalPages = Math.max(1, Math.ceil(contributions.length / pageSize))
-  const safePage = Math.min(page, totalPages)
-  const pageItems = contributions.slice((safePage - 1) * pageSize, safePage * pageSize)
-
-  useEffect(() => { setPage(1) }, [contributions.length])
-
-  return (
-    <section className="workspace">
-      <section className="dashboardHeaderBlock">
-        <h2 className="ty-section-title">My Contributions</h2>
-        <p className="ty-body">Track the verification lifecycle of your submitted political records.</p>
-        <div>
-          <button type="button" onClick={() => onNavigateToSubmit?.()}>
-            Submit Official Audit Record
-          </button>
-        </div>
-      </section>
-
-      <StatusLine state={state} />
-
-      <div className="myContribGrid">
-        {state.status === 'loading' && <ContributionCardsSkeleton count={4} />}
-        {state.status !== 'loading' && contributions.length === 0 && (
-          <div className="myContribEmpty">
-            <p className="ty-body" style={{ color: 'var(--text-muted)' }}>No contributions yet. Head to <strong>File Evidence</strong> to submit your first record.</p>
-          </div>
-        )}
-
-        {pageItems.map((item) => {
-          return (
-            <article key={item.submissionId} className="review-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ background: 'var(--info-soft)', color: 'var(--info)', border: '1px solid var(--info-border)', padding: '4px 10px', borderRadius: 'var(--radius-full)', fontFamily: 'var(--mono, monospace)', fontSize: '11px', fontWeight: '500', letterSpacing: '0.04em' }}>#{item.submissionId.substring(0, 8).toUpperCase()}</span>
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                  <TrustDeltaBadge entry={item} />
-                  <span style={{ fontFamily: 'var(--mono, monospace)', fontSize: '11px', color: 'var(--text-muted)', fontWeight: '500' }}>{formatDate(item.createdAt)}</span>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '14px' }}>
-                {[[ 'Category', item.categoryTag ], [ 'Action Tag', item.actionIdentifier ], [ 'Metric', formatActionMetric(item.actionDetails, item.actionIdentifier) ]].map(([k, v]) => (
-                  <div key={k}>
-                    <span className="ty-label" style={{ display: 'block', marginBottom: '3px' }}>{k}</span>
-                    <strong style={{ fontFamily: 'var(--display)', fontSize: '14px', fontWeight: '700', color: 'var(--text-primary)' }}>{v}</strong>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ background: 'var(--bg-inset)', border: '1px solid var(--line-hairline)', borderLeft: '3px solid var(--line-strong)', padding: '12px 16px', borderRadius: '0 var(--radius-xs) var(--radius-xs) 0', fontStyle: 'italic', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.65' }}>
-                "{item.impactSummary}"
-              </div>
-
-              <div>
-                <span className="ty-label" style={{ display: 'inline', marginRight: '6px' }}>Source</span>
-                <a href={item.sourceUrl} target="_blank" rel="noreferrer" style={{ fontFamily: 'var(--mono, monospace)', fontSize: '12px', color: 'var(--info)', fontWeight: '500', textDecoration: 'none', borderBottom: '1px solid var(--info-border)' }}>{item.sourceUrl}</a>
-              </div>
-
-              <LifecycleStageStrip status={item.status} title="Lifecycle Stage" />
-            </article>
-          )
-        })}
-      </div>
-      {contributions.length > pageSize && <div className="myContribPagination"><PaginationMini page={safePage} totalPages={totalPages} onChange={setPage} /></div>}
-    </section>
-  )
-}
 /*  Utilities                                                                   */
 /* ─────────────────────────────────────────────────────────────────────────── */
 function initialsFor(name) {
   return name.split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase()
-}
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0))
-}
-
-function formatActionMetric(actionDetails, actionIdentifier) {
-  if (!actionDetails) return 'N/A'
-  switch (actionIdentifier) {
-    case 'COA_FINDING':
-      return formatCurrency(actionDetails.flaggedAmount)
-    case 'BUDGET_ALLOCATION':
-      return formatCurrency(actionDetails.allocationAmount)
-    case 'PROJECT_COMPLETION':
-      return `${Number(actionDetails.completionPercentage || 0).toLocaleString('en-PH')}% Completed`
-    case 'SPONSORED_LEGISLATION':
-      return [
-        actionDetails.legislationTitle,
-        actionDetails.legislativeStatus,
-        formatDate(actionDetails.dateFiled),
-      ].filter(Boolean).join(' | ') || 'Legislation details'
-    default:
-      return actionDetails.metric !== undefined ? String(actionDetails.metric) : 'View Details'
-  }
 }
 
 function normalizeActionDetails(actionDetails = {}) {
@@ -1732,11 +1890,6 @@ function normalizeActionDetails(actionDetails = {}) {
         return Number.isFinite(numericValue) && value !== null && value !== '' ? [key, numericValue] : [key, value]
       }),
   )
-}
-
-function formatDate(value) {
-  if (!value) return null
-  return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
 }
 
 export default App

@@ -1,11 +1,11 @@
 import React from 'react'
 
-function IconBase({ children, size = 18, className = '' }) {
+function IconBase({ children, size = 18, className = '', fill = 'none' }) {
   return (
     <svg
       aria-hidden="true"
       className={className}
-      fill="none"
+      fill={fill}
       height={size}
       stroke="currentColor"
       strokeLinecap="round"
@@ -110,6 +110,22 @@ export function BellIcon(props) {
     <IconBase {...props}>
       <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </IconBase>
+  )
+}
+
+export function BookmarkIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M19 21l-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </IconBase>
+  )
+}
+
+export function MessageCircleIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.5 8.7 8.7 0 0 1-4-.9L3 21l1.9-5.2a8.2 8.2 0 0 1-.9-3.8 8.5 8.5 0 0 1 17-.5z" />
     </IconBase>
   )
 }
@@ -250,6 +266,35 @@ export function CircleXIcon(props) {
   )
 }
 
+export function LockIcon(props) {
+  return (
+    <IconBase {...props}>
+      <rect x="4" y="10" width="16" height="11" rx="2" />
+      <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+    </IconBase>
+  )
+}
+
+export function RefreshCwIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M20 11a8 8 0 0 0-14.8-4L3 10" />
+      <path d="M3 4v6h6" />
+      <path d="M4 13a8 8 0 0 0 14.8 4L21 14" />
+      <path d="M21 20v-6h-6" />
+    </IconBase>
+  )
+}
+
+export function SearchIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
+    </IconBase>
+  )
+}
+
 export function UserPlusIcon(props) {
   return (
     <IconBase {...props}>
@@ -330,6 +375,73 @@ export function ExternalLinkIcon(props) {
       <path d="M15 3h6v6" />
       <path d="M10 14L21 3" />
       <path d="M21 14v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h7" />
+    </IconBase>
+  )
+}
+
+export function HomeIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </IconBase>
+  )
+}
+
+export function GlobeIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18" />
+      <path d="M12 3a14 14 0 0 1 0 18" />
+      <path d="M12 3a14 14 0 0 0 0 18" />
+    </IconBase>
+  )
+}
+
+export function LandmarkIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 21h18" />
+      <path d="M5 18h14" />
+      <path d="M6 18v-7" />
+      <path d="M10 18v-7" />
+      <path d="M14 18v-7" />
+      <path d="M18 18v-7" />
+      <path d="M4 8l8-5 8 5" />
+      <path d="M3 9h18" />
+    </IconBase>
+  )
+}
+
+export function MegaphoneIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M3 11v2" />
+      <path d="M5 10h3l10-5v14L8 14H5z" />
+      <path d="M8 14l1 6h3l-1-6" />
+      <path d="M21 9a3 3 0 0 1 0 6" />
+    </IconBase>
+  )
+}
+
+export function BanIcon(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.6 5.6l12.8 12.8" />
+    </IconBase>
+  )
+}
+
+export function ScrollTextIcon(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M8 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H8a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4z" />
+      <path d="M8 3v18" />
+      <path d="M12 8h5" />
+      <path d="M12 12h5" />
+      <path d="M12 16h3" />
     </IconBase>
   )
 }

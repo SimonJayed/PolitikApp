@@ -1,0 +1,1230 @@
+/* =========================================================
+   Congress data page + Congress record display
+   Colors come from the :root palette in App.css (--ph-*).
+   Typography: Poppins.
+   Used by OpenCongress.jsx, CongressRecord.jsx and (through CongressRecord)
+   the admin panel on politician profiles.
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+.congressPage,
+.congressRecord {
+  --cg-font: 'Poppins', var(--sans, system-ui), sans-serif;
+  --cg-surface: var(--ph-white);
+  --cg-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
+  --cg-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
+  --cg-line-soft: color-mix(in srgb, var(--ph-blue) 8%, var(--ph-white));
+  --cg-btn-border: color-mix(in srgb, var(--ph-blue) 24%, var(--ph-white));
+  --cg-text: var(--ph-blue);
+  --cg-text-2: color-mix(in srgb, var(--ph-blue) 78%, var(--ph-white));
+  --cg-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
+  --cg-gold-soft: color-mix(in srgb, var(--ph-gold) 14%, var(--ph-white));
+  --cg-gold-text: color-mix(in srgb, var(--ph-gold) 62%, var(--ph-blue));
+  --cg-gold-line: color-mix(in srgb, var(--ph-gold) 45%, var(--ph-white));
+  --cg-red-soft: color-mix(in srgb, var(--ph-red) 7%, var(--ph-white));
+  --cg-red-line: color-mix(in srgb, var(--ph-red) 28%, var(--ph-white));
+  --cg-blue-soft: color-mix(in srgb, var(--ph-blue-light) 9%, var(--ph-white));
+  --cg-blue-line: color-mix(in srgb, var(--ph-blue-light) 32%, var(--ph-white));
+  --cg-green: #1b7a47;
+  --cg-green-soft: color-mix(in srgb, var(--cg-green) 11%, var(--ph-white));
+  --cg-green-line: color-mix(in srgb, var(--cg-green) 38%, var(--ph-white));
+  --cg-radius-lg: 18px;
+  --cg-radius-md: 12px;
+  --cg-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
+  --cg-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.06), 0 14px 32px rgba(10, 29, 66, 0.12);
+  font-family: var(--cg-font);
+}
+
+.congressPage {
+  display: grid;
+  gap: 18px;
+  width: min(1440px, 100%);
+  margin: 0 auto;
+  padding: 20px clamp(16px, 3vw, 44px) 88px;
+  color: var(--cg-text);
+}
+
+:is(.congressPage, .congressRecord) :is(button, input, select, textarea) {
+  font-family: var(--cg-font);
+}
+
+:is(.congressPage, .congressRecord) :is(button, a, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--ph-blue-light);
+  outline-offset: 2px;
+}
+
+/* ---------- Hero ---------- */
+.cgHero {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px 28px;
+  overflow: hidden;
+  padding: 24px clamp(22px, 3vw, 34px);
+  border-radius: var(--cg-radius-lg);
+  background:
+    radial-gradient(380px 200px at 100% 0%, color-mix(in srgb, var(--ph-red) 40%, transparent), transparent 70%),
+    radial-gradient(320px 200px at 0% 130%, color-mix(in srgb, var(--ph-gold) 30%, transparent), transparent 70%),
+    linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+  color: var(--ph-white);
+  box-shadow: var(--cg-shadow-sm);
+}
+
+.cgHeroText {
+  min-width: 0;
+  max-width: 62ch;
+}
+
+.cgHeroText h1 {
+  margin: 0;
+  color: var(--ph-white);
+  font: 800 clamp(1.5rem, 3vw, 2.1rem)/1.1 var(--cg-font);
+  letter-spacing: -0.02em;
+}
+
+.cgHeroText p {
+  margin: 8px 0 0;
+  color: color-mix(in srgb, var(--ph-white) 76%, transparent);
+  font: 400 14px/1.6 var(--cg-font);
+}
+
+.cgHeroChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cgChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 25%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ph-white) 10%, transparent);
+  color: color-mix(in srgb, var(--ph-white) 84%, transparent);
+  font: 600 12px/1 var(--cg-font);
+  text-transform: capitalize;
+}
+
+.cgChip strong {
+  color: var(--ph-white);
+  font-weight: 800;
+}
+
+.cgChip-pending { border-color: var(--ph-gold-light); }
+.cgChip-done { border-color: color-mix(in srgb, var(--ph-white) 55%, transparent); }
+.cgChip-failed { border-color: var(--ph-red-soft); background: color-mix(in srgb, var(--ph-red) 40%, transparent); }
+
+.cgChip.onLight {
+  border-color: var(--cg-line);
+  background: var(--cg-inset);
+  color: var(--cg-text-2);
+}
+
+.cgChip.onLight.cgChip-pending { border-color: var(--cg-gold-line); background: var(--cg-gold-soft); color: var(--cg-gold-text); }
+.cgChip.onLight.cgChip-done { border-color: var(--cg-blue-line); background: var(--cg-blue-soft); color: var(--ph-blue-light); }
+.cgChip.onLight.cgChip-failed { border-color: var(--cg-red-line); background: var(--cg-red-soft); color: var(--ph-red); }
+
+/* ---------- Alerts and notices ---------- */
+.cgAlert,
+.cgNotice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 14px 18px;
+  border: 1px solid var(--cg-red-line);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-red-soft);
+  color: var(--ph-red);
+  font: 600 13px/1.55 var(--cg-font);
+  overflow-wrap: anywhere;
+}
+
+.cgNotice {
+  border-color: var(--cg-blue-line);
+  background: var(--cg-blue-soft);
+  color: var(--ph-blue-mid);
+}
+
+.cgNotice.success {
+  border-color: var(--cg-green-line);
+  background: var(--cg-green-soft);
+  color: var(--cg-green);
+}
+
+/* Compatibility: used by CongressProfilePanel's "possible match" box */
+.congressNotice {
+  padding: 12px 16px;
+  border-left: 4px solid var(--ph-gold);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-gold-soft);
+  color: var(--cg-gold-text);
+  font: 500 13px/1.55 var(--cg-font);
+}
+
+/* ---------- Tabs ---------- */
+.cgTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--cg-line);
+  border-radius: var(--cg-radius-lg);
+  background: var(--cg-surface);
+  box-shadow: var(--cg-shadow-sm);
+}
+
+.congressPage .cgTabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 0;
+  height: auto;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--cg-text-2);
+  font: 700 13px/1 var(--cg-font);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.congressPage .cgTabs button:hover:not(.active) {
+  background: var(--cg-blue-soft);
+  color: var(--ph-blue-mid);
+}
+
+.congressPage .cgTabs button.active {
+  background: var(--ph-blue);
+  color: var(--ph-white);
+}
+
+.cgTabCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--ph-gold-light);
+  color: var(--ph-blue);
+  font: 800 11px/1 var(--cg-font);
+}
+
+/* ---------- Cards ---------- */
+.cgStack {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.cgCard {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--cg-line);
+  border-left: 5px solid var(--ph-blue-light);
+  border-radius: var(--cg-radius-lg);
+  background: var(--cg-surface);
+  box-shadow: var(--cg-shadow-sm);
+}
+
+.cgCardHead,
+.cgSubHead {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px 16px;
+}
+
+.cgCardHead h2 {
+  margin: 0;
+  color: var(--cg-text);
+  font: 800 18px/1.25 var(--cg-font);
+}
+
+.cgSubHead > div {
+  min-width: 0;
+  flex: 1 1 280px;
+}
+
+.cgSubHead h3 {
+  margin: 0;
+  color: var(--cg-text);
+  font: 800 15px/1.3 var(--cg-font);
+}
+
+.cgHint {
+  margin: 4px 0 0;
+  color: var(--cg-muted);
+  font: 400 13px/1.6 var(--cg-font);
+}
+
+.cgSub {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--cg-line-soft);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-inset);
+}
+
+.cgCount {
+  display: inline-grid;
+  place-items: center;
+  min-width: 26px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--cg-gold-soft);
+  color: var(--cg-gold-text);
+  font: 800 12px/1 var(--cg-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.cgEmpty,
+.cgPlaceholder {
+  margin: 0;
+  padding: 24px;
+  border: 1px dashed var(--cg-line);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-surface);
+  color: var(--cg-muted);
+  text-align: center;
+  font: 600 13px/1.6 var(--cg-font);
+}
+
+.cgPlaceholder {
+  padding: 56px 24px;
+  background: var(--cg-inset);
+}
+
+.cgMuted {
+  margin: 0;
+  color: var(--cg-muted);
+  font: 400 13px/1.6 var(--cg-font);
+}
+
+/* ---------- Buttons ---------- */
+:is(.congressPage, .congressRecord) .cgBtn {
+  --btn: var(--ph-blue-light);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-height: 0;
+  height: auto;
+  padding: 11px 18px;
+  border: 1.5px solid var(--cg-btn-border);
+  border-radius: 999px;
+  background: var(--cg-surface);
+  box-shadow: none;
+  color: var(--cg-text);
+  font: 700 13px/1 var(--cg-font);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+}
+
+:is(.congressPage, .congressRecord) .cgBtnSm {
+  padding: 8px 14px;
+  font-size: 12px;
+}
+
+:is(.congressPage, .congressRecord) .cgBtn:hover:not(:disabled) {
+  border-color: var(--btn);
+  background: color-mix(in srgb, var(--btn) 10%, var(--ph-white));
+  color: var(--btn);
+}
+
+:is(.congressPage, .congressRecord) .cgBtn:active:not(:disabled) {
+  background: color-mix(in srgb, var(--btn) 18%, var(--ph-white));
+  transform: translateY(1px);
+}
+
+:is(.congressPage, .congressRecord) .cgBtn:focus-visible {
+  outline: 0;
+  box-shadow: 0 0 0 3px var(--ph-white), 0 0 0 5px var(--btn);
+}
+
+:is(.congressPage, .congressRecord) .cgBtnPrimary {
+  border-color: var(--ph-blue-light);
+  background: var(--ph-blue-light);
+  color: var(--ph-white);
+}
+
+:is(.congressPage, .congressRecord) .cgBtnPrimary:hover:not(:disabled) {
+  border-color: var(--ph-blue-mid);
+  background: var(--ph-blue-mid);
+  color: var(--ph-white);
+}
+
+:is(.congressPage, .congressRecord) .cgBtnPrimary:active:not(:disabled) {
+  background: var(--ph-blue);
+  color: var(--ph-white);
+}
+
+:is(.congressPage, .congressRecord) .cgBtn:disabled {
+  border-color: var(--cg-line);
+  background: var(--cg-inset);
+  color: var(--cg-muted);
+  cursor: not-allowed;
+}
+
+/* Arrow buttons */
+:is(.congressPage, .congressRecord) .cgArrow {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  min-height: 0;
+  padding: 0;
+  border: 1.5px solid var(--cg-blue-line);
+  border-radius: 999px;
+  background: var(--cg-surface);
+  box-shadow: none;
+  color: var(--ph-blue-light);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+
+:is(.congressPage, .congressRecord) .cgArrowSm {
+  width: 34px;
+  height: 34px;
+}
+
+:is(.congressPage, .congressRecord) .cgArrow:hover:not(:disabled) {
+  border-color: var(--ph-blue-light);
+  background: var(--ph-blue-light);
+  color: var(--ph-white);
+}
+
+:is(.congressPage, .congressRecord) .cgArrow:active:not(:disabled) {
+  border-color: var(--ph-blue-mid);
+  background: var(--ph-blue-mid);
+  transform: translateY(1px);
+}
+
+:is(.congressPage, .congressRecord) .cgArrow:disabled {
+  border-color: var(--cg-line);
+  background: var(--cg-inset);
+  color: var(--cg-muted);
+  cursor: not-allowed;
+}
+
+.cgActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ---------- Bulk match stats ---------- */
+.cgStats,
+.cgCounts,
+.cgFacts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.cgStats > div,
+.cgCounts > div,
+.cgFacts > div {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--cg-line);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-surface);
+}
+
+.cgStats dt,
+.cgCounts dt,
+.cgFacts dt {
+  color: var(--cg-muted);
+  font: 600 11px/1.3 var(--cg-font);
+}
+
+.cgStats dd,
+.cgCounts dd {
+  margin: 0;
+  color: var(--cg-text);
+  font: 800 24px/1 var(--cg-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.cgFacts dd {
+  margin: 0;
+  color: var(--cg-text);
+  font: 600 14px/1.4 var(--cg-font);
+  overflow-wrap: anywhere;
+}
+
+.cgStats .ready { border-left: 4px solid var(--ph-blue-light); }
+.cgStats .linked { border-left: 4px solid var(--cg-green); }
+.cgStats .review { border-left: 4px solid var(--ph-gold); }
+.cgStats .unmatched { border-left: 4px solid var(--ph-red); }
+
+.cgCounts dd {
+  font-size: 20px;
+}
+
+/* ---------- Bulk groups ---------- */
+.cgGroup {
+  --tone: var(--ph-blue-light);
+  border: 1px solid var(--cg-line);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-surface);
+}
+
+.cgGroup.review { --tone: var(--ph-gold); }
+.cgGroup.unmatched { --tone: var(--ph-red); }
+.cgGroup.linked { --tone: var(--cg-green); }
+
+.cgGroup > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  color: var(--cg-text);
+  font: 700 13px/1.3 var(--cg-font);
+  cursor: pointer;
+  list-style: none;
+}
+
+.cgGroup > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cgGroup > summary::after {
+  content: '▸';
+  margin-left: auto;
+  color: var(--cg-muted);
+  transition: transform 0.15s ease;
+}
+
+.cgGroup[open] > summary::after {
+  transform: rotate(90deg);
+}
+
+.cgGroupDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+
+.cgGroupBody {
+  display: grid;
+  gap: 10px;
+  padding: 0 18px 18px;
+}
+
+/* ---------- Candidate rows ---------- */
+.cgList {
+  display: grid;
+  gap: 10px;
+}
+
+.cgList:empty {
+  display: none;
+}
+
+.cgCandidate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border: 1px solid var(--cg-line);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-surface);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.cgCandidate:hover {
+  border-color: var(--cg-blue-line);
+  box-shadow: var(--cg-shadow-sm);
+}
+
+.cgCandidateBody {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.cgCandidateBody p,
+.cgCandidateBody ul {
+  margin: 0;
+  color: var(--cg-text-2);
+  font: 400 13px/1.6 var(--cg-font);
+  overflow-wrap: anywhere;
+}
+
+.cgCandidateBody ul {
+  padding-left: 18px;
+}
+
+.cgCandidateTitle {
+  color: var(--cg-text) !important;
+}
+
+.cgCandidateTitle strong {
+  font-weight: 700;
+}
+
+.cgCandidateTitle span {
+  color: var(--cg-muted);
+}
+
+.cgCandidate > .cgBtn {
+  flex: 0 0 auto;
+}
+
+.cgLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.cgLinks a,
+.cgExtLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ph-blue-light);
+  font: 700 12px/1.4 var(--cg-font);
+  text-decoration: none;
+}
+
+.cgLinks a:hover,
+.cgExtLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.cgLinks a i,
+.cgExtLink i {
+  font-style: normal;
+}
+
+.cgTag {
+  display: inline-flex;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font: 700 11px/1.3 var(--cg-font);
+}
+
+.cgTag.changed {
+  background: var(--cg-gold-soft);
+  color: var(--cg-gold-text);
+}
+
+.cgTag.created {
+  background: var(--cg-green-soft);
+  color: var(--cg-green);
+}
+
+/* ---------- Forms ---------- */
+.cgForm,
+.cgToolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  align-items: end;
+  gap: 14px;
+}
+
+.cgToolbar {
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+}
+
+.cgField {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--cg-muted);
+  font: 600 12px/1.3 var(--cg-font);
+}
+
+.cgFieldWide {
+  grid-column: span 2;
+}
+
+:is(.congressPage, .congressRecord) .cgField :is(input:not([type='checkbox']), select, textarea) {
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  padding: 11px 14px;
+  border: 1px solid var(--cg-line);
+  border-radius: var(--cg-radius-md);
+  outline: 0;
+  box-shadow: none;
+  background: var(--cg-inset);
+  color: var(--cg-text);
+  font: 500 14px/1.5 var(--cg-font);
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+:is(.congressPage, .congressRecord) .cgField :is(input, select, textarea):focus {
+  border-color: var(--ph-blue-light);
+  background: var(--cg-surface);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ph-blue-light) 14%, transparent);
+}
+
+:is(.congressPage, .congressRecord) .cgField textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.cgCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--cg-text);
+  font: 600 13px/1.4 var(--cg-font);
+  cursor: pointer;
+}
+
+.cgCheckbox input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ph-blue-light);
+}
+
+.cgIssues {
+  border: 1px solid var(--cg-red-line);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-red-soft);
+}
+
+.cgIssues summary {
+  padding: 12px 16px;
+  color: var(--ph-red);
+  font: 700 13px/1.3 var(--cg-font);
+  cursor: pointer;
+}
+
+.cgIssues ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0 16px 14px 34px;
+  color: var(--cg-text-2);
+  font: 400 12px/1.55 var(--cg-font);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- Browse layout ---------- */
+.cgBrowse {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.cgListPane {
+  position: sticky;
+  top: 96px;
+  gap: 14px;
+  max-height: calc(100vh - 120px);
+  overflow: auto;
+  padding: 18px;
+}
+
+.cgRows {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+:is(.congressPage, .congressRecord) .cgRow {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  padding: 11px 14px;
+  border: 1.5px solid transparent;
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-inset);
+  box-shadow: none;
+  color: var(--cg-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+:is(.congressPage, .congressRecord) .cgRow strong {
+  font: 700 13px/1.4 var(--cg-font);
+  overflow-wrap: anywhere;
+}
+
+:is(.congressPage, .congressRecord) .cgRow span {
+  color: var(--cg-muted);
+  font: 500 12px/1.4 var(--cg-font);
+}
+
+:is(.congressPage, .congressRecord) .cgRow:hover {
+  border-color: var(--cg-blue-line);
+  background: var(--cg-blue-soft);
+}
+
+:is(.congressPage, .congressRecord) .cgRow.active {
+  border-color: var(--ph-blue-light);
+  background: var(--cg-blue-soft);
+  box-shadow: inset 4px 0 0 var(--ph-gold);
+}
+
+.cgPager,
+.cgMiniPager {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--cg-line-soft);
+}
+
+.cgPager span,
+.cgMiniPager span {
+  min-width: 80px;
+  color: var(--cg-text);
+  text-align: center;
+  font: 700 12px/1 var(--cg-font);
+  font-variant-numeric: tabular-nums;
+}
+
+.cgDetailPane {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+/* ---------- Link to a politician (inside a person record) ---------- */
+.cgLink {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  border: 1px solid var(--cg-line);
+  border-left: 5px solid var(--ph-gold);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-inset);
+}
+
+.cgLink h3 {
+  margin: 0;
+  color: var(--cg-text);
+  font: 800 15px/1.3 var(--cg-font);
+}
+
+.cgLinked {
+  margin: 0;
+  color: var(--cg-green);
+  font: 700 13px/1.5 var(--cg-font);
+}
+
+/* =========================================================
+   Congress record
+   ========================================================= */
+.congressRecord {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  padding: 24px;
+  border: 1px solid var(--cg-line);
+  border-left: 5px solid var(--ph-blue-light);
+  border-radius: var(--cg-radius-lg);
+  background: var(--cg-surface);
+  box-shadow: var(--cg-shadow-sm);
+  color: var(--cg-text);
+  overflow-wrap: anywhere;
+}
+
+.cgRecHead {
+  display: grid;
+  gap: 6px;
+}
+
+.cgEyebrow {
+  width: max-content;
+  max-width: 100%;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--cg-gold-soft);
+  color: var(--cg-gold-text);
+  font: 700 11px/1.2 var(--cg-font);
+}
+
+.cgRecHead h2 {
+  margin: 0;
+  color: var(--cg-text);
+  font: 800 clamp(1.25rem, 2.2vw, 1.6rem)/1.25 var(--cg-font);
+  letter-spacing: -0.015em;
+}
+
+.cgRecHead p {
+  margin: 0;
+  color: var(--cg-muted);
+  font: 500 13px/1.5 var(--cg-font);
+}
+
+.cgRecNotice {
+  margin: 0;
+  padding: 12px 16px;
+  border-left: 4px solid var(--ph-gold);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-gold-soft);
+  color: var(--cg-gold-text);
+  font: 500 13px/1.6 var(--cg-font);
+}
+
+.cgAliases {
+  margin: 0;
+  color: var(--cg-text-2);
+  font: 500 13px/1.6 var(--cg-font);
+}
+
+.cgRecSection {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--cg-line-soft);
+}
+
+.cgRecSection h3 {
+  margin: 0;
+  color: var(--cg-text);
+  font: 800 15px/1.3 var(--cg-font);
+}
+
+.cgRecSection p {
+  margin: 0;
+}
+
+.cgAbstract {
+  margin: 0;
+  color: var(--cg-text-2);
+  font: 400 14px/1.7 var(--cg-font);
+}
+
+/* Tables */
+.cgTableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--cg-line-soft);
+  border-radius: var(--cg-radius-md);
+}
+
+.cgTableWrap table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+.cgTableWrap th,
+.cgTableWrap td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--cg-line-soft);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.cgTableWrap th {
+  background: var(--cg-inset);
+  color: var(--cg-muted);
+  font: 700 11px/1 var(--cg-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cgTableWrap td {
+  color: var(--cg-text-2);
+  font: 500 13px/1.5 var(--cg-font);
+}
+
+.cgTableWrap tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cgTableWrap tbody tr:hover td {
+  background: var(--cg-inset);
+}
+
+/* Bills */
+.cgBillList,
+.cgPlainList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cgPlainList li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+  color: var(--cg-text-2);
+  font: 500 13px/1.5 var(--cg-font);
+}
+
+:is(.congressPage, .congressRecord) .cgBillRow {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  padding: 12px 16px;
+  border: 1px solid var(--cg-line);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-surface);
+  box-shadow: none;
+  color: var(--cg-text);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+:is(.congressPage, .congressRecord) .cgBillRow strong {
+  font: 700 13px/1.4 var(--cg-font);
+}
+
+:is(.congressPage, .congressRecord) .cgBillRow span {
+  color: var(--cg-muted);
+  font: 500 12px/1.4 var(--cg-font);
+}
+
+:is(.congressPage, .congressRecord) .cgBillRow:hover {
+  border-color: var(--ph-blue-light);
+  background: var(--cg-blue-soft);
+}
+
+:is(.congressPage, .congressRecord) .cgLinkBtn {
+  min-height: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--ph-blue-light);
+  font: 700 13px/1.5 var(--cg-font);
+  text-align: left;
+  cursor: pointer;
+}
+
+:is(.congressPage, .congressRecord) .cgLinkBtn:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Status badges and dates */
+.cgTimeline {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cgTimeline li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  color: var(--cg-text-2);
+  font: 500 13px/1.5 var(--cg-font);
+}
+
+.cgHistoryList {
+  max-height: 480px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.cgHistoryList li {
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid var(--cg-line-soft);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-inset);
+}
+
+.cgDate {
+  display: inline-flex;
+  align-items: center;
+  min-width: 108px;
+  justify-content: center;
+  padding: 5px 10px;
+  border: 1px solid var(--cg-line-soft);
+  border-radius: 8px;
+  background: var(--cg-surface);
+  color: var(--cg-text-2);
+  font: 700 12px/1.2 var(--cg-font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cgAction {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.cgBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 12px;
+  border: 1px solid var(--cg-line);
+  border-radius: 999px;
+  background: var(--cg-inset);
+  color: var(--cg-text-2);
+  font: 700 12px/1.2 var(--cg-font);
+}
+
+.cgBadge::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.cgBadge.pending { border-color: var(--cg-gold-line); background: var(--cg-gold-soft); color: var(--cg-gold-text); }
+.cgBadge.done { border-color: var(--cg-green-line); background: var(--cg-green-soft); color: var(--cg-green); }
+.cgBadge.stopped { border-color: var(--cg-red-line); background: var(--cg-red-soft); color: var(--ph-red); }
+
+/* Collapsible sections */
+.cgDetails {
+  border: 1px solid var(--cg-line-soft);
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-inset);
+}
+
+.cgDetails > summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  color: var(--cg-text);
+  font: 700 13px/1.3 var(--cg-font);
+  cursor: pointer;
+  list-style: none;
+}
+
+.cgDetails > summary::-webkit-details-marker {
+  display: none;
+}
+
+.cgDetails > summary::before {
+  content: '▸';
+  color: var(--ph-gold);
+  transition: transform 0.15s ease;
+}
+
+.cgDetails[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+.cgDetailsBody {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px 16px;
+  color: var(--cg-text-2);
+  font: 400 13px/1.6 var(--cg-font);
+}
+
+.cgDetailsBody p,
+.cgDetailsBody ul {
+  margin: 0;
+}
+
+.cgDetailsBody ul {
+  padding-left: 18px;
+}
+
+.cgPre {
+  max-height: 320px;
+  overflow: auto;
+  margin: 0;
+  padding: 12px;
+  border-radius: var(--cg-radius-md);
+  background: var(--cg-surface);
+  color: var(--cg-text-2);
+  font: 400 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cgRevisions {
+  display: grid;
+  gap: 10px;
+}
+
+/* ---------- Motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .congressPage *,
+  .congressPage *::before,
+  .congressPage *::after,
+  .congressRecord *,
+  .congressRecord *::before {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1000px) {
+  .cgBrowse {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cgListPane {
+    position: static;
+    max-height: 420px;
+  }
+}
+
+@media (max-width: 720px) {
+  .cgCandidate {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cgToolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .cgFieldWide {
+    grid-column: auto;
+  }
+
+  .cgCard {
+    padding: 18px;
+  }
+
+  .congressRecord {
+    padding: 18px;
+  }
+
+  .cgSubHead > .cgBtn {
+    width: 100%;
+  }
+}
