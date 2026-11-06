@@ -538,7 +538,6 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                               <ThumbUpIcon size={15} />
                               <span>{comment.upvotes ?? 0}</span>
                             </button>
-                            <strong aria-label={`Vote score ${comment.score}`}>{comment.score}</strong>
                             <button
                               className="voteDown"
                               aria-label="Downvote"

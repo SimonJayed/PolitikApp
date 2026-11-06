@@ -69,7 +69,6 @@ public class NewsMapper {
                 "Anonymous",
                 comment.getContent(),
                 comment.getCreatedAt(),
-                upvotes - downvotes,
                 upvotes,
                 downvotes,
                 userId != null && voteRepository.findByCommentIdAndUserUserId(comment.getId(), userId).isPresent()
