@@ -924,9 +924,12 @@
 }
 
 .newsFeedShell .voteButtons .voteUp:hover:not(:disabled) {
-  background: var(--d-success);
-  border-color: var(--d-success);
-  color: var(--ph-white);
+  background: color-mix(in srgb, var(--d-success) 14%, var(--ph-white));
+  border-color: color-mix(in srgb, var(--d-success) 48%, var(--ph-white));
+}
+
+.newsFeedShell .voteButtons .voteUp.is-selected .voteIconSelected {
+  fill: currentColor;
 }
 
 /* Downvote = red */
@@ -937,9 +940,12 @@
 }
 
 .newsFeedShell .voteButtons .voteDown:hover:not(:disabled) {
-  background: var(--d-danger);
-  border-color: var(--d-danger);
-  color: var(--ph-white);
+  background: color-mix(in srgb, var(--d-danger) 12%, var(--ph-white));
+  border-color: color-mix(in srgb, var(--d-danger) 48%, var(--ph-white));
+}
+
+.newsFeedShell .voteButtons .voteDown.is-selected .voteIconSelected {
+  fill: currentColor;
 }
 
 .newsFeedShell .voteButtons button:active:not(:disabled) {

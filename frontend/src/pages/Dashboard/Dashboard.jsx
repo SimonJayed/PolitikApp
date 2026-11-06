@@ -528,25 +528,25 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                           </div>
                           <div className="voteButtons">
                             <button
-                              className="voteUp"
+                              className={`voteUp${comment.voteType === 'UP' ? ' is-selected' : ''}`}
                               aria-label="Upvote"
                               title={token ? 'Upvote' : 'Sign in to vote'}
-                              disabled={busy[`vote-${comment.id}`] || comment.voted}
+                              disabled={busy[`vote-${comment.id}`] || (comment.voted && comment.voteType !== 'UP')}
                               type="button"
                               onClick={() => vote(comment.id, post.id, 'UP')}
                             >
-                              <ThumbUpIcon size={15} />
+                              <ThumbUpIcon size={15} className={comment.voteType === 'UP' ? 'voteIconSelected' : ''} />
                               <span>{comment.upvotes ?? 0}</span>
                             </button>
                             <button
-                              className="voteDown"
+                              className={`voteDown${comment.voteType === 'DOWN' ? ' is-selected' : ''}`}
                               aria-label="Downvote"
                               title={token ? 'Downvote' : 'Sign in to vote'}
-                              disabled={busy[`vote-${comment.id}`] || comment.voted}
+                              disabled={busy[`vote-${comment.id}`] || (comment.voted && comment.voteType !== 'DOWN')}
                               type="button"
                               onClick={() => vote(comment.id, post.id, 'DOWN')}
                             >
-                              <ThumbDownIcon size={15} />
+                              <ThumbDownIcon size={15} className={comment.voteType === 'DOWN' ? 'voteIconSelected' : ''} />
                               <span>{comment.downvotes ?? 0}</span>
                             </button>
                           </div>

@@ -53,7 +53,8 @@ public class NewsDtos {
             Instant createdAt,
             int upvotes,
             int downvotes,
-            boolean voted
+            boolean voted,
+            String voteType
     ) {}
 
     public record UserCommentResponse(

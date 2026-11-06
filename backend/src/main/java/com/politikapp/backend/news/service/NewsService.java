@@ -109,7 +109,11 @@ public class NewsService {
         AuthUser user = user(userId);
         CommentVote vote = voteRepository.findByCommentIdAndUserUserId(commentId, userId).orElse(null);
         if (vote != null) {
-            throw new HttpResponseException(409, "You have already voted on this comment.");
+            if (voteType.equals(vote.getVoteType())) {
+                voteRepository.delete(vote);
+                return mapper.toCommentResponse(comment, userId);
+            }
+            throw new HttpResponseException(409, "You already selected the other vote type. Take it back before switching.");
         }
         vote = new CommentVote();
         vote.setComment(comment);

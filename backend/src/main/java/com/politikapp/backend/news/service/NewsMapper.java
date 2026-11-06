@@ -64,6 +64,11 @@ public class NewsMapper {
     public NewsCommentResponse toCommentResponse(NewsComment comment, java.util.UUID userId) {
         int upvotes = voteRepository.countByCommentIdAndVoteType(comment.getId(), "UP");
         int downvotes = voteRepository.countByCommentIdAndVoteType(comment.getId(), "DOWN");
+        String voteType = userId == null
+                ? null
+                : voteRepository.findByCommentIdAndUserUserId(comment.getId(), userId)
+                        .map(com.politikapp.backend.news.entity.CommentVote::getVoteType)
+                        .orElse(null);
         return new NewsCommentResponse(
                 comment.getId(),
                 "Anonymous",
@@ -71,7 +76,8 @@ public class NewsMapper {
                 comment.getCreatedAt(),
                 upvotes,
                 downvotes,
-                userId != null && voteRepository.findByCommentIdAndUserUserId(comment.getId(), userId).isPresent()
+                voteType != null,
+                voteType
         );
     }
 
