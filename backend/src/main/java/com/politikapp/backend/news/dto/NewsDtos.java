@@ -51,7 +51,10 @@ public class NewsDtos {
             String authorLabel,
             String content,
             Instant createdAt,
-            int score
+            int score,
+            int upvotes,
+            int downvotes,
+            boolean voted
     ) {}
 
     public record UserCommentResponse(

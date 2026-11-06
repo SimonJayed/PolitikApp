@@ -94,9 +94,6 @@ export default function CongressProfilePanel({ politicianId, token, onDraftCreat
       </div>
     </div>}
     {record && <>
-      <div className="csToolbar">
-        <button className="prBtn prBtnOutline" type="button" disabled={loading || !person} onClick={() => { setRecord(person); setError('') }}>← Back to linked person</button>
-      </div>
       <div className="csRecordWrap">
         <CongressRecord key={record.entity_id} record={record} token={token} onSelect={select} onDraftMembership={person && record.kind === 'PERSON' ? draftMembership : undefined}>{canDraft && <button className="prBtn prBtnPrimaryDark" type="button" disabled={drafting} onClick={draftBill}>{drafting ? 'Creating draft…' : 'Create private bill draft for review'}</button>}</CongressRecord>
       </div>

@@ -13,6 +13,7 @@ import {
 } from '../../components/icons/Lucide'
 import './Dashboard.css'
 import NewsArticleReader from '../../components/NewsArticleReader'
+import { PaginationMini } from '../pageHelpers'
 
 const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 const INSIGHTS_SAMPLE_SIZE = 50
@@ -190,7 +191,9 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
     }
     setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'loading', items: [] } }))
     try {
-      const comments = await fetch(`${API_BASE_URL}/api/news/${newsId}/comments`).then(readApiResponse)
+      const comments = await fetch(`${API_BASE_URL}/api/news/${newsId}/comments`, {
+        headers: token ? { Authorization: 'Bearer ' + token } : {},
+      }).then(readApiResponse)
       setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'success', items: comments } }))
     } catch (error) {
       setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'error', message: error.message, items: [] } }))
@@ -528,22 +531,24 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                               className="voteUp"
                               aria-label="Upvote"
                               title={token ? 'Upvote' : 'Sign in to vote'}
-                              disabled={busy[`vote-${comment.id}`]}
+                              disabled={busy[`vote-${comment.id}`] || comment.voted}
                               type="button"
                               onClick={() => vote(comment.id, post.id, 'UP')}
                             >
                               <ThumbUpIcon size={15} />
+                              <span>{comment.upvotes ?? 0}</span>
                             </button>
-                            <strong>{comment.score}</strong>
+                            <strong aria-label={`Vote score ${comment.score}`}>{comment.score}</strong>
                             <button
                               className="voteDown"
                               aria-label="Downvote"
                               title={token ? 'Downvote' : 'Sign in to vote'}
-                              disabled={busy[`vote-${comment.id}`]}
+                              disabled={busy[`vote-${comment.id}`] || comment.voted}
                               type="button"
                               onClick={() => vote(comment.id, post.id, 'DOWN')}
                             >
                               <ThumbDownIcon size={15} />
+                              <span>{comment.downvotes ?? 0}</span>
                             </button>
                           </div>
                         </div>
@@ -557,9 +562,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
 
           {feed.totalPages > 1 && (
             <nav className="feedPager" aria-label="News pagination">
-              <button disabled={page === 0} onClick={() => goToPage(Math.max(0, page - 1))} type="button">Previous</button>
-              <span>Page {page + 1} of {feed.totalPages}</span>
-              <button disabled={page + 1 >= feed.totalPages} onClick={() => goToPage(page + 1)} type="button">Next</button>
+              <PaginationMini page={page + 1} totalPages={feed.totalPages} onChange={(nextPage) => goToPage(nextPage - 1)} />
             </nav>
           )}
         </main>

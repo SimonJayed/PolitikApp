@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import { congressRecordsPath, congressRequest, sourceHref } from '../../api/congress'
+import { PaginationMini } from '../../pages/pageHelpers'
+
+const BILL_PAGE_SIZE = 10
 
 // Styles for this component live in OpenCongress.css (classes prefixed "cg").
 
@@ -21,14 +24,6 @@ function statusTone(status) {
   if (/withdrawn|vetoed|rejected|lapsed|disapproved|dropped|died/.test(value)) return 'stopped'
   if (/pending|referred|filed|reading|committee|calendar|consideration|hearing|review/.test(value)) return 'pending'
   return 'neutral'
-}
-
-function Chevron({ direction }) {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={direction === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
-    </svg>
-  )
 }
 
 function SourceLink({ url, children }) {
@@ -63,9 +58,11 @@ function RevisionHistory({ id, token }) {
       </div>
     </details>)}
     <div className="cgMiniPager">
-      <button type="button" className="cgArrow cgArrowSm" aria-label="Previous revisions" title="Previous revisions" disabled={!offset || state.loading} onClick={() => setOffset(value => Math.max(0, value - 10))}><Chevron direction="left" /></button>
-      <span>Revisions</span>
-      <button type="button" className="cgArrow cgArrowSm" aria-label="Next revisions" title="Next revisions" disabled={state.rows.length < 10 || state.loading} onClick={() => setOffset(value => value + 10)}><Chevron direction="right" /></button>
+      <PaginationMini
+        page={Math.floor(offset / 10) + 1}
+        totalPages={Math.floor(offset / 10) + (state.rows.length >= 10 ? 2 : 1)}
+        onChange={page => setOffset((page - 1) * 10)}
+      />
     </div>
   </section>
 }
@@ -91,7 +88,7 @@ export default function CongressRecord({ record, token, previewId, onSelect, onD
     const controller = new AbortController()
     setBills([])
     setBillState({ busy: true, error: '' })
-    congressRequest(`${congressRecordsPath(previewId)}?kind=BILL&personId=${encodeURIComponent(id)}&limit=25&offset=${offset}`, token, { signal: controller.signal })
+    congressRequest(`${congressRecordsPath(previewId)}?kind=BILL&personId=${encodeURIComponent(id)}&limit=${BILL_PAGE_SIZE}&offset=${offset}`, token, { signal: controller.signal })
       .then(data => { setBills(data); setBillState({ busy: false, error: '' }) })
       .catch(error => { if (error.name !== 'AbortError') setBillState({ busy: false, error: error.message }) })
     return () => controller.abort()
@@ -132,10 +129,12 @@ export default function CongressRecord({ record, token, previewId, onSelect, onD
             <span>{bill.subtype?.toUpperCase()} {bill.billNumber} · Congress {bill.congress}</span>
           </button>
         </li>)}</ul>
-        {(offset > 0 || bills.length >= 25) && <div className="cgMiniPager">
-          <button type="button" className="cgArrow cgArrowSm" aria-label="Previous bills" title="Previous bills" disabled={offset === 0 || billState.busy} onClick={() => setOffset(value => Math.max(0, value - 25))}><Chevron direction="left" /></button>
-          <span>Bills</span>
-          <button type="button" className="cgArrow cgArrowSm" aria-label="Next bills" title="Next bills" disabled={bills.length < 25 || billState.busy} onClick={() => setOffset(value => value + 25)}><Chevron direction="right" /></button>
+        {(offset > 0 || bills.length >= BILL_PAGE_SIZE) && <div className="cgMiniPager">
+          <PaginationMini
+            page={Math.floor(offset / BILL_PAGE_SIZE) + 1}
+            totalPages={Math.floor(offset / BILL_PAGE_SIZE) + (bills.length >= BILL_PAGE_SIZE ? 2 : 1)}
+            onChange={page => setOffset((page - 1) * BILL_PAGE_SIZE)}
+          />
         </div>}
       </section>
     </>}

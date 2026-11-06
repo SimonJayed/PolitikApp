@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { congressRequest } from '../../api/congress'
+import { PaginationMini } from '../../pages/pageHelpers'
 
 // Styles for this component live in Profile.css (classes prefixed "cs" and "pr").
-const PAGE_LIMIT = 10
+const PAGE_LIMIT = 5
 
 // ---------- Status & date parsing ----------
 // Statuses can arrive as plain text, an array, or a JSON string such as
@@ -168,11 +169,11 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
 
       <nav className="prPager" aria-label="Congress record pagination">
         <p>Showing <strong>{page.offset + 1}–{Math.min(page.offset + page.records.length, page.total)}</strong> of <strong>{page.total}</strong></p>
-        {totalPages > 1 && <div className="prPagerControls">
-          <button className="prPagerBtn secondary" type="button" disabled={page.offset === 0} onClick={() => load(Math.max(0, page.offset - PAGE_LIMIT)).catch(cause => setError(cause.message))}>← Previous</button>
-          <span>Page {pageNumber} of {totalPages}</span>
-          <button className="prPagerBtn primary" type="button" disabled={page.offset + PAGE_LIMIT >= page.total} onClick={() => load(page.offset + PAGE_LIMIT).catch(cause => setError(cause.message))}>Next →</button>
-        </div>}
+        {totalPages > 1 &&         <PaginationMini
+          page={pageNumber}
+          totalPages={totalPages}
+          onChange={next => load((next - 1) * PAGE_LIMIT).catch(cause => setError(cause.message))}
+        />}
       </nav>
     </>}
 
@@ -204,11 +205,7 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
 
         <nav className="prPager" aria-label="Pending update pagination">
           <p>Showing <strong>{pendingStart + 1}–{Math.min(pendingStart + PAGE_LIMIT, pending.length)}</strong> of <strong>{pending.length}</strong></p>
-          {pendingTotalPages > 1 && <div className="prPagerControls">
-            <button className="prPagerBtn secondary" type="button" disabled={pendingSafePage <= 1} onClick={() => setPendingPage(pendingSafePage - 1)}>← Previous</button>
-            <span>Page {pendingSafePage} of {pendingTotalPages}</span>
-            <button className="prPagerBtn primary" type="button" disabled={pendingSafePage >= pendingTotalPages} onClick={() => setPendingPage(pendingSafePage + 1)}>Next →</button>
-          </div>}
+          {pendingTotalPages > 1 &&           <PaginationMini page={pendingSafePage} totalPages={pendingTotalPages} onChange={setPendingPage} />}
         </nav>
 
         <div className="csApprove">

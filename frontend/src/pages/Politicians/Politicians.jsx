@@ -174,7 +174,7 @@ export default function PoliticiansLoaderPanel({
                 )}
               </span>
 
-              <span className="polCardFooter">View profile <i aria-hidden="true">→</i></span>
+              <span className="polCardFooter">View profile</span>
             </button>
           )
         })}

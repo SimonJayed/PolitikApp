@@ -58,12 +58,21 @@ public class NewsMapper {
     }
 
     public NewsCommentResponse toCommentResponse(NewsComment comment) {
+        return toCommentResponse(comment, null);
+    }
+
+    public NewsCommentResponse toCommentResponse(NewsComment comment, java.util.UUID userId) {
+        int upvotes = voteRepository.countByCommentIdAndVoteType(comment.getId(), "UP");
+        int downvotes = voteRepository.countByCommentIdAndVoteType(comment.getId(), "DOWN");
         return new NewsCommentResponse(
                 comment.getId(),
                 "Anonymous",
                 comment.getContent(),
                 comment.getCreatedAt(),
-                voteRepository.scoreForComment(comment.getId())
+                upvotes - downvotes,
+                upvotes,
+                downvotes,
+                userId != null && voteRepository.findByCommentIdAndUserUserId(comment.getId(), userId).isPresent()
         );
     }
 

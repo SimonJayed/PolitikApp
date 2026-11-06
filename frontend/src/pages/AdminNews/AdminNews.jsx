@@ -9,7 +9,7 @@ import {
 } from '../../components/icons/Lucide'
 import './AdminNews.css'
 import SourceManager from './SourceManager'
-import { PageSkeleton } from '../pageHelpers'
+import { PageSkeleton, PaginationMini } from '../pageHelpers'
 
 const statuses = ['ALL', 'PENDING_REVIEW', 'APPROVED', 'PUBLISHED', 'REJECTED', 'UNPUBLISHED', 'FAILED']
 const categories = ['Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
@@ -31,14 +31,6 @@ function statusTone(status) {
   if (value === 'FAILED') return 'failed'
   if (value === 'UNPUBLISHED') return 'muted'
   return 'pending'
-}
-
-function Chevron({ direction }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={direction === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
-    </svg>
-  )
 }
 
 function truncate(value, max = 92) {
@@ -428,9 +420,7 @@ export default function AdminNews({ token, user }) {
       </section>
 
       <nav className="adminPager" aria-label="Review queue pages">
-        <button className="adminArrowBtn" type="button" aria-label="Previous page" title="Previous page" disabled={busy || page === 0} onClick={() => setPage(page - 1)}><Chevron direction="left" /></button>
-        <span>Page {page + 1} of {totalPages}</span>
-        <button className="adminArrowBtn" type="button" aria-label="Next page" title="Next page" disabled={busy || page + 1 >= totalPages} onClick={() => setPage(page + 1)}><Chevron direction="right" /></button>
+        <PaginationMini page={page + 1} totalPages={totalPages} onChange={nextPage => setPage(nextPage - 1)} />
       </nav>
 
       <section className="adminReviewPanel" aria-label="Article review">

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { congressRecordsPath, congressRequest } from '../../api/congress'
 import CongressRecord from '../../components/governance/CongressRecord'
-import { InlineSkeleton, PageSkeleton } from '../pageHelpers'
+import { InlineSkeleton, PageSkeleton, PaginationMini } from '../pageHelpers'
 import './OpenCongress.css'
 
 const normalizedName = value => String(value || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
@@ -12,14 +12,6 @@ const BULK_GROUPS = [
   { status: 'UNMATCHED', tone: 'unmatched', label: 'Unmatched' },
   { status: 'ALREADY_LINKED', tone: 'linked', label: 'Already linked' },
 ]
-
-function Chevron({ direction }) {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={direction === 'left' ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
-    </svg>
-  )
-}
 
 export default function OpenCongress({ token, politicians = [] }) {
   const [config, setConfig] = useState(null)
@@ -410,9 +402,11 @@ export default function OpenCongress({ token, politicians = [] }) {
             </button>
           </li>)}</ul>
           <nav className="cgPager" aria-label="Record pages">
-            <button type="button" className="cgArrow" aria-label="Previous records" title="Previous records" disabled={!offset || listState.loading} onClick={() => setOffset(value => Math.max(0, value - PAGE_SIZE))}><Chevron direction="left" /></button>
-            <span>{rows.length > 0 ? `${offset + 1}–${offset + rows.length}` : '—'}</span>
-            <button type="button" className="cgArrow" aria-label="Next records" title="Next records" disabled={rows.length < PAGE_SIZE || listState.loading} onClick={() => setOffset(value => value + PAGE_SIZE)}><Chevron direction="right" /></button>
+            <PaginationMini
+              page={Math.floor(offset / PAGE_SIZE) + 1}
+              totalPages={Math.floor(offset / PAGE_SIZE) + (rows.length >= PAGE_SIZE ? 2 : 1)}
+              onChange={page => setOffset((page - 1) * PAGE_SIZE)}
+            />
           </nav>
         </section>
 

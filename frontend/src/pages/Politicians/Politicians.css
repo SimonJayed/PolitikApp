@@ -302,7 +302,9 @@
 }
 
 .politiciansPage .polCard:hover {
-  transform: translateY(-3px);
+  transform: translateY(-3px) scale(1.02);
+  position: relative;
+  z-index: 1;
   border-color: color-mix(in srgb, var(--accent) 45%, var(--p-line));
   box-shadow: var(--p-shadow-md);
 }
@@ -401,8 +403,8 @@
   width: 100%;
   padding: 13px 18px;
   border-top: 1px solid var(--p-line-soft);
-  background: var(--p-inset);
-  color: var(--ph-blue-mid);
+  background: var(--ph-blue);
+  color: var(--ph-white);
   font: 800 12px/1 var(--display);
   transition: background-color 0.2s ease, color 0.2s ease;
 }
@@ -413,12 +415,8 @@
 }
 
 .politiciansPage .polCard:hover .polCardFooter {
-  background: var(--ph-blue);
+  background: var(--ph-blue-mid);
   color: var(--ph-white);
-}
-
-.politiciansPage .polCard:hover .polCardFooter i {
-  transform: translateX(3px);
 }
 
 /* ---------- Empty state ---------- */

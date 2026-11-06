@@ -62,8 +62,8 @@ public class NewsController {
     }
 
     @GetMapping("/news/{id}/comments")
-    public List<NewsCommentResponse> comments(@PathVariable UUID id) {
-        return newsService.comments(id);
+    public List<NewsCommentResponse> comments(@PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
+        return newsService.comments(id, userId(principal));
     }
 
     @PostMapping("/news/{id}/comments")

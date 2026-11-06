@@ -74,12 +74,12 @@ public class NewsService {
     }
 
     @Transactional(readOnly = true)
-    public List<NewsCommentResponse> comments(UUID articleId) {
+    public List<NewsCommentResponse> comments(UUID articleId, UUID userId) {
         articleRepository.findByIdAndStatus(articleId, "PUBLISHED")
                 .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
         return commentRepository.findByArticleIdAndHiddenFalseAndDeletedAtIsNull(articleId, Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
-                .map(mapper::toCommentResponse)
+                .map(comment -> mapper.toCommentResponse(comment, userId))
                 .toList();
     }
 
@@ -108,18 +108,15 @@ public class NewsService {
         }
         AuthUser user = user(userId);
         CommentVote vote = voteRepository.findByCommentIdAndUserUserId(commentId, userId).orElse(null);
-        if (vote != null && voteType.equals(vote.getVoteType())) {
-            voteRepository.delete(vote);
-            return mapper.toCommentResponse(comment);
+        if (vote != null) {
+            throw new HttpResponseException(409, "You have already voted on this comment.");
         }
-        if (vote == null) {
-            vote = new CommentVote();
-            vote.setComment(comment);
-            vote.setUser(user);
-        }
+        vote = new CommentVote();
+        vote.setComment(comment);
+        vote.setUser(user);
         vote.setVoteType(voteType);
         voteRepository.save(vote);
-        return mapper.toCommentResponse(comment);
+        return mapper.toCommentResponse(comment, userId);
     }
 
     @Transactional

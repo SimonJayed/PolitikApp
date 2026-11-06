@@ -11,9 +11,13 @@ public interface CommentVoteRepository extends JpaRepository<CommentVote, UUID> 
     Optional<CommentVote> findByCommentIdAndUserUserId(UUID commentId, UUID userId);
 
     @Query("""
-            select coalesce(sum(case when v.voteType = 'UP' then 1 when v.voteType = 'DOWN' then -1 else 0 end), 0)
+            select count(v)
             from CommentVote v
-            where v.comment.id = :commentId
+            where v.comment.id = :commentId and v.voteType = :voteType
             """)
-    int scoreForComment(@Param("commentId") UUID commentId);
+    int countByCommentIdAndVoteType(@Param("commentId") UUID commentId, @Param("voteType") String voteType);
+
+    default int scoreForComment(UUID commentId) {
+        return countByCommentIdAndVoteType(commentId, "UP") - countByCommentIdAndVoteType(commentId, "DOWN");
+    }
 }

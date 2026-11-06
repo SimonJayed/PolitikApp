@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { BarChart3Icon, FolderIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
-import { KpiGrid, ProfileSkeleton, StatusLine, TimelineLedger } from '../pageHelpers'
+import { KpiGrid, PaginationMini, ProfileSkeleton, StatusLine, TimelineLedger } from '../pageHelpers'
 import PoliticianEditor from '../../components/governance/PoliticianEditor'
 import EditSubmissionForm from '../../components/governance/EditSubmissionForm'
 import CongressProfilePanel from '../../components/governance/CongressProfilePanel'
@@ -11,7 +11,7 @@ import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { congressRequest } from '../../api/congress'
 import './Profile.css'
 
-const RECORDS_PER_PAGE = 10
+const RECORDS_PER_PAGE = 9
 
 function exportLedger(entries, profile, type) {
   const data = type === 'json'
@@ -62,15 +62,10 @@ function paginate(items, page, size = RECORDS_PER_PAGE) {
 }
 
 function Pager({ paged, onChange, label }) {
-  if (paged.total <= RECORDS_PER_PAGE) return null
   return (
     <nav className="prPager" aria-label={label}>
       <p>Showing <strong>{paged.from}–{paged.to}</strong> of <strong>{paged.total}</strong></p>
-      <div className="prPagerControls">
-        <button className="prPagerBtn secondary" type="button" disabled={paged.safePage <= 1} onClick={() => onChange(paged.safePage - 1)}>← Previous</button>
-        <span>Page {paged.safePage} of {paged.totalPages}</span>
-        <button className="prPagerBtn primary" type="button" disabled={paged.safePage >= paged.totalPages} onClick={() => onChange(paged.safePage + 1)}>Next →</button>
-      </div>
+      <PaginationMini page={paged.safePage} totalPages={paged.totalPages} onChange={onChange} />
     </nav>
   )
 }
