@@ -267,7 +267,7 @@ export default function PoliticianProfilePage({
                     src={profile.profileImageUrl}
                   />
                 )}
-                <span aria-hidden="true">{initials(profile.fullName)}</span>
+                {!profile.profileImageUrl && <span aria-hidden="true">{initials(profile.fullName)}</span>}
               </span>
               <div className="prIdentity">
                 <span className="prPositionPill">{position}</span>
