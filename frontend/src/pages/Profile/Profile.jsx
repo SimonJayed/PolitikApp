@@ -64,7 +64,7 @@ function paginate(items, page, size = RECORDS_PER_PAGE) {
 function Pager({ paged, onChange, label }) {
   return (
     <nav className="prPager" aria-label={label}>
-      <p>Showing <strong>{paged.from}–{paged.to}</strong> of <strong>{paged.total}</strong></p>
+      <p>Showing <strong>{paged.from}–{paged.to}</strong> of <strong>{paged.total}</strong> records</p>
       <PaginationMini page={paged.safePage} totalPages={paged.totalPages} onChange={onChange} />
     </nav>
   )
@@ -83,7 +83,10 @@ export default function PoliticianProfilePage({
 }) {
   const fallback = politicians.find((p) => p.politicianId === politicianId)
   const profile = state.data || fallback
-  const entries = state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || []
+  const dashboardMatchesProfile = state.data?.politicianId === politicianId
+  const entries = dashboardMatchesProfile
+    ? (state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || [])
+    : []
   const verifiedEntries = entries.filter((entry) => entry.actionDetails?.sourceReported !== true)
   const relatedNews = state.data?.relatedNews || []
   const [recordQuery, setRecordQuery] = useState('')
