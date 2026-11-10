@@ -1,6 +1,7 @@
 import { ArrowLeftIcon, ArrowRightIcon } from '../components/icons/Lucide'
 import KPIWidget from '../components/governance/KPIWidget'
 import TimelineLedgerDecoupled from '../components/governance/TimelineLedger'
+import { paginationHandlers } from './pagination'
 
 export function initialsFor(name = '') {
   return name.split(' ').filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
@@ -11,11 +12,12 @@ export function formatDate(value) {
   return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(new Date(value))
 }
 
-export function PaginationMini({ page, totalPages, onChange }) {
+export function PaginationMini({ page, totalPages, onChange, disabled = false }) {
+  const { previous, next } = paginationHandlers(page, totalPages, onChange)
   return <nav className="paginationMini" aria-label="Pagination">
-    <button type="button" disabled={page <= 1} onClick={() => onChange((current) => Math.max(1, current - 1))} className="paginationButton" aria-label="Previous page"><ArrowLeftIcon size={17} strokeWidth={2.4} /></button>
+    <button type="button" disabled={disabled || page <= 1} onClick={previous} className="paginationButton" aria-label="Previous page"><ArrowLeftIcon size={17} strokeWidth={2.4} /></button>
     <span className="paginationText" aria-live="polite">{page} / {totalPages}</span>
-    <button type="button" disabled={page >= totalPages} onClick={() => onChange((current) => Math.min(totalPages, current + 1))} className="paginationButton" aria-label="Next page"><ArrowRightIcon size={17} strokeWidth={2.4} /></button>
+    <button type="button" disabled={disabled || page >= totalPages} onClick={next} className="paginationButton" aria-label="Next page"><ArrowRightIcon size={17} strokeWidth={2.4} /></button>
   </nav>
 }
 

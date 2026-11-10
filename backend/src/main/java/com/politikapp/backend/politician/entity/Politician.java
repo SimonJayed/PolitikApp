@@ -29,19 +29,19 @@ public class Politician {
     @Column(name = "full_name", nullable = false, length = 150)
     private String fullName;
 
-    @Column(name = "position", nullable = false, length = 100)
+    @Column(name = "position", length = 100)
     private String position;
 
-    @Column(name = "jurisdiction", nullable = false, length = 100)
+    @Column(name = "jurisdiction", length = 100)
     private String jurisdiction;
 
     @Column(name = "party_affiliation", length = 100)
     private String partyAffiliation;
 
-    @Column(name = "term_start", nullable = false)
+    @Column(name = "term_start")
     private LocalDate termStart;
 
-    @Column(name = "term_end", nullable = false)
+    @Column(name = "term_end")
     private LocalDate termEnd;
 
     @Column(name = "profile_image_url", columnDefinition = "TEXT")
@@ -52,6 +52,10 @@ public class Politician {
 
     @Column(name = "status", length = 50)
     private String status = "ACTIVE";
+
+    @Column(name = "profile_origin", nullable = false, length = 40)
+    @org.hibernate.annotations.ColumnDefault("'ADMIN_CURATED'")
+    private String profileOrigin = "ADMIN_CURATED";
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

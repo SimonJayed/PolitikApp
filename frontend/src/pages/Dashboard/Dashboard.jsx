@@ -14,6 +14,7 @@ import {
 import './Dashboard.css'
 import NewsArticleReader from '../../components/NewsArticleReader'
 import { PaginationMini } from '../pageHelpers'
+import { summaryLabel } from '../../features/news/newsWorkflow'
 
 const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 const INSIGHTS_SAMPLE_SIZE = 50
@@ -452,6 +453,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                   <div className="postBody">
                     <span className="categoryPill"><i className="categoryDot" />{post.category}</span>
                     <h2>{post.headline}</h2>
+                    <p className="ty-meta">{summaryLabel(post)}</p>
                     {summaryText && <p className={longSummary && !isExpanded ? 'clamped' : ''}>{summaryText}</p>}
                     {longSummary && (
                       <button

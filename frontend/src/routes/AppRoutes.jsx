@@ -189,7 +189,7 @@ export default function AppRoutes({
 
   if (activeView === 'adminNews') {
     return currentRole === 'ADMIN'
-      ? <AdminNews token={token} user={activeUser} />
+      ? <AdminNews token={token} user={activeUser} politicians={politiciansState.data} />
       : <Dashboard onNavigate={navigateTo} onOpenProfile={openPoliticianProfile} politicians={politiciansState.data} user={activeUser} />
   }
 

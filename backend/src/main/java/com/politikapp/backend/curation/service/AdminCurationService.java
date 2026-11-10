@@ -51,8 +51,9 @@ public class AdminCurationService {
     public TimelineEntry addCuratedMetric(AdminMetricUpsertRequest request, UUID adminId) {
         log.info("Admin {} adding curated metric for politician {}", adminId, request.politicianId());
         validateSourceUrl(request.primarySourceUrl());
+        CivicRecordValidation.validate(request);
 
-        politicianRepository.findById(request.politicianId())
+        politicianRepository.findById(request.politicianId()).filter(profile -> !"ARCHIVED".equals(profile.getStatus()))
                 .orElseThrow(() -> new HttpResponseException(404, "Politician not found: " + request.politicianId()));
 
         ProfileEditSubmission submission = ProfileEditSubmission.directPublished(
@@ -78,14 +79,18 @@ public class AdminCurationService {
     public TimelineEntry updateCuratedMetric(UUID timelineId, AdminMetricUpsertRequest request, UUID adminId) {
         log.info("Admin {} updating curated metric {}", adminId, timelineId);
         validateSourceUrl(request.primarySourceUrl());
+        CivicRecordValidation.validate(request);
 
         TimelineEntry timeline = timelineEntryRepository.findById(timelineId)
                 .orElseThrow(() -> new HttpResponseException(404, "Timeline entry not found: " + timelineId));
 
+        if (timeline.getIsHidden()) throw new HttpResponseException(409, "Hidden records cannot be edited as published records.");
+
         if (!timeline.getPoliticianId().equals(request.politicianId())) {
             throw new HttpResponseException(400, "A record cannot be moved to another politician.");
         }
-        if (timeline.getActionDetails() != null && timeline.getActionDetails().containsKey("openCongressId")) {
+        if (timeline.getActionDetails() != null && (timeline.getActionDetails().containsKey("openCongressId")
+                || timeline.getActionDetails().containsKey("sourceKey"))) {
             throw new HttpResponseException(409, "Edit imported Congress records through the Congress verification workflow.");
         }
         timeline.setCategoryTag(request.categoryTag().trim());

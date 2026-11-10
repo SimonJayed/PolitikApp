@@ -7,7 +7,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.UUID;
-import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -47,8 +46,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 UUID userId = UUID.fromString(claims.get("uid", String.class));
 
                 // Real-time account lockout check
-                String accountStatus = resolveAccountStatus(userId);
-                if (!"ACTIVE".equals(accountStatus)) {
+                var accounts = jdbcTemplate.queryForList("SELECT account_status, role FROM users WHERE user_id = ?", userId);
+                if (accounts.isEmpty() || !"ACTIVE".equals(accounts.get(0).get("account_status"))) {
                     jakarta.servlet.http.HttpServletResponse res = (jakarta.servlet.http.HttpServletResponse) response;
                     res.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
                     res.setContentType("application/json");
@@ -59,7 +58,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 AuthPrincipal principal = new AuthPrincipal(
                         userId,
                         claims.getSubject(),
-                        jdbcTemplate.queryForObject("SELECT role FROM users WHERE user_id = ?", String.class, userId)
+                        (String) accounts.get(0).get("role")
                 );
                 SecurityContextHolder.getContext().setAuthentication(
                         new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities())
@@ -72,15 +71,4 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private String resolveAccountStatus(UUID userId) {
-        try {
-            return jdbcTemplate.queryForObject(
-                    "SELECT account_status FROM users WHERE user_id = ?",
-                    String.class,
-                    userId
-            );
-        } catch (EmptyResultDataAccessException exception) {
-            return null;
-        }
-    }
 }

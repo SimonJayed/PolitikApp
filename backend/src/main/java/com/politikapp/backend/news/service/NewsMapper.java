@@ -29,6 +29,21 @@ public class NewsMapper {
     }
 
     public NewsArticleResponse toArticleResponse(NewsArticle article, boolean saved, boolean admin) {
+        return toArticleResponse(article, saved, admin,
+                commentRepository.countByArticleIdAndHiddenFalseAndDeletedAtIsNull(article.getId()));
+    }
+
+    public org.springframework.data.domain.Page<NewsArticleResponse> toArticlePage(
+            org.springframework.data.domain.Page<NewsArticle> articles, java.util.Set<java.util.UUID> savedIds, boolean admin) {
+        if (articles.isEmpty()) return articles.map(article -> toArticleResponse(article, false, admin, 0));
+        var ids = articles.getContent().stream().map(NewsArticle::getId).toList();
+        var counts = commentRepository.countVisibleByArticleIds(ids).stream().collect(java.util.stream.Collectors.toMap(
+                NewsCommentRepository.ArticleCommentCount::getArticleId, NewsCommentRepository.ArticleCommentCount::getTotal));
+        return articles.map(article -> toArticleResponse(article, savedIds.contains(article.getId()), admin,
+                counts.getOrDefault(article.getId(), 0L)));
+    }
+
+    private NewsArticleResponse toArticleResponse(NewsArticle article, boolean saved, boolean admin, long commentCount) {
         return new NewsArticleResponse(
                 article.getId(),
                 firstNonBlank(article.getSuggestedTitle(), article.getOriginalTitle()),
@@ -44,11 +59,11 @@ public class NewsMapper {
                 article.getAiProcessingStatus(),
                 article.getOriginalContent(),
                 admin ? article.getReviewNotes() : null,
-                commentRepository.countByArticleIdAndHiddenFalseAndDeletedAtIsNull(article.getId()),
+                commentCount,
                 article.getReviewedAt() != null && "PUBLISHED".equals(article.getStatus()),
                 saved,
                 article.getRelatedPoliticians().stream().filter(p -> !"ARCHIVED".equals(p.getStatus())).map(p -> new com.politikapp.backend.news.dto.NewsDtos.RelatedPoliticianResponse(p.getPoliticianId(), p.getFullName())).toList(),
-                extraction(article.getExtractionData())
+                admin ? extraction(article.getExtractionData()) : json.createObjectNode()
         );
     }
 

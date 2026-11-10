@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangleIcon, SearchIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
-import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
+import { formatPosition } from '../../components/governance/positionConfig'
+import CongressMembershipSummary from '../../components/governance/CongressMembershipSummary'
+import { formatDisplayName } from '../../features/congress/displayName'
 import { initialsFor, PaginationMini, StatusLine } from '../pageHelpers'
 import './Politicians.css'
 import PoliticianEditor from '../../components/governance/PoliticianEditor'
@@ -146,6 +148,7 @@ export default function PoliticiansLoaderPanel({
 
         {pageItems.map((politician) => {
           const isNational = String(politician.jurisdiction || '').toUpperCase().includes('NATIONAL')
+          const displayName = formatDisplayName(politician.fullName)
           return (
             <button
               className={`polCard${isNational ? ' national' : ''}`}
@@ -161,12 +164,9 @@ export default function PoliticiansLoaderPanel({
               </span>
 
               <span className="polCardBody">
-                <strong className="polName">{politician.fullName}</strong>
-                <span className="polPosition">{formatPosition(politician.position) || 'UNKNOWN'}</span>
-                <span className="polMetaList">
-                  <small>{formatJurisdiction(politician.jurisdiction) || 'Unspecified'}</small>
-                  <small>{politician.partyAffiliation || 'Party not disclosed'}</small>
-                </span>
+                <strong className="polName">{displayName.name}</strong>
+                {displayName.needsReview && <small className="nameReviewFlag">Name formatting requires review</small>}
+                <CongressMembershipSummary politicianId={politician.politicianId} />
                 {politician.coaAuditDiscrepancies > 0 && (
                   <span className="polCoaChip">
                     <AlertTriangleIcon size={14} /> COA Findings ({politician.coaAuditDiscrepancies})

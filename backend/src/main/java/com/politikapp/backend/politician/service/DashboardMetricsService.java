@@ -16,21 +16,55 @@ public class DashboardMetricsService {
     private static final double BUDGET_REFERENCE_CEILING_PHP = 500_000_000.0;
 
     private final ProfileEditSubmissionRepository submissionRepository;
+    private final com.politikapp.backend.politician.repository.TimelineEntryRepository timelines;
 
     public DashboardMetricsService(ProfileEditSubmissionRepository submissionRepository) {
+        this(submissionRepository, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public DashboardMetricsService(ProfileEditSubmissionRepository submissionRepository,
+            com.politikapp.backend.politician.repository.TimelineEntryRepository timelines) {
         this.submissionRepository = submissionRepository;
+        this.timelines = timelines;
+    }
+
+    List<ProfileEditSubmission> includeVerifiedTimeline(Politician politician, List<ProfileEditSubmission> submissions) {
+        return includeVerifiedTimeline(submissions, timelines == null ? List.of()
+                : timelines.findActiveEntries(politician.getPoliticianId(), "PUBLISHED"));
+    }
+
+    Map<java.util.UUID, List<com.politikapp.backend.politician.entity.TimelineEntry>> verifiedTimelines(List<Politician> politicians) {
+        if (timelines == null || politicians.isEmpty()) return Map.of();
+        return timelines.findByPoliticianIdInAndPublicationStatusAndIsHiddenFalse(
+                politicians.stream().map(Politician::getPoliticianId).toList(), "PUBLISHED").stream()
+                .collect(java.util.stream.Collectors.groupingBy(com.politikapp.backend.politician.entity.TimelineEntry::getPoliticianId));
+    }
+
+    List<ProfileEditSubmission> includeVerifiedTimeline(List<ProfileEditSubmission> submissions,
+            List<com.politikapp.backend.politician.entity.TimelineEntry> entries) {
+        var result = new java.util.ArrayList<>(submissions);
+        for (var entry : entries) {
+            if (entry.getSubmissionId() != null || (entry.getActionDetails() != null
+                    && Boolean.TRUE.equals(entry.getActionDetails().get("sourceReported")))) continue;
+            var record = new ProfileEditSubmission();
+            record.setActionIdentifier(entry.getActionIdentifier());
+            record.setActionDetails(entry.getActionDetails());
+            result.add(record);
+        }
+        return result;
     }
 
     public SymmetricalKpiPayload buildKpiPayload(Politician politician) {
         List<ProfileEditSubmission> rawSubmissions = submissionRepository
                 .findByPoliticianIdAndStatus(politician.getPoliticianId(), "PUBLISHED");
 
-        List<ProfileEditSubmission> submissions = rawSubmissions.stream()
+        List<ProfileEditSubmission> submissions = includeVerifiedTimeline(politician, rawSubmissions).stream()
                 .filter(sub -> isActionAllowedForPosition(sub.getActionIdentifier(), politician.getPosition()))
                 .toList();
 
-        double billsAuthored = sumEffectiveLegislation(submissions);
-        double projectCompletions = sumEffectiveProjects(submissions);
+        double billsAuthored = countByAction(submissions, "SPONSORED_LEGISLATION");
+        double projectCompletions = countByAction(submissions, "PROJECT_COMPLETION");
         int coaDiscrepancies = Math.toIntExact(countByAction(submissions, "COA_FINDING"));
         BigDecimal totalBudget = submissions.stream()
                 .filter(submission -> "BUDGET_ALLOCATION".equals(submission.getActionIdentifier()))
@@ -49,8 +83,8 @@ public class DashboardMetricsService {
 
         double wgiScore = computeWgiCompositeScore(
                 politician.getPosition(),
-                billsAuthored,
-                projectCompletions,
+                sumEffectiveLegislation(submissions),
+                sumEffectiveProjects(submissions),
                 totalBudget,
                 totalFlagged,
                 coaDiscrepancies);

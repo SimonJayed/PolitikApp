@@ -45,7 +45,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(403).body(ApiErrorResponse.of(403, "You do not have permission to perform this action."));
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class})
+    @ExceptionHandler({IllegalArgumentException.class, org.springframework.http.converter.HttpMessageNotReadableException.class,
+            org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
     public ResponseEntity<ApiErrorResponse> invalidRequest(Exception exception) {
         return ResponseEntity.badRequest().body(ApiErrorResponse.of(400, "Invalid request. Check the supplied fields."));
     }

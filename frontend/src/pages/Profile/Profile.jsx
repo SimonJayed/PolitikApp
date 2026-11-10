@@ -6,6 +6,8 @@ import PoliticianEditor from '../../components/governance/PoliticianEditor'
 import EditSubmissionForm from '../../components/governance/EditSubmissionForm'
 import CongressProfilePanel from '../../components/governance/CongressProfilePanel'
 import CongressSourceSection from '../../components/governance/CongressSourceSection'
+import CongressMembershipSummary from '../../components/governance/CongressMembershipSummary'
+import { formatDisplayName } from '../../features/congress/displayName'
 import BaseModal from '../../components/BaseModal'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { congressRequest } from '../../api/congress'
@@ -242,11 +244,12 @@ export default function PoliticianProfilePage({
   const recordsPaged = paginate(visibleEntries, recordPage)
   const draftsPaged = paginate(congressDrafts, draftPage)
   const managePaged = paginate(verifiedEntries, managePage)
-  const position = profile ? formatPosition(profile.position) || 'UNKNOWN' : ''
+  const position = profile ? (profile.position ? formatPosition(profile.position) : 'Current office unverified') : ''
   const jurisdiction = profile ? formatJurisdiction(profile.jurisdiction) || 'Unspecified jurisdiction' : ''
   const party = profile ? profile.partyAffiliation || 'Party affiliation unavailable' : ''
   const term = profile ? `${profile.termStart || 'Start date unverified'} to ${profile.termEnd || 'End date unverified'}` : ''
   const termEnded = Boolean(profile?.termEnd && profile.termEnd < new Date().toISOString().slice(0, 10))
+  const displayName = formatDisplayName(profile?.fullName || '')
 
   return (
     <section className="workspace profilePage">
@@ -268,14 +271,15 @@ export default function PoliticianProfilePage({
                 {!profile.profileImageUrl && <span aria-hidden="true">{initials(profile.fullName)}</span>}
               </span>
               <div className="prIdentity">
-                <span className="prPositionPill">{position}</span>
-                <h1>{profile.fullName}</h1>
-                <p className="prIdentityMeta">
-                  <span>{jurisdiction}</span>
-                  <i aria-hidden="true" />
-                  <span>{party}</span>
-                </p>
-                <p className="prTerm">Term: {term}.</p>
+                <h1>{displayName.name}</h1>
+                {displayName.needsReview && <p className="prNotice">Name formatting requires review</p>}
+                <CongressMembershipSummary politicianId={politicianId} detailed />
+                {(profile.position || profile.jurisdiction || profile.partyAffiliation) && <p className="prIdentityMeta">
+                  {profile.position && <span>{position}</span>}
+                  {profile.jurisdiction && <span>{jurisdiction}</span>}
+                  {profile.partyAffiliation && <span>{party}</span>}
+                </p>}
+                {(profile.termStart || profile.termEnd) && <p className="prTerm">Recorded term: {term}.</p>}
                 {termEnded && (
                   <p className="prNotice">This term has ended; current office information may be outdated.</p>
                 )}

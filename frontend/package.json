@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "test": "node --test src/features/news/newsWorkflow.test.js src/features/news/sourceReference.test.js src/pages/pagination.test.js src/features/congress/congressHistory.test.js",
     "start": "vite",
     "dev": "vite",
     "build": "vite build",

@@ -1,0 +1,10 @@
+.congressMembershipSummary {
+  display: grid;
+  gap: 6px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.nameReviewFlag {
+  color: var(--p-text-2);
+}

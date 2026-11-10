@@ -147,7 +147,7 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
   const [pages, setPages] = useState({ left: 1, right: 1 })
   const closeRef = useRef(null)
   const modalCallback = useRef(onModalOpenChange)
-  modalCallback.current = onModalOpenChange
+  useEffect(() => { modalCallback.current = onModalOpenChange }, [onModalOpenChange])
 
   const jurisdictions = useMemo(
     () => [...new Set(politicians.map((politician) => politician.jurisdiction).filter(Boolean))],

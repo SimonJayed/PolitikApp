@@ -57,6 +57,8 @@ public class SourceTextExtractor {
         if (value == null || value.isBlank()) return null;
         try { return OffsetDateTime.parse(value).toInstant(); }
         catch (Exception ignored) { }
+        try { return LocalDate.parse(value).atStartOfDay(ZoneId.of("Asia/Manila")).toInstant(); }
+        catch (Exception ignored) { }
         try { return LocalDate.parse(value, DateTimeFormatter.ofPattern("MMMM d, uuuu", Locale.ENGLISH))
                 .atStartOfDay(ZoneId.of("Asia/Manila")).toInstant(); }
         catch (Exception ignored) { return null; }

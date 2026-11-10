@@ -81,13 +81,8 @@ public class PoliticianService {
                 .stream()
                 .collect(Collectors.groupingBy(ProfileEditSubmission::getPoliticianId));
 
-        return politicians.stream()
-                .filter(p -> !"ARCHIVED".equals(p.getStatus()))
-                .map(p -> politicianMapper.toResponse(
-                        p,
-                        submissionsByPolitician.getOrDefault(p.getPoliticianId(), Collections.emptyList())
-                ))
-                .toList();
+        return politicianMapper.toResponses(politicians.stream()
+                .filter(p -> !"ARCHIVED".equals(p.getStatus())).toList(), submissionsByPolitician);
     }
 
     @Transactional
@@ -96,8 +91,13 @@ public class PoliticianService {
                 .orElseThrow(() -> new HttpResponseException(404, "Not Found: Politician record does not exist."));
 
         politician.setFullName(updates.fullName());
-        politician.setPosition(updates.position());
-        politician.setJurisdiction(updates.jurisdiction());
+        if (!"CONGRESS_DATASET".equals(politician.getProfileOrigin())
+                && (updates.position()==null || updates.position().isBlank()
+                    || updates.jurisdiction()==null || updates.jurisdiction().isBlank())) {
+            throw new HttpResponseException(400, "Position and jurisdiction are required for curated profiles.");
+        }
+        politician.setPosition(updates.position()==null || updates.position().isBlank() ? null : updates.position().trim());
+        politician.setJurisdiction(updates.jurisdiction()==null || updates.jurisdiction().isBlank() ? null : updates.jurisdiction().trim());
         politician.setPartyAffiliation(updates.partyAffiliation());
         politician.setProfileImageUrl(updates.profileImageUrl());
         politician.setBiography(updates.biography());
