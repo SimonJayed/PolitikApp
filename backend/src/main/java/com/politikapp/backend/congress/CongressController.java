@@ -45,6 +45,17 @@ public class CongressController {
     @GetMapping("/configuration")
     public CongressImportService.Configuration configuration() { return imports.configuration(); }
 
+    public record PopulationRequest(@jakarta.validation.constraints.Pattern(regexp="[0-9a-f]{40}")
+                                    @jakarta.validation.constraints.NotBlank String commit, Boolean dryRun) {}
+
+    @org.springframework.beans.factory.annotation.Autowired
+    private CongressPopulationService population;
+
+    @PostMapping("/population")
+    public CongressPopulationService.Report populate(@Valid @RequestBody PopulationRequest request) {
+        return Boolean.FALSE.equals(request.dryRun()) ? population.populate(request.commit()) : population.preview(request.commit());
+    }
+
     @GetMapping("/previews/{jobId}/records")
     public List<JsonNode> previewList(@PathVariable UUID jobId, @RequestParam(defaultValue = "BILL") String kind,
             @RequestParam(defaultValue = "") String search, @RequestParam(required = false) String personId,

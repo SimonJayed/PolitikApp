@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CircleCheckIcon, ExternalLinkIcon, ScaleIcon, ArrowLeftIcon, ArrowRightIcon } from '../icons/Lucide';
 import { TimelineCardsSkeleton } from '../Skeletons';
 import { formatActionIdentifier } from './positionConfig';
+import { usableSourceUrl } from '../../features/news/sourceReference';
 import ChallengeRecordModal from '../moderation/ChallengeRecordModal';
 
 function PaginationMini({ page, totalPages, onChange }) {
@@ -170,7 +171,7 @@ export default function TimelineLedger({
                   flexWrap: 'wrap',
                   gap: '8px'
                 }}>
-                  {sourceUrl ? (
+                  {usableSourceUrl(sourceUrl) ? (
                     <a
                       href={sourceUrl}
                       rel="noreferrer"
@@ -197,7 +198,7 @@ export default function TimelineLedger({
                       Primary Source <ExternalLinkIcon size={13} />
                     </a>
                   ) : (
-                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>Citation pending</span>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>{sourceUrl ? 'Invalid citation; administrator review required' : 'Citation pending'}</span>
                   )}
 
                   {allowChallenge && (

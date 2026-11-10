@@ -24,7 +24,7 @@ class GovernmentNewsRetrievalServiceTests {
     private static final String ARTICLE = "https://www.dbm.gov.ph/index.php/homepage-2/4332-budget-scrutiny";
 
     @Test
-    void activeDostAndAgricultureRecordsArePausedWithoutDatabaseUpdates() {
+    void removedSourceRecordsAreExcludedEvenIfStillMarkedActive() {
         var sources = mock(GovernmentSourceRepository.class);
         var articles = mock(NewsArticleRepository.class);
         var client = mock(ApprovedSourceClient.class);
@@ -32,7 +32,11 @@ class GovernmentNewsRetrievalServiceTests {
         dost.setActive(true);
         var da = source("https://www.da.gov.ph/", "HTML");
         da.setActive(true);
-        when(sources.findByActiveTrue()).thenReturn(List.of(dost, da));
+        var senate = source("https://senate.gov.ph/", "HTML");
+        senate.setActive(true);
+        var pia = source("https://pia.gov.ph/", "HTML");
+        pia.setActive(true);
+        when(sources.findByActiveTrue()).thenReturn(List.of(dost, da, senate, pia));
         var service = new GovernmentNewsRetrievalService(sources, articles, mock(NewsAiService.class), client,
                 new SourceTextExtractor(), new ObjectMapper());
         ReflectionTestUtils.setField(service, "retrievalEnabled", true);
@@ -172,14 +176,14 @@ class GovernmentNewsRetrievalServiceTests {
         var sources = mock(GovernmentSourceRepository.class);
         var articles = mock(NewsArticleRepository.class);
         var client = mock(ApprovedSourceClient.class);
-        var pia = source("https://pia.gov.ph/", "HTML");
-        pia.setFeedUrl("https://pia.gov.ph/news/");
-        pia.setActive(true);
+        var blocked = source("https://www.officialgazette.gov.ph/", "RSS");
+        blocked.setFeedUrl("https://www.officialgazette.gov.ph/feed/");
+        blocked.setActive(true);
         var dbm = source("https://www.dbm.gov.ph/", "RSS");
         dbm.setFeedUrl("https://www.dbm.gov.ph/index.php/management-2?format=feed&type=rss");
         dbm.setActive(true);
-        when(sources.findByActiveTrue()).thenReturn(List.of(pia, dbm));
-        when(client.get(eq(pia), any(URI.class))).thenThrow(new IOException("HTTP 403"));
+        when(sources.findByActiveTrue()).thenReturn(List.of(blocked, dbm));
+        when(client.get(eq(blocked), any(URI.class))).thenThrow(new IOException("HTTP 403"));
         String feed = "<rss><channel><item><title>National budget undergoes scrutiny</title><link>" + ARTICLE + "</link></item></channel></rss>";
         when(client.get(eq(dbm), any(URI.class))).thenAnswer(call -> {
             URI uri = call.getArgument(1);
@@ -198,7 +202,7 @@ class GovernmentNewsRetrievalServiceTests {
         var result = service.fetchLatest();
         assertEquals(1, result.retrieved());
         assertEquals(1, result.failed());
-        assertNotNull(pia.getLastError());
+        assertNotNull(blocked.getLastError());
         assertEquals(2, result.sources().size());
         assertEquals(1, result.sources().stream().filter(row -> row.failed() > 0).count());
         verify(articles).save(any(NewsArticle.class));
@@ -256,18 +260,17 @@ class GovernmentNewsRetrievalServiceTests {
     }
 
     @Test
-    void blockedPiaListingReportsTheEndpointAndDoesNotCreateAnArticle() throws Exception {
+    void blockedListingReportsTheEndpointAndDoesNotCreateAnArticle() throws Exception {
         var sources = mock(GovernmentSourceRepository.class);
         var articles = mock(NewsArticleRepository.class);
         var client = mock(ApprovedSourceClient.class);
-        var pia = source("https://pia.gov.ph/", "HTML");
-        pia.setName("Philippine Information Agency");
-        pia.setFeedUrl("https://pia.gov.ph/news/");
-        pia.setActive(true);
-        when(sources.findAll()).thenReturn(List.of(pia));
-        when(sources.findByActiveTrue()).thenReturn(List.of(pia));
-        when(client.get(eq(pia), eq(URI.create(pia.getFeedUrl()))))
-                .thenThrow(new ApprovedSourceClient.HttpStatusException(403, URI.create(pia.getFeedUrl())));
+        var blocked = source("https://www.officialgazette.gov.ph/", "RSS");
+        blocked.setName("Official Gazette");
+        blocked.setFeedUrl("https://www.officialgazette.gov.ph/feed/");
+        blocked.setActive(true);
+        when(sources.findByActiveTrue()).thenReturn(List.of(blocked));
+        when(client.get(eq(blocked), eq(URI.create(blocked.getFeedUrl()))))
+                .thenThrow(new ApprovedSourceClient.HttpStatusException(403, URI.create(blocked.getFeedUrl())));
         var service = new GovernmentNewsRetrievalService(sources, articles, mock(NewsAiService.class), client,
                 new SourceTextExtractor(), new ObjectMapper());
         ReflectionTestUtils.setField(service, "retrievalEnabled", true);
@@ -277,7 +280,7 @@ class GovernmentNewsRetrievalServiceTests {
         assertEquals(1, result.blocked());
         assertEquals(0, result.incomplete());
         assertEquals("LISTING", result.sources().get(0).issues().get(0).stage());
-        assertEquals(pia.getFeedUrl(), result.sources().get(0).issues().get(0).url());
+        assertEquals(blocked.getFeedUrl(), result.sources().get(0).issues().get(0).url());
         verify(articles, never()).save(any());
     }
 

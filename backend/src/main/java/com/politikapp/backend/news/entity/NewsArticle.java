@@ -28,6 +28,7 @@ public class NewsArticle {
     private String extractionData;
 
     @jakarta.persistence.ManyToMany
+    @org.hibernate.annotations.BatchSize(size = 50)
     @jakarta.persistence.JoinTable(name = "news_politicians",
             joinColumns = @JoinColumn(name = "news_id"),
             inverseJoinColumns = @JoinColumn(name = "politician_id"))

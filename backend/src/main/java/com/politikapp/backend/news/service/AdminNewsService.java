@@ -54,25 +54,25 @@ public class AdminNewsService {
 
     @Transactional(readOnly = true)
     public Page<NewsArticleResponse> pending(Pageable pageable) {
-        return articleRepository.findByStatus("PENDING_REVIEW", pageable)
-                .map(article -> mapper.toArticleResponse(article, false));
+        return mapper.toArticlePage(articleRepository.findByStatus("PENDING_REVIEW", pageable), java.util.Set.of(), true);
     }
 
     @Transactional(readOnly = true)
     public Page<NewsArticleResponse> list(String status, Pageable pageable) {
         if (status == null || status.isBlank() || "ALL".equalsIgnoreCase(status)) {
-            return articleRepository.findAll(pageable).map(article -> mapper.toArticleResponse(article, false));
+            return mapper.toArticlePage(articleRepository.findAll(pageable), java.util.Set.of(), true);
         }
-        return articleRepository.findByStatus(status.trim().toUpperCase(), pageable)
-                .map(article -> mapper.toArticleResponse(article, false));
+        return mapper.toArticlePage(articleRepository.findByStatus(status.trim().toUpperCase(), pageable), java.util.Set.of(), true);
     }
 
     @Transactional(readOnly = true)
     public AdminNewsSummaryResponse summary() {
+        var counts = articleRepository.countByStatusGrouped().stream().collect(java.util.stream.Collectors.toMap(
+                NewsArticleRepository.StatusCount::getStatus, NewsArticleRepository.StatusCount::getTotal));
         return new AdminNewsSummaryResponse(
-                articleRepository.countByStatus("PENDING_REVIEW"),
-                articleRepository.countByStatus("PUBLISHED"),
-                articleRepository.countByStatus("REJECTED")
+                counts.getOrDefault("PENDING_REVIEW", 0L),
+                counts.getOrDefault("PUBLISHED", 0L),
+                counts.getOrDefault("REJECTED", 0L)
         );
     }
 
@@ -84,24 +84,32 @@ public class AdminNewsService {
 
     @Transactional(readOnly = true)
     public List<SourceResponse> sources() {
-        return sourceRepository.findAll().stream().map(mapper::toSourceResponse).toList();
+        return sourceRepository.findAll().stream().filter(source -> !GovernmentNewsSourcePolicy.removed(source))
+                .map(mapper::toSourceResponse).toList();
     }
 
     @Transactional
     public NewsArticleResponse processAi(UUID id, UUID adminId) {
+        AuthUser actor = admin(adminId);
         NewsArticle article = article(id);
+        requireStatus(article, "PENDING_REVIEW", "REJECTED", "APPROVED", "UNPUBLISHED");
         if ("INCOMPLETE".equals(article.getAiProcessingStatus())) {
             throw new HttpResponseException(409, "Full article text is unavailable; AI processing is not permitted for metadata-only records.");
         }
+        if (article.getOriginalContent() == null || article.getOriginalContent().isBlank()) {
+            throw new HttpResponseException(409, "Full source text is required before AI processing.");
+        }
         invalidateApproval(article);
         aiService.processArticle(article);
-        log(article, admin(adminId), "PROCESS_AI", "AI processing requested by admin.");
+        log(article, actor, "PROCESS_AI", "AI processing requested by admin; result=" + article.getAiProcessingStatus());
         return mapper.toArticleResponse(articleRepository.save(article), false);
     }
 
     @Transactional
     public NewsArticleResponse update(UUID id, ReviewArticleRequest request, UUID adminId) {
+        AuthUser actor = admin(adminId);
         NewsArticle article = article(id);
+        requireStatus(article, "PENDING_REVIEW", "APPROVED", "REJECTED", "PUBLISHED", "UNPUBLISHED");
         if (!List.of("Legislation", "Government Projects", "Public Spending", "Audit Reports", "Government Announcements").contains(request.category())) {
             throw new HttpResponseException(400, "Unsupported article category.");
         }
@@ -117,7 +125,7 @@ public class AdminNewsService {
         article.setCategory(request.category().trim());
         article.setReviewNotes(request.reviewNotes());
         invalidateApproval(article);
-        log(article, admin(adminId), "UPDATE", "Admin edited news article; fresh approval required.");
+        log(article, actor, "UPDATE", "Admin edited news article; fresh approval required.");
         return mapper.toArticleResponse(articleRepository.save(article), false);
     }
 
@@ -144,6 +152,7 @@ public class AdminNewsService {
     @Transactional
     public NewsArticleResponse reject(UUID id, RejectArticleRequest request, UUID adminId) {
         NewsArticle article = article(id);
+        requireStatus(article, "PENDING_REVIEW", "APPROVED");
         AuthUser admin = admin(adminId);
         article.setReviewedBy(admin);
         article.setReviewedAt(Instant.now());
@@ -165,7 +174,6 @@ public class AdminNewsService {
             throw new HttpResponseException(409, "Only reviewed articles can be published.");
         }
         AuthUser admin = admin(adminId);
-        article.setReviewedBy(admin);
         article.setReviewedAt(article.getReviewedAt() == null ? Instant.now() : article.getReviewedAt());
         article.setPublishedAt(Instant.now());
         article.setStatus("PUBLISHED");
@@ -190,6 +198,12 @@ public class AdminNewsService {
         return articleRepository.findForReview(id).orElseThrow(() -> new HttpResponseException(404, "News article not found."));
     }
 
+    private void requireStatus(NewsArticle article, String... allowed) {
+        if (!List.of(allowed).contains(article.getStatus())) {
+            throw new HttpResponseException(409, "This action is not permitted for the current article status.");
+        }
+    }
+
     @Transactional
     public SourceResponse saveSource(UUID id, com.politikapp.backend.news.dto.NewsDtos.SourceRequest request, UUID adminId) {
         AuthUser actor = admin(adminId);
@@ -199,6 +213,9 @@ public class AdminNewsService {
         source.setBaseUrl(request.baseUrl().trim());
         source.setFeedUrl(request.feedUrl() == null || request.feedUrl().isBlank() ? null : request.feedUrl().trim());
         source.setRetrievalType(request.retrievalType());
+        if (GovernmentNewsSourcePolicy.removed(source)) {
+            throw new HttpResponseException(400, "This source has been removed from government news retrieval.");
+        }
         try {
             sourceClient.validate(source, java.net.URI.create(source.getBaseUrl()));
             if (source.getFeedUrl() != null) sourceClient.validate(source, java.net.URI.create(source.getFeedUrl()));

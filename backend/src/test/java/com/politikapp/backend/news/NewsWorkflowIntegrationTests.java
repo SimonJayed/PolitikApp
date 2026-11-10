@@ -1,149 +1,138 @@
 package com.politikapp.backend.news;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.hamcrest.Matchers.greaterThanOrEqualTo;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.politikapp.backend.auth.entity.AuthUser;
 import com.politikapp.backend.auth.repository.AuthUserRepository;
 import com.politikapp.backend.auth.security.JwtService;
 import com.politikapp.backend.news.entity.GovernmentSource;
 import com.politikapp.backend.news.repository.GovernmentSourceRepository;
-import com.sun.net.httpserver.HttpServer;
-import java.net.InetSocketAddress;
+import com.politikapp.backend.news.service.ApprovedSourceClient;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-@SpringBootTest
+@SpringBootTest(properties = {"app.news.retrieval-enabled=true", "app.news.scheduled-enabled=false"})
 @AutoConfigureMockMvc
 class NewsWorkflowIntegrationTests {
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private ObjectMapper objectMapper;
-
-    @Autowired
-    private GovernmentSourceRepository sourceRepository;
-
-    @Autowired
-    private AuthUserRepository userRepository;
-
-    @Autowired
-    private JwtService jwtService;
+    @Autowired private MockMvc mvc;
+    @Autowired private ObjectMapper json;
+    @Autowired private GovernmentSourceRepository sources;
+    @Autowired private AuthUserRepository users;
+    @Autowired private JwtService jwt;
+    @MockitoBean private ApprovedSourceClient transport;
 
     @Test
-    void newsMovesFromRetrievalToPublicationAndPublicInteraction() throws Exception {
-        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        String uniquePath = "/article-" + UUID.randomUUID();
-        try {
-            int port = server.getAddress().getPort();
-            String baseUrl = "http://127.0.0.1:" + port;
-            String articleUrl = baseUrl + uniquePath;
-            String rss = """
-                    <?xml version="1.0" encoding="UTF-8"?>
-                    <rss version="2.0"><channel>
-                      <title>Mock Government Source</title>
-                      <item>
-                        <title>Agency announces public infrastructure project</title>
-                        <link>%s</link>
-                        <pubDate>Tue, 13 Oct 2026 09:20:51 +0000</pubDate>
-                        <description><![CDATA[The agency announced a public infrastructure project for admin verification.]]></description>
-                      </item>
-                    </channel></rss>
-                    """.formatted(articleUrl);
-            server.createContext("/feed", exchange -> {
-                byte[] body = rss.getBytes(StandardCharsets.UTF_8);
-                exchange.getResponseHeaders().set("Content-Type", "application/rss+xml");
-                exchange.sendResponseHeaders(200, body.length);
-                exchange.getResponseBody().write(body);
-                exchange.close();
-            });
-            server.start();
-
-            GovernmentSource source = new GovernmentSource();
-            source.setName("Mock Government Source " + UUID.randomUUID());
-            source.setBaseUrl(baseUrl);
-            source.setFeedUrl(baseUrl + "/feed");
-            source.setRetrievalType("RSS");
-            source.setActive(true);
-            sourceRepository.save(source);
-
-            AuthUser admin = saveUser("admin-" + UUID.randomUUID() + "@politikapp.test", "ADMIN");
-            AuthUser contributor = saveUser("user-" + UUID.randomUUID() + "@politikapp.test", "CONTRIBUTOR");
-            String adminToken = jwtService.generateAccessToken(admin.getUserId(), admin.getEmail(), admin.getRole());
-            String userToken = jwtService.generateAccessToken(contributor.getUserId(), contributor.getEmail(), contributor.getRole());
-
-            mockMvc.perform(post("/api/admin/news/fetch").header("Authorization", "Bearer " + adminToken))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.retrieved").value(1));
-
-            mockMvc.perform(get("/api/admin/news/summary").header("Authorization", "Bearer " + adminToken))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.pendingReview", greaterThanOrEqualTo(1)))
-                    .andExpect(jsonPath("$.publishedArticles").exists())
-                    .andExpect(jsonPath("$.rejectedArticles").exists());
-
-            mockMvc.perform(get("/api/admin/news/summary").header("Authorization", "Bearer " + userToken))
-                    .andExpect(status().isForbidden());
-
-            String pendingJson = mockMvc.perform(get("/api/admin/news?status=PENDING_REVIEW")
-                            .header("Authorization", "Bearer " + adminToken))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content[0].status").value("PENDING_REVIEW"))
-                    .andReturn().getResponse().getContentAsString();
-            String articleId = objectMapper.readTree(pendingJson).at("/content/0/id").asText();
-
-            mockMvc.perform(post("/api/admin/news/{id}/approve", articleId).header("Authorization", "Bearer " + adminToken))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value("APPROVED"));
-            mockMvc.perform(post("/api/admin/news/{id}/publish", articleId).header("Authorization", "Bearer " + adminToken))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.status").value("PUBLISHED"));
-
-            mockMvc.perform(get("/api/news"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.content[0].id").value(articleId));
-
-            String commentJson = mockMvc.perform(post("/api/news/{id}/comments", articleId)
-                            .header("Authorization", "Bearer " + userToken)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"content\":\"This is an anonymous civic comment.\"}"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.authorLabel").value("Anonymous"))
-                    .andReturn().getResponse().getContentAsString();
-            JsonNode comment = objectMapper.readTree(commentJson);
-
-            mockMvc.perform(post("/api/comments/{id}/vote", comment.get("id").asText())
-                            .header("Authorization", "Bearer " + userToken)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content("{\"voteType\":\"UP\"}"))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.score").value(1));
-        } finally {
-            server.stop(0);
+    void retrievalReviewPublicationInteractionsAndRemovalUseRealApisAndDatabase() throws Exception {
+        String unique = UUID.randomUUID().toString();
+        String url = "https://www.dbm.gov.ph/article-" + unique;
+        var source = new GovernmentSource();
+        source.setName("Test fixture source " + unique);
+        source.setBaseUrl("https://www.dbm.gov.ph/");
+        source.setFeedUrl("https://www.dbm.gov.ph/test-feed-" + unique);
+        source.setRetrievalType("RSS");
+        source.setActive(true);
+        sources.save(source);
+        String date = DateTimeFormatter.RFC_1123_DATE_TIME.format(Instant.now().atZone(ZoneOffset.UTC));
+        String rss = "<rss><channel><item><title>National budget review</title><link>" + url
+                + "</link><pubDate>" + date + "</pubDate></item></channel></rss>";
+        String page = "<html><h1>National budget review</h1><article>"
+                + "This is test fixture content describing a national budget review, not a factual government record. "
+                + "It is used only in the isolated test database to verify extraction, review and publication behavior."
+                + "</article></html>";
+        when(transport.get(any(), any(URI.class))).thenAnswer(call -> {
+            URI uri = call.getArgument(1);
+            return new ApprovedSourceClient.Download(
+                    (uri.toString().equals(source.getFeedUrl()) ? rss : page).getBytes(StandardCharsets.UTF_8),
+                    "text/html", uri);
+        });
+        String admin = token("ADMIN");
+        String user = token("CONTRIBUTOR");
+        mvc.perform(post("/api/admin/news/fetch").header("Authorization", "Bearer " + user))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/api/admin/news/fetch").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isAccepted());
+        String state = "RUNNING";
+        for (int attempt = 0; attempt < 100 && state.equals("RUNNING"); attempt++) {
+            var result = mvc.perform(get("/api/admin/news/fetch-status").header("Authorization", "Bearer " + admin))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+            state = json.readTree(result).path("state").asText();
+            if (state.equals("RUNNING")) Thread.sleep(20);
         }
+        org.junit.jupiter.api.Assertions.assertEquals("COMPLETED", state);
+        String pending = mvc.perform(get("/api/admin/news?status=PENDING_REVIEW").header("Authorization", "Bearer " + admin))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        String id = json.readTree(pending).path("content").get(0).path("id").asText();
+        mvc.perform(get("/api/news/{id}", id)).andExpect(status().isNotFound());
+        action(id, "publish", admin, 409);
+        action(id, "process-ai", admin, 200);
+        action(id, "approve", admin, 200);
+        mvc.perform(get("/api/news/{id}", id)).andExpect(status().isNotFound());
+        action(id, "publish", admin, 200);
+        action(id, "approve", admin, 409);
+        action(id, "process-ai", admin, 409);
+        mvc.perform(get("/api/news/{id}", id)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.reviewNotes").doesNotExist())
+                .andExpect(jsonPath("$.extraction").isEmpty());
+        mvc.perform(post("/api/news/{id}/comments", id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"content\":\"Guest\"}")).andExpect(status().isUnauthorized());
+        String comment = mvc.perform(post("/api/news/{id}/comments", id).header("Authorization", "Bearer " + user)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"Test comment\"}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.authorLabel").value("Anonymous"))
+                .andReturn().getResponse().getContentAsString();
+        String commentId = json.readTree(comment).path("id").asText();
+        for (int expected : new int[]{1, 0}) {
+            mvc.perform(post("/api/comments/{id}/vote", commentId).header("Authorization", "Bearer " + user)
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"voteType\":\"UP\"}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.upvotes").value(expected));
+        }
+        mvc.perform(post("/api/news/{id}/save", id).header("Authorization", "Bearer " + user))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/me/saved-posts").header("Authorization", "Bearer " + user))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(id));
+        action(id, "unpublish", admin, 200);
+        mvc.perform(get("/api/news/{id}", id)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/news/{id}/comments", id)).andExpect(status().isNotFound());
+        mvc.perform(get("/api/me/saved-posts").header("Authorization", "Bearer " + user))
+                .andExpect(status().isOk()).andExpect(jsonPath("$").isEmpty());
+        action(id, "unpublish", admin, 409);
+        action(id, "process-ai", admin, 200);
+        mvc.perform(post("/api/admin/news/{id}/reject", id).header("Authorization", "Bearer " + admin)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"reason\":\"Test rejection\"}"))
+                .andExpect(status().isOk());
+        action(id, "publish", admin, 409);
+        mvc.perform(get("/api/news/{id}", id)).andExpect(status().isNotFound());
     }
 
-    private AuthUser saveUser(String email, String role) {
-        AuthUser user = new AuthUser();
+    private void action(String id, String action, String token, int expected) throws Exception {
+        mvc.perform(post("/api/admin/news/{id}/{action}", id, action).header("Authorization", "Bearer " + token))
+                .andExpect(status().is(expected));
+    }
+
+    private String token(String role) {
+        var user = new AuthUser();
         user.setUserId(UUID.randomUUID());
-        user.setEmail(email);
-        user.setUsername(email.substring(0, Math.min(email.indexOf("@"), 50)));
-        user.setFullName(role + " Test User");
-        user.setPasswordHash("hash");
+        user.setEmail(UUID.randomUUID() + "@test.invalid");
+        user.setUsername(UUID.randomUUID().toString());
+        user.setFullName("Test fixture user");
+        user.setPasswordHash("test-fixture-hash");
         user.setRole(role);
         user.setAccountStatus("ACTIVE");
-        return userRepository.save(user);
+        users.save(user);
+        return jwt.generateAccessToken(user.getUserId(), user.getEmail(), role);
     }
 }

@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface TimelineEntryRepository extends JpaRepository<TimelineEntry, UUID> {
+    List<TimelineEntry> findByPoliticianIdInAndPublicationStatusAndIsHiddenFalse(java.util.Collection<UUID> politicianIds, String publicationStatus);
+
     @Query("SELECT t FROM TimelineEntry t WHERE t.politicianId = :politicianId AND t.publicationStatus = :publicationStatus AND t.isHidden = false ORDER BY t.createdAt DESC")
     List<TimelineEntry> findActiveEntries(UUID politicianId, String publicationStatus);
 

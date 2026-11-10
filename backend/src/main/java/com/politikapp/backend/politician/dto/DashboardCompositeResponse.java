@@ -21,7 +21,8 @@ public record DashboardCompositeResponse(
         BigDecimal trackedBudgetAllocated,
         double wgiCompositeScore,
         List<TimelineEntryResponse> publishedTimelineLedger,
-        List<ProfileNewsItem> relatedNews
+        List<ProfileNewsItem> relatedNews,
+        String profileOrigin
 ) {
     public record ProfileNewsItem(UUID id, String headline, String sourceName, String sourceUrl,
                                   String summary, java.time.Instant publishedAt) {}

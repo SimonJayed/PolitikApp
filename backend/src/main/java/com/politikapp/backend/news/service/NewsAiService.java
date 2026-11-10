@@ -35,12 +35,24 @@ public class NewsAiService {
     @Value("${app.ai.gemini-api-key:${GEMINI_API_KEY:}}")
     private String apiKey;
 
+    @Value("${app.ai.discovery-enabled:false}")
+    private boolean discoveryEnabled;
+
+    @org.springframework.beans.factory.annotation.Autowired
     public NewsAiService(ObjectMapper objectMapper, com.politikapp.backend.politician.repository.PoliticianRepository politicians) {
+        this(objectMapper, politicians, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
+    }
+
+    NewsAiService(ObjectMapper objectMapper, com.politikapp.backend.politician.repository.PoliticianRepository politicians,
+                  HttpClient httpClient) {
         this.objectMapper = objectMapper;
         this.politicians = politicians;
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(10))
-                .build();
+        this.httpClient = httpClient;
+    }
+
+    public void prepareRetrievedDraft(NewsArticle article) {
+        if (discoveryEnabled) processArticle(article);
+        else prepareDeterministicDraft(article);
     }
 
     public void processArticle(NewsArticle article) {
@@ -55,6 +67,9 @@ public class NewsAiService {
         article.getRelatedPoliticians().clear();
 
         try {
+            if (safeText(article.getOriginalContent()).isBlank()) {
+                throw new IllegalArgumentException("Full source text is required for AI processing.");
+            }
             if (!aiEnabled || mockMode) {
                 applyMockResponse(article);
                 return;
@@ -65,8 +80,12 @@ public class NewsAiService {
 
             GeminiNewsResult result = callGemini(article);
             String sourceText = safeText(article.getOriginalContent());
-            if (result.evidenceExcerpts() != null && result.evidenceExcerpts().stream()
-                    .anyMatch(excerpt -> excerpt == null || !sourceText.contains(safeText(excerpt)))) {
+            if (result.evidenceExcerpts() == null || result.evidenceExcerpts().isEmpty()
+                    || result.evidenceExcerpts().stream().anyMatch(excerpt -> excerpt == null
+                        || safeText(excerpt).isBlank() || !sourceText.contains(safeText(excerpt)))
+                    || (result.legislativeRecords() != null && result.legislativeRecords().stream()
+                        .anyMatch(record -> record == null || safeText(record.evidenceExcerpt()).isBlank()
+                            || !sourceText.contains(safeText(record.evidenceExcerpt()))))) {
                 throw new IllegalArgumentException("AI evidence could not be matched to the source text.");
             }
             article.setExtractionData(objectMapper.writeValueAsString(result));
@@ -81,11 +100,17 @@ public class NewsAiService {
             article.setAiSummary(result.summary().trim());
             article.setAiKeyPoints(String.join("\n", result.keyPoints() == null ? List.of() : result.keyPoints()));
             article.setCategory(validCategory(result.category()));
-            article.setAiModel(model);
+            article.setAiModel(normalizeModel(model));
             article.setAiProcessingStatus("COMPLETED");
             article.setReviewNotes("Review extracted evidence and uncertainty flags against the original source before approval.");
             article.setStatus("PENDING_REVIEW");
         } catch (Exception exception) {
+            if (exception instanceof InterruptedException) Thread.currentThread().interrupt();
+            article.setExtractionData(null);
+            article.getRelatedPoliticians().clear();
+            article.setSuggestedTitle(article.getOriginalTitle());
+            article.setAiSummary(null);
+            article.setAiKeyPoints(null);
             article.setAiModel(model);
             article.setAiProcessingStatus("FAILED");
             article.setStatus("PENDING_REVIEW");
@@ -106,8 +131,9 @@ public class NewsAiService {
     }
 
     private GeminiNewsResult callGemini(NewsArticle article) throws Exception {
+        String modelId = normalizeModel(model);
         String endpoint = "https://generativelanguage.googleapis.com/v1beta/models/"
-                + URLEncoder.encode(model, StandardCharsets.UTF_8)
+                + URLEncoder.encode(modelId, StandardCharsets.UTF_8)
                 + ":generateContent";
         Map<String, Object> payload = Map.of(
                 "contents", List.of(Map.of(
@@ -130,10 +156,18 @@ public class NewsAiService {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() == 429) {
-            throw new IllegalStateException("Gemini quota or rate limit reached.");
+            throw new IllegalStateException(providerError(response, "Gemini quota or rate limit reached (HTTP 429)."));
+        }
+        if (response.statusCode() == 404) {
+            throw new IllegalStateException(providerError(response,
+                    "Gemini model " + modelId + " is unavailable for generation (HTTP 404)."));
+        }
+        if (response.statusCode() == 503) {
+            throw new IllegalStateException(providerError(response,
+                    "Gemini is temporarily unavailable (HTTP 503). Retry processing later."));
         }
         if (response.statusCode() >= 400) {
-            throw new IllegalStateException("Gemini API returned HTTP " + response.statusCode());
+            throw new IllegalStateException(providerError(response, "Gemini API returned HTTP " + response.statusCode() + "."));
         }
 
         JsonNode root = objectMapper.readTree(response.body());
@@ -142,6 +176,27 @@ public class NewsAiService {
             throw new IllegalStateException("Gemini response did not include JSON text.");
         }
         return parseGeminiJson(textNode.asText());
+    }
+
+    private String normalizeModel(String configured) {
+        String name = configured.trim();
+        if (name.startsWith("models/")) name = name.substring("models/".length());
+        if (!name.matches("[A-Za-z0-9][A-Za-z0-9._-]*")) {
+            throw new IllegalArgumentException("GEMINI_MODEL must be a model ID or models/model-id.");
+        }
+        return name;
+    }
+
+    private String providerError(HttpResponse<String> response, String fallback) {
+        try {
+            var message = objectMapper.readTree(response.body()).at("/error/message");
+            if (message.isTextual() && !message.asText().isBlank()) {
+                return fallback + " " + safeError(message.asText());
+            }
+        } catch (Exception ignored) {
+            // Non-JSON provider failures must not replace the useful HTTP status.
+        }
+        return fallback;
     }
 
     GeminiNewsResult parseGeminiJson(String text) throws Exception {
@@ -223,6 +278,23 @@ public class NewsAiService {
         }
         if (result.suggestedHeadline() == null || result.suggestedHeadline().isBlank()) {
             throw new IllegalArgumentException("Gemini JSON did not include a suggested headline.");
+        }
+        if (result.suggestedHeadline().length() > 300 || result.summary().length() > 3000) {
+            throw new IllegalArgumentException("AI headline or summary exceeds review field limits.");
+        }
+        validateStrings(result.keyPoints(), 30, 600);
+        validateStrings(result.relevantPoliticians(), 50, 150);
+        validateStrings(result.evidenceExcerpts(), 30, 5000);
+        validateStrings(result.uncertaintyFlags(), 30, 1000);
+        if (result.legislativeRecords() != null && result.legislativeRecords().size() > 50) {
+            throw new IllegalArgumentException("Too many AI legislative records.");
+        }
+    }
+
+    private void validateStrings(List<String> values, int count, int length) {
+        if (values != null && (values.size() > count
+                || values.stream().anyMatch(value -> value == null || value.isBlank() || value.length() > length))) {
+            throw new IllegalArgumentException("AI response contains invalid list fields.");
         }
     }
 

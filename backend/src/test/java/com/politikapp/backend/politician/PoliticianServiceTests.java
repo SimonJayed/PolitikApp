@@ -68,8 +68,7 @@ class PoliticianServiceTests {
         PoliticianResponse r1 = mock(PoliticianResponse.class);
         PoliticianResponse r2 = mock(PoliticianResponse.class);
 
-        when(politicianMapper.toResponse(eq(p1), any())).thenReturn(r1);
-        when(politicianMapper.toResponse(eq(p2), any())).thenReturn(r2);
+        when(politicianMapper.toResponses(eq(List.of(p1, p2)), any())).thenReturn(List.of(r1, r2));
 
         List<PoliticianResponse> results = politicianService.getPoliticians();
 

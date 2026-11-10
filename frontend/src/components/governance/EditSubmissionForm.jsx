@@ -33,7 +33,7 @@ export const actionDetailFields = {
     {
       key: 'legislativeStatus',
       label: 'Legislative Status',
-      options: ['Filed', 'In Committee', 'Approved', 'Rejected', 'Withdrawn'],
+      options: ['Filed', 'In Committee', 'Approved', 'Enacted', 'Rejected', 'Withdrawn', 'Unknown'],
       type: 'select',
     },
   ],
@@ -137,6 +137,16 @@ export default function EditSubmissionForm({
         <label>
           Impact Summary
           <textarea name="impactSummary" required rows="5" value={formData.impactSummary} onChange={onChange} />
+        </label>
+
+        <label>Source organization
+          <input maxLength={200} value={formData.actionDetails?.sourceOrganization || ''} onChange={event => onDetailChange('sourceOrganization', event.target.value)} />
+        </label>
+        <label>Official record identifier (when available)
+          <input maxLength={200} value={formData.actionDetails?.externalRecordId || ''} onChange={event => onDetailChange('externalRecordId', event.target.value)} />
+        </label>
+        <label>Verification notes
+          <textarea name="verificationNotes" maxLength={5000} value={formData.verificationNotes || ''} onChange={onChange} />
         </label>
 
         <div className="formFooter">

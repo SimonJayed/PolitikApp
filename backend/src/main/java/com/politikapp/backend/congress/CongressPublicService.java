@@ -22,8 +22,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class CongressPublicService {
     public record SourceRecord(String key, String type, String title, String congress, String chamber,
                                String filedDate, String reportedStatus, String sourceUrl, String datasetUrl,
-                               String revision, JsonNode history, String reviewState) {}
-    public record Page(List<SourceRecord> records, int total, int offset, int limit) {}
+                               String revision, JsonNode history, String reviewState, String billNumber) {}
+    public record Page(List<SourceRecord> records, int total, int offset, int limit, List<SourceRecord> memberships) {}
     public record ApprovalResult(int approved, int alreadyApproved) {}
 
     private final JdbcTemplate jdbc;
@@ -46,11 +46,12 @@ public class CongressPublicService {
             if (row != null) visible.put(row.key(), row);
         }
         List<SourceRecord> rows = new ArrayList<>(visible.values());
-        rows.sort(Comparator.comparing(SourceRecord::type).thenComparing(SourceRecord::congress,
-                Comparator.nullsLast(Comparator.reverseOrder())).thenComparing(SourceRecord::title));
+        rows.sort(Comparator.comparing(SourceRecord::type).thenComparing(
+                row -> congressNumber(row.congress()), Comparator.reverseOrder()).thenComparing(SourceRecord::title));
         int start = Math.min(Math.max(0, offset), rows.size());
         int size = Math.max(1, Math.min(50, limit));
-        return new Page(rows.subList(start, Math.min(rows.size(), start + size)), rows.size(), start, size);
+        return new Page(rows.subList(start, Math.min(rows.size(), start + size)), rows.size(), start, size,
+                rows.stream().filter(row -> "MEMBERSHIP".equals(row.type())).toList());
     }
 
     @Transactional(readOnly = true)
@@ -106,6 +107,7 @@ public class CongressPublicService {
             details.put("congress", row.congress());
             details.put("chamber", row.chamber());
             details.put("reportedStatus", row.reportedStatus());
+            details.put("billNumber", row.billNumber());
             details.put("history", row.history());
             entry.setActionDetails(details);
             entry.setPublicationStatus("PUBLISHED");
@@ -129,7 +131,7 @@ public class CongressPublicService {
                 String.valueOf(d.getOrDefault("title", entry.getSummary())), string(d.get("congress")),
                 string(d.get("chamber")), string(d.get("filedDate")), string(d.get("reportedStatus")),
                 entry.getSourceUrl(), string(d.get("datasetUrl")), string(d.get("sourceRevision")),
-                json.valueToTree(d.get("history")), "ADMIN_REVIEWED_SOURCE");
+                json.valueToTree(d.get("history")), "ADMIN_REVIEWED_SOURCE", string(d.get("billNumber")));
     }
 
     private List<SourceRecord> sourceRows(UUID politicianId, boolean current) {
@@ -147,18 +149,20 @@ public class CongressPublicService {
             JsonNode urls = parse(rs.getString(6));
             String sourceUrl = urls.isArray() && !urls.isEmpty() ? urls.get(0).asText(null) : null;
             JsonNode memberships = payload.path("memberships");
+            var membershipKeys = new java.util.HashSet<String>();
             for (int i = 0; i < memberships.size(); i++) {
                 JsonNode m = memberships.get(i);
+                if (!membershipKeys.add(m.path("type").asText()+":"+m.path("subtype").asText()+":"+m.path("congress").asText())) continue;
                 String key = "membership:" + rs.getString(1) + ":" + i;
                 rows.add(new SourceRecord(key, "MEMBERSHIP", "Congress " + m.path("congress").asText("Unknown") + " membership",
                         m.path("congress").asText("Unknown"), m.path("subtype").asText("Unknown"), null,
                         m.path("position").asText("Not provided"), sourceUrl,
-                        datasetUrl(rs.getString(3), rs.getString(4)), rs.getString(2), json.createArrayNode(), "SOURCE_REPORTED"));
+                        datasetUrl(rs.getString(3), rs.getString(4)), rs.getString(2), json.createArrayNode(), "SOURCE_REPORTED", null));
             }
         }, politicianId);
         String billsSql = """
                 select distinct on (e.id) e.id, r.revision, r.title, r.congress::text, r.subtype,
-                       r.filed_date::text, r.payload::text, r.source_urls::text, r.dataset_commit, r.dataset_path
+                       r.filed_date::text, r.payload::text, r.source_urls::text, r.dataset_commit, r.dataset_path, r.bill_number
                 from public.open_congress_entities person
                 join public.open_congress_relationships rel on rel.target_id=person.id and rel.relationship='AUTHORED_BY'
                 join public.open_congress_entities e on e.id=rel.entity_id and e.kind='BILL'
@@ -172,7 +176,7 @@ public class CongressPublicService {
             String url = urls.isArray() && !urls.isEmpty() ? urls.get(0).asText(null) : null;
             rows.add(new SourceRecord("bill:" + rs.getString(1), "BILL", rs.getString(3), rs.getString(4),
                     rs.getString(5), rs.getString(6), payload.path("status").isMissingNode() ? "Unknown" : payload.path("status").toString(),
-                    url, datasetUrl(rs.getString(9), rs.getString(10)), rs.getString(2), payload.path("history"), "SOURCE_REPORTED"));
+                    url, datasetUrl(rs.getString(9), rs.getString(10)), rs.getString(2), payload.path("history"), "SOURCE_REPORTED", rs.getString(11)));
         }, politicianId);
         return rows;
     }
@@ -192,4 +196,8 @@ public class CongressPublicService {
     }
 
     private static String string(Object value) { return value == null ? null : String.valueOf(value); }
+
+    private static int congressNumber(String value) {
+        try { return Integer.parseInt(value); } catch (Exception ignored) { return -1; }
+    }
 }

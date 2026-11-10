@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { API_BASE_URL, readApiResponse } from '../../api/client'
-import { congressRequest } from '../../api/congress'
+import { congressRequest, publicCongressRecords } from '../../api/congress'
 import { PaginationMini } from '../../pages/pageHelpers'
+import { chamberLabel, groupBillsByCongress, summarizeMemberships } from '../../features/congress/congressHistory'
 
 // Styles for this component live in Profile.css (classes prefixed "cs" and "pr").
 const PAGE_LIMIT = 5
@@ -93,10 +93,15 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
   const [selected, setSelected] = useState([])
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const load = useCallback(async (offset = 0) => {
-    const result = await fetch(`${API_BASE_URL}/api/politicians/${politicianId}/congress-records?offset=${offset}&limit=${PAGE_LIMIT}`).then(readApiResponse)
-    setPage(result)
+  const load = useCallback(async (offset = 0, refresh = false) => {
+    setLoading(true)
+    setError('')
+    try {
+      const result = await publicCongressRecords(politicianId, offset, PAGE_LIMIT, refresh)
+      setPage(result)
+    } finally { setLoading(false) }
   }, [politicianId])
 
   const loadPending = useCallback(async () => {
@@ -123,7 +128,7 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
         method: 'POST', body: JSON.stringify({ keys: selected }),
       })
       setSelected([])
-      await Promise.all([load(page.offset), loadPending()])
+      await Promise.all([load(page.offset, true), loadPending()])
     } catch (cause) { setError(cause.message) }
     finally { setBusy(false) }
   }
@@ -136,6 +141,16 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
   const pendingSafePage = Math.min(pendingPage, pendingTotalPages)
   const pendingStart = (pendingSafePage - 1) * PAGE_LIMIT
   const pendingItems = pending.slice(pendingStart, pendingStart + PAGE_LIMIT)
+  const membershipGroups = new Map()
+  for (const membership of page.memberships || []) {
+    const chamber = chamberLabel(membership.chamber) || 'Chamber unavailable'
+    if (!membershipGroups.has(chamber)) membershipGroups.set(chamber, [])
+    membershipGroups.get(chamber).push(membership)
+  }
+  const recordGroups = [
+    ...[...membershipGroups].map(([chamber, records]) => ({ label: `${chamber} memberships`, records })),
+    ...groupBillsByCongress(page.records).map(([congress, records]) => ({ label: `${congress} bills`, records })),
+  ]
 
   return <section className="prCard csSection" aria-label="Congress source records">
     <div className="prCardHead">
@@ -146,14 +161,20 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
       {page.total > 0 && <span className="prCount">{page.total}</span>}
     </div>
     <p className="csDisclaimer">Authorship does not mean a bill became law. Dates and statuses may be incomplete; use the original links to check each record.</p>
+    {summarizeMemberships(page.memberships).map(history => <p className="csMeta" key={history}>{history}</p>)}
     {error && <p className="csAlert" role="alert">{error}</p>}
-    {page.records.length === 0 && !error && <p className="csEmpty">No linked Congress source records are available for this profile.</p>}
+    {loading && <p role="status">Loading Congress records…</p>}
+    {!loading && !error && !(page.memberships || []).length && <p className="csEmpty">Congressional membership unavailable</p>}
+    {!loading && page.records.length === 0 && !error && <p className="csEmpty">No linked Congress source records are available for this profile.</p>}
 
     {page.records.length > 0 && <>
-      <ul className="csList">{page.records.map(record => <li className="csRecord" key={record.key}>
+      <p className="prCardHint">All available memberships appear below. Bills are grouped by Congress within each page; use the page controls to browse all associated records.</p>
+      {recordGroups.map(group => <section key={group.label} aria-label={group.label}>
+      <h3 className="csSubTitle">{group.label}</h3>
+      <ul className="csList">{group.records.map(record => <li className="csRecord" key={record.key}>
         <div className="csRecordHead">
-          <strong className="csTitle">{record.title || 'Untitled record'}</strong>
-          <span className={`csType ${record.type === 'BILL' ? 'bill' : 'member'}`}>{record.type === 'BILL' ? 'Reported authorship' : 'Reported membership'}</span>
+          <strong className="csTitle">{record.billNumber ? `${String(record.chamber || '').toUpperCase()} ${record.billNumber}: ` : ''}{record.title || 'Untitled record'}</strong>
+          <span className={`csType ${record.type === 'BILL' ? 'bill' : 'member'}`}>{record.type === 'BILL' ? `Reported authorship (${record.relationshipType || record.relationship || 'AUTHORED_BY'})` : 'Reported membership'}</span>
         </div>
         <p className="csMeta">Congress {record.congress || 'unknown'} · {record.chamber || 'chamber unknown'}{record.filedDate ? ` · Filed ${formatDateLabel(record.filedDate)}` : ''}</p>
         <StatusBlock label={record.type === 'BILL' ? 'Reported status' : 'Reported position'} value={record.reportedStatus} />
@@ -166,6 +187,7 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
           {record.datasetUrl && <ExternalLink href={record.datasetUrl}>Dataset record</ExternalLink>}
         </div>}
       </li>)}</ul>
+      </section>)}
 
       <nav className="prPager" aria-label="Congress record pagination">
         <p>Showing <strong>{page.offset + 1}–{Math.min(page.offset + page.records.length, page.total)}</strong> of <strong>{page.total}</strong></p>

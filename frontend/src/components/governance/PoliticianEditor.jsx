@@ -25,7 +25,7 @@ export default function PoliticianEditor({ politician, token, onSaved, onClose }
     <form className="editorPanel" onSubmit={save}>
       <h2>{politician ? 'Edit politician' : 'Add politician'}</h2>
       {[['fullName', 'Full name', 150], ['position', 'Government position', 100], ['jurisdiction', 'Jurisdiction', 100], ['partyAffiliation', 'Party affiliation', 100], ['profileImageUrl', 'Profile image URL', 2048]].map(([field, label, max]) => <label key={field}>{label}
-        <input required={['fullName', 'position', 'jurisdiction'].includes(field)} type={field === 'profileImageUrl' ? 'url' : 'text'} maxLength={max} value={draft[field] || ''} onChange={event => setDraft({ ...draft, [field]: event.target.value })} />
+        <input required={field === 'fullName' || (politician?.profileOrigin !== 'CONGRESS_DATASET' && ['position', 'jurisdiction'].includes(field))} type={field === 'profileImageUrl' ? 'url' : 'text'} maxLength={max} value={draft[field] || ''} onChange={event => setDraft({ ...draft, [field]: event.target.value })} />
       </label>)}
       <label>Biography<textarea maxLength={10000} value={draft.biography || ''} onChange={event => setDraft({ ...draft, biography: event.target.value })} /></label>
       {!politician && <><label>Term start<input required type="date" value={draft.termStart} onChange={event => setDraft({ ...draft, termStart: event.target.value })} /></label>

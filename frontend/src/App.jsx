@@ -6,6 +6,10 @@ import { useAuth } from './auth/AuthContext'
 import TopNav from './components/TopNav'
 import AuthPromptModal from './components/AuthPromptModal'
 import WgiMethodologyModal from './components/governance/WgiMethodologyModal'
+import { formatActionIdentifier, formatPosition, formatJurisdiction, POSITION_OPTIONS } from './components/governance/positionConfig'
+import ConfirmActionModal from './components/ConfirmActionModal'
+import KPIWidget from './components/governance/KPIWidget'
+import TimelineLedgerDecoupled from './components/governance/TimelineLedger'
 
 import './components/governance.css'
 import './components/moderation.css'
@@ -23,6 +27,10 @@ import ComparisonPanelExtracted from './pages/Compare/Compare'
 import {
   AlertTriangleIcon,
   ArrowLeftIcon,
+  ArrowRightIcon,
+  BarChart3Icon,
+  FolderIcon,
+  ScaleIcon,
 } from './components/icons/Lucide'
 
 
@@ -132,18 +140,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     setAuthModalConfig({ isOpen: true, actionType })
   }, [])
 
-  const selectView = useCallback((viewKey) => {
-    if (!isAuthenticated && guestRestrictedViews.has(viewKey)) {
-      triggerAuthPrompt('preview')
-      return
-    }
-    if (['adminNews', 'openCongress', 'submit', 'moderation'].includes(viewKey) && currentRole !== 'ADMIN') {
-      navigateTo('dashboard')
-      return
-    }
-    navigateTo(viewKey)
-  }, [currentRole, isAuthenticated, triggerAuthPrompt])
-
   const activeHeader = {
     account: ['Account', 'User Account'],
     auth: ['Authentication', 'Civic Account Access'],
@@ -161,29 +157,26 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'adminNews', 'openCongress', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
-  const loadPoliticians = useCallback(async () => {
+  const politicianRequest = useRef(null)
+  const loadPoliticians = useCallback(() => {
+    if (politicianRequest.current) return politicianRequest.current
     setPoliticiansState((current) => ({ ...current, message: 'Loading politicians...', status: 'loading' }))
-    try {
-      const data = await fetch(`${API_BASE_URL}/api/politicians`).then(readApiResponse)
+    politicianRequest.current = fetch(`${API_BASE_URL}/api/politicians`).then(readApiResponse).then(data => {
       setPoliticiansState({ data, message: '', selected: data[0] || null, status: 'success' })
-    } catch (error) {
+    }).catch(error => {
       setPoliticiansState({ data: [], message: error.message, selected: null, status: 'error' })
-    }
+    }).finally(() => { politicianRequest.current = null })
+    return politicianRequest.current
   }, [])
 
+  const politicianListRequested = useRef(false)
+  // Load once on entry, then refresh when returning to the dashboard.
   useEffect(() => {
-    loadPoliticians()
-  }, [loadPoliticians])
-
-  // Re-fetch politician list whenever the dashboard view becomes active so that
-  // KPIs (billsAuthored, projectCompletions, WGI score, etc.) reflect any
-  // submissions that were approved/published since the initial page load.
-  useEffect(() => {
-    if (activeView === 'dashboard') {
+    if (!politicianListRequested.current || activeView === 'dashboard') {
+      politicianListRequested.current = true
       loadPoliticians()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView])
+  }, [activeView, loadPoliticians])
 
   useEffect(() => {
     let cancelled = false
@@ -311,6 +304,18 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [])
+
+  const selectView = useCallback((viewKey) => {
+    if (!isAuthenticated && guestRestrictedViews.has(viewKey)) {
+      triggerAuthPrompt('preview')
+      return
+    }
+    if (['adminNews', 'openCongress', 'submit', 'moderation'].includes(viewKey) && currentRole !== 'ADMIN') {
+      navigateTo('dashboard')
+      return
+    }
+    navigateTo(viewKey)
+  }, [currentRole, isAuthenticated, triggerAuthPrompt, navigateTo])
 
   useEffect(() => {
     const initialRestrictedView = initialPath === '/admin/dashboard' ? 'adminNews' : initialViewParam
@@ -616,7 +621,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
         )}
         {activeView === 'profileMatrix' && <ProfileMatrix token={token} user={activeUser} />}
         {activeView === 'openCongress' && currentRole === 'ADMIN' && <OpenCongress token={token} politicians={politiciansState.data} />}
-        {activeView === 'adminNews' && <AdminNews token={token} user={activeUser} />}
+        {activeView === 'adminNews' && <AdminNews token={token} user={activeUser} politicians={politiciansState.data} />}
         {activeView === 'moderation' && (
           currentRole !== 'ADMIN' ? (
             <section className="workspace">

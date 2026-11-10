@@ -76,7 +76,8 @@ public class DashboardService {
                 kpis.trackedBudgetAllocated(),
                 kpis.wgiCompositeScore(),
                 timeline,
-                news
+                news,
+                politician.getProfileOrigin()
         );
     }
 }

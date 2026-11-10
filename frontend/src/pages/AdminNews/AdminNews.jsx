@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { canProcessAi, canRejectArticle, planBulkNewsAction, runConcurrentNewsActions } from '../../features/news/newsWorkflow'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import {
   CircleXIcon,
@@ -11,7 +12,13 @@ import './AdminNews.css'
 import SourceManager from './SourceManager'
 import { PageSkeleton, PaginationMini } from '../pageHelpers'
 
-const statuses = ['ALL', 'PENDING_REVIEW', 'APPROVED', 'PUBLISHED', 'REJECTED', 'UNPUBLISHED', 'FAILED']
+const statuses = ['ALL', 'PENDING_REVIEW', 'APPROVED', 'PUBLISHED', 'REJECTED', 'UNPUBLISHED', 'RETRIEVED', 'PROCESSING', 'FAILED']
+const bulkActions = [
+  { path: 'approve', label: 'Approve', progress: 'Approving', past: 'approved', tone: 'Approve' },
+  { path: 'publish', label: 'Publish', progress: 'Publishing', past: 'published', tone: 'Publish' },
+  { path: 'unpublish', label: 'Unpublish', progress: 'Unpublishing', past: 'unpublished', tone: 'Unpublish' },
+  { path: 'reject', label: 'Reject', progress: 'Rejecting', past: 'rejected', tone: 'Reject' },
+]
 const categories = ['Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 
 function formatDate(value) {
@@ -38,14 +45,13 @@ function truncate(value, max = 92) {
   return value.length > max ? `${value.slice(0, max - 1).trim()}...` : value
 }
 
-export default function AdminNews({ token, user }) {
+export default function AdminNews({ token, user, politicians = [] }) {
   const [status, setStatus] = useState('ALL')
   const [summary, setSummary] = useState({ pendingReview: 0, publishedArticles: 0, rejectedArticles: 0 })
   const [items, setItems] = useState([])
   const [selectedId, setSelectedId] = useState(null)
   const [selectedIds, setSelectedIds] = useState([])
   const [selected, setSelected] = useState(null)
-  const [politicians, setPoliticians] = useState([])
   const [page, setPage] = useState(0)
   const [retrieving, setRetrieving] = useState(false)
   const [sourceRefresh, setSourceRefresh] = useState(0)
@@ -60,9 +66,11 @@ export default function AdminNews({ token, user }) {
   const [draft, setDraft] = useState({ suggestedTitle: '', aiSummary: '', category: 'Government Announcements', reviewNotes: '' })
   const [state, setState] = useState({ status: 'idle', message: '' })
   const [actionState, setActionState] = useState({ status: 'idle', message: '' })
+  const [bulkProgress, setBulkProgress] = useState(null)
 
   const isAdmin = user?.role === 'ADMIN'
-  const busy = state.status === 'loading' || actionState.status === 'loading'
+  const busy = state.status === 'loading' || actionState.status === 'loading' || Boolean(bulkProgress)
+  const bulkPlans = Object.fromEntries(bulkActions.map(action => [action.path, planBulkNewsAction(items, selectedIds, action.path)]))
   const isMockOutput = selected?.aiProcessingStatus === 'MOCKED'
   const isDeterministic = selected?.aiProcessingStatus === 'DETERMINISTIC'
   const isIncomplete = selected?.aiProcessingStatus === 'INCOMPLETE'
@@ -93,12 +101,6 @@ export default function AdminNews({ token, user }) {
 
   useEffect(() => {
     if (!isAdmin || !token) return
-    fetch(`${API_BASE_URL}/api/politicians`).then(readApiResponse).then(setPoliticians)
-      .catch(error => setActionState({ status: 'error', message: error.message }))
-  }, [isAdmin, token])
-
-  useEffect(() => {
-    if (!isAdmin || !token) return
     fetch(`${API_BASE_URL}/api/admin/news/sources`, { headers: { Authorization: `Bearer ${token}` } })
       .then(readApiResponse).then(rows => {
         const active = rows.filter(source => source.active)
@@ -114,11 +116,9 @@ export default function AdminNews({ token, user }) {
   }, [isAdmin, token, status, page])
 
   useEffect(() => {
-    setSelected(null)
-    if (!selectedId || !token) return
-    loadArticle(selectedId)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedId, token])
+    // Queue responses already contain the complete review fields.
+    setSelected(items.find(item => item.id === selectedId) || null)
+  }, [selectedId, items])
 
   useEffect(() => {
     if (!selected) return
@@ -148,26 +148,15 @@ export default function AdminNews({ token, user }) {
       const nextItems = Array.isArray(queueData.content) ? queueData.content : []
       setSummary(summaryData)
       setItems(nextItems)
-      setTotalPages(queueData.totalPages || 1)
+      const nextTotalPages = Math.max(1, queueData.totalPages || 1)
+      setTotalPages(nextTotalPages)
+      if (page >= nextTotalPages) setPage(nextTotalPages - 1)
       setSelectedId((current) => (current && nextItems.some((item) => item.id === current) ? current : nextItems[0]?.id || null))
       setSelectedIds((current) => current.filter((id) => nextItems.some((item) => item.id === id)))
       setState({ status: 'success', message: '' })
     } catch (error) {
       setItems([])
       setState({ status: 'error', message: error.message })
-    }
-  }
-
-  async function loadArticle(id) {
-    setActionState({ status: 'loading', message: 'Loading article...' })
-    try {
-      const data = await fetch(`${API_BASE_URL}/api/admin/news/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(readApiResponse)
-      setSelected(data)
-      setActionState({ status: 'idle', message: '' })
-    } catch (error) {
-      setActionState({ status: 'error', message: error.message })
     }
   }
 
@@ -239,30 +228,36 @@ export default function AdminNews({ token, user }) {
   }
 
   async function runBulkAction(path) {
-    if (!selectedIds.length) return
-    const actionLabel = path === 'process-ai' ? 'process' : path
-    const pastTense = { approve: 'approved', publish: 'published', reject: 'rejected', unpublish: 'unpublished' }[path] || `${actionLabel}ed`
-    setActionState({ status: 'loading', message: `${actionLabel[0].toUpperCase()}${actionLabel.slice(1)}ing ${selectedIds.length} articles...` })
+    if (busy) return
+    const { eligible, skipped } = planBulkNewsAction(items, selectedIds, path)
+    if (!eligible.length) return
+    const action = bulkActions.find(item => item.path === path)
+    setActionState({ status: 'loading', message: `${action.progress} ${eligible.length} articles...` })
+    setBulkProgress({ path, label: action.progress, processed: 0, total: eligible.length })
     const failures = []
     let completed = 0
-    for (const id of selectedIds) {
-      try {
-        await fetch(`${API_BASE_URL}/api/admin/news/${id}/${path}`, {
+    await runConcurrentNewsActions(eligible, item =>
+        fetch(`${API_BASE_URL}/api/admin/news/${item.id}/${path}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: token ? `Bearer ${token}` : '' },
           body: path === 'reject' ? JSON.stringify({ reason: 'Rejected by admin.' }) : undefined,
-        }).then(readApiResponse)
+        }).then(readApiResponse), ({ item, value, error, processed }) => {
+      if (error) {
+        failures.push(`${truncate(item.originalTitle || item.headline, 60)}: ${error.message}`)
+      } else {
+        if (item.id === selectedId) setSelected(value)
         completed += 1
-      } catch (error) {
-        failures.push(`${id}: ${error.message}`)
       }
-    }
+      setBulkProgress({ path, label: action.progress, processed, total: eligible.length })
+    })
     // These run once, after every selected article has been processed.
     setSelectedIds([])
     await loadDashboard()
+    setBulkProgress(null)
+    const result = `${completed} article${completed === 1 ? '' : 's'} ${action.past}.${skipped ? ` ${skipped} skipped because they are not eligible for this action.` : ''}`
     setActionState(failures.length
-      ? { status: 'error', message: `${completed} article${completed === 1 ? '' : 's'} updated; ${failures.length} failed. ${failures.join(' ')}` }
-      : { status: 'success', message: `${completed} article${completed === 1 ? '' : 's'} ${pastTense} successfully.` })
+      ? { status: 'error', message: `${result} ${failures.length} failed. ${failures.join(' ')}` }
+      : { status: 'success', message: result })
   }
 
   if (!isAdmin) {
@@ -280,7 +275,7 @@ export default function AdminNews({ token, user }) {
   ]
 
   return (
-    <section className="adminNewsShell">
+    <section className="adminNewsShell" aria-busy={busy || retrieving}>
       <header className="adminHero">
         <div className="adminHeroText">
           <span className="adminHeroKicker">Administrator dashboard</span>
@@ -333,14 +328,23 @@ export default function AdminNews({ token, user }) {
 
       <SourceManager token={token} refreshSignal={sourceRefresh} />
 
-      <div className="adminNewsToolbar" aria-label="Article status filter">
-        {statuses.map((item) => (
-          <button disabled={busy} className={status === item ? 'active' : ''} key={item} onClick={() => { setStatus(item); setPage(0) }} type="button">
-            {item !== 'ALL' && <i className={`statusDot ${statusTone(item)}`} aria-hidden="true" />}
-            {displayStatus(item)}
-          </button>
-        ))}
+      <div className="adminNewsFilters">
+        <label htmlFor="admin-news-status">Article status
+          <select id="admin-news-status" disabled={busy} value={status} onChange={event => {
+            setStatus(event.target.value); setPage(0); setSelectedIds([])
+          }}>
+            {statuses.map(item => <option value={item} key={item}>{item === 'ALL' ? 'All statuses' : displayStatus(item)}</option>)}
+          </select>
+        </label>
+        <p>Filter by status, then select articles on this page. Approve requires Pending Review and a summary; incomplete articles cannot be approved or published.</p>
       </div>
+
+      {(busy || retrieving) && <div className="adminNewsLoading" role="status" aria-live="polite">
+        <span className="adminLoadingSpinner" aria-hidden="true" />
+        <span>{bulkProgress ? `${bulkProgress.label} articles: ${bulkProgress.processed} of ${bulkProgress.total}`
+          : retrieving ? 'Fetching government articles...'
+            : actionState.status === 'loading' ? actionState.message : 'Loading news...'}</span>
+      </div>}
 
       {state.status === 'error' && state.message && <div className={`adminNewsNotice ${state.status}`}>{state.message}</div>}
       {actionState.message && actionState.status !== 'loading' && <div className={`adminNewsNotice ${actionState.status}`}>{actionState.message}</div>}
@@ -359,17 +363,19 @@ export default function AdminNews({ token, user }) {
               <label className="adminSelectAll">
                 <input
                   type="checkbox"
-                  checked={selectedIds.length === items.length}
+                  checked={items.every(item => selectedIds.includes(item.id))}
                   onChange={(event) => setSelectedIds(event.target.checked ? items.map((item) => item.id) : [])}
                   disabled={busy}
                 />
                 Select all on page
               </label>
               <span>{selectedIds.length} selected</span>
-              <button className="adminBtn adminBtnSm adminBtnApprove" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('approve')}>Approve</button>
-              <button className="adminBtn adminBtnSm adminBtnPublish" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('publish')}>Publish</button>
-              <button className="adminBtn adminBtnSm adminBtnUnpublish" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('unpublish')}>Unpublish</button>
-              <button className="adminBtn adminBtnSm adminBtnReject" disabled={busy || !selectedIds.length} type="button" onClick={() => runBulkAction('reject')}>Reject</button>
+              {bulkActions.map(action => <button key={action.path} className={`adminBtn adminBtnSm adminBtn${action.tone}`}
+                disabled={busy || !bulkPlans[action.path].eligible.length} type="button" onClick={() => runBulkAction(action.path)}>
+                {bulkProgress?.path === action.path && <span className="adminLoadingSpinner" aria-hidden="true" />}
+                {action.label} ({bulkPlans[action.path].eligible.length})
+              </button>)}
+              <span className="adminBulkHint">Counts show eligible selected articles.</span>
             </div>
             <table className="adminArticleTable">
               <thead>
@@ -420,7 +426,7 @@ export default function AdminNews({ token, user }) {
       </section>
 
       <nav className="adminPager" aria-label="Review queue pages">
-        <PaginationMini page={page + 1} totalPages={totalPages} onChange={nextPage => setPage(nextPage - 1)} />
+        <PaginationMini disabled={busy} page={page + 1} totalPages={totalPages} onChange={nextPage => { setSelectedIds([]); setPage(nextPage - 1) }} />
       </nav>
 
       <section className="adminReviewPanel" aria-label="Article review">
@@ -502,11 +508,11 @@ export default function AdminNews({ token, user }) {
 
             <footer className="reviewActions">
               <button className="adminBtn adminBtnSave" disabled={busy} type="button" onClick={saveEdits}>Save Edits</button>
-              <button className="adminBtn adminBtnAi" disabled={busy || isDeterministic || isIncomplete} type="button" onClick={() => runAction('process-ai', { loading: 'Processing article with AI...', success: 'AI processing completed. Review the result before publishing.' })}>Process with AI</button>
+              <button className="adminBtn adminBtnAi" disabled={busy || dirty || !canProcessAi(selected)} type="button" onClick={() => runAction('process-ai', { loading: 'Processing article with AI...', success: 'Processing finished. Check its status and review the draft before approval.' })}>Process with AI</button>
               <button className="adminBtn adminBtnApprove" disabled={busy || dirty || isIncomplete || selected.status !== 'PENDING_REVIEW'} type="button" onClick={() => runAction('approve', { success: 'Article approved. Publish separately when ready.' })}>Approve</button>
               <button className="adminBtn adminBtnPublish" disabled={busy || dirty || isIncomplete || !['APPROVED', 'UNPUBLISHED'].includes(selected.status)} type="button" onClick={() => runAction('publish', { success: 'Article published.' })}>Publish</button>
               <button className="adminBtn adminBtnUnpublish" disabled={busy || selected.status !== 'PUBLISHED'} type="button" onClick={() => runAction('unpublish', { success: 'Article unpublished.' })}>Unpublish</button>
-              <button className="adminBtn adminBtnReject" disabled={busy} type="button" onClick={() => runAction('reject', { body: { reason: draft.reviewNotes || 'Rejected by admin.' }, success: 'Article rejected.' })}>Reject</button>
+              <button className="adminBtn adminBtnReject" disabled={busy || !canRejectArticle(selected)} type="button" onClick={() => runAction('reject', { body: { reason: draft.reviewNotes || 'Rejected by admin.' }, success: 'Article rejected.' })}>Reject</button>
             </footer>
 
             {selectedIndex >= 0 && <p className="adminMeta">Article {selectedIndex + 1} of {items.length}</p>}

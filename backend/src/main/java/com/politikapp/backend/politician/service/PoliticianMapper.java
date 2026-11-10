@@ -32,7 +32,19 @@ public class PoliticianMapper {
 
     public PoliticianResponse toResponse(Politician politician, List<ProfileEditSubmission> rawSubmissions) {
         List<ProfileEditSubmission> safeRaw = rawSubmissions != null ? rawSubmissions : Collections.emptyList();
-        List<ProfileEditSubmission> submissions = safeRaw.stream()
+        return toResponseWithRecords(politician, dashboardMetricsService.includeVerifiedTimeline(politician, safeRaw));
+    }
+
+    public List<PoliticianResponse> toResponses(List<Politician> politicians,
+            Map<java.util.UUID, List<ProfileEditSubmission>> submissionsByPolitician) {
+        var timelines = dashboardMetricsService.verifiedTimelines(politicians);
+        return politicians.stream().map(p -> toResponseWithRecords(p, dashboardMetricsService.includeVerifiedTimeline(
+                submissionsByPolitician.getOrDefault(p.getPoliticianId(), List.of()),
+                timelines.getOrDefault(p.getPoliticianId(), List.of())))).toList();
+    }
+
+    private PoliticianResponse toResponseWithRecords(Politician politician, List<ProfileEditSubmission> records) {
+        List<ProfileEditSubmission> submissions = records.stream()
                 .filter(sub -> dashboardMetricsService.isActionAllowedForPosition(sub.getActionIdentifier(), politician.getPosition()))
                 .toList();
 
@@ -83,7 +95,8 @@ public class PoliticianMapper {
                 totalBudget,
                 billsAuthored,
                 projectCompletions,
-                wgiScore
+                wgiScore,
+                politician.getProfileOrigin()
         );
     }
 

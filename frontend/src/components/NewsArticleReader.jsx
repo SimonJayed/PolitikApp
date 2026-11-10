@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import BaseModal from './BaseModal'
 import { API_BASE_URL, readApiResponse } from '../api/client'
+import { summaryLabel } from '../features/news/newsWorkflow'
 
 export default function NewsArticleReader({ id, token, onClose, onOpenProfile }) {
   const [article, setArticle] = useState(null)
@@ -19,7 +20,7 @@ export default function NewsArticleReader({ id, token, onClose, onOpenProfile })
     {!article && !error && <div className="articleReaderSkeleton" aria-label="Loading article" aria-busy="true"><span /><span /><span /></div>}
     {article && <article>
       <h1>{article.headline}</h1><p>{article.sourceName} · {article.category}</p>
-      <h2>Summary</h2><p>{article.summary}</p>
+      <h2>Summary</h2><p className="ty-meta">{summaryLabel(article)}</p><p>{article.summary}</p>
       <ul>{article.keyPoints?.map((point, index) => <li key={index}>{point}</li>)}</ul>
       <h2>Source text</h2><p style={{ whiteSpace: 'pre-wrap' }}>{article.originalContent || 'Source text is unavailable. Read the original source below.'}</p>
       <a href={article.sourceUrl} target="_blank" rel="noreferrer">Read the original government source</a>

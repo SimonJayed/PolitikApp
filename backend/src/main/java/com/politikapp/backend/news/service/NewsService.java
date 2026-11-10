@@ -58,8 +58,10 @@ public class NewsService {
     public Page<NewsArticleResponse> published(String category, String query, Pageable pageable, UUID userId) {
         String normalizedCategory = category == null || category.equalsIgnoreCase("All") || category.equalsIgnoreCase("Latest") || category.isBlank() ? null : category;
         String normalizedQuery = query == null || query.isBlank() ? null : query.trim();
-        return articleRepository.findAll(publishedSpec(normalizedCategory, normalizedQuery), pageable)
-                .map(article -> mapper.toArticleResponse(article, isSaved(userId, article.getId()), false));
+        var articles = articleRepository.findAll(publishedSpec(normalizedCategory, normalizedQuery), pageable);
+        var savedIds = userId == null || articles.isEmpty() ? Set.<UUID>of()
+                : savedPostRepository.findSavedArticleIds(userId, articles.getContent().stream().map(NewsArticle::getId).toList());
+        return mapper.toArticlePage(articles, savedIds, false);
     }
 
     @Transactional(readOnly = true)
@@ -103,7 +105,7 @@ public class NewsService {
         }
         NewsComment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new HttpResponseException(404, "Comment not found."));
-        if (comment.isHidden() || comment.getDeletedAt() != null || !"PUBLISHED".equals(comment.getArticle().getStatus())) {
+        if (comment.isHidden() || comment.getDeletedAt() != null || !publicArticle(comment.getArticle())) {
             throw new HttpResponseException(409, "This comment cannot be voted on.");
         }
         AuthUser user = user(userId);
@@ -143,7 +145,7 @@ public class NewsService {
     public List<UserCommentResponse> userComments(UUID userId) {
             if (userId == null) throw new HttpResponseException(401, "Authentication required.");
             return commentRepository.findByUserUserIdAndHiddenFalseAndDeletedAtIsNullOrderByCreatedAtDesc(userId).stream()
-                    .filter(comment -> "PUBLISHED".equals(comment.getArticle().getStatus()))
+                    .filter(comment -> publicArticle(comment.getArticle()))
                     .map(comment -> new UserCommentResponse(
                             comment.getId(),
                             comment.getArticle().getId(),
@@ -162,7 +164,7 @@ public class NewsService {
             if (userId == null) throw new HttpResponseException(401, "Authentication required.");
             return savedPostRepository.findByIdUserIdOrderByCreatedAtDesc(userId).stream()
                     .map(saved -> saved.getArticle())
-                    .filter(article -> "PUBLISHED".equals(article.getStatus()))
+                    .filter(this::publicArticle)
                     .map(article -> mapper.toArticleResponse(article, true, false))
                     .toList();
     }
@@ -189,6 +191,11 @@ public class NewsService {
         return userId != null && savedPostRepository.existsByIdUserIdAndIdNewsId(userId, articleId);
     }
 
+    private boolean publicArticle(NewsArticle article) {
+        return "PUBLISHED".equals(article.getStatus()) && article.getReviewedBy() != null
+                && article.getReviewedAt() != null && article.getPublishedAt() != null;
+    }
+
     private String sanitize(String content) {
         return content.trim(); // React renders comments as text, never HTML.
     }
@@ -196,6 +203,8 @@ public class NewsService {
     private Specification<NewsArticle> publishedSpec(String category, String query) {
         return (root, criteriaQuery, builder) -> {
             var predicate = builder.equal(root.get("status"), "PUBLISHED");
+            predicate = builder.and(predicate, builder.isNotNull(root.get("reviewedBy")),
+                    builder.isNotNull(root.get("reviewedAt")), builder.isNotNull(root.get("publishedAt")));
             if (category != null) {
                 predicate = builder.and(predicate, builder.equal(builder.lower(root.get("category")), category.toLowerCase()));
             }

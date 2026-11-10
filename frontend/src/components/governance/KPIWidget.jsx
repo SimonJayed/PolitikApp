@@ -3,7 +3,7 @@ import { getKpisForPosition, getPositionGroupLabel, computeWgiCompositeScore } f
 import WgiMethodologyModal, { HelpCircleIcon } from './WgiMethodologyModal';
 
 function resolveWgiScore(politician) {
-  if (Number.isFinite(Number(politician.wgiCompositeScore)) && Number(politician.wgiCompositeScore) > 0) {
+  if (politician.wgiCompositeScore != null && Number.isFinite(Number(politician.wgiCompositeScore))) {
     return Number(politician.wgiCompositeScore);
   }
   return computeWgiCompositeScore(

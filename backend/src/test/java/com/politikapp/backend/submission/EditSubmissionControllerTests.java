@@ -61,12 +61,13 @@ class EditSubmissionControllerTests {
                     "mock.contributor@politikapp.com",
                     "mock_contributor",
                     "hash",
-                    "CONTRIBUTOR",
+                    "ADMIN",
                     "ACTIVE"
             );
         }
 
-        token = jwtService.generateAccessToken(contributorId, "mock.contributor@politikapp.com", "CONTRIBUTOR");
+        jdbcTemplate.update("UPDATE users SET role = 'ADMIN' WHERE user_id = ?", contributorId);
+        token = jwtService.generateAccessToken(contributorId, "mock.contributor@politikapp.com", "ADMIN");
     }
 
     @Test

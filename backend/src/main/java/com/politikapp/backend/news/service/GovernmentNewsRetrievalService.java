@@ -33,7 +33,6 @@ import org.w3c.dom.Element;
 
 @Service
 public class GovernmentNewsRetrievalService {
-    private static final Set<String> PAUSED_SOURCE_HOSTS = Set.of("dost.gov.ph", "da.gov.ph");
     private final GovernmentSourceRepository sources;
     private final NewsArticleRepository articles;
     private final NewsAiService ai;
@@ -152,10 +151,11 @@ public class GovernmentNewsRetrievalService {
             if (!isArticlePage(source, download.uri())) throw new IllegalArgumentException("Source redirected to a non-article page.");
             if (articles.existsByCanonicalUrl(canonical)) { counts.duplicates++; counts.skipped++; return; }
             var extracted = extractor.extract(download);
+            String title = extracted.title() == null || extracted.title().isBlank() ? candidate.title() : extracted.title();
             Instant publishedAt = candidate.publishedAt() == null ? extracted.publishedAt() : candidate.publishedAt();
             if (publishedAt != null && old(publishedAt)) { counts.skipped++; return; }
-            if (!relevance.relevant(extracted.title())) { counts.irrelevant++; return; }
-            if (extracted.text().length() < 150 || extracted.title() == null || extracted.title().isBlank()) {
+            if (title != null && !title.isBlank() && !relevance.relevant(title)) { counts.irrelevant++; return; }
+            if (extracted.text().length() < 150 || title == null || title.isBlank()) {
                 issues.add(new FetchIssue("EXTRACTION", "INCOMPLETE", canonical, "Article title or body could not be extracted reliably."));
                 saveIncomplete(source, new Candidate(canonical, candidate.title(), publishedAt), canonical,
                         "Article title or body could not be extracted reliably.", counts);
@@ -163,12 +163,12 @@ public class GovernmentNewsRetrievalService {
             }
             NewsArticle article = new NewsArticle();
             article.setSource(source);
-            article.setOriginalTitle(extracted.title());
+            article.setOriginalTitle(title.trim());
             article.setSourceUrl(canonical);
             article.setCanonicalUrl(canonical);
             article.setOriginalContent(extracted.text());
             article.setOriginalPublishedAt(publishedAt);
-            ai.prepareDeterministicDraft(article); // Never a paid Gemini call.
+            ai.prepareRetrievedDraft(article);
             articles.save(article);
             counts.retrieved++;
         } catch (Exception exception) {
@@ -254,10 +254,7 @@ public class GovernmentNewsRetrievalService {
     }
 
     private boolean paused(GovernmentSource source) {
-        try {
-            String host = URI.create(source.getBaseUrl()).getHost();
-            return host != null && PAUSED_SOURCE_HOSTS.contains(host.toLowerCase(java.util.Locale.ROOT).replaceFirst("^www\\.", ""));
-        } catch (Exception ignored) { return false; }
+        return GovernmentNewsSourcePolicy.removed(source);
     }
 
     List<Candidate> candidates(GovernmentSource source) throws Exception {
@@ -293,7 +290,12 @@ public class GovernmentNewsRetrievalService {
             for (var row : rows) {
                 if (result.size() == 20) break;
                 String url = row.path("url").asText(row.path("source_url").asText(row.path("link").asText("")));
-                if (!url.isBlank()) result.add(new Candidate(download.uri().resolve(url).toString(), row.path("title").asText(""), null));
+                try {
+                    if (!url.isBlank()) result.add(new Candidate(download.uri().resolve(url).toString(), row.path("title").asText(""),
+                            date(row.path("published_at").asText(row.path("publishedAt").asText(row.path("date").asText(""))))));
+                } catch (IllegalArgumentException ignored) {
+                    // A malformed source row must not discard the remaining records.
+                }
             }
             return result;
         }
@@ -311,12 +313,16 @@ public class GovernmentNewsRetrievalService {
             Element item = (Element) items.item(i);
             String link = text(item, "link");
             if (!link.isBlank()) {
+                try {
                 URI article = download.uri().resolve(link);
                 if (source.getBaseUrl().contains("senate.gov.ph") && "http".equalsIgnoreCase(article.getScheme())) {
                     article = new URI("https", null, article.getHost(), -1, article.getPath(), article.getQuery(), null);
                 }
                 if (isArticlePage(source, article)) {
                     result.add(new Candidate(article.toString(), Jsoup.parse(text(item, "title")).text(), date(text(item, "pubDate"))));
+                }
+                } catch (IllegalArgumentException ignored) {
+                    // Continue with other feed entries when one URL is malformed.
                 }
             }
         }
@@ -338,6 +344,8 @@ public class GovernmentNewsRetrievalService {
 
     private Instant date(String value) {
         try { return ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME).toInstant(); }
+        catch (Exception ignored) { }
+        try { return java.time.OffsetDateTime.parse(value).toInstant(); }
         catch (Exception ignored) { return null; }
     }
 
