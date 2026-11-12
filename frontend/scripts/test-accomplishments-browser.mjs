@@ -17,6 +17,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import Profile from '/src/pages/Profile/Profile.jsx';
 import '/src/index.css';
+import '/src/App.css';
 const isAdmin = new URLSearchParams(location.search).get('role') === 'admin';
 window.fixtureCalls = [];
 window.fetch = async (input, options = {}) => {
@@ -110,14 +111,14 @@ try {
   }
   const navigate = async role => {
     await call('Page.navigate',{url:`http://127.0.0.1:${port}/__accomplishments_browser?role=${role}`},sessionId)
-    await until(`document.querySelector('.accomplishmentsSection') && !document.querySelector('.accomplishmentsSection').innerText.includes('Loading accomplishments')`)
+    await until(`document.querySelector('.accomplishmentsSection') && !document.querySelector('.accomplishmentsSection').innerText.includes('Loading accomplishments') && !document.querySelector('[aria-label="Verified public records"]').innerText.includes('Loading verified records')`)
   }
   const click = text => evaluate(`Array.from(document.querySelectorAll('button,summary')).find(el=>el.textContent.trim()===${JSON.stringify(text)}).click()`)
   const input = async (label,value) => {
     await evaluate(`(()=>{const label=Array.from(document.querySelectorAll('label')).find(el=>el.firstChild.textContent.trim()===${JSON.stringify(label)}); const input=label.querySelector('input,textarea,select'); input.focus(); if(input.tagName==='SELECT'){input.value=${JSON.stringify(value)};input.dispatchEvent(new Event('change',{bubbles:true}));}else{Object.getOwnPropertyDescriptor(input.tagName==='TEXTAREA'?HTMLTextAreaElement.prototype:HTMLInputElement.prototype,'value').set.call(input,${JSON.stringify(value)});input.dispatchEvent(new Event('input',{bubbles:true}));}})()`)
   }
   await navigate('guest')
-  assert.ok(await evaluate(`document.querySelector('.accomplishmentsSection').innerText.includes('No accomplishments are currently available')`))
+  assert.ok(await evaluate(`document.querySelector('[aria-label="Verified public records"]').innerText.includes('No verified accountability records match this selection')`))
   assert.ok(await evaluate(`!document.querySelector('.accomplishmentsSection button')`))
   await navigate('admin')
   await click('Add accomplishment')
@@ -135,8 +136,8 @@ try {
   await click('Save accomplishment')
   await until(`!document.querySelector('[role="dialog"]')`)
   await navigate('guest')
-  assert.ok(await evaluate(`document.querySelector('.accomplishmentsSection').innerText.includes('Updated service award')`))
-  assert.equal(await evaluate(`document.querySelector('.accomplishmentsSection a').href`),'https://www.dost.gov.ph/award')
+  assert.ok(await evaluate(`document.querySelector('.accountabilityCard').innerText.includes('Updated service award')`))
+  assert.equal(await evaluate(`document.querySelector('.accountabilityCard a').href`),'https://www.dost.gov.ph/award')
   assert.ok(await evaluate(`document.body.innerText.includes('Existing biography remains visible.')`))
   await call('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true},sessionId)
   assert.ok(await evaluate(`document.querySelector('.accomplishmentsSection').getBoundingClientRect().width <= innerWidth`))
@@ -147,8 +148,8 @@ try {
   await until(`document.querySelector('.accomplishmentManagement').innerText.includes('Hidden')`)
   assert.ok(await evaluate(`document.querySelector('.accomplishmentManagement').innerText.includes('Updated service award')`))
   await navigate('guest')
-  assert.ok(await evaluate(`document.querySelector('.accomplishmentsSection').innerText.includes('No accomplishments are currently available')`))
-  assert.ok(await evaluate(`!document.querySelector('.accomplishmentsSection').innerText.includes('Updated service award')`))
+  assert.ok(await evaluate(`document.querySelector('[aria-label="Verified public records"]').innerText.includes('No verified accountability records match this selection')`))
+  assert.ok(await evaluate(`!document.querySelector('[aria-label="Verified public records"]').innerText.includes('Updated service award')`))
   console.log('PASS: actual profile mounts; guest empty state; admin create/edit/hide; duplicate submit protection; public citation and visibility; mobile section width; existing biography retained. API fixture only.')
 } finally {
   socket?.close()

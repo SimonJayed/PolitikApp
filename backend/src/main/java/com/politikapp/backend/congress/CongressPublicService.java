@@ -22,8 +22,15 @@ import org.springframework.transaction.annotation.Transactional;
 public class CongressPublicService {
     public record SourceRecord(String key, String type, String title, String congress, String chamber,
                                String filedDate, String reportedStatus, String sourceUrl, String datasetUrl,
-                               String revision, JsonNode history, String reviewState, String billNumber) {}
-    public record Page(List<SourceRecord> records, int total, int offset, int limit, List<SourceRecord> memberships) {}
+                               String revision, JsonNode history, String reviewState, String billNumber,
+                               String relationshipType, UUID authorPoliticianId, String originalSourceStatus) {
+        public SourceRecord withSourceStatus(String status) {
+            return new SourceRecord(key, type, title, congress, chamber, filedDate, reportedStatus, sourceUrl,
+                    datasetUrl, revision, history, reviewState, billNumber, relationshipType, authorPoliticianId, status);
+        }
+    }
+    public record Page(List<SourceRecord> records, int total, int offset, int limit, List<SourceRecord> memberships,
+                       List<String> congresses) {}
     public record ApprovalResult(int approved, int alreadyApproved) {}
 
     private final JdbcTemplate jdbc;
@@ -38,20 +45,37 @@ public class CongressPublicService {
 
     @Transactional(readOnly = true)
     public Page publicRecords(UUID politicianId, int offset, int limit) {
+        return publicRecords(politicianId, offset, limit, null);
+    }
+
+    @Transactional(readOnly = true)
+    public Page publicRecords(UUID politicianId, int offset, int limit, Integer congress) {
         requireProfile(politicianId);
         Map<String, SourceRecord> visible = new LinkedHashMap<>();
         for (SourceRecord row : sourceRows(politicianId, false)) visible.put(row.key(), row);
+        // An approved snapshot must still have an AUTHORED_BY relationship for
+        // this exact politician and revision. Approval alone is not authorship.
+        var authored = new java.util.HashSet<>(jdbc.queryForList("""
+                select distinct 'bill:' || rel.entity_id || ':' || rel.revision
+                from public.open_congress_relationships rel
+                join public.open_congress_entities person on person.id=rel.target_id
+                where person.kind='PERSON' and person.politician_id=? and rel.relationship='AUTHORED_BY'
+                """, String.class, politicianId));
         for (TimelineEntry entry : approvedEntries(politicianId)) {
             SourceRecord row = fromEntry(entry);
-            if (row != null) visible.put(row.key(), row);
+            if (row != null && (!"BILL".equals(row.type()) || authored.contains(row.key() + ":" + row.revision()))) visible.put(row.key(), row);
         }
-        List<SourceRecord> rows = new ArrayList<>(visible.values());
-        rows.sort(Comparator.comparing(SourceRecord::type).thenComparing(
-                row -> congressNumber(row.congress()), Comparator.reverseOrder()).thenComparing(SourceRecord::title));
+        var memberships = visible.values().stream().filter(row -> "MEMBERSHIP".equals(row.type())).toList();
+        var bills = visible.values().stream().filter(row -> "BILL".equals(row.type())).toList();
+        var congresses = bills.stream().map(SourceRecord::congress).filter(value -> congressNumber(value) > 0)
+                .distinct().sorted(Comparator.comparing(CongressPublicService::congressNumber).reversed()).toList();
+        List<SourceRecord> rows = new ArrayList<>(bills.stream()
+                .filter(row -> congress == null || String.valueOf(congress).equals(row.congress())).toList());
+        rows.sort(Comparator.comparing((SourceRecord row) -> congressNumber(row.congress()), Comparator.reverseOrder())
+                .thenComparing(SourceRecord::title, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
         int start = Math.min(Math.max(0, offset), rows.size());
         int size = Math.max(1, Math.min(50, limit));
-        return new Page(rows.subList(start, Math.min(rows.size(), start + size)), rows.size(), start, size,
-                rows.stream().filter(row -> "MEMBERSHIP".equals(row.type())).toList());
+        return new Page(rows.subList(start, Math.min(rows.size(), start + size)), rows.size(), start, size, memberships, congresses);
     }
 
     @Transactional(readOnly = true)
@@ -131,7 +155,8 @@ public class CongressPublicService {
                 String.valueOf(d.getOrDefault("title", entry.getSummary())), string(d.get("congress")),
                 string(d.get("chamber")), string(d.get("filedDate")), string(d.get("reportedStatus")),
                 entry.getSourceUrl(), string(d.get("datasetUrl")), string(d.get("sourceRevision")),
-                json.valueToTree(d.get("history")), "ADMIN_REVIEWED_SOURCE", string(d.get("billNumber")));
+                json.valueToTree(d.get("history")), "ADMIN_REVIEWED_SOURCE", string(d.get("billNumber")),
+                "BILL".equals(string(d.get("recordType"))) ? "AUTHORED_BY" : null, entry.getPoliticianId(), "UNCHECKED");
     }
 
     private List<SourceRecord> sourceRows(UUID politicianId, boolean current) {
@@ -147,7 +172,7 @@ public class CongressPublicService {
         jdbc.query(peopleSql, rs -> {
             JsonNode payload = parse(rs.getString(5));
             JsonNode urls = parse(rs.getString(6));
-            String sourceUrl = urls.isArray() && !urls.isEmpty() ? urls.get(0).asText(null) : null;
+            String sourceUrl = governmentSource(urls);
             JsonNode memberships = payload.path("memberships");
             var membershipKeys = new java.util.HashSet<String>();
             for (int i = 0; i < memberships.size(); i++) {
@@ -157,12 +182,13 @@ public class CongressPublicService {
                 rows.add(new SourceRecord(key, "MEMBERSHIP", "Congress " + m.path("congress").asText("Unknown") + " membership",
                         m.path("congress").asText("Unknown"), m.path("subtype").asText("Unknown"), null,
                         m.path("position").asText("Not provided"), sourceUrl,
-                        datasetUrl(rs.getString(3), rs.getString(4)), rs.getString(2), json.createArrayNode(), "SOURCE_REPORTED", null));
+                        datasetUrl(rs.getString(3), rs.getString(4)), rs.getString(2), json.createArrayNode(), "SOURCE_REPORTED", null,
+                        null, null, "UNCHECKED"));
             }
         }, politicianId);
         String billsSql = """
                 select distinct on (e.id) e.id, r.revision, r.title, r.congress::text, r.subtype,
-                       r.filed_date::text, r.payload::text, r.source_urls::text, r.dataset_commit, r.dataset_path, r.bill_number
+                       r.filed_date::text, r.payload::text, r.source_urls::text, r.dataset_commit, r.dataset_path, r.bill_number, r.imported_at
                 from public.open_congress_entities person
                 join public.open_congress_relationships rel on rel.target_id=person.id and rel.relationship='AUTHORED_BY'
                 join public.open_congress_entities e on e.id=rel.entity_id and e.kind='BILL'
@@ -173,10 +199,11 @@ public class CongressPublicService {
         jdbc.query(billsSql, rs -> {
             JsonNode payload = parse(rs.getString(7));
             JsonNode urls = parse(rs.getString(8));
-            String url = urls.isArray() && !urls.isEmpty() ? urls.get(0).asText(null) : null;
+            String url = governmentSource(urls);
             rows.add(new SourceRecord("bill:" + rs.getString(1), "BILL", rs.getString(3), rs.getString(4),
                     rs.getString(5), rs.getString(6), payload.path("status").isMissingNode() ? "Unknown" : payload.path("status").toString(),
-                    url, datasetUrl(rs.getString(9), rs.getString(10)), rs.getString(2), payload.path("history"), "SOURCE_REPORTED", rs.getString(11)));
+                    url, datasetUrl(rs.getString(9), rs.getString(10)), rs.getString(2), payload.path("history"), "SOURCE_REPORTED", rs.getString(11),
+                    "AUTHORED_BY", politicianId, "UNCHECKED"));
         }, politicianId);
         return rows;
     }
@@ -193,6 +220,14 @@ public class CongressPublicService {
 
     private static String datasetUrl(String commit, String path) {
         return "https://github.com/bettergovph/open-congress-data/blob/" + commit + "/" + path;
+    }
+
+    private static String governmentSource(JsonNode urls) {
+        if (urls.isArray()) for (JsonNode value : urls) {
+            String url = value.asText(null);
+            if (OriginalSourceService.sourceUri(url) != null) return url;
+        }
+        return null;
     }
 
     private static String string(Object value) { return value == null ? null : String.valueOf(value); }

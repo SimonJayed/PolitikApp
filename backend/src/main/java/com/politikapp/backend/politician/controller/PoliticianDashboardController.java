@@ -5,6 +5,7 @@ import com.politikapp.backend.politician.dto.DashboardCompositeResponse;
 import com.politikapp.backend.politician.service.ComparisonService;
 import com.politikapp.backend.politician.service.DashboardService;
 import com.politikapp.backend.congress.CongressPublicService;
+import com.politikapp.backend.congress.OriginalSourceService;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,12 +20,14 @@ public class PoliticianDashboardController {
     private final DashboardService dashboardService;
     private final ComparisonService comparisonService;
     private final CongressPublicService congressPublicService;
+    private final OriginalSourceService originalSources;
 
     public PoliticianDashboardController(DashboardService dashboardService, ComparisonService comparisonService,
-                                         CongressPublicService congressPublicService) {
+                                         CongressPublicService congressPublicService, OriginalSourceService originalSources) {
         this.dashboardService = dashboardService;
         this.comparisonService = comparisonService;
         this.congressPublicService = congressPublicService;
+        this.originalSources = originalSources;
     }
 
     @GetMapping("/{politicianId}/dashboard")
@@ -34,8 +37,10 @@ public class PoliticianDashboardController {
 
     @GetMapping("/{politicianId}/congress-records")
     public CongressPublicService.Page congressRecords(@PathVariable UUID politicianId,
-            @RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "20") int limit) {
-        return congressPublicService.publicRecords(politicianId, offset, limit);
+            @RequestParam(defaultValue = "0") int offset, @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(required = false) Integer congress, @RequestParam(defaultValue = "false") boolean checkSources) {
+        var page = congressPublicService.publicRecords(politicianId, offset, limit, congress);
+        return checkSources ? originalSources.checkPage(page) : page;
     }
 
     @GetMapping("/compare")

@@ -35,7 +35,7 @@ export function PublicAccomplishments({ records = [] }) {
     </li>)}</ul>
 }
 
-export default function AccomplishmentsSection({ politicianId, isAdmin, token }) {
+export default function AccomplishmentsSection({ politicianId, isAdmin, token, showPublic = true, embedded = false, onRecordsChange }) {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -48,6 +48,8 @@ export default function AccomplishmentsSection({ politicianId, isAdmin, token })
   const publicPath = `/api/politicians/${politicianId}/accomplishments`
   const adminPath = `/api/admin/politicians/${politicianId}/accomplishments`
   const canManage = Boolean(isAdmin && token)
+
+  useEffect(() => { onRecordsChange?.({ politicianId, records, loading, error }) }, [politicianId, records, loading, error, onRecordsChange])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -121,14 +123,14 @@ export default function AccomplishmentsSection({ politicianId, isAdmin, token })
     finally { submitting.current = false; setBusy(false) }
   }
 
-  return <section className="prCard accomplishmentsSection" aria-label="Accomplishments">
-    <div className="prCardHead">
+  return <section className={`${embedded ? 'accomplishmentTools' : 'prCard'} accomplishmentsSection`} aria-label="Accomplishments">
+    {(showPublic || canManage) && <div className="prCardHead">
       <h2 className="prCardTitle">Accomplishments</h2>
       {canManage && <button className="prBtn prBtnOutline" type="button" disabled={loading || busy || Boolean(error)} onClick={() => openEditor(null)}>Add accomplishment</button>}
-    </div>
+    </div>}
     {loading ? <p className="prMuted" role="status">Loading accomplishments…</p>
       : error ? <div role="alert"><p>{error}</p><button className="prBtn prBtnOutline" type="button" onClick={() => setRefresh(value => value + 1)}>Retry</button></div>
-        : <PublicAccomplishments records={records} />}
+        : showPublic && <PublicAccomplishments records={records} />}
     {message && <p role="status">{message}</p>}
     {canManage && !loading && !error && <details className="accomplishmentManagement">
       <summary>Manage accomplishments ({records.length})</summary>

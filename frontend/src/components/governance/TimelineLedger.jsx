@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { CircleCheckIcon, ExternalLinkIcon, ScaleIcon, ArrowLeftIcon, ArrowRightIcon } from '../icons/Lucide';
 import { TimelineCardsSkeleton } from '../Skeletons';
 import { formatActionIdentifier } from './positionConfig';
-import { usableSourceUrl } from '../../features/news/sourceReference';
+import { publicCitationHref } from '../../api/congress';
+import { chronologicalHistory, recordDate } from '../../features/congress/legislativeRecords';
 import ChallengeRecordModal from '../moderation/ChallengeRecordModal';
 
 function PaginationMini({ page, totalPages, onChange }) {
@@ -109,7 +110,7 @@ export default function TimelineLedger({
       {!isLoading && (
         <div className="timelineGrid">
           {pagedEntries.map((entry) => {
-            const sourceUrl = entry.primarySourceUrl || entry.sourceUrl;
+            const sourceUrl = publicCitationHref(entry.primarySourceUrl || entry.sourceUrl);
             return (
               <article className="timelineItem" key={entry.timelineId || `${entry.categoryTag}-${entry.createdAt}`}>
                 <div className="timelineItemTop">
@@ -131,20 +132,18 @@ export default function TimelineLedger({
                 <p className="ty-body">{entry.summary}</p>
                 {entry.actionDetails?.recordType === 'BILL' && <div className="ty-body">
                   <strong>{entry.actionDetails.legislationTitle || 'Legislative record'}</strong>
-                  <p>Admin-verified status: {typeof entry.actionDetails.verifiedStatus === 'string'
+                  <p>{entry.actionDetails.sourceReported === true ? 'Source-reported status' : 'Admin-verified status'}: {typeof entry.actionDetails.verifiedStatus === 'string'
                     ? entry.actionDetails.verifiedStatus : 'Not established'}.
                     A filed bill is not necessarily enacted law.</p>
-                  {Array.isArray(entry.actionDetails.legislativeHistory) && entry.actionDetails.legislativeHistory.length > 0
-                    ? <details><summary>Dataset-reported legislative history</summary><ol>{entry.actionDetails.legislativeHistory.map((step, index) =>
-                      <li key={index}>{step?.date || 'Date unknown'} — {step?.action || step?.description || 'Details unavailable'}</li>)}</ol></details>
+                  {chronologicalHistory(entry.actionDetails.legislativeHistory).length > 0
+                    ? <details><summary>Dataset-reported legislative history</summary><ol>{chronologicalHistory(entry.actionDetails.legislativeHistory).map((step, index) =>
+                      <li key={index}>{step.date ? `${recordDate(step.date)} — ` : ''}{step.description}</li>)}</ol></details>
                     : <p>Legislative history unavailable.</p>}
-                  {entry.actionDetails.datasetUrl && <a href={entry.actionDetails.datasetUrl} target="_blank" rel="noreferrer">Dataset record</a>}
                 </div>}
                 {entry.actionDetails?.recordType === 'MEMBERSHIP' && <div className="ty-body">
                   <p>Congress {entry.actionDetails.congress || 'Unknown'} · {entry.actionDetails.chamber || 'Chamber unknown'} · {entry.actionDetails.position || 'Position unknown'}</p>
                   <p>Personal term dates: {entry.actionDetails.termStart || 'Unknown'} to {entry.actionDetails.termEnd || 'Unknown'}.</p>
                   <p>Verification: {entry.actionDetails.verifiedStatus || 'Status not established'}.</p>
-                  {entry.actionDetails.datasetUrl && <a href={entry.actionDetails.datasetUrl} target="_blank" rel="noreferrer">Dataset record</a>}
                 </div>}
 
                 {entry.verificationNotes && (
@@ -157,7 +156,7 @@ export default function TimelineLedger({
                     marginBottom: '8px',
                     fontFamily: 'var(--mono, monospace)'
                   }}>
-                    <><CircleCheckIcon size={14} /> Curator Verified: {entry.verificationNotes}</>
+                    <><CircleCheckIcon size={14} /> {entry.actionDetails?.sourceReported === true ? 'Source-reported; not independently verified' : 'Administrator verification notes'}: {entry.verificationNotes}</>
                   </div>
                 )}
 
@@ -171,10 +170,10 @@ export default function TimelineLedger({
                   flexWrap: 'wrap',
                   gap: '8px'
                 }}>
-                  {usableSourceUrl(sourceUrl) ? (
+                  {sourceUrl ? (
                     <a
                       href={sourceUrl}
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       target="_blank"
                       style={{
                         display: 'inline-flex',

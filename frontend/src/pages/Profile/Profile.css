@@ -899,6 +899,27 @@
   overflow-wrap: anywhere;
 }
 
+.csRecord > .csTitle { display: block; margin: 0; line-height: 1.55; }
+.csAuthorship { display: block; margin: 0; font: 600 13px/1.6 var(--sans); color: var(--p-text-2); }
+.csAuthorship span { font-weight: 500; }
+.csMembershipSummary { display: grid; gap: 6px; padding: 12px 14px; border-radius: 10px; background: var(--p-inset); }
+.csCongressFilter { max-width: 280px; }
+.csCongressGroup { display: grid; min-width: 0; gap: 12px; }
+.csTimeline li > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.csStatusBlock .csMeta { overflow-wrap: anywhere; }
+.accountabilityList { display: grid; min-width: 0; gap: 14px; }
+.accountabilityCard { display: grid; min-width: 0; gap: 10px; padding: 16px; border: 1px solid var(--p-line); border-radius: 12px; background: var(--p-surface); }
+.accountabilityCard h3, .accountabilityCard p { margin: 0; }
+.accountabilityCard h3 { font: 750 16px/1.5 var(--display); overflow-wrap: anywhere; }
+.accountabilityLabels { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+.accountabilityCategory { color: var(--p-muted); font: 500 12px/1.5 var(--sans); }
+.accountabilityVerification { color: var(--ph-blue-mid); font: 600 12px/1.6 var(--sans); }
+.accountabilityMetric { color: var(--p-text); font: 700 16px/1.5 var(--display); font-variant-numeric: tabular-nums; }
+.accountabilityDescription { white-space: pre-wrap; overflow-wrap: anywhere; font: 400 14px/1.8 var(--sans); color: var(--p-text-2); }
+.accountabilityContext { color: var(--p-muted); font: 500 12px/1.65 var(--sans); }
+.accountabilityCard a { justify-self: start; color: var(--ph-blue-light); font: 600 13px/1.6 var(--sans); }
+.accomplishmentTools { display: grid; gap: 12px; min-width: 0; }
+
 .csType {
   flex: 0 0 auto;
   padding: 5px 11px;

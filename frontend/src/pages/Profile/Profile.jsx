@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 import { BarChart3Icon, FolderIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
-import { KpiGrid, PaginationMini, ProfileSkeleton, StatusLine, TimelineLedger } from '../pageHelpers'
+import { KpiGrid, PaginationMini, ProfileSkeleton, StatusLine } from '../pageHelpers'
 import PoliticianEditor from '../../components/governance/PoliticianEditor'
 import EditSubmissionForm from '../../components/governance/EditSubmissionForm'
 import CongressProfilePanel from '../../components/governance/CongressProfilePanel'
 import CongressSourceSection from '../../components/governance/CongressSourceSection'
 import AccomplishmentsSection from '../../components/governance/AccomplishmentsSection'
+import AccountabilityRecords from '../../components/governance/AccountabilityRecords'
+import { accountabilityRecords, filterAccountabilityRecords } from '../../features/congress/accountabilityRecords'
 import CongressMembershipSummary from '../../components/governance/CongressMembershipSummary'
 import { formatDisplayName } from '../../features/congress/displayName'
 import BaseModal from '../../components/BaseModal'
@@ -97,14 +99,9 @@ export default function PoliticianProfilePage({
   const [recordPage, setRecordPage] = useState(1)
   const [draftPage, setDraftPage] = useState(1)
   const [managePage, setManagePage] = useState(1)
-  const visibleEntries = verifiedEntries.filter((entry) => {
-    const legislative = ['BILL', 'MEMBERSHIP'].includes(entry.actionDetails?.recordType) || Boolean(entry.actionDetails?.openCongressId)
-    if (recordType === 'LEGISLATION' && !legislative) return false
-    if (recordType === 'OTHER' && legislative) return false
-    const query = recordQuery.trim().toLowerCase()
-    return !query || [entry.summary, entry.actionDetails?.legislationTitle, entry.actionDetails?.verifiedStatus]
-      .some((value) => String(value || '').toLowerCase().includes(query))
-  })
+  const [accomplishments, setAccomplishments] = useState({ records: [], loading: true, error: '' })
+  const publicEntries = accountabilityRecords(verifiedEntries, accomplishments.politicianId === politicianId ? accomplishments.records : [])
+  const visibleEntries = filterAccountabilityRecords(publicEntries, recordType, recordQuery)
   const [editing, setEditing] = useState(false)
   const [record, setRecord] = useState(null)
   const [recordState, setRecordState] = useState({ status: 'idle', message: '' })
@@ -309,8 +306,6 @@ export default function PoliticianProfilePage({
 
               <CongressSourceSection key={`congress-source:${politicianId}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />
 
-              <AccomplishmentsSection key={`accomplishments:${politicianId}:${isAdmin}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />
-
               <StatusLine state={recordState} />
 
               {isAdmin && (
@@ -397,20 +392,23 @@ export default function PoliticianProfilePage({
                 <div className="prToolbar" role="search" aria-label="Filter verified records">
                   <label className="prField prSearch">
                     <span>Search verified records</span>
-                    <input value={recordQuery} onChange={(event) => setRecordQuery(event.target.value)} placeholder="Bill title, status, or activity" />
+                    <input value={recordQuery} onChange={(event) => setRecordQuery(event.target.value)} placeholder="Title, category, description, or year" />
                   </label>
                   <label className="prField">
                     <span>Record type</span>
                     <select value={recordType} onChange={(event) => setRecordType(event.target.value)}>
                       <option value="ALL">All records</option>
-                      <option value="LEGISLATION">Legislation</option>
-                      <option value="OTHER">Other activities</option>
+                      <option value="PROJECT_COMPLETION">Project Completion</option>
+                      <option value="BUDGET_ALLOCATION">Budget Allocation</option>
+                      <option value="COA_FINDING">COA Audit Findings</option>
+                      <option value="ACCOMPLISHMENT">Accomplishments</option>
                     </select>
                   </label>
                 </div>
 
-                <TimelineLedger className="prLedger" entries={recordsPaged.pageItems} isLoading={state.status === 'loading'} allowChallenge={false} title="Verified public records" />
+                <AccountabilityRecords entries={recordsPaged.pageItems} loading={state.status === 'loading' || accomplishments.politicianId !== politicianId || accomplishments.loading} />
                 <Pager paged={recordsPaged} onChange={setRecordPage} label="Record pagination" />
+                <AccomplishmentsSection key={`accomplishments:${politicianId}:${isAdmin}`} politicianId={politicianId} isAdmin={isAdmin} token={token} embedded showPublic={false} onRecordsChange={setAccomplishments} />
               </section>
 
               <section className="prCard prNewsCard" aria-label="Related published news">
@@ -433,6 +431,7 @@ export default function PoliticianProfilePage({
               {isAdmin && verifiedEntries.length > 0 && (
                 <details className="prCard prManage">
                   <summary>Manage published records <span className="prCount">{verifiedEntries.length}</span></summary>
+                  <p className="prMuted">All curated records, including Sponsored Legislation, remain available here for editing and removal. Curated legislation is preserved separately from dataset-reported authored bills.</p>
                   <div className="prManageList">
                     {managePaged.pageItems.map((entry) => (
                       <div className="prManageRow" key={entry.timelineId}>
@@ -464,7 +463,7 @@ export default function PoliticianProfilePage({
                   <div><dt>Jurisdiction</dt><dd>{jurisdiction}</dd></div>
                   <div><dt>Party</dt><dd>{party}</dd></div>
                   <div><dt>Term</dt><dd>{term}</dd></div>
-                  <div><dt>Verified records</dt><dd>{verifiedEntries.length}</dd></div>
+                  <div><dt>Accountability records</dt><dd>{publicEntries.length}</dd></div>
                 </dl>
               </section>
 
