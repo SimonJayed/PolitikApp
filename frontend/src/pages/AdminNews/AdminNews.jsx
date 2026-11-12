@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { canProcessAi, canRejectArticle, planBulkNewsAction, runConcurrentNewsActions } from '../../features/news/newsWorkflow'
+import { aiActionNotice, canProcessAi, canRejectArticle, planBulkNewsAction, runConcurrentNewsActions } from '../../features/news/newsWorkflow'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import {
   CircleXIcon,
@@ -74,8 +74,8 @@ export default function AdminNews({ token, user, politicians = [] }) {
   const isMockOutput = selected?.aiProcessingStatus === 'MOCKED'
   const isDeterministic = selected?.aiProcessingStatus === 'DETERMINISTIC'
   const isIncomplete = selected?.aiProcessingStatus === 'INCOMPLETE'
-  const dirty = selected && (draft.suggestedTitle !== (selected.headline || '') || draft.aiSummary !== (selected.summary || '')
-    || draft.category !== selected.category || draft.reviewNotes !== (selected.reviewNotes || '')
+  const dirty = selected && (draft.suggestedTitle !== (selected.headline || selected.originalTitle || '') || draft.aiSummary !== (selected.summary || '')
+    || draft.category !== (selected.category || 'Government Announcements') || draft.reviewNotes !== (selected.reviewNotes || '')
     || (draft.keyPointsText || '') !== (selected.keyPoints || []).join('\n')
     || JSON.stringify(draft.relatedPoliticianIds || []) !== JSON.stringify((selected.relatedPoliticians || []).map(p => p.id)))
 
@@ -221,7 +221,7 @@ export default function AdminNews({ token, user, politicians = [] }) {
       }).then(readApiResponse)
       setSelected(updated)
       await loadDashboard()
-      setActionState({ status: 'success', message: options.success || 'Article updated.' })
+      setActionState(options.resolveNotice ? options.resolveNotice(updated) : { status: 'success', message: options.success || 'Article updated.' })
     } catch (error) {
       setActionState({ status: 'error', message: error.message })
     }
@@ -508,7 +508,7 @@ export default function AdminNews({ token, user, politicians = [] }) {
 
             <footer className="reviewActions">
               <button className="adminBtn adminBtnSave" disabled={busy} type="button" onClick={saveEdits}>Save Edits</button>
-              <button className="adminBtn adminBtnAi" disabled={busy || dirty || !canProcessAi(selected)} type="button" onClick={() => runAction('process-ai', { loading: 'Processing article with AI...', success: 'Processing finished. Check its status and review the draft before approval.' })}>Process with AI</button>
+              <button className="adminBtn adminBtnAi" disabled={busy || dirty || !canProcessAi(selected)} type="button" onClick={() => runAction('process-ai', { loading: 'Processing article with AI...', resolveNotice: aiActionNotice })}>Process with AI</button>
               <button className="adminBtn adminBtnApprove" disabled={busy || dirty || isIncomplete || selected.status !== 'PENDING_REVIEW'} type="button" onClick={() => runAction('approve', { success: 'Article approved. Publish separately when ready.' })}>Approve</button>
               <button className="adminBtn adminBtnPublish" disabled={busy || dirty || isIncomplete || !['APPROVED', 'UNPUBLISHED'].includes(selected.status)} type="button" onClick={() => runAction('publish', { success: 'Article published.' })}>Publish</button>
               <button className="adminBtn adminBtnUnpublish" disabled={busy || selected.status !== 'PUBLISHED'} type="button" onClick={() => runAction('unpublish', { success: 'Article unpublished.' })}>Unpublish</button>

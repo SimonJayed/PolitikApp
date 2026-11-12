@@ -8,6 +8,7 @@ import com.politikapp.backend.news.dto.NewsDtos.NewsArticleResponse;
 import com.politikapp.backend.news.dto.NewsDtos.RejectArticleRequest;
 import com.politikapp.backend.news.dto.NewsDtos.ReviewArticleRequest;
 import com.politikapp.backend.news.dto.NewsDtos.SourceResponse;
+import com.politikapp.backend.news.entity.GovernmentSource;
 import com.politikapp.backend.news.entity.NewsArticle;
 import com.politikapp.backend.news.entity.NewsAuditLog;
 import com.politikapp.backend.news.repository.GovernmentSourceRepository;
@@ -16,10 +17,15 @@ import com.politikapp.backend.news.repository.NewsAuditLogRepository;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Supplier;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
 public class AdminNewsService {
@@ -31,6 +37,8 @@ public class AdminNewsService {
     private final NewsAiService aiService;
     private final ApprovedSourceClient sourceClient;
     private final com.politikapp.backend.politician.repository.PoliticianRepository politicians;
+    private final TransactionTemplate readTx;
+    private final TransactionTemplate writeTx;
 
     public AdminNewsService(
             NewsArticleRepository articleRepository,
@@ -42,6 +50,22 @@ public class AdminNewsService {
             ApprovedSourceClient sourceClient,
             com.politikapp.backend.politician.repository.PoliticianRepository politicians
     ) {
+        this(articleRepository, sourceRepository, auditLogRepository, userRepository,
+                mapper, aiService, sourceClient, politicians, null);
+    }
+
+    @Autowired
+    public AdminNewsService(
+            NewsArticleRepository articleRepository,
+            GovernmentSourceRepository sourceRepository,
+            NewsAuditLogRepository auditLogRepository,
+            AuthUserRepository userRepository,
+            NewsMapper mapper,
+            NewsAiService aiService,
+            ApprovedSourceClient sourceClient,
+            com.politikapp.backend.politician.repository.PoliticianRepository politicians,
+            PlatformTransactionManager transactionManager
+    ) {
         this.articleRepository = articleRepository;
         this.sourceRepository = sourceRepository;
         this.auditLogRepository = auditLogRepository;
@@ -50,6 +74,15 @@ public class AdminNewsService {
         this.aiService = aiService;
         this.sourceClient = sourceClient;
         this.politicians = politicians;
+        if (transactionManager == null) {
+            this.readTx = null;
+            this.writeTx = null;
+        } else {
+            this.readTx = new TransactionTemplate(transactionManager);
+            this.readTx.setReadOnly(true);
+            this.writeTx = new TransactionTemplate(transactionManager);
+            this.writeTx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRED);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -88,10 +121,30 @@ public class AdminNewsService {
                 .map(mapper::toSourceResponse).toList();
     }
 
-    @Transactional
     public NewsArticleResponse processAi(UUID id, UUID adminId) {
-        AuthUser actor = admin(adminId);
-        NewsArticle article = article(id);
+        // Prepare a detached snapshot in a short read transaction so the external Gemini call
+        // never holds a Postgres row lock or Hikari connection.
+        NewsArticle workingCopy = inTransaction(readTx, () -> {
+            admin(adminId);
+            NewsArticle existing = articleRepository.findById(id)
+                    .orElseThrow(() -> new HttpResponseException(404, "News article not found."));
+            requireAiEligible(existing);
+            return snapshotForAi(existing);
+        });
+
+        aiService.processArticle(workingCopy);
+
+        return inTransaction(writeTx, () -> {
+            AuthUser actor = admin(adminId);
+            NewsArticle article = article(id);
+            requireAiEligible(article);
+            applyAiOutcome(article, workingCopy);
+            log(article, actor, "PROCESS_AI", "AI processing requested by admin; result=" + article.getAiProcessingStatus());
+            return mapper.toArticleResponse(articleRepository.save(article), false);
+        });
+    }
+
+    private void requireAiEligible(NewsArticle article) {
         requireStatus(article, "PENDING_REVIEW", "REJECTED", "APPROVED", "UNPUBLISHED");
         if ("INCOMPLETE".equals(article.getAiProcessingStatus())) {
             throw new HttpResponseException(409, "Full article text is unavailable; AI processing is not permitted for metadata-only records.");
@@ -99,10 +152,87 @@ public class AdminNewsService {
         if (article.getOriginalContent() == null || article.getOriginalContent().isBlank()) {
             throw new HttpResponseException(409, "Full source text is required before AI processing.");
         }
+    }
+
+    private NewsArticle snapshotForAi(NewsArticle source) {
+        NewsArticle copy = new NewsArticle();
+        copy.setId(source.getId());
+        if (source.getSource() != null) {
+            GovernmentSource detachedSource = new GovernmentSource();
+            detachedSource.setId(source.getSource().getId());
+            detachedSource.setName(source.getSource().getName());
+            copy.setSource(detachedSource);
+        }
+        copy.setOriginalTitle(source.getOriginalTitle());
+        copy.setSuggestedTitle(source.getSuggestedTitle());
+        copy.setSourceUrl(source.getSourceUrl());
+        copy.setCanonicalUrl(source.getCanonicalUrl());
+        copy.setOriginalContent(source.getOriginalContent());
+        copy.setAiSummary(source.getAiSummary());
+        copy.setAiKeyPoints(source.getAiKeyPoints());
+        copy.setCategory(source.getCategory());
+        copy.setOriginalPublishedAt(source.getOriginalPublishedAt());
+        copy.setStatus(source.getStatus());
+        copy.setAiProcessingStatus(source.getAiProcessingStatus());
+        copy.setExtractionData(source.getExtractionData());
+        copy.setReviewNotes(source.getReviewNotes());
+        return copy;
+    }
+
+    private void applyAiOutcome(NewsArticle article, NewsArticle workingCopy) {
+        boolean failed = "FAILED".equals(workingCopy.getAiProcessingStatus());
+        boolean hadSummary = article.getAiSummary() != null && !article.getAiSummary().isBlank();
+        article.setAiModel(workingCopy.getAiModel());
+        article.setAiProcessingStatus(workingCopy.getAiProcessingStatus());
+        article.setAiProcessedAt(workingCopy.getAiProcessedAt());
+        article.setAiProcessingMs(workingCopy.getAiProcessingMs());
+
+        if (failed && hadSummary) {
+            article.setReviewNotes(mergeFailureReviewNotes(workingCopy.getReviewNotes(), article.getReviewNotes()));
+            return;
+        }
+        if (failed) {
+            article.setSuggestedTitle(workingCopy.getSuggestedTitle());
+            article.setAiSummary(workingCopy.getAiSummary());
+            article.setAiKeyPoints(workingCopy.getAiKeyPoints());
+            article.setExtractionData(null);
+            article.getRelatedPoliticians().clear();
+            article.setReviewNotes(workingCopy.getReviewNotes());
+            invalidateApproval(article);
+            return;
+        }
+
         invalidateApproval(article);
-        aiService.processArticle(article);
-        log(article, actor, "PROCESS_AI", "AI processing requested by admin; result=" + article.getAiProcessingStatus());
-        return mapper.toArticleResponse(articleRepository.save(article), false);
+        article.setExtractionData(workingCopy.getExtractionData());
+        article.getRelatedPoliticians().clear();
+        for (var politician : workingCopy.getRelatedPoliticians()) {
+            article.getRelatedPoliticians().add(politicians.getReferenceById(politician.getPoliticianId()));
+        }
+        article.setSuggestedTitle(workingCopy.getSuggestedTitle());
+        article.setAiSummary(workingCopy.getAiSummary());
+        article.setAiKeyPoints(workingCopy.getAiKeyPoints());
+        article.setCategory(workingCopy.getCategory());
+        article.setReviewNotes(workingCopy.getReviewNotes());
+        article.setStatus(workingCopy.getStatus());
+    }
+
+    private String mergeFailureReviewNotes(String failureNote, String previousNotes) {
+        if (previousNotes == null || previousNotes.isBlank()) return failureNote;
+        String base = failureNote == null ? "" : failureNote.trim();
+        String trimmedPrev = previousNotes.trim();
+        int prevMarker = trimmedPrev.indexOf("\nPrevious notes: ");
+        if (prevMarker >= 0) {
+            trimmedPrev = trimmedPrev.substring(prevMarker + "\nPrevious notes: ".length()).trim();
+        } else if (trimmedPrev.startsWith("AI processing failed")) {
+            return base;
+        }
+        if (trimmedPrev.isBlank()) return base;
+        String combined = base + "\nPrevious notes: " + trimmedPrev;
+        return combined.length() <= 3000 ? combined : combined.substring(0, 2997).trim() + "...";
+    }
+
+    private <T> T inTransaction(TransactionTemplate template, Supplier<T> action) {
+        return template == null ? action.get() : template.execute(status -> action.get());
     }
 
     @Transactional

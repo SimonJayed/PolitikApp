@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ScaleIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
+import { useDirectory } from '../../features/congress/useDirectory'
+import { sortDirectory } from '../../features/congress/politicianDirectory'
 import { initialsFor, KpiGrid, PageSkeleton, PaginationMini, StatusLine, TimelineLedger } from '../pageHelpers'
 import './Compare.css'
 
@@ -145,9 +147,13 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [pages, setPages] = useState({ left: 1, right: 1 })
+  const [directoryRefresh, setDirectoryRefresh] = useState(0)
+  const directory = useDirectory(directoryRefresh)
   const closeRef = useRef(null)
   const modalCallback = useRef(onModalOpenChange)
   useEffect(() => { modalCallback.current = onModalOpenChange }, [onModalOpenChange])
+
+  const membershipIndex = useMemo(() => new Map(directory.people.map(person => [person.politicianId, person])), [directory.people])
 
   const jurisdictions = useMemo(
     () => [...new Set(politicians.map((politician) => politician.jurisdiction).filter(Boolean))],
@@ -156,7 +162,8 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return politicians.filter((politician) => {
+    const matches = politicians.filter((politician) => {
+      if (politician.status === 'ARCHIVED') return false
       if (jurisdictionFilter !== 'ALL' && politician.jurisdiction !== jurisdictionFilter) return false
       if (!q) return true
       return (
@@ -165,7 +172,8 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
         (formatPosition(politician.position) || '').toLowerCase().includes(q)
       )
     })
-  }, [jurisdictionFilter, politicians, query])
+    return sortDirectory(matches, membershipIndex, directory.currentCongress, directory.asOfDate)
+  }, [jurisdictionFilter, politicians, query, membershipIndex, directory.currentCongress, directory.asOfDate])
 
   useEffect(() => { setPages({ left: 1, right: 1 }) }, [query, jurisdictionFilter])
 
@@ -236,7 +244,11 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
 
       <StatusLine state={state} />
       <StatusLine state={politiciansState} />
-      {politiciansState.status === 'loading' ? <PageSkeleton variant="compare" /> : <>
+      {Boolean(directory.error) && <div role="alert">
+        <p>Congress membership ordering could not be loaded. {directory.error}</p>
+        <button type="button" onClick={() => setDirectoryRefresh(value => value + 1)}>Retry candidate ordering</button>
+      </div>}
+      {politiciansState.status === 'loading' || directory.status === 'loading' ? <PageSkeleton variant="compare" /> : <>
 
       <p className="cmpResultMeta">
         <span>{filtered.length} {filtered.length === 1 ? 'candidate' : 'candidates'}{isFiltering ? ' match your filters' : ''}</span>

@@ -1247,6 +1247,29 @@
   color: var(--p-text);
 }
 
+.accomplishmentList {
+  display: grid;
+  gap: 16px;
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+.accomplishmentList > li {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--p-line-soft);
+  border-radius: var(--p-radius-md);
+  overflow-wrap: anywhere;
+}
+
+.accomplishmentList h3 { margin: 0 0 8px; }
+.accomplishmentDescription { white-space: pre-wrap; }
+.accomplishmentManagement { margin-top: 20px; }
+.accomplishmentManagement > summary { cursor: pointer; font-weight: 600; }
+.accomplishmentList .prManageActions { margin-top: 12px; flex-wrap: wrap; }
+.accomplishmentsSection .prCardHead { flex-wrap: wrap; gap: 12px; }
+
 /* ---------- Motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .profilePage *,

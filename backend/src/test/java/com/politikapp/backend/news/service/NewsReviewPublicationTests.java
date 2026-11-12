@@ -74,4 +74,49 @@ class NewsReviewPublicationTests {
         assertThrows(HttpResponseException.class, () -> review.publish(article.getId(), UUID.randomUUID()));
         verify(articles, never()).save(any());
     }
+
+    @Test
+    void failedAiReprocessingPreservesExistingSummaryAndApprovalStatus() {
+        var articles = mock(NewsArticleRepository.class);
+        var users = mock(AuthUserRepository.class);
+        var mapper = mock(NewsMapper.class);
+        var aiService = mock(NewsAiService.class);
+        var admin = new AuthUser();
+        UUID adminId = UUID.randomUUID();
+        UUID articleId = UUID.randomUUID();
+        admin.setUserId(adminId);
+        admin.setRole("ADMIN");
+        admin.setAccountStatus("ACTIVE");
+        var article = new NewsArticle();
+        article.setId(articleId);
+        article.setOriginalTitle("Original title");
+        article.setOriginalContent("Full source article text for verification.");
+        article.setSuggestedTitle("Curated headline");
+        article.setAiSummary("Admin curated summary.");
+        article.setStatus("APPROVED");
+        article.setReviewedBy(admin);
+        article.setReviewedAt(java.time.Instant.now());
+        when(users.findById(adminId)).thenReturn(Optional.of(admin));
+        when(articles.findById(articleId)).thenReturn(Optional.of(article));
+        when(articles.findForReview(articleId)).thenReturn(Optional.of(article));
+        when(articles.save(any(NewsArticle.class))).thenAnswer(call -> call.getArgument(0));
+        doAnswer(call -> {
+            NewsArticle copy = call.getArgument(0);
+            copy.setAiProcessingStatus("FAILED");
+            copy.setReviewNotes("AI processing failed (existing draft preserved); HTTP 503.");
+            return null;
+        }).when(aiService).processArticle(any(NewsArticle.class));
+        var review = new AdminNewsService(articles, mock(GovernmentSourceRepository.class),
+                mock(NewsAuditLogRepository.class), users, mapper, aiService,
+                mock(ApprovedSourceClient.class), mock(PoliticianRepository.class));
+
+        review.processAi(articleId, adminId);
+
+        assertEquals("APPROVED", article.getStatus());
+        assertNotNull(article.getReviewedAt());
+        assertEquals("Curated headline", article.getSuggestedTitle());
+        assertEquals("Admin curated summary.", article.getAiSummary());
+        assertEquals("FAILED", article.getAiProcessingStatus());
+        assertTrue(article.getReviewNotes().contains("HTTP 503"));
+    }
 }

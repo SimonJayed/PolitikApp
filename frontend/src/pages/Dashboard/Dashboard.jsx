@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
+import { newsCacheFor, publicReadCache } from '../../api/readCache'
+import { useCachedRead } from '../../api/useCachedRead'
 import { useAuth } from '../../auth/AuthContext'
 import {
   BookmarkIcon,
@@ -18,6 +20,11 @@ import { summaryLabel } from '../../features/news/newsWorkflow'
 
 const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 const INSIGHTS_SAMPLE_SIZE = 50
+const EMPTY_FEED = { items: [], totalPages: 1, totalElements: 0 }
+const EMPTY_INSIGHTS = { items: [], total: 0 }
+const EMPTY_SUMMARY = { data: null }
+const SUMMARY_URL = `${API_BASE_URL}/api/news/summary`
+const loadSummary = () => fetch(SUMMARY_URL).then(readApiResponse).then(data => ({ data }))
 
 // Boilerplate strings that should never be shown to readers.
 const HIDDEN_TEXT = [
@@ -53,11 +60,8 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
-  const [feed, setFeed] = useState({ status: 'loading', message: '', items: [], totalPages: 1, totalElements: 0 })
-  const [insights, setInsights] = useState({ status: 'loading', items: [], total: 0 })
   const [commentsByPost, setCommentsByPost] = useState({})
   const [drafts, setDrafts] = useState({})
-  const [summary, setSummary] = useState({ status: 'loading', data: null, message: '' })
   const [actionMessage, setActionMessage] = useState('')
   const [busy, setBusy] = useState({})
   const [expanded, setExpanded] = useState({})
@@ -65,34 +69,26 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   const feedTopRef = useRef(null)
   const queryRef = useRef('')
 
-  // Platform summary numbers (backend aggregate endpoint)
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/api/news/summary`)
-      .then(readApiResponse)
-      .then((data) => setSummary({ status: 'success', data, message: '' }))
-      .catch((error) => setSummary({ status: 'error', data: null, message: error.message }))
-  }, [reloadKey])
+  const newsCache = useMemo(() => newsCacheFor(token), [token])
+  const [summary] = useCachedRead(publicReadCache, SUMMARY_URL, loadSummary, EMPTY_SUMMARY, reloadKey)
+  const insightsUrl = `${API_BASE_URL}/api/news?${new URLSearchParams({ page: '0', size: String(INSIGHTS_SAMPLE_SIZE), sort: 'newest' })}`
+  const loadInsights = useCallback(async () => {
+    const data = await fetch(insightsUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(readApiResponse)
+    const items = Array.isArray(data.content) ? data.content : []
+    return { items, total: Number(data.totalElements ?? items.length) }
+  }, [insightsUrl, token])
+  const [insights, setInsights] = useCachedRead(newsCache, insightsUrl, loadInsights, EMPTY_INSIGHTS, reloadKey)
 
-  // Chart data: the most recent published posts, independent of the filters below,
-  // so the charts reflect the platform instead of whichever page is on screen.
-  useEffect(() => {
-    const controller = new AbortController()
-    const params = new URLSearchParams({ page: '0', size: String(INSIGHTS_SAMPLE_SIZE), sort: 'newest' })
-    fetch(`${API_BASE_URL}/api/news?${params}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      signal: controller.signal,
-    })
-      .then(readApiResponse)
-      .then((data) => {
-        const items = Array.isArray(data.content) ? data.content : []
-        setInsights({ status: 'success', items, total: Number(data.totalElements ?? items.length) })
-      })
-      .catch((error) => {
-        if (error.name === 'AbortError') return
-        setInsights({ status: 'error', items: [], total: 0 })
-      })
-    return () => controller.abort()
-  }, [token, reloadKey])
+  const feedParams = new URLSearchParams({ page: String(page), size: '8', sort })
+  if (activeCategory !== 'All' && activeCategory !== 'Latest') feedParams.set('category', activeCategory)
+  if (query) feedParams.set('q', query)
+  const feedUrl = `${API_BASE_URL}/api/news?${feedParams}`
+  const loadFeed = useCallback(async () => {
+    const data = await fetch(feedUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(readApiResponse)
+    const items = Array.isArray(data.content) ? data.content : []
+    return { items, totalPages: Math.max(1, Number(data.totalPages || 1)), totalElements: Number(data.totalElements ?? items.length) }
+  }, [feedUrl, token])
+  const [feed, setFeed] = useCachedRead(newsCache, feedUrl, loadFeed, EMPTY_FEED, reloadKey)
 
   // Debounced search: avoids a request on every keystroke
   useEffect(() => {
@@ -106,36 +102,6 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
     }, 350)
     return () => clearTimeout(timer)
   }, [queryInput])
-
-  // Filtered, paginated feed
-  useEffect(() => {
-    const controller = new AbortController()
-    const params = new URLSearchParams({ page: String(page), size: '8', sort })
-    if (activeCategory !== 'All' && activeCategory !== 'Latest') params.set('category', activeCategory)
-    if (query) params.set('q', query)
-
-    setFeed((current) => ({ ...current, status: 'loading', message: '' }))
-    fetch(`${API_BASE_URL}/api/news?${params}`, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      signal: controller.signal,
-    })
-      .then(readApiResponse)
-      .then((data) => {
-        const items = Array.isArray(data.content) ? data.content : []
-        setFeed({
-          status: 'success',
-          message: '',
-          items,
-          totalPages: Math.max(1, Number(data.totalPages || 1)),
-          totalElements: Number(data.totalElements ?? items.length),
-        })
-      })
-      .catch((error) => {
-        if (error.name === 'AbortError') return
-        setFeed({ status: 'error', message: error.message, items: [], totalPages: 1, totalElements: 0 })
-      })
-    return () => controller.abort()
-  }, [activeCategory, page, query, sort, token, reloadKey])
 
   const changeCategory = (category) => { setActiveCategory(category); setPage(0) }
   const changeSort = (value) => { setSort(value); setPage(0) }
@@ -218,6 +184,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
         [newsId]: { status: 'success', items: [comment, ...(all[newsId]?.items || [])] },
       }))
       const bump = (item) => item.id === newsId ? { ...item, commentCount: Number(item.commentCount || 0) + 1 } : item
+      newsCache.retain([feedUrl, insightsUrl])
       setFeed((current) => ({ ...current, items: current.items.map(bump) }))
       setInsights((current) => ({ ...current, items: current.items.map(bump) }))
     })
@@ -260,6 +227,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
       })
       if (!response.ok) await readApiResponse(response)
       const toggle = (item) => item.id === newsId ? { ...item, saved: !isSaved } : item
+      newsCache.retain([feedUrl, insightsUrl])
       setFeed((current) => ({ ...current, items: current.items.map(toggle) }))
       setInsights((current) => ({ ...current, items: current.items.map(toggle) }))
     })
