@@ -129,6 +129,10 @@
   min-width: 0;
 }
 
+.polFilters.withCongress {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+}
+
 .polField > span {
   color: var(--p-muted);
   font: 700 11px/1 var(--display);
@@ -225,6 +229,12 @@
 .polResultsBar p strong {
   color: var(--p-text);
   font-variant-numeric: tabular-nums;
+}
+
+.polPagination {
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
 }
 
 /* ---------- Grid & cards ---------- */
@@ -473,7 +483,7 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .polFilters {
+  .polFilters, .polFilters.withCongress {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -484,7 +494,7 @@
 
 @media (max-width: 640px) {
   .polGrid,
-  .polFilters {
+  .polFilters, .polFilters.withCongress {
     grid-template-columns: minmax(0, 1fr);
   }
 

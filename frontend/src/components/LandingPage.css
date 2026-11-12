@@ -489,6 +489,8 @@
 }
 
 .official-avatar {
+    position: relative;
+    overflow: hidden;
   width: 56px;
   height: 56px;
   border-radius: 12px;
@@ -503,7 +505,16 @@
   border: 1px solid rgba(168, 0, 32, 0.2);
 }
 
-.official-info {
+  .official-avatar img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
+  }
+
+  .official-info {
   flex-grow: 1;
   min-width: 0;
 }

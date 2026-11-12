@@ -6,6 +6,7 @@ import PoliticianEditor from '../../components/governance/PoliticianEditor'
 import EditSubmissionForm from '../../components/governance/EditSubmissionForm'
 import CongressProfilePanel from '../../components/governance/CongressProfilePanel'
 import CongressSourceSection from '../../components/governance/CongressSourceSection'
+import AccomplishmentsSection from '../../components/governance/AccomplishmentsSection'
 import CongressMembershipSummary from '../../components/governance/CongressMembershipSummary'
 import { formatDisplayName } from '../../features/congress/displayName'
 import BaseModal from '../../components/BaseModal'
@@ -306,12 +307,14 @@ export default function PoliticianProfilePage({
                 <p>{profile.biography || 'No biography available.'}</p>
               </section>
 
-              <CongressSourceSection key={politicianId} politicianId={politicianId} isAdmin={isAdmin} token={token} />
+              <CongressSourceSection key={`congress-source:${politicianId}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />
+
+              <AccomplishmentsSection key={`accomplishments:${politicianId}:${isAdmin}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />
 
               <StatusLine state={recordState} />
 
               {isAdmin && (
-                <CongressProfilePanel key={politicianId} politicianId={politicianId} token={token} onDraftCreated={loadCongressDrafts} />
+                <CongressProfilePanel key={`congress-admin:${politicianId}`} politicianId={politicianId} token={token} onDraftCreated={loadCongressDrafts} />
               )}
 
               {isAdmin && (

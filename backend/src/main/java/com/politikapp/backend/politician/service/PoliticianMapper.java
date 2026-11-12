@@ -43,7 +43,7 @@ public class PoliticianMapper {
                 timelines.getOrDefault(p.getPoliticianId(), List.of())))).toList();
     }
 
-    private PoliticianResponse toResponseWithRecords(Politician politician, List<ProfileEditSubmission> records) {
+    PoliticianResponse toResponseWithRecords(Politician politician, List<ProfileEditSubmission> records) {
         List<ProfileEditSubmission> submissions = records.stream()
                 .filter(sub -> dashboardMetricsService.isActionAllowedForPosition(sub.getActionIdentifier(), politician.getPosition()))
                 .toList();

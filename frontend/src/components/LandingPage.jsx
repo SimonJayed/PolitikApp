@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import './LandingPage.css';
 import { formatPosition, formatJurisdiction } from './governance/positionConfig';
+import { selectFeaturedPoliticians } from '../features/congress/featuredPoliticians';
 import {
   BanIcon,
   GitCompareIcon,
@@ -39,11 +40,10 @@ export default function LandingPage({
     };
   }, [politicians]);
 
-  // Featured sample politicians (prioritize Cebu City and National officials)
+  // Prioritize recorded indicators, then fill the six cards with current senators.
   const featuredPoliticians = useMemo(() => {
-    if (!politicians || politicians.length === 0) return [];
-    // Keep the landing page compact; all profiles are available in the directory.
-    return politicians.slice(0, 6);
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Manila' }).format(new Date());
+    return selectFeaturedPoliticians(politicians, today);
   }, [politicians]);
 
   return (
@@ -169,7 +169,15 @@ export default function LandingPage({
               >
                 <div className="official-top">
                   <div className="official-avatar">
-                    {initialsFor(politician.fullName)}
+                    <span aria-hidden="true">{initialsFor(politician.fullName)}</span>
+                    {politician.profileImageUrl && <img
+                      src={politician.profileImageUrl}
+                      alt={politician.fullName}
+                      loading="lazy"
+                      decoding="async"
+                      onError={(event) => { event.currentTarget.hidden = true; }}
+                      onLoad={(event) => { event.currentTarget.hidden = false; }}
+                    />}
                   </div>
                   <div className="official-info">
                     <div className="official-name">{politician.fullName}</div>

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from './api/client'
+import { fetchReadWithRetry } from './api/readRequest'
+import { prefetchDirectory } from './features/congress/useDirectory'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import { useAuth } from './auth/AuthContext'
@@ -158,25 +160,30 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const politicianRequest = useRef(null)
+  const politicianLoadedAt = useRef(0)
   const loadPoliticians = useCallback(() => {
     if (politicianRequest.current) return politicianRequest.current
-    setPoliticiansState((current) => ({ ...current, message: 'Loading politicians...', status: 'loading' }))
-    politicianRequest.current = fetch(`${API_BASE_URL}/api/politicians`).then(readApiResponse).then(data => {
+    setPoliticiansState((current) => current.status === 'success' ? current : ({ ...current, message: 'Loading politicians...', status: 'loading' }))
+    politicianRequest.current = fetchReadWithRetry(`${API_BASE_URL}/api/politicians`).then(readApiResponse).then(data => {
       setPoliticiansState({ data, message: '', selected: data[0] || null, status: 'success' })
+      politicianLoadedAt.current = Date.now()
     }).catch(error => {
-      setPoliticiansState({ data: [], message: error.message, selected: null, status: 'error' })
+      setPoliticiansState(current => current.status === 'success' ? { ...current, message: `Could not refresh politicians. ${error.message}` }
+        : { data: [], message: error.message, selected: null, status: 'error' })
     }).finally(() => { politicianRequest.current = null })
     return politicianRequest.current
   }, [])
 
   const politicianListRequested = useRef(false)
-  // Load once on entry, then refresh when returning to the dashboard.
+  // Reuse recent data and refresh older lists without hiding existing cards.
   useEffect(() => {
-    if (!politicianListRequested.current || activeView === 'dashboard') {
+    if (!politicianListRequested.current || (activeView === 'dashboard' && Date.now() - politicianLoadedAt.current >= 60000)) {
       politicianListRequested.current = true
       loadPoliticians()
     }
   }, [activeView, loadPoliticians])
+
+  useEffect(() => { prefetchDirectory().catch(() => {}) }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -536,6 +543,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
             onViewProfile={openPoliticianProfile}
             politicians={politiciansState.data}
             politiciansState={politiciansState}
+            onRetry={loadPoliticians}
             state={dashboardState}
             onPoliticianUpdate={handlePoliticianLocalUpdate}
             onPoliticianCreate={handlePoliticianLocalCreate}
