@@ -45,12 +45,11 @@ public class AdminCurationService {
 
     /**
      * Direct Admin CRUD: Add a verified curated metric (bills, projects, budgets, COA audits).
-     * Mandatory primarySourceUrl is strictly verified before publishing.
+     * Requires a web citation from any domain; the administrator verifies its claims.
      */
     @Transactional
     public TimelineEntry addCuratedMetric(AdminMetricUpsertRequest request, UUID adminId) {
         log.info("Admin {} adding curated metric for politician {}", adminId, request.politicianId());
-        validateSourceUrl(request.primarySourceUrl());
         CivicRecordValidation.validate(request);
 
         politicianRepository.findById(request.politicianId()).filter(profile -> !"ARCHIVED".equals(profile.getStatus()))
@@ -78,7 +77,6 @@ public class AdminCurationService {
     @Transactional
     public TimelineEntry updateCuratedMetric(UUID timelineId, AdminMetricUpsertRequest request, UUID adminId) {
         log.info("Admin {} updating curated metric {}", adminId, timelineId);
-        validateSourceUrl(request.primarySourceUrl());
         CivicRecordValidation.validate(request);
 
         TimelineEntry timeline = timelineEntryRepository.findById(timelineId)
@@ -312,13 +310,4 @@ public class AdminCurationService {
         return submission.getSourceUrl() != null ? submission.getSourceUrl() : "";
     }
 
-    private void validateSourceUrl(String url) {
-        if (url == null || url.isBlank()) {
-            throw new HttpResponseException(422, "Primary source citation URL cannot be blank.");
-        }
-        String trimmed = url.trim().toLowerCase();
-        if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-            throw new HttpResponseException(422, "Primary source citation URL must begin with http:// or https://");
-        }
-    }
 }

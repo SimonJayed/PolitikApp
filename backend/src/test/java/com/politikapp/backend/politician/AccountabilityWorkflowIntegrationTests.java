@@ -55,6 +55,28 @@ class AccountabilityWorkflowIntegrationTests {
                 .andExpect(status().isUnprocessableEntity());
     }
 
+    @Test
+    void adminsCanCreateAndEditRecordsWithCitationsFromAnyWebsite() throws Exception {
+        String admin = token("ADMIN");
+        String politician = profile(admin, "MAYOR");
+        String timeline = record(admin, politician, "BUDGET_ALLOCATION", Map.of("allocationAmount", 500), "https://example.com/budget/report?year=2026");
+        String replacement = "https://drive.google.com/file/d/test-report/view";
+        String payload = json.writeValueAsString(Map.of(
+                "politicianId", politician, "categoryTag", "Finance", "actionIdentifier", "BUDGET_ALLOCATION",
+                "actionDetails", Map.of("allocationAmount", 600), "impactSummary", "Isolated test fixture only.",
+                "primarySourceUrl", replacement));
+        mvc.perform(put("/api/admin/curation/metrics/{id}", timeline).header("Authorization", "Bearer " + admin)
+                .contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.sourceUrl").value(replacement));
+        mvc.perform(get("/api/politicians/{id}/dashboard", politician)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.trackedBudgetAllocated").value(600))
+                .andExpect(jsonPath("$.publishedTimelineLedger[0].sourceUrl").value(replacement));
+        mvc.perform(post("/api/admin/curation/metrics").contentType(MediaType.APPLICATION_JSON).content(payload))
+                .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/admin/curation/metrics").header("Authorization", "Bearer " + token("CONTRIBUTOR"))
+                .contentType(MediaType.APPLICATION_JSON).content(payload)).andExpect(status().isForbidden());
+    }
+
     private String record(String token, String politician, String action, Map<String, Object> details, String source) throws Exception {
         String result = mvc.perform(post("/api/admin/curation/metrics").header("Authorization", "Bearer " + token)
                 .contentType(MediaType.APPLICATION_JSON).content(json.writeValueAsString(Map.of(

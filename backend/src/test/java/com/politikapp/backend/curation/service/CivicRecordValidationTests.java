@@ -31,9 +31,16 @@ class CivicRecordValidationTests {
     }
 
     @Test
-    void rejectsForgedProvenanceAndDisguisedCitationHosts() {
+    void acceptsAdminCitationsFromAnyWebDomain() {
+        for (String url : new String[]{"https://example.com/report", "http://news.example.org/story?item=1", "https://drive.google.com/file/d/report/view", "https://example.com/coa.gov.ph", "https://www.coa.gov.ph.evil.test/"}) {
+            assertDoesNotThrow(() -> CivicRecordValidation.validate(request("COA_FINDING", Map.of("flaggedAmount", 1), url)));
+        }
+    }
+
+    @Test
+    void rejectsForgedProvenanceAndMalformedOrNonWebCitations() {
         assertThrows(HttpResponseException.class, () -> CivicRecordValidation.validate(request("COA_FINDING", Map.of("flaggedAmount", 1, "sourceReported", true), "https://www.coa.gov.ph/")));
-        for (String url : new String[]{"https://example.com/coa.gov.ph", "https://www.coa.gov.ph@evil.test/", "https://www.coa.gov.ph.evil.test/", "javascript:alert(1)"}) {
+        for (String url : new String[]{null, "", "not a link", "https://", "https://example.com/bad path", "https://user:password@example.com/", "javascript:alert(1)", "file:///report.pdf"}) {
             assertThrows(HttpResponseException.class, () -> CivicRecordValidation.validate(request("COA_FINDING", Map.of("flaggedAmount", 1), url)));
         }
     }

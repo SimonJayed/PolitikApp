@@ -2,7 +2,8 @@ package com.politikapp.backend.curation.service;
 
 import com.politikapp.backend.common.HttpResponseException;
 import com.politikapp.backend.curation.dto.AdminCurationDtos.AdminMetricUpsertRequest;
-import com.politikapp.backend.submission.service.SourceValidationService;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -13,7 +14,7 @@ final class CivicRecordValidation {
     private CivicRecordValidation() {}
 
     static void validate(AdminMetricUpsertRequest request) {
-        new SourceValidationService().validateSourceUrl(request.primarySourceUrl());
+        validateCitation(request.primarySourceUrl());
         Map<String, Object> details = request.actionDetails() == null ? Map.of() : request.actionDetails();
         // Imported provenance is server-managed and cannot be forged through the generic editor.
         if (details.containsKey("openCongressId") || details.containsKey("sourceReported")
@@ -37,6 +38,20 @@ final class CivicRecordValidation {
             }
             default -> invalid("Unsupported accountability action.");
         }
+    }
+
+    // Admins may cite any website; there is no source-domain allowlist here.
+    private static void validateCitation(String sourceUrl) {
+        if (sourceUrl != null && !sourceUrl.isBlank()) {
+            try {
+                URI uri = new URI(sourceUrl.trim());
+                if (("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
+                        && uri.getHost() != null && uri.getUserInfo() == null) {
+                    return;
+                }
+            } catch (URISyntaxException ignored) { /* Report an invalid web link below. */ }
+        }
+        invalid("Enter a complete HTTP or HTTPS source URL without credentials.");
     }
 
     private static void amount(Map<String, Object> details, String key, BigDecimal maximum) {
