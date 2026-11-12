@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { setImmediate } from 'node:timers'
-import { canProcessAi, canRejectArticle, canRunNewsAction, planBulkNewsAction, runConcurrentNewsActions, summaryLabel } from './newsWorkflow.js'
+import { aiActionNotice, canProcessAi, canRejectArticle, canRunNewsAction, planBulkNewsAction, runConcurrentNewsActions, summaryLabel } from './newsWorkflow.js'
 
 test('bulk writes overlap with at most three active requests and continue after a failure', async () => {
   let active = 0
@@ -71,4 +71,18 @@ test('publishing and unpublishing respect review status and incomplete-content r
   assert.equal(canRunNewsAction({ status: 'REJECTED' }, 'publish'), false)
   assert.equal(canRunNewsAction({ status: 'PUBLISHED' }, 'unpublish'), true)
   assert.equal(canRunNewsAction({ status: 'UNPUBLISHED' }, 'unpublish'), false)
+})
+
+test('AI processing feedback distinguishes failure, mock mode, and completion', () => {
+  const failed = aiActionNotice({ aiProcessingStatus: 'FAILED', reviewNotes: 'HTTP 429 quota reached.' })
+  assert.equal(failed.status, 'error')
+  assert.match(failed.message, /HTTP 429/)
+
+  const mocked = aiActionNotice({ aiProcessingStatus: 'MOCKED' })
+  assert.equal(mocked.status, 'success')
+  assert.match(mocked.message, /mock mode/)
+
+  const completed = aiActionNotice({ aiProcessingStatus: 'COMPLETED' })
+  assert.equal(completed.status, 'success')
+  assert.match(completed.message, /completed/)
 })
