@@ -1,0 +1,22 @@
+.newsArticleReader { width: min(820px, calc(100vw - 28px)); max-height: 88dvh; overflow-y: auto; padding: clamp(20px, 4vw, 36px); color: #10264b; background: white; }
+.newsArticleReader article { display: grid; gap: 20px; min-width: 0; }
+.newsArticleReader h1 { margin: 0; color: #0b1f45; font: 800 clamp(26px, 3.6vw, 36px)/1.25 var(--display); letter-spacing: -0.015em; text-wrap: balance; overflow-wrap: anywhere; }
+.newsArticleReader h2 { margin: 8px 0 0; font: 700 20px/1.4 var(--display); }
+.newsArticleReader p { margin: 0; font: 400 17px/1.72 var(--sans); color: #2b405b; }
+.newsArticleReader .readerSource { font-size: 13px; line-height: 1.6; color: #53657d; }
+.newsArticleReader .readerSummarySection { display: grid; gap: 10px; min-width: 0; }
+.newsArticleReader .readerSummarySection h2 { margin: 0; }
+.newsArticleReader .readerSummary p { max-width: 66ch; overflow-wrap: anywhere; }
+.newsArticleReader .summaryText { gap: 16px; }
+.newsArticleReader .summaryText strong { color: #10264b; font-weight: 700; }
+.newsArticleReader .articleImage { margin: 4px 0; }
+.newsArticleReader .readerOriginal { padding: 14px 16px; background: #f4f7fb; border-radius: 12px; }
+.newsArticleReader .readerOriginal summary { cursor: pointer; font: 600 14px/1.6 var(--sans); }
+.newsArticleReader .readerOriginal p { margin-top: 14px; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; max-width: 68ch; }
+.newsArticleReader > button { margin-bottom: 20px; }
+.newsArticleReader a { color: #174f8f; text-decoration: underline; text-underline-offset: 3px; }
+.newsArticleReader .readerSourceLink { font: 600 15px/1.6 var(--sans); }
+@media (max-width: 600px) {
+  .newsArticleReader article { gap: 16px; }
+  .newsArticleReader p { font-size: 16px; line-height: 1.7; }
+}

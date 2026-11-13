@@ -93,13 +93,13 @@ public class NewsAiService {
             article.setReviewedBy(null);
             article.setReviewedAt(null);
             article.setPublishedAt(null);
-            article.setExtractionData(objectMapper.writeValueAsString(result));
+            NewsSourceMetadata.replaceExtraction(article, objectMapper.valueToTree(result), objectMapper);
             article.getRelatedPoliticians().clear();
             article.getRelatedPoliticians().addAll(matchPoliticians(result.relevantPoliticians()));
             article.setSuggestedTitle(firstNonBlank(result.suggestedHeadline(), article.getOriginalTitle()));
             article.setAiSummary(result.summary().trim());
             article.setAiKeyPoints(String.join("\n", result.keyPoints() == null ? List.of() : result.keyPoints()));
-            article.setCategory(validCategory(result.category()));
+            article.setCategory(NewsTopics.category(article));
             article.setAiModel(callResult.modelId());
             article.setAiProcessingStatus("COMPLETED");
             article.setReviewNotes(reviewNotesFor(result, verified.hasMismatchWarning()));
@@ -116,7 +116,7 @@ public class NewsAiService {
                 article.setReviewNotes("AI processing failed (existing draft preserved); admin manual review required. "
                         + safeError(exception.getMessage()));
             } else {
-                article.setExtractionData(null);
+                NewsSourceMetadata.replaceExtraction(article, null, objectMapper);
                 article.getRelatedPoliticians().clear();
                 article.setSuggestedTitle(article.getOriginalTitle());
                 article.setAiKeyPoints(null);
@@ -339,6 +339,9 @@ public class NewsAiService {
                 - Evidence excerpts must be exact excerpts from the supplied text.
                 - Do not invent facts, people, dates, quotes, or outcomes.
                 - Keep language neutral and non-persuasive.
+                - Provide 2–3 concise keyPoints, each one short, complete sentence about a distinct supported fact.
+                - Exclude author bylines, publication metadata, repeated headlines, boilerplate, and HTML from summaries and keyPoints.
+                - Do not repeat the summary verbatim in keyPoints or truncate a sentence to make a keyPoint.
                 - Distinguish proposals, announcements, enacted laws, allegations, and completed work.
                 - Never imply an allegation is proven.
 
@@ -362,14 +365,14 @@ public class NewsAiService {
         article.setReviewedBy(null);
         article.setReviewedAt(null);
         article.setPublishedAt(null);
-        article.setExtractionData(null);
+        NewsSourceMetadata.replaceExtraction(article, null, objectMapper);
         article.getRelatedPoliticians().clear();
         article.setSuggestedTitle(article.getOriginalTitle());
         article.setAiSummary(content.isBlank()
                 ? "Summary requires admin review because the source feed did not provide article text."
                 : truncate(content, 520));
         article.setAiKeyPoints("Retrieved from an approved government source.");
-        article.setCategory(classify(article.getOriginalTitle() + " " + content));
+        article.setCategory(NewsTopics.category(article));
         article.setAiModel(truncate("mock-" + firstNonBlank(safeModelName(model), "default"), 120));
         article.setAiProcessingStatus("MOCKED");
         article.setReviewNotes("AI is disabled or in mock mode. This is a source excerpt, not an AI summary; manual verification is required.");
@@ -380,14 +383,14 @@ public class NewsAiService {
     public void prepareDeterministicDraft(NewsArticle article) {
         String content = safeText(article.getOriginalContent()).replaceAll("\\s+", " ").trim();
         String excerpt = truncate(content, 500);
-        int sentenceEnd = content.indexOf('.');
-        String firstPoint = sentenceEnd >= 0 ? content.substring(0, Math.min(sentenceEnd + 1, 350)) : truncate(content, 350);
+        String firstPoint = java.util.Arrays.stream(content.split("(?<=[.!?])\\s+(?=[A-Z0-9])"))
+                .map(String::trim).filter(sentence -> sentence.length() >= 25 && sentence.length() <= 220
+                        && sentence.matches("(?s).*[.!?]$"))
+                .distinct().limit(3).collect(java.util.stream.Collectors.joining("\n"));
         article.setSuggestedTitle(article.getOriginalTitle());
         article.setAiSummary(excerpt);
         article.setAiKeyPoints(firstPoint);
-        article.setCategory(content.toLowerCase(java.util.Locale.ROOT).contains("project")
-                || content.toLowerCase(java.util.Locale.ROOT).contains("infrastructure")
-                ? "Government Projects" : "Government Announcements");
+        article.setCategory(NewsTopics.category(article));
         article.setAiProcessingStatus("DETERMINISTIC");
         article.setAiModel(null);
         article.setReviewNotes("Automatically retrieved source excerpt. No Gemini call was made. Check the original article and edit before approval.");
@@ -535,23 +538,6 @@ public class NewsAiService {
     }
 
     private record EvidenceCheck(GeminiNewsResult result, boolean hasMismatchWarning) {}
-
-    private String validCategory(String category) {
-        if (category == null) return "Government Announcements";
-        return switch (category.trim()) {
-            case "Legislation", "Government Projects", "Public Spending", "Audit Reports", "Government Announcements" -> category.trim();
-            default -> "Government Announcements";
-        };
-    }
-
-    private String classify(String text) {
-        String normalized = text == null ? "" : text.toLowerCase();
-        if (normalized.contains("audit") || normalized.contains("coa")) return "Audit Reports";
-        if (normalized.contains("bill") || normalized.contains("act") || normalized.contains("law")) return "Legislation";
-        if (normalized.contains("budget") || normalized.contains("spending") || normalized.contains("fund")) return "Public Spending";
-        if (normalized.contains("project") || normalized.contains("infrastructure")) return "Government Projects";
-        return "Government Announcements";
-    }
 
     private String stripCodeFence(String value) {
         String cleaned = value == null ? "" : value.trim();

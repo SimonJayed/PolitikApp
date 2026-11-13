@@ -163,14 +163,6 @@ export default function PoliticiansLoaderPanel({
       </div>
 
       <section className="polGrid" aria-label="Politicians">
-        {isLoading && Array.from({ length: 6 }).map((_, index) => (
-          <div className="polSkeletonCard" key={`politician-skeleton-${index}`} aria-hidden="true">
-            <span className="polSkeletonAvatar" />
-            <span className="polSkeletonLine wide" />
-            <span className="polSkeletonLine medium" />
-            <span className="polSkeletonLine short" />
-          </div>
-        ))}
 
         {!isLoading && politiciansState.status !== 'error' && directory.status !== 'error' && filtered.length === 0 && (
           <div className="polEmpty">
@@ -181,7 +173,7 @@ export default function PoliticiansLoaderPanel({
           </div>
         )}
 
-        {!isLoading && pageItems.map((politician) => {
+        {pageItems.map((politician) => {
           const jurisdiction = directoryJurisdiction(politician, membershipIndex)
           const isNational = String(jurisdiction || '').toUpperCase().includes('NATIONAL')
           const displayName = formatDisplayName(politician.fullName)

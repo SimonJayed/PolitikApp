@@ -26,8 +26,12 @@ public class NewsDtos {
             boolean adminVerified,
             boolean saved,
             List<RelatedPoliticianResponse> relatedPoliticians,
-            com.fasterxml.jackson.databind.JsonNode extraction
+            com.fasterxml.jackson.databind.JsonNode extraction,
+            String sourceAuthor,
+            SourceImageResponse image
     ) {}
+
+    public record SourceImageResponse(String url, String alt, String attribution, String license, String sourceUrl) {}
 
     public record RelatedPoliticianResponse(UUID id, String fullName) {}
 
@@ -83,7 +87,7 @@ public class NewsDtos {
     public record ReviewArticleRequest(
             @NotBlank @Size(max = 300) String suggestedTitle,
             @NotBlank @Size(max = 3000) String aiSummary,
-            @NotBlank @Size(max = 80) String category,
+            @Size(max = 80) String category,
             @Size(max = 3000) String reviewNotes,
             @Size(max = 50) List<UUID> relatedPoliticianIds,
             @Size(max = 30) List<@NotBlank @Size(max = 600) String> keyPoints

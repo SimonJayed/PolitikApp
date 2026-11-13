@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ScaleIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { useDirectory } from '../../features/congress/useDirectory'
-import { sortDirectory } from '../../features/congress/politicianDirectory'
+import { normalizePosition, sortDirectory } from '../../features/congress/politicianDirectory'
 import { initialsFor, KpiGrid, PageSkeleton, PaginationMini, StatusLine, TimelineLedger } from '../pageHelpers'
 import './Compare.css'
 
@@ -154,6 +154,11 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
   useEffect(() => { modalCallback.current = onModalOpenChange }, [onModalOpenChange])
 
   const membershipIndex = useMemo(() => new Map(directory.people.map(person => [person.politicianId, person])), [directory.people])
+  const byId = (id) => politicians.find((politician) => politician.politicianId === id)
+  const selected = { idA: byId(compareIds.idA), idB: byId(compareIds.idB) }
+  const comparisonPosition = normalizePosition(selected.idA?.position || selected.idB?.position)
+  const compatiblePair = Boolean(selected.idA && selected.idB && compareIds.idA !== compareIds.idB && comparisonPosition
+    && normalizePosition(selected.idA.position) === normalizePosition(selected.idB.position))
 
   const jurisdictions = useMemo(
     () => [...new Set(politicians.map((politician) => politician.jurisdiction).filter(Boolean))],
@@ -164,6 +169,8 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
     const q = query.trim().toLowerCase()
     const matches = politicians.filter((politician) => {
       if (politician.status === 'ARCHIVED') return false
+      const position = normalizePosition(politician.position)
+      if (!position || (comparisonPosition && position !== comparisonPosition)) return false
       if (jurisdictionFilter !== 'ALL' && politician.jurisdiction !== jurisdictionFilter) return false
       if (!q) return true
       return (
@@ -173,9 +180,9 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
       )
     })
     return sortDirectory(matches, membershipIndex, directory.currentCongress, directory.asOfDate)
-  }, [jurisdictionFilter, politicians, query, membershipIndex, directory.currentCongress, directory.asOfDate])
+  }, [jurisdictionFilter, politicians, query, comparisonPosition, membershipIndex, directory.currentCongress, directory.asOfDate])
 
-  useEffect(() => { setPages({ left: 1, right: 1 }) }, [query, jurisdictionFilter])
+  useEffect(() => { setPages({ left: 1, right: 1 }) }, [query, jurisdictionFilter, comparisonPosition])
 
   useEffect(() => {
     modalCallback.current?.(isModalOpen)
@@ -196,16 +203,22 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
     return { safe, items: filtered.slice((safe - 1) * PAGE_SIZE, safe * PAGE_SIZE) }
   }
 
-  const byId = (id) => politicians.find((politician) => politician.politicianId === id)
-  const selected = { idA: byId(compareIds.idA), idB: byId(compareIds.idB) }
   const isFiltering = Boolean(query.trim()) || jurisdictionFilter !== 'ALL'
   const isLoading = state.status === 'loading'
 
   function setSide(idKey, value) {
-    onChange((current) => ({ ...current, [idKey]: value }))
+    onChange((current) => {
+      const otherId = current[idKey === 'idA' ? 'idB' : 'idA']
+      const candidate = byId(value)
+      const other = byId(otherId)
+      if (value && (!candidate || !normalizePosition(candidate.position) || value === otherId
+        || (other && normalizePosition(candidate.position) !== normalizePosition(other.position)))) return current
+      return { ...current, [idKey]: value }
+    })
   }
 
   async function submit(event) {
+    if (!compatiblePair) { event.preventDefault(); return }
     const result = await onSubmit(event)
     if (result?.ok) setIsModalOpen(true)
   }
@@ -215,7 +228,7 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
       <header className="cmpHero">
         <div className="cmpHeroText">
           <h1>Compare candidates</h1>
-          <p>Pick two politicians to see their records side by side.</p>
+          <p>Pick two politicians with the same position to see their records side by side.</p>
         </div>
 
         <div className="cmpFilters" role="search" aria-label="Candidate filters">
@@ -256,6 +269,10 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
           <button type="button" onClick={() => { setQuery(''); setJurisdictionFilter('ALL') }}>Clear filters</button>
         )}
       </p>
+      {comparisonPosition && <p className="cmpResultMeta" aria-live="polite">
+        <span>Showing {formatPosition(comparisonPosition) || comparisonPosition} candidates only.</span>
+        <button type="button" onClick={() => onChange({ idA: '', idB: '' })}>Clear selections</button>
+      </p>}
 
       <div className="cmpColumns">
         {SIDES.map((side) => {
@@ -281,7 +298,7 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
 
       <form className="cmpBar" onSubmit={submit}>
         <BarSlot side={SIDES[0]} politician={selected.idA} onClear={() => setSide('idA', '')} />
-        <button type="submit" className="cmpSubmit" disabled={isLoading || !compareIds.idA || !compareIds.idB}>
+        <button type="submit" className="cmpSubmit" disabled={isLoading || !compatiblePair}>
           <ScaleIcon size={18} />
           <span>{isLoading ? 'Comparing...' : 'Compare selected'}</span>
         </button>

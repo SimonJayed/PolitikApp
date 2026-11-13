@@ -171,10 +171,8 @@ public class NewsService {
 
     @Transactional(readOnly = true)
     public DashboardSummaryResponse summary(Instant fourteenDaysAgo, Instant weekStart) {
-            long records = articleRepository.countByPublishedCategories(
-                    "PUBLISHED",
-                    Set.of("Legislation", "Bills", "Resolutions", "Audit Reports", "COA Audit Reports")
-            );
+            long records = articleRepository.count(publishedSpec("Legislation", null))
+                    + articleRepository.count(publishedSpec("Audit Reports", null));
             return new DashboardSummaryResponse(
                     records,
                     articleRepository.countPublishedSince("PUBLISHED", fourteenDaysAgo),
@@ -206,7 +204,7 @@ public class NewsService {
             predicate = builder.and(predicate, builder.isNotNull(root.get("reviewedBy")),
                     builder.isNotNull(root.get("reviewedAt")), builder.isNotNull(root.get("publishedAt")));
             if (category != null) {
-                predicate = builder.and(predicate, builder.equal(builder.lower(root.get("category")), category.toLowerCase()));
+                predicate = builder.and(predicate, builder.equal(builder.lower(NewsTopics.category(builder, root)), category.toLowerCase(java.util.Locale.ROOT)));
             }
             if (query != null) {
                 String like = "%" + query.toLowerCase() + "%";

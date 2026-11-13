@@ -21,6 +21,7 @@ window.fetch=async(input)=>{
  else if(url.pathname.endsWith('/directory-memberships'))data={people:[],currentCongress:20,asOfDate:'2026-11-12'};
  else if(url.pathname.endsWith('/leaderboard'))data={entries:[{...politicians[3],rank:1,wgiCompositeScore:25}],totalRanked:1,unrankedCount:11,hasMore:false,calculatedAt:'2026-11-12T00:00:00Z'};
  else if(url.pathname==='/api/news')data={content:[post],totalPages:1,totalElements:1};
+ else if(url.pathname.endsWith('/comments'))data=[];
  return new Response(JSON.stringify(data),{headers:{'content-type':'application/json'}});
 };
 createRoot(document.getElementById('root')).render(React.createElement(AuthProvider,null,React.createElement(App)));
@@ -57,6 +58,7 @@ try {
     const politiciansMs = await switchTo('Politicians')
     assert.equal(await evaluate(`document.querySelectorAll('.polName').length`), 9)
     assert.ok(await evaluate(`document.querySelector('.wgiFeatured')?.innerText.includes('Senator 03')`))
+    assert.ok(await evaluate(`!document.querySelector('.wgiLeaderboard').innerText.includes('Loading')`))
     await switchTo('Compare')
     assert.equal(await evaluate(`document.querySelectorAll('.cmpCard').length`), 10)
     assert.ok(await evaluate(`document.querySelector('.cmpCard')?.innerText.includes('President Fixture')`))

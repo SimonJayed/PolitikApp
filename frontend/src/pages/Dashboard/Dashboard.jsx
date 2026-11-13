@@ -16,7 +16,10 @@ import {
 import './Dashboard.css'
 import NewsArticleReader from '../../components/NewsArticleReader'
 import { PaginationMini } from '../pageHelpers'
-import { summaryLabel } from '../../features/news/newsWorkflow'
+import NewsCardContent from '../../components/NewsCardContent'
+import { safeNewsUrl } from '../../features/news/newsPresentation'
+import { createOptimisticActions, relativeCommentTime } from '../../features/news/optimisticActions'
+import { commentsUrl, loadNewsComments, updateNewsComments } from '../../features/news/newsComments'
 
 const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 const INSIGHTS_SAMPLE_SIZE = 50
@@ -25,16 +28,6 @@ const EMPTY_INSIGHTS = { items: [], total: 0 }
 const EMPTY_SUMMARY = { data: null }
 const SUMMARY_URL = `${API_BASE_URL}/api/news/summary`
 const loadSummary = () => fetch(SUMMARY_URL).then(readApiResponse).then(data => ({ data }))
-
-// Boilerplate strings that should never be shown to readers.
-const HIDDEN_TEXT = [
-  'Retrieved from an approved government source.',
-  'Retrieved from an approved government source',
-  'Needs administrator verification before publication.',
-]
-const stripHidden = (text = '') =>
-  HIDDEN_TEXT.reduce((result, phrase) => result.split(phrase).join(''), String(text)).replace(/\s{2,}/g, ' ').trim()
-const isHiddenPoint = (point) => HIDDEN_TEXT.some((phrase) => String(point).trim() === phrase)
 
 // Category colors come from the App.css flag palette (--ph-*), so they follow the theme.
 const categoryColors = {
@@ -61,6 +54,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
   const [commentsByPost, setCommentsByPost] = useState({})
+  const [openComments, setOpenComments] = useState({})
   const [drafts, setDrafts] = useState({})
   const [actionMessage, setActionMessage] = useState('')
   const [busy, setBusy] = useState({})
@@ -68,6 +62,15 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   const [reloadKey, setReloadKey] = useState(0)
   const feedTopRef = useRef(null)
   const queryRef = useRef('')
+  const optimisticAction = useMemo(() => {
+    const enqueue = createOptimisticActions()
+    return (key, ...args) => enqueue(`${token || 'guest'}:${key}`, ...args)
+  }, [token])
+  const [commentNow, setCommentNow] = useState(Date.now)
+  useEffect(() => {
+    const interval = setInterval(() => setCommentNow(Date.now()), 60000)
+    return () => clearInterval(interval)
+  }, [])
 
   const newsCache = useMemo(() => newsCacheFor(token), [token])
   const [summary] = useCachedRead(publicReadCache, SUMMARY_URL, loadSummary, EMPTY_SUMMARY, reloadKey)
@@ -89,6 +92,17 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
     return { items, totalPages: Math.max(1, Number(data.totalPages || 1)), totalElements: Number(data.totalElements ?? items.length) }
   }, [feedUrl, token])
   const [feed, setFeed] = useCachedRead(newsCache, feedUrl, loadFeed, EMPTY_FEED, reloadKey)
+  const commentPrefetchIds = feed.items.map(post => post.id).join('|')
+  useEffect(() => {
+    let cancelled = false
+    for (const id of commentPrefetchIds.split('|').filter(Boolean)) {
+      loadNewsComments(newsCache, id, token).then(items => {
+        if (!cancelled) setCommentsByPost(all => ({ ...all, [id]: { status: 'success', items } }))
+      }).catch(() => {}) // Opening the thread provides a retry and visible errors if needed.
+    }
+    return () => { cancelled = true }
+  }, [commentPrefetchIds, newsCache, token])
+  useEffect(() => { setCommentsByPost({}); setOpenComments({}) }, [newsCache])
 
   // Debounced search: avoids a request on every keystroke
   useEffect(() => {
@@ -151,19 +165,15 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   }
 
   async function loadComments(newsId) {
-    const current = commentsByPost[newsId]
-    if (current?.status === 'success') {
-      setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'idle', items: current.items } }))
-      return
-    }
-    setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'loading', items: [] } }))
+    setOpenComments(all => ({ ...all, [newsId]: !all[newsId] }))
+    if (openComments[newsId]) return
+    const cached = newsCache.peek(commentsUrl(newsId))
+    if (cached) setCommentsByPost(all => ({ ...all, [newsId]: { status: 'success', items: cached } }))
     try {
-      const comments = await fetch(`${API_BASE_URL}/api/news/${newsId}/comments`, {
-        headers: token ? { Authorization: 'Bearer ' + token } : {},
-      }).then(readApiResponse)
+      const comments = await loadNewsComments(newsCache, newsId, token)
       setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'success', items: comments } }))
     } catch (error) {
-      setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'error', message: error.message, items: [] } }))
+      setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'error', message: error.message, items: all[newsId]?.items || [] } }))
     }
   }
 
@@ -178,13 +188,16 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ content }),
       }).then(readApiResponse)
+      const receivedAt = Date.now()
+      setCommentNow(receivedAt)
       setDrafts((all) => ({ ...all, [newsId]: '' }))
+      const items = updateNewsComments(newsCache, newsId, current => [{ ...comment, displayCreatedAt: new Date(receivedAt).toISOString() }, ...current.filter(item => item.id !== comment.id)])
       setCommentsByPost((all) => ({
         ...all,
-        [newsId]: { status: 'success', items: [comment, ...(all[newsId]?.items || [])] },
+        [newsId]: { status: 'success', items },
       }))
       const bump = (item) => item.id === newsId ? { ...item, commentCount: Number(item.commentCount || 0) + 1 } : item
-      newsCache.retain([feedUrl, insightsUrl])
+      newsCache.retain([feedUrl, insightsUrl, ...feed.items.flatMap(post => [commentsUrl(post.id), `${API_BASE_URL}/api/news/${post.id}`])])
       setFeed((current) => ({ ...current, items: current.items.map(bump) }))
       setInsights((current) => ({ ...current, items: current.items.map(bump) }))
     })
@@ -195,21 +208,30 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
       setActionMessage('Sign in to vote on comments.')
       return
     }
-    if (busy[`vote-${commentId}`]) return
-    return guarded(`vote-${commentId}`, async () => {
-      const updated = await fetch(`${API_BASE_URL}/api/comments/${commentId}/vote`, {
+    const comment = commentsByPost[newsId]?.items.find(item => item.id === commentId)
+    if (!comment || (comment.voted && comment.voteType !== voteType)) return
+    setActionMessage('')
+    const removing = comment.voteType === voteType
+    const desired = { ...comment, voted: !removing, voteType: removing ? null : voteType,
+      upvotes: Math.max(0, Number(comment.upvotes || 0) + (voteType === 'UP' ? (removing ? -1 : 1) : 0)),
+      downvotes: Math.max(0, Number(comment.downvotes || 0) + (voteType === 'DOWN' ? (removing ? -1 : 1) : 0)) }
+    const apply = updated => {
+      const items = updateNewsComments(newsCache, newsId, current => current.map(item => item.id === commentId ? { ...item, ...updated } : item))
+      setCommentsByPost(all => ({ ...all, [newsId]: {
+      ...(all[newsId] || { status: 'success' }),
+      items,
+    } })) }
+    const postVote = type => fetch(`${API_BASE_URL}/api/comments/${commentId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ voteType }),
+        body: JSON.stringify({ voteType: type }),
       }).then(readApiResponse)
-      setCommentsByPost((all) => ({
-        ...all,
-        [newsId]: {
-          ...(all[newsId] || { status: 'success' }),
-          items: (all[newsId]?.items || []).map((item) => item.id === commentId ? updated : item),
-        },
-      }))
-    })
+    return optimisticAction(`vote-${commentId}`, comment, desired, apply, async (confirmed, target, confirm) => {
+      let updated = confirmed
+      if (updated.voteType && updated.voteType !== target.voteType) { updated = await postVote(updated.voteType); confirm(updated) }
+      if (target.voteType && updated.voteType !== target.voteType) { updated = await postVote(target.voteType); confirm(updated) }
+      return updated
+    }, error => setActionMessage(error.message || 'Your vote could not be saved. Please try again.'))
   }
 
   function savePost(newsId) {
@@ -217,20 +239,25 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
       setActionMessage('Sign in to save posts.')
       return
     }
-    if (busy[`save-${newsId}`]) return
     const post = feed.items.find((item) => item.id === newsId)
+    if (!post) return
     const isSaved = Boolean(post?.saved)
-    return guarded(`save-${newsId}`, async () => {
+    setActionMessage('')
+    const apply = saved => {
+      const toggle = item => item.id === newsId ? { ...item, saved } : item
+      newsCache.retain([feedUrl, insightsUrl, ...feed.items.flatMap(post => [commentsUrl(post.id), `${API_BASE_URL}/api/news/${post.id}`])])
+      setFeed(current => ({ ...current, items: current.items.map(toggle) }))
+      setInsights(current => ({ ...current, items: current.items.map(toggle) }))
+    }
+    return optimisticAction(`save-${newsId}`, isSaved, !isSaved, apply, async (confirmed, target) => {
+      if (confirmed === target) return confirmed
       const response = await fetch(`${API_BASE_URL}/api/news/${newsId}/save`, {
-        method: isSaved ? 'DELETE' : 'POST',
+        method: target ? 'POST' : 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       })
       if (!response.ok) await readApiResponse(response)
-      const toggle = (item) => item.id === newsId ? { ...item, saved: !isSaved } : item
-      newsCache.retain([feedUrl, insightsUrl])
-      setFeed((current) => ({ ...current, items: current.items.map(toggle) }))
-      setInsights((current) => ({ ...current, items: current.items.map(toggle) }))
-    })
+      return target
+    }, error => setActionMessage(error.message || 'Your bookmark could not be saved. Please try again.'))
   }
 
   const suggestedPoliticians = politicians.slice(0, 4)
@@ -391,16 +418,15 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
           )}
 
           <div className="postStack">
-            {readingId && <NewsArticleReader id={readingId} token={token} onClose={() => setReadingId(null)} onOpenProfile={onOpenProfile} />}
+            {readingId && <NewsArticleReader id={readingId} initialArticle={feed.items.find(post => post.id === readingId)} token={token} onClose={() => setReadingId(null)} onOpenProfile={onOpenProfile} />}
             {feed.status !== 'loading' && feed.items.map((post, index) => {
               const comments = commentsByPost[post.id]
-              const open = Boolean(comments?.status && comments.status !== 'idle')
+              const open = Boolean(openComments[post.id])
               const isFeatured = index === 0 && page === 0 && sort === 'newest' && !query && activeCategory === 'All'
-              const summaryText = stripHidden(post.summary)
-              const longSummary = summaryText.length > 240
+
+
               const isExpanded = Boolean(expanded[post.id])
-              const visiblePoints = (post.keyPoints || []).filter((point) => !isHiddenPoint(point)).slice(0, 3)
-              const saveBusy = Boolean(busy[`save-${post.id}`])
+
               return (
                 <article
                   className={`newsPost${isFeatured ? ' featured' : ''}`}
@@ -411,35 +437,14 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                     <span className="sourceBadge">{initials(post.sourceName)}</span>
                     <div>
                       <strong>{post.sourceName}</strong>
-                      <span title={`Published here ${formatDate(post.publishedAt)}`}>
-                        {timeAgo(post.originalPublishedAt || post.publishedAt)}
-                      </span>
+                      <time dateTime={post.originalPublishedAt || post.publishedAt || undefined} title={post.originalPublishedAt ? 'Original publication date' : 'Publication date on PolitikApp'}>
+                        {post.originalPublishedAt || post.publishedAt ? formatDate(post.originalPublishedAt || post.publishedAt) : 'Publication date unavailable'}
+                      </time>
                     </div>
-                    {post.adminVerified && <span className="verifiedPill"><ShieldCheckIcon size={14} /> Verified</span>}
+                    {post.adminVerified && <span className="verifiedPill"><ShieldCheckIcon size={14} /> Admin reviewed</span>}
                   </header>
 
-                  <div className="postBody">
-                    <span className="categoryPill"><i className="categoryDot" />{post.category}</span>
-                    <h2>{post.headline}</h2>
-                    <p className="ty-meta">{summaryLabel(post)}</p>
-                    {summaryText && <p className={longSummary && !isExpanded ? 'clamped' : ''}>{summaryText}</p>}
-                    {longSummary && (
-                      <button
-                        className="readMore"
-                        type="button"
-                        aria-expanded={isExpanded}
-                        onClick={() => setExpanded((all) => ({ ...all, [post.id]: !isExpanded }))}
-                      >
-                        {isExpanded ? 'Show less' : 'Show more'}
-                      </button>
-                    )}
-                    {visiblePoints.length > 0 && (
-                      <ul className="keyPoints">
-                        {visiblePoints.map((point) => <li key={point}>{point}</li>)}
-                      </ul>
-                    )}
-                  </div>
-
+                  <NewsCardContent article={post} expanded={isExpanded} onToggle={() => setExpanded(all => ({ ...all, [post.id]: !all[post.id] }))} />
                   <footer className="postActions">
                     <button type="button" onClick={() => setReadingId(post.id)}>Read article</button>
                     <button type="button" aria-expanded={open} onClick={() => loadComments(post.id)}>
@@ -447,15 +452,14 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                       <span>{open ? 'Hide comments' : `${post.commentCount ?? 0} comment${post.commentCount === 1 ? '' : 's'}`}</span>
                     </button>
                     <div className="postActionsEnd">
-                      <a className="sourceLink" href={post.sourceUrl} target="_blank" rel="noreferrer">
+                      {safeNewsUrl(post.sourceUrl) && <a className="sourceLink" href={safeNewsUrl(post.sourceUrl)} target="_blank" rel="noopener noreferrer">
                         <ExternalLinkIcon size={17} />
                         <span>Read original</span>
-                      </a>
+                      </a>}
                       <button
                         className={`saveIconButton${post.saved ? ' saved' : ''}`}
                         aria-label={post.saved ? 'Unsave update' : 'Save update'}
                         aria-pressed={Boolean(post.saved)}
-                        disabled={saveBusy}
                         title={token ? (post.saved ? 'Unsave update' : 'Save update') : 'Sign in to save posts'}
                         type="button"
                         onClick={() => savePost(post.id)}
@@ -483,17 +487,16 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                       ) : (
                         <p className="ty-meta commentHint">Sign in to join the discussion. Comments are anonymous.</p>
                       )}
-                      {comments.status === 'loading' && <span className="inlineSkeleton commentSkeleton" aria-label="Loading comments" />}
-                      {comments.status === 'error' && <p className="ty-meta commentHint">{comments.message}</p>}
-                      {comments.status === 'success' && comments.items?.length === 0 && (
+                      {comments?.status === 'error' && <p className="ty-meta commentHint">{comments.message}</p>}
+                      {comments?.status === 'success' && comments.items?.length === 0 && (
                         <p className="ty-meta commentHint">No comments yet. Start the discussion.</p>
                       )}
-                      {comments.items?.map((comment) => (
+                      {comments?.items?.map((comment) => (
                         <div className="commentRow" key={comment.id}>
                           <span className="commentAvatar">{initials(comment.authorLabel)}</span>
                           <div className="commentText">
                             <strong>{comment.authorLabel}</strong>
-                            <span>{timeAgo(comment.createdAt)}</span>
+                            <time dateTime={comment.createdAt}>{relativeCommentTime(comment.displayCreatedAt || comment.createdAt, commentNow)}</time>
                             <p>{comment.content}</p>
                           </div>
                           <div className="voteButtons">
@@ -501,7 +504,8 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                               className={`voteUp${comment.voteType === 'UP' ? ' is-selected' : ''}`}
                               aria-label="Upvote"
                               title={token ? 'Upvote' : 'Sign in to vote'}
-                              disabled={busy[`vote-${comment.id}`] || (comment.voted && comment.voteType !== 'UP')}
+                              aria-pressed={comment.voteType === 'UP'}
+                              disabled={comment.voted && comment.voteType !== 'UP'}
                               type="button"
                               onClick={() => vote(comment.id, post.id, 'UP')}
                             >
@@ -512,7 +516,8 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                               className={`voteDown${comment.voteType === 'DOWN' ? ' is-selected' : ''}`}
                               aria-label="Downvote"
                               title={token ? 'Downvote' : 'Sign in to vote'}
-                              disabled={busy[`vote-${comment.id}`] || (comment.voted && comment.voteType !== 'DOWN')}
+                              aria-pressed={comment.voteType === 'DOWN'}
+                              disabled={comment.voted && comment.voteType !== 'DOWN'}
                               type="button"
                               onClick={() => vote(comment.id, post.id, 'DOWN')}
                             >
@@ -659,19 +664,4 @@ function formatDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return 'Date unavailable'
   return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(date)
-}
-
-function timeAgo(value) {
-  if (!value) return 'Date unavailable'
-  const time = new Date(value).getTime()
-  if (Number.isNaN(time)) return 'Date unavailable'
-  const seconds = Math.round((Date.now() - time) / 1000)
-  if (seconds < 60) return 'Just now'
-  const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 7) return `${days}d ago`
-  return formatDate(value)
 }

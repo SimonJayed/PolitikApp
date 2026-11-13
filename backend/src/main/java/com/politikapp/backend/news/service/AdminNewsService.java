@@ -195,7 +195,7 @@ public class AdminNewsService {
             article.setSuggestedTitle(workingCopy.getSuggestedTitle());
             article.setAiSummary(workingCopy.getAiSummary());
             article.setAiKeyPoints(workingCopy.getAiKeyPoints());
-            article.setExtractionData(null);
+            article.setExtractionData(workingCopy.getExtractionData());
             article.getRelatedPoliticians().clear();
             article.setReviewNotes(workingCopy.getReviewNotes());
             invalidateApproval(article);
@@ -240,9 +240,6 @@ public class AdminNewsService {
         AuthUser actor = admin(adminId);
         NewsArticle article = article(id);
         requireStatus(article, "PENDING_REVIEW", "APPROVED", "REJECTED", "PUBLISHED", "UNPUBLISHED");
-        if (!List.of("Legislation", "Government Projects", "Public Spending", "Audit Reports", "Government Announcements").contains(request.category())) {
-            throw new HttpResponseException(400, "Unsupported article category.");
-        }
         if (request.relatedPoliticianIds() != null) {
             var ids = new java.util.HashSet<>(request.relatedPoliticianIds());
             var related = politicians.findAllById(ids);
@@ -252,7 +249,7 @@ public class AdminNewsService {
         article.setSuggestedTitle(request.suggestedTitle().trim());
         article.setAiSummary(request.aiSummary().trim());
         if (request.keyPoints() != null) article.setAiKeyPoints(String.join("\n", request.keyPoints()));
-        article.setCategory(request.category().trim());
+        article.setCategory(NewsTopics.category(article));
         article.setReviewNotes(request.reviewNotes());
         invalidateApproval(article);
         log(article, actor, "UPDATE", "Admin edited news article; fresh approval required.");

@@ -15,7 +15,7 @@ export const ACTION_LABELS = {
   SPONSORED_LEGISLATION: 'Sponsored Legislation',
 };
 
-export const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education'];
+export const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education', 'Governance', 'Labor and Employment', 'Social Welfare', 'Environment', 'Agriculture'];
 
 export const actionDetailFields = {
   COA_FINDING: [

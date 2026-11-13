@@ -47,6 +47,11 @@ public class ComparisonService {
                 .filter(p -> !"ARCHIVED".equals(p.getStatus()))
                 .orElseThrow(() -> missingProfileException());
 
+        String positionA = comparisonPosition(politicianA.getPosition());
+        if (positionA.isBlank() || !positionA.equals(comparisonPosition(politicianB.getPosition()))) {
+            throw new HttpResponseException(400, "Choose two politicians with the same position.");
+        }
+
         List<TimelineEntry> streamA = timelineEntryRepository
                 .findActiveEntries(idA, "PUBLISHED");
         List<TimelineEntry> streamB = timelineEntryRepository
@@ -87,5 +92,15 @@ public class ComparisonService {
 
     private HttpResponseException missingProfileException() {
         return new HttpResponseException(404, "Not Found: One or both requested profiles are missing.");
+    }
+
+    private String comparisonPosition(String value) {
+        String position = value == null ? "" : value.trim().toUpperCase(java.util.Locale.ROOT).replaceAll("[^A-Z0-9]+", "_");
+        return switch (position) {
+            case "SENATE" -> "SENATOR";
+            case "HOUSE", "REPRESENTATIVE", "HOUSE_OF_REPRESENTATIVES", "CONGRESSMAN", "CONGRESSWOMAN" -> "HOUSE_REPRESENTATIVE";
+            case "VICE_PRES" -> "VICE_PRESIDENT";
+            default -> position;
+        };
     }
 }

@@ -169,6 +169,14 @@ public class GovernmentNewsRetrievalService {
             article.setOriginalContent(extracted.text());
             article.setOriginalPublishedAt(publishedAt);
             ai.prepareRetrievedDraft(article);
+            var sourceMetadata = json.createObjectNode();
+            if (extracted.author() != null) sourceMetadata.put("author", extracted.author());
+            if (extracted.image() != null) sourceMetadata.set("image", json.valueToTree(extracted.image()));
+            if (!sourceMetadata.isEmpty()) {
+                var data = json.createObjectNode();
+                data.set("sourceMetadata", sourceMetadata);
+                article.setExtractionData(data.toString());
+            }
             articles.save(article);
             counts.retrieved++;
         } catch (Exception exception) {

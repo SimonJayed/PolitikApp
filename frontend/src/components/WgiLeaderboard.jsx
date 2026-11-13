@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../api/client'
 import { fetchReadWithRetry } from '../api/readRequest'
 import { publicReadCache } from '../api/readCache'
+import { LEADERBOARD_SNAPSHOT_KEY } from '../features/congress/leaderboardReads'
 import { formatJurisdiction, formatPosition } from './governance/positionConfig'
 import { combineLeaderboardEntries, formatWgiScore, rankedLeaderboardEntries, validWgiScore } from '../features/congress/wgiLeaderboard'
 import BaseModal from './BaseModal'
 import './WgiLeaderboard.css'
 
 const COLLAPSED_LIMIT = 6
-const SNAPSHOT_KEY = `${API_BASE_URL}/api/politicians/leaderboard:visible`
+const SNAPSHOT_KEY = LEADERBOARD_SNAPSHOT_KEY
 
 function updatedLabel(value) {
   if (!value || !Number.isFinite(new Date(value).getTime())) return 'Not Available'
@@ -24,27 +25,26 @@ function Photo({ entry }) {
 }
 
 export function WgiLeaderboardEntries({ entries = [], onSelectPolitician, children }) {
-  const score = entry => validWgiScore(entry.wgiCompositeScore) === null ? '—' : formatWgiScore(entry.wgiCompositeScore)
   return <>
     <ol className="wgiTopThree" aria-label="Featured leaderboard profiles">
-      {entries.slice(0, 3).map((entry, index) => <li key={entry.politicianId}>
+      {entries.slice(0, 3).map(entry => <li key={entry.politicianId}>
         <button className="wgiFeatured" type="button" onClick={() => onSelectPolitician?.(entry.politicianId)} aria-label={`View profile: ${entry.fullName}`}>
           <Photo entry={entry} />
-          <span className="wgiRank">{entry.rank ? `Rank ${entry.rank}` : `Position ${index + 1}`}</span>
+          <span className="wgiRank">{entry.rank ? `Rank ${entry.rank}` : 'Not ranked'}</span>
           <strong className="wgiName">{entry.fullName}</strong>
-          <span className="wgiScore" title={entry.rank ? 'Calculated WGI score' : 'WGI score not available'}><small>WGI</small> {score(entry)}</span>
+          <ScoreLabel entry={entry} />
         </button>
       </li>)}
     </ol>
     {(entries.length > 3 || children) && <div className="wgiFullRankings">
-      <div className="wgiFullHeading"><h3>Full WGI rankings</h3><span>Scored first · Default order for unscored profiles</span></div>
+      <div className="wgiFullHeading"><h3>Full WGI rankings</h3><span>Highest scores first · Unscored profiles follow</span></div>
       <ol className="wgiRankedList" start={4} aria-label="Additional WGI rankings">
-      {entries.slice(3).map((entry, index) => <li key={entry.politicianId}>
+      {entries.slice(3).map(entry => <li key={entry.politicianId}>
         <button className="wgiListRow" type="button" onClick={() => onSelectPolitician?.(entry.politicianId)} aria-label={`View profile: ${entry.fullName}`}>
-          <span className="wgiRank" title={entry.rank ? 'WGI rank' : 'Default directory position'}>#{entry.rank || index + 4}</span>
+          <span className="wgiRank" aria-label={entry.rank ? `Rank ${entry.rank}` : 'Not ranked'} title={entry.rank ? 'Rank by WGI Score' : 'Not yet ranked; shown in default politician order'}>{entry.rank ? `#${entry.rank}` : '—'}</span>
           <Photo entry={entry} />
           <span className="wgiIdentity"><strong className="wgiName">{entry.fullName}</strong><span className="wgiOffice">{[formatPosition(entry.position), formatJurisdiction(entry.jurisdiction)].filter(Boolean).join(' · ') || 'Position Not Available'}</span></span>
-          <span className="wgiScore" title={entry.rank ? 'Calculated WGI score' : 'WGI score not available'}>{score(entry)}</span>
+          <ScoreLabel entry={entry} />
         </button>
       </li>)}
       </ol>
@@ -53,11 +53,46 @@ export function WgiLeaderboardEntries({ entries = [], onSelectPolitician, childr
   </>
 }
 
-function Methodology({ calculatedAt, latestSourceUpdate, onClose }) {
-  return <BaseModal isOpen title="About WGI scoring" onClose={onClose} modalClassName="wgiLeaderboardMethodology">
-    <h2>About WGI scoring</h2>
-    <p>WGI stands for Worldwide Governance Indicators. PolitikApp uses a project-specific, position-aware composite inspired by those indicators. It is not an official World Bank rating of individual politicians.</p>
-    <p>The existing scoring service combines published, curated legislative records, project completion, tracked budget allocations, and COA findings. Its activity terms represent Government Effectiveness and its audit penalties represent Control of Corruption within the project’s model. Open a profile to inspect supporting source citations. Imported source-reported claims, private drafts, hidden records, and standalone accomplishments do not contribute.</p>
+function ScoreLabel({ entry }) {
+  const scored = validWgiScore(entry.wgiCompositeScore) !== null && Number.isInteger(entry.rank) && entry.rank > 0
+  return <span className="wgiScore" data-score-state={scored ? 'scored' : 'unscored'}
+    title={scored ? 'Calculated from eligible published records; 0.0 is a valid score' : 'No eligible published scoring records are available; this is not a score of zero'}>
+    <small>WGI Score</small><strong>{scored ? formatWgiScore(entry.wgiCompositeScore) : 'Not yet scored'}</strong>
+    {scored && <span className="wgiScoreMax">/ 100</span>}
+  </span>
+}
+
+function InfoTip({ label, children }) {
+  const id = useId()
+  const [open, setOpen] = useState(false)
+  return <span className="wgiHelp" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
+    <button className="wgiInfoButton" type="button" aria-label={label} aria-describedby={open ? id : undefined}
+      onFocus={() => setOpen(true)} onBlur={() => setOpen(false)} onClick={() => setOpen(true)}
+      onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); setOpen(false) } }}>i</button>
+    {open && <span className="wgiTooltip" id={id} role="tooltip">{children}</span>}
+  </span>
+}
+
+export function Methodology({ calculatedAt, latestSourceUpdate, onClose }) {
+  return <BaseModal isOpen title="How are scores calculated?" onClose={onClose} modalClassName="wgiLeaderboardMethodology">
+    <h2>How are scores calculated?</h2>
+    <p>WGI means Worldwide Governance Indicators. PolitikApp uses its own record-based score inspired by these indicators. It is not an official World Bank rating of individual politicians.</p>
+    <h3>What goes into a score?</h3>
+    <ul className="wgiPlainFactors">
+      <li><strong>Bills:</strong> eligible legislative records contribute according to their recorded status.</li>
+      <li><strong>Projects:</strong> eligible project records contribute according to their recorded completion.</li>
+      <li><strong>Budgets:</strong> tracked budget allocations contribute to the score.</li>
+      <li><strong>Audit findings:</strong> Commission on Audit (COA) findings reduce the score based on their number and flagged amounts.</li>
+    </ul>
+    <p>Only eligible, published records count. The factors and weights depend on the politician’s office. The formula also combines bill and project contributions into an efficiency component. Open a profile to see the supporting records and source links.</p>
+    <h3>What does a higher score mean?</h3>
+    <p>A higher score means a higher result under this formula, based on the records available in PolitikApp. Rankings reflect this methodology, not an objective judgment of a politician’s overall performance. Different office weights, incomplete records and different lengths of service limit comparisons.</p>
+    <h3>What is the maximum?</h3>
+    <p>Scores stay within <strong>0 to 100</strong>; 100 is the upper limit. Some offices have a lower attainable maximum because of their weights and eligible factors. A score is not a percentage of overall performance or a passing grade.</p>
+    <h3>Is zero the same as no score?</h3>
+    <p><strong>0.0</strong> is a calculated score based on eligible records. <strong>Not yet scored</strong> means no eligible published scoring records are available; it is not zero. These profiles appear after scored politicians in the default directory order and have no WGI rank.</p>
+    <details className="wgiCalculationDetails"><summary>View formula and ranking details</summary>
+    <p>Imported source-reported claims, private drafts, hidden records and standalone accomplishments do not contribute. An audit finding is not itself proof of personal wrongdoing.</p>
     <h3>Existing calculation</h3>
     <p>Bills are weighted by recorded status: Filed 0.3, In Committee 0.6, Approved/Enacted 1, and Rejected/Withdrawn 0. The existing scorer uses 1 for missing or unrecognized statuses. Project contributions use completion percentage divided by 100, or 1 when unavailable.</p>
     <p>Bills, projects, and budget are normalized against reference ceilings of 50 bills, 30 project completions, and PHP 500 million, capped at 100. Efficiency is the average of normalized projects and bills when effective bills are above zero; otherwise it is normalized projects.</p>
@@ -70,12 +105,13 @@ function Methodology({ calculatedAt, latestSourceUpdate, onClose }) {
     </tbody></table></div>
     <p>The COA penalty is twice the finding count plus a magnitude penalty, capped together at 40. With a tracked budget, magnitude is the lesser of 30 and (flagged amount ÷ (budget + 1,000)) × 40. With flagged funds but no tracked budget, it is the lesser of 30 and three times the finding count. The final score is clamped to 0–100.</p>
     <h3>Ranking and limitations</h3>
-    <p>Scores are ordered highest first. Equal unrounded scores use the previous leaderboard’s order: more bills, more projects, higher tracked budget, fewer COA findings, then name. Identical names use profile ID for consistency. Ranks are sequential after these tie-breaks. Displayed scores are rounded to one decimal.</p>
-    <p>Profiles without eligible scoring records show WGI — and follow the default directory order after scored profiles. Their displayed positions are not WGI ranks. A calculated zero remains valid. Missing records do not prove an absence of government activity. Scores reflect available curated data, use different office weights, and are not normalized for time served or record completeness.</p>
+    <p>Scores are ordered highest first. Equal unrounded scores are ordered by more bills, more projects, higher tracked budget, fewer COA findings, then name. Identical names use profile ID for consistency. Ranks are sequential after these tie-breaks. Displayed scores are rounded to one decimal.</p>
+    <p>Missing records do not prove an absence of government activity. Scores are not normalized for time served or record completeness.</p>
     <p>These measures describe the project’s recorded indicators; they do not establish that one official is objectively better or worse. An audit finding is not itself proof of personal wrongdoing.</p>
     <p>Calculated for this leaderboard response: <strong>{updatedLabel(calculatedAt)}</strong>.</p>
     <p>Latest contributing record update among loaded entries: <strong>{updatedLabel(latestSourceUpdate)}</strong>. This is a system record timestamp, not the date of an independent real-world verification.</p>
-    <button className="wgiControl" type="button" onClick={onClose}>Close scoring methodology</button>
+    </details>
+    <button className="wgiControl" type="button" onClick={onClose}>Got it</button>
   </BaseModal>
 }
 
@@ -104,7 +140,7 @@ export default function WgiLeaderboard({ defaultPoliticians = [], onSelectPoliti
         do {
           const limit = Math.min(50, desiredCount.current - entries.length)
           const url = `${API_BASE_URL}/api/politicians/leaderboard?offset=${entries.length}&limit=${limit}`
-          result = await publicReadCache.load(url, () => fetchReadWithRetry(url).then(readApiResponse), { maxAge: 0 })
+          result = await publicReadCache.load(url, () => fetchReadWithRetry(url).then(readApiResponse), { maxAge: background || refresh > 0 ? 0 : 15000 })
           if (!Array.isArray(result.entries)) throw new Error('The leaderboard response was unavailable. Please retry.')
           const page = rankedLeaderboardEntries(result.entries)
           entries = [...entries, ...page]
@@ -151,23 +187,28 @@ export default function WgiLeaderboard({ defaultPoliticians = [], onSelectPoliti
   const controls = <div className="wgiControls">
     {!expanded && total > COLLAPSED_LIMIT && <button className="wgiControl" type="button" aria-expanded="false" onClick={showMore}>View Full Leaderboard</button>}
     {expanded && <>
-      {total > visibleCount && <button className="wgiControl" type="button" disabled={moreLoading} onClick={showMore}>{moreLoading ? 'Loading rankings…' : 'Show More'}</button>}
+      {total > visibleCount && <button className="wgiControl" type="button" disabled={moreLoading} onClick={showMore}>Show More</button>}
       <button className="wgiControl" type="button" aria-expanded="true" onClick={() => { desiredCount.current = COLLAPSED_LIMIT; setVisibleCount(COLLAPSED_LIMIT); heading.current?.scrollIntoView({ block: 'start' }) }}>Collapse leaderboard</button>
     </>}
   </div>
   return <section className="wgiLeaderboard" aria-labelledby="wgi-leaderboard-heading">
     <div className="wgiHeader">
-      <div><h2 id="wgi-leaderboard-heading" ref={heading}>WGI Leaderboard</h2><p>Published scores first. Unscored profiles follow the default politician order.</p></div>
-      <button className="wgiControl" type="button" onClick={() => setShowMethodology(true)}>Methodology</button>
+      <div><h2 id="wgi-leaderboard-heading" ref={heading}>WGI Leaderboard</h2>
+        <p className="wgiIntro">WGI means <strong>Worldwide Governance Indicators</strong>. PolitikApp’s own score draws on published bill, project, budget and audit records, with different weights for each office.</p>
+      </div>
+      <button className="wgiControl wgiExplainButton" type="button" onClick={() => setShowMethodology(true)}>How are scores calculated?</button>
     </div>
-    {state.status === 'loading' && <p role="status">Loading WGI rankings…</p>}
+    <div className="wgiReadingGuide" aria-label="Understanding WGI scores">
+      <span><strong>0–100 scale</strong> · Higher means a higher result under this formula <InfoTip label="About the score scale">100 is the formula’s upper limit. Some offices have a lower attainable maximum because their weights and eligible factors differ. This is not a percentage grade.</InfoTip></span>
+      <span><strong>0.0</strong> = a calculated score · <strong>Not yet scored</strong> = no eligible records <InfoTip label="About zero and missing scores">Zero is a valid calculated result. A profile without eligible published scoring records is not assigned zero or a WGI rank.</InfoTip></span>
+    </div>
+    <p className="wgiContextNote">Rankings reflect this methodology, not an objective judgment of a politician’s overall performance.</p>
     {state.error && <div className="wgiNotice" role="alert"><p>{state.status === 'ready' ? 'The latest WGI update could not be loaded. Showing the previous scores.' : 'WGI scores could not be loaded. Showing the default politician order.'} {state.error}</p><button className="wgiControl" type="button" onClick={() => setRefresh(value => value + 1)}>Retry leaderboard</button></div>}
-    {state.status !== 'loading' && <>
+    <>
       {visible.length ? <WgiLeaderboardEntries entries={visible} onSelectPolitician={onSelectPolitician}>{controls}</WgiLeaderboardEntries>
-        : <p className="wgiNotice">No politician profiles are available yet.</p>}
-      <p className="wgiFootnote">{state.totalRanked} scored profile{state.totalRanked === 1 ? '' : 's'}. WGI — means no eligible score yet; default positions are not WGI ranks.</p>
-      <p className="wgiFootnote">Updates automatically every 15 seconds while this page is visible. Calculated: {updatedLabel(state.calculatedAt)}.</p>
-    </>}
+        : state.status !== 'loading' && <p className="wgiNotice">No politician profiles are available yet.</p>}
+      {state.status !== 'loading' && <p className="wgiFootnote">{state.totalRanked} scored profile{state.totalRanked === 1 ? '' : 's'}.</p>}
+    </>
     {showMethodology && <Methodology calculatedAt={state.calculatedAt} latestSourceUpdate={latestSourceUpdate} onClose={() => setShowMethodology(false)} />}
   </section>
 }

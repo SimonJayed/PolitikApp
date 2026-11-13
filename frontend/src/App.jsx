@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from './api/client'
 import { fetchReadWithRetry } from './api/readRequest'
 import { prefetchDirectory } from './features/congress/useDirectory'
+import { prefetchLeaderboard } from './features/congress/leaderboardReads'
 import './App.css'
 import ModerationPanel from './components/ModerationPanel'
 import { useAuth } from './auth/AuthContext'
@@ -52,7 +53,7 @@ const actionOptions = [
   'SPONSORED_LEGISLATION',
 ]
 
-const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education']
+const categoryOptions = ['Audit', 'Finance', 'Infrastructure', 'Healthcare', 'Education', 'Governance', 'Labor and Employment', 'Social Welfare', 'Environment', 'Agriculture']
 const guestRestrictedViews = new Set([
   'adminNews',
   'openCongress',
@@ -183,7 +184,10 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
   }, [activeView, loadPoliticians])
 
-  useEffect(() => { prefetchDirectory().catch(() => {}) }, [])
+  useEffect(() => {
+    prefetchDirectory().catch(() => {})
+    prefetchLeaderboard().catch(() => {})
+  }, [])
 
   useEffect(() => {
     let cancelled = false

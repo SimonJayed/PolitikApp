@@ -10,6 +10,7 @@ import {
 } from '../../components/icons/Lucide'
 import './AdminNews.css'
 import SourceManager from './SourceManager'
+import { ArticleImage } from '../../components/NewsCardContent'
 import { PageSkeleton, PaginationMini } from '../pageHelpers'
 
 const statuses = ['ALL', 'PENDING_REVIEW', 'APPROVED', 'PUBLISHED', 'REJECTED', 'UNPUBLISHED', 'RETRIEVED', 'PROCESSING', 'FAILED']
@@ -19,7 +20,6 @@ const bulkActions = [
   { path: 'unpublish', label: 'Unpublish', progress: 'Unpublishing', past: 'unpublished', tone: 'Unpublish' },
   { path: 'reject', label: 'Reject', progress: 'Rejecting', past: 'rejected', tone: 'Reject' },
 ]
-const categories = ['Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
 
 function formatDate(value) {
   if (!value) return 'Unavailable'
@@ -449,8 +449,10 @@ export default function AdminNews({ token, user, politicians = [] }) {
               <section className="sourcePreview">
                 <p className="panelKicker">Original government article</p>
                 <h2>{selected.originalTitle}</h2>
+                <ArticleImage article={selected} />
                 <dl className="articleFacts">
                   <div><dt>Source</dt><dd>{selected.sourceName || 'Government source'}</dd></div>
+                  {selected.sourceAuthor && <div><dt>Author</dt><dd>{selected.sourceAuthor}</dd></div>}
                   <div><dt>Publication Date</dt><dd>{formatDate(selected.originalPublishedAt)}</dd></div>
                   <div><dt>URL</dt><dd><a href={selected.sourceUrl} target="_blank" rel="noreferrer">{selected.sourceUrl}</a></dd></div>
                 </dl>
@@ -478,10 +480,8 @@ export default function AdminNews({ token, user, politicians = [] }) {
                 </label>
 
                 <label>
-                  Category
-                  <select value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))}>
-                    {categories.map((category) => <option key={category} value={category}>{category}</option>)}
-                  </select>
+                  Topic
+                  <input value={selected.category || 'Government Announcements'} readOnly />
                 </label>
 
                 {selected.keyPoints?.length > 0 && (

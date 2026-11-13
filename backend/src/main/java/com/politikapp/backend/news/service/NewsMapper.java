@@ -50,7 +50,7 @@ public class NewsMapper {
                 article.getOriginalTitle(),
                 article.getSource().getName(),
                 article.getSourceUrl(),
-                article.getCategory(),
+                NewsTopics.category(article),
                 firstNonBlank(article.getAiSummary(), article.getOriginalContent()),
                 splitKeyPoints(article.getAiKeyPoints()),
                 article.getOriginalPublishedAt(),
@@ -63,8 +63,25 @@ public class NewsMapper {
                 article.getReviewedAt() != null && "PUBLISHED".equals(article.getStatus()),
                 saved,
                 article.getRelatedPoliticians().stream().filter(p -> !"ARCHIVED".equals(p.getStatus())).map(p -> new com.politikapp.backend.news.dto.NewsDtos.RelatedPoliticianResponse(p.getPoliticianId(), p.getFullName())).toList(),
-                admin ? extraction(article.getExtractionData()) : json.createObjectNode()
+                admin ? extraction(article.getExtractionData()) : json.createObjectNode(),
+                extraction(article.getExtractionData()).path("sourceMetadata").path("author").asText(null),
+                sourceImage(article)
         );
+    }
+
+    private com.politikapp.backend.news.dto.NewsDtos.SourceImageResponse sourceImage(NewsArticle article) {
+        try {
+            var node = extraction(article.getExtractionData()).path("sourceMetadata").path("image");
+            if (!node.isObject() || node.path("license").asText("").isBlank()) return null;
+            var image = json.treeToValue(node, com.politikapp.backend.news.dto.NewsDtos.SourceImageResponse.class);
+            var uri = java.net.URI.create(image.url());
+            var source = java.net.URI.create(article.getSourceUrl());
+            if (uri.getHost() == null || source.getHost() == null || uri.getUserInfo() != null
+                    || !uri.getHost().toLowerCase(java.util.Locale.ROOT).endsWith(".gov.ph")
+                    || !uri.getHost().replaceFirst("^www\\.", "").equalsIgnoreCase(source.getHost().replaceFirst("^www\\.", ""))
+                    || !("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))) return null;
+            return image;
+        } catch (Exception ignored) { return null; }
     }
 
     private com.fasterxml.jackson.databind.JsonNode extraction(String value) {

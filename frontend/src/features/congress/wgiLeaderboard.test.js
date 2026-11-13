@@ -7,10 +7,10 @@ import { createServer } from 'vite'
 import { combineLeaderboardEntries, formatWgiScore, rankedLeaderboardEntries, validWgiScore } from './wgiLeaderboard.js'
 
 let server
-let Entries
+let Entries, Explanation, Leaderboard
 before(async () => {
   server = await createServer({ root: fileURLToPath(new URL('../../../', import.meta.url)), server: { middlewareMode: true, watch: null }, appType: 'custom' })
-  ;({ WgiLeaderboardEntries: Entries } = await server.ssrLoadModule('/src/components/WgiLeaderboard.jsx'))
+  ;({ WgiLeaderboardEntries: Entries, Methodology: Explanation, default: Leaderboard } = await server.ssrLoadModule('/src/components/WgiLeaderboard.jsx'))
 })
 after(async () => { await server?.close() })
 
@@ -49,7 +49,7 @@ test('scored profiles lead, followed by default directory order without duplicat
   assert.equal(combined[0].wgiCompositeScore, 12)
   assert.ok(combined.slice(1).every(person => person.rank === null && person.wgiCompositeScore === null))
   const html = renderToStaticMarkup(createElement(Entries, { entries: combined }))
-  assert.ok(html.includes('Position 2') && html.includes('WGI score not available'))
+  assert.ok(html.includes('Not ranked') && html.includes('Not yet scored'))
   const refreshed = combineLeaderboardEntries([{ ...people[1], rank: 1, wgiCompositeScore: 20 }, { ...scored, rank: 2 }], people)
   assert.deepEqual(refreshed.map(person => person.politicianId), ['vice', 'senator', 'president', 'old-senator'])
 })
@@ -58,4 +58,23 @@ test('empty rows never fabricate podium entries', () => {
   const html = renderToStaticMarkup(createElement(Entries, { entries: [] }))
   assert.ok(!html.includes('class="wgiFeatured"'))
   assert.ok(!html.includes('#1'))
+})
+
+test('every featured/list score has an explicit label; calculated zero differs from unscored profiles', () => {
+  const entries = Array.from({ length: 4 }, (_, index) => ({ politicianId: String(index), fullName: `Member ${index}`, rank: index === 1 ? null : index + 1, wgiCompositeScore: index === 1 ? null : 0 }))
+  const html = renderToStaticMarkup(createElement(Entries, { entries }))
+  assert.equal((html.match(/<small>WGI Score<\/small>/g) || []).length, 4)
+  assert.equal((html.match(/data-score-state="scored"/g) || []).length, 3)
+  assert.equal((html.match(/data-score-state="unscored"/g) || []).length, 1)
+  assert.ok(html.includes('<strong>0.0</strong>') && html.includes('Not yet scored'))
+  assert.ok(html.includes('Not ranked'))
+})
+
+test('plain-language explanation uses the real factors and scale without assigning performance grades', () => {
+  const html = renderToStaticMarkup(createElement(Leaderboard, { defaultPoliticians: [] }))
+  for (const text of ['Worldwide Governance Indicators', 'bill, project, budget and audit records', 'different weights for each office', 'How are scores calculated?', '0–100 scale', 'not an objective judgment']) assert.ok(html.includes(text), text)
+  const modal = renderToStaticMarkup(createElement(Explanation, {}))
+  for (const text of ['0 to 100', 'lower attainable maximum', 'Commission on Audit', 'not an official World Bank rating', '0.0', 'Not yet scored']) assert.ok(modal.includes(text), text)
+  assert.ok(modal.includes('<details class="wgiCalculationDetails">'))
+  assert.ok(!modal.includes('<details class="wgiCalculationDetails" open'))
 })

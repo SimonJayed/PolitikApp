@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "node --test src/api/readCache.test.js src/api/readRequest.test.js src/features/news/newsWorkflow.test.js src/features/news/sourceReference.test.js src/pages/pagination.test.js src/features/congress/congressHistory.test.js src/features/congress/legislativeRecords.test.js src/features/congress/politicianDirectory.test.js src/features/congress/featuredPoliticians.test.js src/features/congress/wgiLeaderboard.test.js src/features/accomplishments/accomplishments.test.js",
+    "test": "node --test src/api/readCache.test.js src/api/readRequest.test.js src/features/news/newsWorkflow.test.js src/features/news/newsPresentation.test.js src/features/news/optimisticActions.test.js src/features/news/sourceReference.test.js src/pages/pagination.test.js src/features/congress/congressHistory.test.js src/features/congress/legislativeRecords.test.js src/features/congress/politicianDirectory.test.js src/features/congress/featuredPoliticians.test.js src/features/congress/wgiLeaderboard.test.js src/features/accomplishments/accomplishments.test.js",
     "start": "vite",
     "dev": "vite",
     "build": "vite build",
@@ -13,6 +13,7 @@
     "test:browser:wgi": "node scripts/test-wgi-leaderboard-browser.mjs",
     "test:browser:tabs": "node scripts/test-tab-loading-browser.mjs",
     "test:browser:profile": "node scripts/test-profile-records-browser.mjs",
+    "test:browser:news": "node scripts/test-news-cards-browser.mjs",
     "preview": "vite preview"
   },
   "dependencies": {

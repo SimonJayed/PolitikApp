@@ -1,5 +1,13 @@
 # WGI leaderboard restoration
 
+## Plain-language UI revision — November 13, 2026
+
+The current UI explains Worldwide Governance Indicators and PolitikApp’s own office-weighted, records-based score directly below the heading. Featured cards and full-ranking rows label values **WGI Score**. Valid calculated zero is shown as **0.0 / 100**; profiles without eligible records say **Not yet scored** and receive no WGI rank. The existing top-three/expandable layout and navy theme remain.
+
+**How are scores calculated?** opens a beginner-friendly explanation of contributing bills, projects, tracked budgets and COA deductions; higher scores; the 0–100 limit; and valid zero versus missing records. It explicitly explains that office weights/eligible factors can make the attainable maximum lower than 100, and that rankings are not an objective verdict on overall performance. Existing normalization, weights, penalties and tie-break details remain available in a collapsed disclosure. Keyboard/touch-accessible information tips explain the scale and missing scores inline.
+
+The scoring implementation and this document were inspected before these presentation changes. `DashboardMetricsService` and `WgiLeaderboardService`, the scoring formula, database and actual scores were not modified. Frontend validation: 70 tests passed; ESLint has zero errors and 31 existing warnings; production build passed. Browser checks passed for calculated zero/unscored labels, explanation dialog, focus/Escape tooltips, responsive tooltip bounds at 1280/768/390/320px, expansion, navigation and live score updates. Only isolated fixture scores were used. No commit or deployment was performed.
+
 Implemented November 12, 2026. No commits, pushes, merges, deployments, migrations, or Supabase record changes were performed.
 
 ## Recovery and integration
