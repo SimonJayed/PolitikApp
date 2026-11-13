@@ -17,7 +17,7 @@
   --p-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.06), 0 14px 32px rgba(10, 29, 66, 0.12);
 
   display: grid;
-  gap: 18px;
+  gap: 20px;
   width: min(1440px, 100%);
   margin: 0 auto;
   padding: 20px clamp(16px, 3vw, 44px) 88px;
@@ -32,11 +32,8 @@
 /* ---------- Hero ---------- */
 .polHero {
   position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px 28px;
+  display: grid;
+  gap: 20px;
   overflow: hidden;
   padding: 24px clamp(22px, 3vw, 34px);
   border-radius: var(--p-radius-lg);
@@ -46,6 +43,14 @@
     linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
   color: var(--ph-white);
   box-shadow: var(--p-shadow-sm);
+}
+
+.polHeroTop {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px 28px;
 }
 
 .polHeroText {
@@ -83,6 +88,7 @@
   background: color-mix(in srgb, var(--ph-white) 10%, transparent);
   color: color-mix(in srgb, var(--ph-white) 82%, transparent);
   font: 600 12px/1 var(--display);
+  white-space: pre-wrap;
 }
 
 .polCountChip strong {
@@ -110,31 +116,29 @@
   background: var(--ph-white);
 }
 
-/* ---------- Filters ---------- */
+/* ---------- Filters (inside the blue hero card) ---------- */
 .polFilters {
-  display: grid;
-  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
-  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
   gap: 14px;
-  padding: 16px 18px;
-  border: 1px solid var(--p-line);
-  border-radius: var(--p-radius-lg);
-  background: var(--p-surface);
-  box-shadow: var(--p-shadow-sm);
+  padding: 18px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--ph-white) 20%, transparent);
 }
 
 .politiciansPage .polField {
   display: grid;
+  flex: 1 1 170px;
   gap: 6px;
   min-width: 0;
 }
 
-.polFilters.withCongress {
-  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+.politiciansPage .polField.polSearch {
+  flex: 1.7 1 280px;
 }
 
 .polField > span {
-  color: var(--p-muted);
+  color: color-mix(in srgb, var(--ph-white) 72%, transparent);
   font: 700 11px/1 var(--display);
 }
 
@@ -142,18 +146,22 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 14px;
-  border: 1px solid var(--p-line);
+  padding: 0 8px 0 14px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 28%, transparent);
   border-radius: 999px;
-  background: var(--p-inset);
-  color: var(--p-muted);
+  background: color-mix(in srgb, var(--ph-white) 12%, transparent);
+  color: color-mix(in srgb, var(--ph-white) 78%, transparent);
   transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.polSearch > div:hover {
+  border-color: color-mix(in srgb, var(--ph-white) 50%, transparent);
+}
+
 .polSearch > div:focus-within {
-  border-color: var(--ph-blue-light);
-  background: var(--p-surface);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ph-blue-light) 14%, transparent);
+  border-color: var(--ph-gold-light);
+  background: color-mix(in srgb, var(--ph-white) 18%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ph-gold-light) 22%, transparent);
 }
 
 .politiciansPage .polField input,
@@ -165,7 +173,7 @@
   outline: 0;
   box-shadow: none;
   background: transparent;
-  color: var(--p-text);
+  color: var(--ph-white);
   font: 600 13px/1.3 var(--sans);
 }
 
@@ -173,21 +181,126 @@
   padding: 12px 0;
 }
 
+.politiciansPage .polField input::placeholder {
+  color: color-mix(in srgb, var(--ph-white) 58%, transparent);
+  opacity: 1;
+}
+
 .politiciansPage .polField input:focus-visible {
   outline: none;
 }
 
-.politiciansPage .polField select {
-  padding: 11px 14px;
-  border: 1px solid var(--p-line);
-  border-radius: 999px;
-  background: var(--p-inset);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease;
+/* Hide the browser's built-in clear icon; we render our own */
+.politiciansPage .polField input[type="search"] {
+  -webkit-appearance: none;
+  appearance: none;
 }
 
-.politiciansPage .polField select:hover {
-  border-color: var(--ph-blue-light);
+.politiciansPage .polField input[type="search"]::-webkit-search-cancel-button,
+.politiciansPage .polField input[type="search"]::-webkit-search-decoration {
+  -webkit-appearance: none;
+  display: none;
+}
+
+.politiciansPage .polClear {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--ph-white) 18%, transparent);
+  box-shadow: none;
+  color: var(--ph-white);
+  font: 800 16px/1 var(--display);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.politiciansPage .polClear:hover {
+  background: color-mix(in srgb, var(--ph-white) 32%, transparent);
+}
+
+.politiciansPage .polField select {
+  padding: 11px 36px 11px 14px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 28%, transparent);
+  border-radius: 999px;
+  background-color: color-mix(in srgb, var(--ph-white) 12%, transparent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  -webkit-appearance: none;
+  appearance: none;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.politiciansPage .polField select:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--ph-white) 55%, transparent);
+}
+
+.politiciansPage .polField select:focus-visible {
+  outline: 0;
+  border-color: var(--ph-gold-light);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--ph-gold-light) 22%, transparent);
+}
+
+.politiciansPage .polField select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Native dropdown lists stay readable on the dark card */
+.politiciansPage .polField select option {
+  background: var(--ph-white);
+  color: var(--ph-blue);
+}
+
+/* Active only */
+.politiciansPage .polCheck {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border: 1px solid color-mix(in srgb, var(--ph-white) 28%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ph-white) 12%, transparent);
+  color: var(--ph-white);
+  font: 800 13px/1.2 var(--display);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.politiciansPage .polCheck:hover {
+  border-color: color-mix(in srgb, var(--ph-white) 55%, transparent);
+}
+
+.politiciansPage .polCheck input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  box-shadow: none;
+  accent-color: var(--ph-blue);
+  cursor: pointer;
+}
+
+.politiciansPage .polCheck:has(input:checked) {
+  border-color: var(--ph-gold-light);
+  background: var(--ph-gold-light);
+  color: var(--ph-blue);
+}
+
+.politiciansPage .polCheck:has(input:focus-visible) {
+  outline: 2px solid var(--ph-gold-light);
+  outline-offset: 2px;
 }
 
 .politiciansPage .polReset {
@@ -205,22 +318,34 @@
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.politiciansPage .polReset:hover {
+.politiciansPage .polReset:hover:not(:disabled) {
   background: var(--ph-gold-light);
   color: var(--ph-blue);
 }
 
-/* ---------- Results bar ---------- */
+.politiciansPage .polReset:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+/* Focus rings inside the hero use gold so they show on the dark card */
+.polHero :is(button, a, input, select):focus-visible {
+  outline-color: var(--ph-gold-light);
+}
+
+/* ---------- Results bar & active filter chips ---------- */
 .polResultsBar {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 10px 16px;
   padding: 0 4px;
+  scroll-margin-top: 16px;
 }
 
 .polResultsBar p {
+  min-height: 1.4em;
   margin: 0;
   color: var(--p-muted);
   font: 600 13px/1.4 var(--sans);
@@ -229,6 +354,53 @@
 .polResultsBar p strong {
   color: var(--p-text);
   font-variant-numeric: tabular-nums;
+}
+
+.polChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.politiciansPage .polChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  min-height: 0;
+  height: auto;
+  max-width: 100%;
+  padding: 6px 10px 6px 12px;
+  border: 1px solid var(--p-line);
+  border-radius: 999px;
+  background: var(--p-inset);
+  box-shadow: none;
+  color: var(--p-text);
+  font: 700 11px/1.3 var(--display);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.politiciansPage .polChip > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.politiciansPage .polChip i {
+  font-style: normal;
+  font-size: 14px;
+  line-height: 1;
+  color: var(--p-muted);
+}
+
+.politiciansPage .polChip:hover {
+  border-color: var(--ph-blue-light);
+  background: var(--p-surface);
 }
 
 .polPagination {
@@ -312,10 +484,15 @@
 }
 
 .politiciansPage .polCard:hover {
-  transform: translateY(-3px) scale(1.02);
-  position: relative;
+  transform: translateY(-4px);
   z-index: 1;
   border-color: color-mix(in srgb, var(--accent) 45%, var(--p-line));
+  box-shadow: var(--p-shadow-md);
+}
+
+.politiciansPage .polCard:focus-visible {
+  z-index: 1;
+  border-color: var(--accent);
   box-shadow: var(--p-shadow-md);
 }
 
@@ -348,6 +525,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center top;
 }
 
 .polCardBody {
@@ -366,30 +544,6 @@
   font: 800 17px/1.25 var(--display);
   letter-spacing: -0.01em;
   overflow-wrap: anywhere;
-}
-
-.polPosition {
-  display: inline-flex;
-  padding: 5px 11px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 14%, var(--ph-white));
-  color: color-mix(in srgb, var(--accent) 70%, var(--ph-blue));
-  font: 800 11px/1 var(--display);
-}
-
-.polMetaList {
-  display: grid;
-  gap: 3px;
-}
-
-.polMetaList small {
-  color: var(--p-text-2);
-  font: 600 13px/1.4 var(--sans);
-}
-
-.polMetaList small + small {
-  color: var(--p-muted);
-  font-weight: 500;
 }
 
 .polCoaChip {
@@ -421,12 +575,20 @@
 
 .polCardFooter i {
   font-style: normal;
+  font-size: 16px;
+  line-height: 1;
   transition: transform 0.2s ease;
 }
 
-.politiciansPage .polCard:hover .polCardFooter {
+.politiciansPage .polCard:hover .polCardFooter,
+.politiciansPage .polCard:focus-visible .polCardFooter {
   background: var(--ph-blue-mid);
   color: var(--ph-white);
+}
+
+.politiciansPage .polCard:hover .polCardFooter i,
+.politiciansPage .polCard:focus-visible .polCardFooter i {
+  transform: translateX(3px);
 }
 
 /* ---------- Empty state ---------- */
@@ -482,23 +644,41 @@
   .polGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-
-  .polFilters, .polFilters.withCongress {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .polSearch {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 640px) {
-  .polGrid,
-  .polFilters, .polFilters.withCongress {
+  .politiciansPage {
+    gap: 16px;
+    padding-bottom: 72px;
+  }
+
+  .polHero {
+    padding: 20px 18px;
+  }
+
+  .polGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .polHeroSide {
     width: 100%;
+    justify-content: space-between;
+  }
+
+  .politiciansPage .polField,
+  .politiciansPage .polField.polSearch,
+  .politiciansPage .polCheck,
+  .politiciansPage .polReset {
+    flex: 1 1 100%;
+  }
+
+  .politiciansPage .polCheck,
+  .politiciansPage .polReset {
+    justify-content: center;
+  }
+
+  .polResultsBar {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

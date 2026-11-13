@@ -72,7 +72,8 @@ test('every featured/list score has an explicit label; calculated zero differs f
 
 test('plain-language explanation uses the real factors and scale without assigning performance grades', () => {
   const html = renderToStaticMarkup(createElement(Leaderboard, { defaultPoliticians: [] }))
-  for (const text of ['Worldwide Governance Indicators', 'bill, project, budget and audit records', 'different weights for each office', 'How are scores calculated?', '0–100 scale', 'not an objective judgment']) assert.ok(html.includes(text), text)
+  for (const text of ['Worldwide Governance Indicators', 'bill, project, budget and audit records', 'different weights for each office']) assert.ok(!html.includes(text), text)
+  for (const text of ['How are scores calculated?', '0–100 scale', 'not an objective judgment']) assert.ok(html.includes(text), text)
   const modal = renderToStaticMarkup(createElement(Explanation, {}))
   for (const text of ['0 to 100', 'lower attainable maximum', 'Commission on Audit', 'not an official World Bank rating', '0.0', 'Not yet scored']) assert.ok(modal.includes(text), text)
   assert.ok(modal.includes('<details class="wgiCalculationDetails">'))
