@@ -1,18 +1,26 @@
 import React from 'react'
 
-function IconBase({ children, size = 18, className = '', fill = 'none' }) {
+function IconBase({ children, size = 18, className = '', fill = 'none', style, ...rest }) {
   return (
     <svg
       aria-hidden="true"
-      className={className}
+      className={`shrink-0 ${className}`}
       fill={fill}
       height={size}
+      width={size}
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth="2"
       viewBox="0 0 24 24"
-      width={size}
+      style={{
+        width: typeof size === 'number' ? `${size}px` : size,
+        height: typeof size === 'number' ? `${size}px` : size,
+        minWidth: typeof size === 'number' ? `${size}px` : size,
+        minHeight: typeof size === 'number' ? `${size}px` : size,
+        ...style,
+      }}
+      {...rest}
     >
       {children}
     </svg>
@@ -133,9 +141,18 @@ export function MessageCircleIcon(props) {
 export function MenuIcon(props) {
   return (
     <IconBase {...props}>
-      <path d="M4 6h16" />
-      <path d="M4 12h16" />
-      <path d="M4 18h16" />
+      <line x1="4" x2="20" y1="6" y2="6" />
+      <line x1="4" x2="20" y1="12" y2="12" />
+      <line x1="4" x2="20" y1="18" y2="18" />
+    </IconBase>
+  )
+}
+
+export function XIcon(props) {
+  return (
+    <IconBase {...props}>
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
     </IconBase>
   )
 }

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -169,7 +170,7 @@ public class CongressPublicService {
                 where person.kind='PERSON' and person.politician_id=? and %s
                 order by r.imported_at desc limit 1
                 """.formatted(current ? "r.revision=person.current_revision" : "r.imported_at<=person.linked_at");
-        jdbc.query(peopleSql, rs -> {
+        jdbc.query(peopleSql, (RowCallbackHandler) rs -> {
             JsonNode payload = parse(rs.getString(5));
             JsonNode urls = parse(rs.getString(6));
             String sourceUrl = governmentSource(urls);
@@ -196,7 +197,7 @@ public class CongressPublicService {
                 where person.kind='PERSON' and person.politician_id=? and %s
                 order by e.id, r.imported_at desc
                 """.formatted(current ? "r.revision=e.current_revision" : "r.imported_at<=person.linked_at");
-        jdbc.query(billsSql, rs -> {
+        jdbc.query(billsSql, (RowCallbackHandler) rs -> {
             JsonNode payload = parse(rs.getString(7));
             JsonNode urls = parse(rs.getString(8));
             String url = governmentSource(urls);

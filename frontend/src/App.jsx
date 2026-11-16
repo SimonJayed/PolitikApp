@@ -4,6 +4,7 @@ import { fetchReadWithRetry } from './api/readRequest'
 import { prefetchDirectory } from './features/congress/useDirectory'
 import { prefetchLeaderboard } from './features/congress/leaderboardReads'
 import './App.css'
+import PlatformRouter from './routes/PlatformRouter'
 import ModerationPanel from './components/ModerationPanel'
 import { useAuth } from './auth/AuthContext'
 import TopNav from './components/TopNav'
@@ -448,252 +449,56 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const isAnyModalOpen = isCompareModalOpen || isAppealModalOpen || isPoliticiansModalOpen || isProfileModalOpen
 
   return (
-    <main className="appShell">
-      {activeView !== 'auth' && (
-        <TopNav
-          activeView={activeView}
-          isCompareModalOpen={isCompareModalOpen}
-          isModalOpen={isAnyModalOpen || authModalConfig.isOpen || isWgiMethodologyOpen}
-          onAuthClick={(mode) => {
-            setAuthMode(mode || 'login')
-            navigateTo('auth')
-          }}
-          onLogout={onLogout}
-          onSelectView={selectView}
-          title="PolitikApp"
-          user={activeUser}
-        />
-      )}
-
-      <section
-        className={
-          activeView === 'auth'
-            ? 'pageContent authPageContent'
-            : `${isAnyModalOpen ? 'pageContent pt-0' : 'pageContent pt-28'} ${activeView === 'landing' ? '' : 'pageContentAligned'}`
-        }
-      >
-        {!isAnyModalOpen && showHeaderTitles && (
-          <header className="topBar">
-              <div className="flex items-center gap-3">
-                <div className="grid h-9 w-9 place-items-center rounded-2xl bg-(--accent-soft) text-(--ph-blue) ring-1 ring-black/5">
-                  <span className="ty-nav font-extrabold" aria-hidden="true">
-                    {activeHeader[0]?.slice(0, 1) || 'P'}
-                  </span>
-                </div>
-
-                <div className="min-w-0">
-                  <p className="ty-label">{activeHeader[0]}</p>
-                  <p className="ty-nav truncate text-(--text-primary)">{activeHeader[1]}</p>
-                </div>
-            </div>
-          </header>
-        )}
-        {notFoundNotice && (
-          <div style={{
-            margin: '12px 0 20px',
-            padding: '12px 20px',
-            borderRadius: '12px',
-            background: '#fef3c7',
-            border: '1px solid #f59e0b',
-            color: '#92400e',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            fontSize: '14px',
-            fontWeight: '500',
-          }}>
-            <span><AlertTriangleIcon size={16} /> {notFoundNotice}</span>
-            <button
-              type="button"
-              onClick={() => setNotFoundNotice('')}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#92400e',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
-              aria-label="Dismiss notice"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
-        {activeView === 'landing' && (
-          <Landing
-            isAuthenticated={isAuthenticated}
-            politicians={politiciansState.data}
-            onAuthPrompt={triggerAuthPrompt}
-            onExplorePoliticians={() => selectView('politicians')}
-            onExploreDashboard={() => selectView('dashboard')}
-            onSelectPolitician={(id) => openPoliticianProfile(id)}
-            onCompare={() => selectView('compare')}
-            onMethodologyClick={() => setIsWgiMethodologyOpen(true)}
-          />
-        )}
-
-        {activeView === 'auth' && (
-          <Authentication
-            initialMode={authMode}
-            onBack={() => navigateTo('landing')}
-          />
-        )}
-
-        {activeView === 'politicians' && (
-          <PoliticiansLoaderPanelExtracted
-            dbUser={currentUser}
-            onViewProfile={openPoliticianProfile}
-            politicians={politiciansState.data}
-            politiciansState={politiciansState}
-            onRetry={loadPoliticians}
-            state={dashboardState}
-            onPoliticianUpdate={handlePoliticianLocalUpdate}
-            onPoliticianCreate={handlePoliticianLocalCreate}
-            onModalOpenChange={setIsPoliticiansModalOpen}
-            token={token}
-          />
-        )}
-        {activeView === 'submit' && (
-          currentRole !== 'ADMIN' ? (
-            <section className="workspace">
-              <div style={{
-                textAlign: 'center',
-                padding: '48px 32px',
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--info-border)',
-                borderRadius: 'var(--radius-lg)',
-              }}>
-                <h2 className="ty-section-title" style={{ margin: '0 0 10px' }}>Authentication Required</h2>
-                <p className="ty-body" style={{ color: 'var(--text-muted)', margin: '0 auto 20px', maxWidth: '460px' }}>
-                  Only administrators can manage politician records.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAuthMode('login')
-                    navigateTo('auth')
-                  }}
-                  className="btn-landing-primary"
-                >
-                  Sign In to Submit Evidence
-                </button>
-              </div>
-            </section>
-          ) : (
-            <SubmitContribution
-              formData={formData}
-              onChange={updateFormField}
-              onDetailChange={updateActionDetail}
-              onDomainCheck={setIsApprovedDomain}
-              onSubmit={handleSubmission}
-              selectedPoliticianId={selectedPoliticianId}
-              state={submissionState}
-              politicians={politiciansState.data}
-            />
-          )
-        )}
-        {activeView === 'profile' && (
-          <PoliticianProfilePageExtracted
-            onAddContribution={openSubmitContributionForPolitician}
-            onPoliticianUpdate={handlePoliticianLocalUpdate}
-            onReload={openPoliticianProfile}
-            onUserUpdate={onUserUpdate}
-            onAppealModalOpenChange={setIsAppealModalOpen}
-            onModalOpenChange={setIsProfileModalOpen}
-            onAuthPrompt={triggerAuthPrompt}
-            politicianId={selectedPoliticianId}
-            politicians={politiciansState.data}
-            state={dashboardState}
-            dbUser={currentUser}
-            token={token}
-            user={activeUser}
-          />
-        )}
-        {activeView === 'dashboard' && (
-          <Dashboard
-            isLoading={politiciansState.status === 'loading'}
-            onNavigate={navigateTo}
-            onOpenProfile={openPoliticianProfile}
-            politicians={politiciansState.data}
-            user={activeUser}
-          />
-        )}
-        {activeView === 'compare' && (
-          <ComparisonPanelExtracted
-            compareIds={compareIds}
-            onChange={setCompareIds}
-            onModalOpenChange={setIsCompareModalOpen}
-            onSubmit={handleComparisonLookup}
-            politicians={politiciansState.data}
-            politiciansState={politiciansState}
-            state={comparisonState}
-          />
-        )}
-        {activeView === 'profileMatrix' && <ProfileMatrix token={token} user={activeUser} />}
-        {activeView === 'openCongress' && currentRole === 'ADMIN' && <OpenCongress token={token} politicians={politiciansState.data} />}
-        {activeView === 'adminNews' && <AdminNews token={token} user={activeUser} politicians={politiciansState.data} />}
-        {activeView === 'moderation' && (
-          currentRole !== 'ADMIN' ? (
-            <section className="workspace">
-              <div style={{
-                textAlign: 'center',
-                padding: '48px 32px',
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--danger-border)',
-                borderRadius: 'var(--radius-lg)',
-                boxShadow: 'var(--shadow-sm)',
-              }}>
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: '52px',
-                  height: '52px',
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--danger-soft)',
-                  marginBottom: '16px',
-                }}>
-                  <AlertTriangleIcon size={22} />
-                </div>
-                <h2 className="ty-section-title" style={{ color: 'var(--danger)', margin: '0 0 10px' }}>Access Restricted</h2>
-                <p className="ty-body" style={{ color: 'var(--text-muted)', margin: '0 auto', maxWidth: '460px' }}>
-                  Contributor accounts do not have authorized clearance to view or moderate pending queue cards.
-                </p>
-                <p className="ty-meta" style={{ color: 'var(--text-subtle)', marginTop: '16px', fontStyle: 'italic' }}>
-                  Presentation Note: Open the floating user profile drawer to reset your Session Role Override to JUDICIAL_REVIEWER.
-                </p>
-              </div>
-            </section>
-          ) : (
-            <ModerationPanel token={token} user={activeUser} />
-          )
-        )}
-        {activeView === 'account' && <Account token={token} user={activeUser} />}
-      </section>
-
-      <AuthPromptModal
-        isOpen={authModalConfig.isOpen}
-        actionType={authModalConfig.actionType}
-        onClose={() => setAuthModalConfig({ isOpen: false, actionType: 'general' })}
-        onSignIn={() => {
-          setAuthModalConfig({ isOpen: false, actionType: 'general' })
-          setAuthMode('login')
-          navigateTo('auth')
-        }}
-        onRegister={() => {
-          setAuthModalConfig({ isOpen: false, actionType: 'general' })
-          setAuthMode('register')
-          navigateTo('auth')
-        }}
-      />
-
-      <WgiMethodologyModal
-        isOpen={isWgiMethodologyOpen}
-        onClose={() => setIsWgiMethodologyOpen(false)}
-      />
-    </main>
+    <PlatformRouter
+      activeHeader={activeHeader}
+      activeUser={activeUser}
+      activeView={activeView}
+      authModalConfig={authModalConfig}
+      authMode={authMode}
+      compareIds={compareIds}
+      comparisonState={comparisonState}
+      currentRole={currentRole}
+      currentUser={currentUser}
+      dashboardState={dashboardState}
+      formData={formData}
+      handleComparisonLookup={handleComparisonLookup}
+      handlePoliticianLocalCreate={handlePoliticianLocalCreate}
+      handlePoliticianLocalUpdate={handlePoliticianLocalUpdate}
+      handleSubmission={handleSubmission}
+      isAuthenticated={isAuthenticated}
+      isAnyModalOpen={isAnyModalOpen}
+      isAppealModalOpen={isAppealModalOpen}
+      isCompareModalOpen={isCompareModalOpen}
+      isPoliticiansModalOpen={isPoliticiansModalOpen}
+      isProfileModalOpen={isProfileModalOpen}
+      isWgiMethodologyOpen={isWgiMethodologyOpen}
+      navigateTo={navigateTo}
+      notFoundNotice={notFoundNotice}
+      onLogout={onLogout}
+      onUserUpdate={onUserUpdate}
+      openPoliticianProfile={openPoliticianProfile}
+      openSubmitContributionForPolitician={openSubmitContributionForPolitician}
+      politiciansState={politiciansState}
+      selectedPoliticianId={selectedPoliticianId}
+      selectView={selectView}
+      setAuthModalConfig={setAuthModalConfig}
+      setAuthMode={setAuthMode}
+      setCompareIds={setCompareIds}
+      setFormDataField={updateFormField}
+      setIsAppealModalOpen={setIsAppealModalOpen}
+      setIsApprovedDomain={setIsApprovedDomain}
+      setIsCompareModalOpen={setIsCompareModalOpen}
+      setIsPoliticiansModalOpen={setIsPoliticiansModalOpen}
+      setIsProfileModalOpen={setIsProfileModalOpen}
+      setIsWgiMethodologyOpen={setIsWgiMethodologyOpen}
+      setNotFoundNotice={setNotFoundNotice}
+      setWgiMethodologyOpen={setIsWgiMethodologyOpen}
+      showHeaderTitles={showHeaderTitles}
+      submissionState={submissionState}
+      token={token}
+      triggerAuthPrompt={triggerAuthPrompt}
+      updateActionDetail={updateActionDetail}
+    />
   )
 }
 
