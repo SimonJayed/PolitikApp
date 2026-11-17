@@ -53,9 +53,23 @@ public class PoliticianService {
             return getPoliticians();
         }
 
-        return mapPoliticiansWithSubmissions(
-                politicianRepository.findByFullNameContainingIgnoreCaseOrderByFullNameAsc(name.trim())
-        );
+        List<Politician> matches = null;
+        for (String token : name.trim().split("\\s+")) {
+            List<Politician> tokenMatches =
+                    politicianRepository.findByFullNameContainingIgnoreCaseOrderByFullNameAsc(token.toLowerCase());
+            if (matches == null) {
+                matches = tokenMatches;
+            } else {
+                var matchingIds = tokenMatches.stream()
+                        .map(Politician::getPoliticianId)
+                        .collect(Collectors.toSet());
+                matches = matches.stream()
+                        .filter(p -> matchingIds.contains(p.getPoliticianId()))
+                        .toList();
+            }
+        }
+
+        return mapPoliticiansWithSubmissions(matches == null ? Collections.emptyList() : matches);
     }
 
     @Transactional

@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { API_BASE_URL, readApiResponse } from '../../api/client'
+import { fetchReadWithRetry } from '../../api/readRequest'
 import { AlertTriangleIcon, SearchIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
@@ -74,11 +76,42 @@ export default function PoliticiansLoaderPanel({
   const [activeOnly, setActiveOnly] = useState(false)
   const [directoryRefresh, setDirectoryRefresh] = useState(0)
   const directory = useDirectory(directoryRefresh)
+  const [searchResults, setSearchResults] = useState(null)
+  const [searchState, setSearchState] = useState({ status: 'idle', message: '' })
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState(false)
   const resultsRef = useRef(null)
 
+  useEffect(() => {
+    const trimmedQuery = query.trim()
+    if (!trimmedQuery) {
+      setSearchResults(null)
+      setSearchState({ status: 'idle', message: '' })
+      return undefined
+    }
+
+    const controller = new AbortController()
+    setSearchState({ status: 'loading', message: '' })
+    const params = new URLSearchParams({ name: trimmedQuery })
+    fetchReadWithRetry(`${API_BASE_URL}/api/politicians/search?${params}`, { signal: controller.signal })
+      .then(readApiResponse)
+      .then(results => {
+        if (!controller.signal.aborted) {
+          setSearchResults(results)
+          setSearchState({ status: 'ready', message: '' })
+        }
+      })
+      .catch(error => {
+        if (!controller.signal.aborted) {
+          setSearchResults([])
+          setSearchState({ status: 'error', message: error.message })
+        }
+      })
+    return () => controller.abort()
+  }, [query])
+
   const membershipIndex = useMemo(() => new Map(directory.people.map(person => [person.politicianId, person])), [directory.people])
+  const displayedPoliticians = query.trim() ? (searchResults || []) : politicians
   const defaultPoliticians = useMemo(() => sortDirectory(
     politicians.filter(person => person.status !== 'ARCHIVED').map(person => ({ ...person, jurisdiction: directoryJurisdiction(person, membershipIndex) })),
     membershipIndex, directory.currentCongress, directory.asOfDate,
@@ -87,7 +120,7 @@ export default function PoliticiansLoaderPanel({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const today = new Date().toISOString().slice(0, 10)
-    const matches = politicians.filter((politician) =>
+    const matches = displayedPoliticians.filter((politician) =>
       politician.status !== 'ARCHIVED' && matchesJurisdiction(directoryJurisdiction(politician, membershipIndex), jurisdictionFilter)
       && (!activeOnly || isActiveProfile(politician, today))
       && matchesPosition(politician, positionFilter, membershipIndex)
@@ -95,7 +128,7 @@ export default function PoliticiansLoaderPanel({
       && (!q || [politician.fullName, politician.position, membershipSummary(membershipIndex.get(politician.politicianId)?.memberships).chamber]
         .some(value => String(value || '').toLowerCase().includes(q))))
     return sortDirectory(matches, membershipIndex, directory.currentCongress, directory.asOfDate)
-  }, [jurisdictionFilter, politicians, positionFilter, congressFilter, activeOnly, query, membershipIndex, directory.currentCongress, directory.asOfDate])
+  }, [jurisdictionFilter, displayedPoliticians, positionFilter, congressFilter, activeOnly, query, membershipIndex, directory.currentCongress, directory.asOfDate])
 
   const positions = useMemo(
     () => Array.from(new Set(['SENATOR', 'HOUSE_REPRESENTATIVE', ...politicians.filter(person => person.status !== 'ARCHIVED')
@@ -112,8 +145,8 @@ export default function PoliticiansLoaderPanel({
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-  const isLoading = politiciansState.status === 'loading' || directory.status === 'loading'
-  const hasError = politiciansState.status === 'error' || directory.status === 'error'
+  const isLoading = politiciansState.status === 'loading' || directory.status === 'loading' || searchState.status === 'loading'
+  const hasError = politiciansState.status === 'error' || directory.status === 'error' || searchState.status === 'error'
   const filtersActive = query.trim() !== '' || jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL' || congressFilter !== 'ALL' || activeOnly
   const isAdmin = dbUser?.role === 'ADMIN'
   const showSkeleton = isLoading && filtered.length === 0
@@ -215,13 +248,16 @@ export default function PoliticiansLoaderPanel({
         </div>
       </header>
 
-      <WgiLeaderboard defaultPoliticians={defaultPoliticians} onSelectPolitician={onViewProfile} />
+      {!query.trim() && <WgiLeaderboard defaultPoliticians={defaultPoliticians} onSelectPolitician={onViewProfile} />}
       {creating && isAdmin && <PoliticianEditor token={token} onClose={() => setCreating(false)} onSaved={onPoliticianCreate} />}
 
       {(politiciansState.status === 'error' || Boolean(directory.error)) && <div className="statusLine error" role="alert">
         <p>{politiciansState.status === 'error' ? `Politician profiles could not be loaded. ${politiciansState.message}`
           : `Congress membership filters and ordering could not be loaded. ${directory.error}`}</p>
         <button className="polReset" type="button" disabled={isLoading} onClick={() => { onRetry?.(); setDirectoryRefresh(value => value + 1) }}>Retry</button>
+      </div>}
+      {searchState.status === 'error' && <div className="statusLine error" role="alert">
+        <p>Politician search could not be completed. {searchState.message}</p>
       </div>}
       <StatusLine state={state} />
 
@@ -252,7 +288,7 @@ export default function PoliticiansLoaderPanel({
           <div className="polEmpty">
             <SearchIcon size={28} />
             <strong>No politicians found</strong>
-            <span>Try a different name, position, Congress or jurisdiction.</span>
+            <span>{query.trim() ? 'No politicians found matching your search.' : 'Try a different name, position, Congress or jurisdiction.'}</span>
           </div>
         )}
 

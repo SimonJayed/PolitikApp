@@ -78,4 +78,31 @@ class PoliticianServiceTests {
         verify(submissionRepository, times(1)).findByPoliticianIdInAndStatus(any(), eq("PUBLISHED"));
         verify(submissionRepository, never()).findByPoliticianIdAndStatus(any(), any());
     }
+
+    @Test
+    void searchPoliticiansIntersectsPartialNameTokensCaseInsensitively() {
+        UUID matchingId = UUID.randomUUID();
+        UUID otherId = UUID.randomUUID();
+        Politician matching = new Politician();
+        matching.setPoliticianId(matchingId);
+        matching.setFullName("Juan Dela Cruz");
+        Politician other = new Politician();
+        other.setPoliticianId(otherId);
+        other.setFullName("Juan Santos");
+
+        when(politicianRepository.findByFullNameContainingIgnoreCaseOrderByFullNameAsc("juan"))
+                .thenReturn(List.of(matching, other));
+        when(politicianRepository.findByFullNameContainingIgnoreCaseOrderByFullNameAsc("cruz"))
+                .thenReturn(List.of(matching));
+        when(submissionRepository.findByPoliticianIdInAndStatus(List.of(matchingId), "PUBLISHED"))
+                .thenReturn(List.of());
+        PoliticianResponse response = mock(PoliticianResponse.class);
+        when(politicianMapper.toResponses(eq(List.of(matching)), any())).thenReturn(List.of(response));
+
+        List<PoliticianResponse> results = politicianService.searchPoliticians("JUAN  cruz");
+
+        assertEquals(List.of(response), results);
+        verify(politicianRepository).findByFullNameContainingIgnoreCaseOrderByFullNameAsc("juan");
+        verify(politicianRepository).findByFullNameContainingIgnoreCaseOrderByFullNameAsc("cruz");
+    }
 }

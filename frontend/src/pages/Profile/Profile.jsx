@@ -151,7 +151,7 @@ export default function PoliticianProfilePage({
 
   async function saveRecord(event) {
     event.preventDefault()
-    setRecordState({ status: 'loading', message: 'Saving verified record...' })
+    setRecordState({ status: 'loading', message: 'Saving accountability record...' })
     try {
       if (record.actionDetails?.openCongressId) {
         await congressRequest(`/records/${record.timelineId}/verification`, token, {
@@ -197,7 +197,7 @@ export default function PoliticianProfilePage({
       setDraftReview(null)
       await loadCongressDrafts()
       await onReload(politicianId)
-      setRecordState({ status: 'success', message: 'Verified legislative record published.' })
+      setRecordState({ status: 'success', message: 'Accountability record published.' })
     } catch (error) { setRecordState({ status: 'error', message: error.message }) }
   }
 
@@ -286,7 +286,7 @@ export default function PoliticianProfilePage({
 
             {isAdmin && (
               <div className="prHeroActions">
-                <button className="prBtn prBtnPrimary" type="button" onClick={() => onAddContribution(politicianId)}>Add verified record</button>
+                <button className="prBtn prBtnPrimary" type="button" onClick={() => onAddContribution(politicianId)}>Add accountability record</button>
                 <button className="prBtn prBtnGhost" type="button" onClick={() => setEditing(true)}>Edit Profile</button>
                 <button className="prBtn prBtnDanger" type="button" disabled={isLoading} onClick={archiveProfile}>Archive profile</button>
               </div>
@@ -371,7 +371,7 @@ export default function PoliticianProfilePage({
                           disabled={isLoading || !draftReview.summary.trim() || !draftReview.sourceUrl || !draftReview.verifiedStatus || draftReview.verificationNotes.trim().length < 20}
                           onClick={publishCongressDraft}
                         >
-                          Publish verified record
+                          Publish accountability record
                         </button>
                         <button className="prBtn prBtnOutline" type="button" onClick={() => setDraftReview(null)}>Cancel</button>
                       </div>
@@ -380,18 +380,18 @@ export default function PoliticianProfilePage({
                 </section>
               )}
 
-              <section className="prCard prTimeline" aria-label="Verified public records">
+              <section className="prCard prTimeline" aria-label="Accountability records">
                 <div className="prCardHead">
                   <div>
-                    <h2 className="prCardTitle">Browse verified records</h2>
+                    <h2 className="prCardTitle">Browse accountability records</h2>
                     <p className="prCardHint">Search and filter, {RECORDS_PER_PAGE} records per page.</p>
                   </div>
                   <span className="prCount">{visibleEntries.length}</span>
                 </div>
 
-                <div className="prToolbar" role="search" aria-label="Filter verified records">
+                <div className="prToolbar" role="search" aria-label="Filter accountability records">
                   <label className="prField prSearch">
-                    <span>Search verified records</span>
+                    <span>Search accountability records</span>
                     <input value={recordQuery} onChange={(event) => setRecordQuery(event.target.value)} placeholder="Title, category, description, or year" />
                   </label>
                   <label className="prField">
@@ -492,11 +492,11 @@ export default function PoliticianProfilePage({
           )}
 
           {isAdmin && record && (
-            <BaseModal isOpen title="Edit verified record" onClose={() => setRecord(null)} isDismissDisabled={isLoading}>
+            <BaseModal isOpen title="Edit accountability record" onClose={() => setRecord(null)} isDismissDisabled={isLoading}>
               <div className="prModalContent">
                 {record.actionDetails?.openCongressId ? (
                   <form className="editorPanel prForm" onSubmit={saveRecord}>
-                    <p className="prMuted">Update the verified claim using its official record. Imported source details remain attached.</p>
+                    <p className="prMuted">Update the accountability record using its official source. Imported source details remain attached.</p>
                     <label>Public summary
                       <textarea required value={record.impactSummary || ''} onChange={(event) => setRecord((current) => ({ ...current, impactSummary: event.target.value }))} />
                     </label>
@@ -509,7 +509,7 @@ export default function PoliticianProfilePage({
                     <label>Evidence and review notes
                       <textarea required minLength={20} value={record.verificationNotes || ''} onChange={(event) => setRecord((current) => ({ ...current, verificationNotes: event.target.value }))} />
                     </label>
-                    <button className="prBtn prBtnPrimaryDark" disabled={isLoading} type="submit">Save verified record</button>
+                    <button className="prBtn prBtnPrimaryDark" disabled={isLoading} type="submit">Save accountability record</button>
                     <StatusLine state={recordState} />
                   </form>
                 ) : (

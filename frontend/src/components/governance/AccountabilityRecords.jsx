@@ -12,7 +12,7 @@ export function AccountabilityCard({ entry }) {
   return <article className="accountabilityCard">
     <div className="accountabilityLabels"><span className="prBadge">{type}</span>{category && <span className="accountabilityCategory">Category: {category}</span>}</div>
     <h3>{title}</h3>
-    <p className="accountabilityVerification">{accomplishment ? 'Administrator-curated accomplishment' : 'Administrator-verified record'}</p>
+    <p className="accountabilityVerification">{accomplishment ? 'Administrator-curated accomplishment' : 'Administrator-verified accountability record'}</p>
     {accomplishment && <p className="prMuted">{entry.accomplishmentDate ? recordDate(entry.accomplishmentDate) : entry.accomplishmentYear || 'Date not provided'}</p>}
     {metric && <p className="accountabilityMetric">{metric}</p>}
     <p className="accountabilityDescription">{entry.description || entry.summary || entry.impactSummary || 'Description unavailable'}</p>
@@ -23,8 +23,8 @@ export function AccountabilityCard({ entry }) {
 }
 
 export default function AccountabilityRecords({ entries = [], loading }) {
-  if (loading) return <p role="status">Loading verified records…</p>
+  if (loading) return <p role="status">Loading accountability records…</p>
   return entries.length ? <div className="accountabilityList">{entries.map(entry =>
     <AccountabilityCard key={entry.timelineId || entry.accomplishmentId} entry={entry} />)}</div>
-    : <p className="prMuted">No verified accountability records match this selection.</p>
+    : <p className="prMuted">No accountability records match this selection.</p>
 }
