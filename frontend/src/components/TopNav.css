@@ -12,14 +12,58 @@
   object-fit: contain;
 }
 
-@media (min-width: 1280px) {
+.topNavHamburgerBtn {
+  display: inline-flex;
+}
+
+.topNavHorizontalNav {
+  display: none;
+}
+
+.topNavHorizontalActions {
+  display: none;
+}
+
+.hoverNav {
+  display: none;
+  align-items: center;
+  background: rgba(18, 42, 88, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgba(4, 13, 31, 0.24);
+  gap: 3px;
+  left: 50%;
+  padding: 5px;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* Tablet Landscape & Desktop viewport: >= 840px */
+@media (min-width: 840px) {
+  .topNavHamburgerBtn {
+    display: none !important;
+  }
+
+  .topNavHorizontalNav {
+    display: flex !important;
+  }
+
+  .topNavHorizontalActions {
+    display: flex !important;
+  }
+
   .topNavFrame {
-    max-width: 980px;
+    max-width: 1040px;
   }
 
   .topNavRow {
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .hoverNav {
+    display: flex !important;
   }
 
   .topNavRow > .hoverNav {
@@ -35,21 +79,6 @@
     grid-column: 3;
     justify-self: end;
   }
-}
-
-.hoverNav {
-  align-items: center;
-  background: rgba(18, 42, 88, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 999px;
-  box-shadow: 0 12px 28px rgba(4, 13, 31, 0.24);
-  display: flex;
-  gap: 3px;
-  left: 50%;
-  padding: 5px;
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
 }
 
 .hoverNavItem {
@@ -119,5 +148,37 @@
   .hoverNavItem,
   .hoverNavItemLabel {
     transition: none;
+  }
+}
+
+/* Mobile Navigation Dropdown */
+.mobileNavDropdown {
+  animation: mobileNavSlideDown 240ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transform-origin: top center;
+  max-height: calc(100dvh - 5.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@keyframes mobileNavSlideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scaleY(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mobileNavDropdown {
+    animation: none;
+  }
+}
+
+@media (min-width: 840px) {
+  .mobileNavDropdown {
+    display: none !important;
   }
 }
