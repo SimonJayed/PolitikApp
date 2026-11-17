@@ -30,15 +30,16 @@ test('invalid/missing scores or ranks never receive a displayed numerical rankin
     { ...entry, rank: null }, { ...entry, wgiCompositeScore: Infinity }]), [entry])
 })
 
-test('only the top three are featured; remaining entries retain server ranks and profile navigation buttons', () => {
+test('the ranked list starts at rank four while the podium retains the top three', () => {
   const rows = Array.from({ length: 6 }, (_, index) => ({ politicianId: String(index), rank: index + 1, fullName: `Member ${index}`, position: 'SENATOR', wgiCompositeScore: 60 - index, profileImageUrl: `https://example.com/${index}.jpg` }))
   const html = renderToStaticMarkup(createElement(Entries, { entries: rows }))
-  assert.equal((html.match(/class="wgiFeatured"/g) || []).length, 3)
+  assert.equal((html.match(/class="wgiFeatured"/g) || []).length, 0)
   assert.equal((html.match(/class="wgiListRow"/g) || []).length, 3)
-  assert.ok(html.includes('Rank 1') && html.includes('#6'))
-  assert.ok(html.includes('View profile: Member 0'))
-  assert.ok(html.includes('https://example.com/0.jpg'))
-  assert.ok(html.indexOf('Member 0') < html.indexOf('Member 5'))
+  assert.ok(html.includes('Rank 4') && html.includes('Rank 6'))
+  assert.ok(html.includes('View profile: Member 3'))
+  assert.ok(html.includes('https://example.com/3.jpg'))
+  assert.ok(!html.includes('class="wgiListRow top1"'))
+  assert.ok(html.indexOf('Member 3') < html.indexOf('Member 5'))
 })
 
 test('scored profiles lead, followed by default directory order without duplicate profiles or invented zeros', () => {
@@ -60,14 +61,14 @@ test('empty rows never fabricate podium entries', () => {
   assert.ok(!html.includes('#1'))
 })
 
-test('every featured/list score has an explicit label; calculated zero differs from unscored profiles', () => {
-  const entries = Array.from({ length: 4 }, (_, index) => ({ politicianId: String(index), fullName: `Member ${index}`, rank: index === 1 ? null : index + 1, wgiCompositeScore: index === 1 ? null : 0 }))
+test('every ranked-list score has an explicit label; calculated zero differs from unscored profiles', () => {
+  const entries = Array.from({ length: 5 }, (_, index) => ({ politicianId: String(index), fullName: `Member ${index}`, rank: index === 3 ? null : index + 1, wgiCompositeScore: index === 3 ? null : 0 }))
   const html = renderToStaticMarkup(createElement(Entries, { entries }))
-  assert.equal((html.match(/<small>WGI Score<\/small>/g) || []).length, 4)
-  assert.equal((html.match(/data-score-state="scored"/g) || []).length, 3)
+  assert.equal((html.match(/<small>WGI Score<\/small>/g) || []).length, 2)
+  assert.equal((html.match(/data-score-state="scored"/g) || []).length, 1)
   assert.equal((html.match(/data-score-state="unscored"/g) || []).length, 1)
   assert.ok(html.includes('<strong>0.0</strong>') && html.includes('Not yet scored'))
-  assert.ok(html.includes('Not ranked'))
+  assert.ok(html.includes('Not ranked') && html.includes('Rank 5'))
 })
 
 test('plain-language explanation uses the real factors and scale without assigning performance grades', () => {

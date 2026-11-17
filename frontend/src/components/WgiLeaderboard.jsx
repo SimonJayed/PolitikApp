@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { API_BASE_URL, readApiResponse } from '../api/client'
 import { fetchReadWithRetry } from '../api/readRequest'
 import { publicReadCache } from '../api/readCache'
@@ -25,42 +26,31 @@ function Photo({ entry }) {
   </span>
 }
 
-export function WgiLeaderboardEntries({ entries = [], onSelectPolitician, children }) {
-  return <>
-    <ol className="wgiTopThree" aria-label="Featured leaderboard profiles">
-      {entries.slice(0, 3).map(entry => <li key={entry.politicianId}>
-        <button className="wgiFeatured" type="button" onClick={() => onSelectPolitician?.(entry.politicianId)} aria-label={`View profile: ${entry.fullName}`}>
-          <Photo entry={entry} />
-          <span className="wgiRank">{entry.rank ? `Rank ${entry.rank}` : 'Not ranked'}</span>
-          <strong className="wgiName">{entry.fullName}</strong>
-          <ScoreLabel entry={entry} />
-        </button>
-        <span className="wgiPedestal" aria-hidden="true">{entry.rank || ''}</span>
-      </li>)}
-    </ol>
-    {(entries.length > 3 || children) && <div className="wgiFullRankings">
-      <div className="wgiFullHeading"><h3>Full WGI rankings</h3><span>Highest scores first · Unscored profiles follow</span></div>
-      <ol className="wgiRankedList" start={4} aria-label="Additional WGI rankings">
-      {entries.slice(3).map(entry => {
-        const tags = [formatPosition(entry.position), formatJurisdiction(entry.jurisdiction)].filter(Boolean)
-        return <li key={entry.politicianId}>
-          <button className="wgiListRow" type="button" onClick={() => onSelectPolitician?.(entry.politicianId)} aria-label={`View profile: ${entry.fullName}`}>
-            <span className="wgiRank" aria-label={entry.rank ? `Rank ${entry.rank}` : 'Not ranked'} title={entry.rank ? 'Rank by WGI Score' : 'Not yet ranked; shown in default politician order'}>{entry.rank ? `#${entry.rank}` : '—'}</span>
-            <Photo entry={entry} />
-            <span className="wgiIdentity">
-              <strong className="wgiName">{entry.fullName}</strong>
-              <span className="wgiOffice">{tags.length
-                ? tags.map((tag, index) => <span className="wgiTag" key={`${tag}-${index}`}>{tag}</span>)
-                : 'Position Not Available'}</span>
-            </span>
-            <ScoreLabel entry={entry} />
-          </button>
-        </li>
-      })}
-      </ol>
-      {children}
-    </div>}
+// Decorative laurel branches that frame the top three ranks. Colored with currentColor.
+function Laurel({ className = '' }) {
+  const branch = <>
+    <path d="M20 42 C9 36 5 24 8 9" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <ellipse cx="7" cy="11" rx="2.4" ry="4.6" transform="rotate(-15 7 11)" />
+    <ellipse cx="4.5" cy="19" rx="2.4" ry="4.6" transform="rotate(-35 4.5 19)" />
+    <ellipse cx="6" cy="27" rx="2.4" ry="4.6" transform="rotate(-55 6 27)" />
+    <ellipse cx="11" cy="34" rx="2.4" ry="4.6" transform="rotate(-75 11 34)" />
+    <ellipse cx="11.5" cy="14" rx="2.2" ry="4.2" transform="rotate(30 11.5 14)" />
+    <ellipse cx="10" cy="22" rx="2.2" ry="4.2" transform="rotate(10 10 22)" />
+    <ellipse cx="13.5" cy="29.5" rx="2.2" ry="4.2" transform="rotate(-15 13.5 29.5)" />
   </>
+  return <svg className={`wgiLaurel ${className}`.trim()} viewBox="0 0 64 48" aria-hidden="true" focusable="false">
+    <g fill="currentColor">{branch}</g>
+    <g fill="currentColor" transform="translate(64 0) scale(-1 1)">{branch}</g>
+  </svg>
+}
+
+function RankBadge({ rank }) {
+  const label = rank ? `Rank ${rank}` : 'Not ranked'
+  if (rank > 0 && rank <= 3) {
+    return <span className={`wgiRankBadge tier${rank}`} role="img" aria-label={label}><Laurel /><b>{rank}</b></span>
+  }
+  return <span className="wgiRankPlain" role="img" aria-label={label}
+    title={rank ? 'Rank by WGI Score' : 'Not yet ranked; shown in default politician order'}>{rank ? rank : '—'}</span>
 }
 
 function ScoreLabel({ entry }) {
@@ -73,14 +63,65 @@ function ScoreLabel({ entry }) {
   </span>
 }
 
+// Top three on a podium: 2nd on the left, 1st in the middle, 3rd on the right.
+export function WgiPodium({ entries = [], onSelectPolitician }) {
+  return <ol className="wgiPodium" aria-label="Top three leaderboard profiles">
+    {entries.slice(0, 3).map((entry, index) => <li key={entry.politicianId} className={`place${index + 1}`}>
+      <button className="wgiPodiumItem" type="button" onClick={() => onSelectPolitician?.(entry.politicianId)} aria-label={`View profile: ${entry.fullName}`}
+        title={validWgiScore(entry.wgiCompositeScore) !== null ? `WGI Score ${formatWgiScore(entry.wgiCompositeScore)} / 100` : 'Not yet scored'}>
+        <span className="wgiPodiumAvatar"><Laurel /><Photo entry={entry} /></span>
+        <span className="wgiPodiumBase">
+          <span className="wgiPodiumName">{entry.fullName}</span>
+          <span className="wgiPodiumNumber" aria-hidden="true">{entry.rank || '—'}</span>
+        </span>
+      </button>
+    </li>)}
+  </ol>
+}
+
+// Ranked profiles below the podium as individual cards.
+export function WgiRankingList({ entries = [], onSelectPolitician, children }) {
+  return <div className="wgiFullRankings">
+    <ol className="wgiRankedList" aria-label="WGI rankings">
+      {entries.map(entry => {
+        const tags = [formatPosition(entry.position), formatJurisdiction(entry.jurisdiction)].filter(Boolean)
+        return <li key={entry.politicianId}>
+          <button className={`wgiListRow${entry.rank > 0 && entry.rank <= 3 ? ` top${entry.rank}` : ''}`} type="button" onClick={() => onSelectPolitician?.(entry.politicianId)} aria-label={`View profile: ${entry.fullName}`}>
+            <RankBadge rank={entry.rank} />
+            <Photo entry={entry} />
+            <span className="wgiIdentity">
+              <strong className="wgiName">{entry.fullName}</strong>
+              <span className="wgiOffice">{tags.length
+                ? tags.map((tag, index) => <span className="wgiTag" key={`${tag}-${index}`}>{tag}</span>)
+                : 'Position Not Available'}</span>
+            </span>
+            <span className="wgiRowCta" aria-hidden="true">View profile</span>
+            <ScoreLabel entry={entry} />
+          </button>
+        </li>
+      })}
+    </ol>
+    {children}
+  </div>
+}
+
+// Kept for compatibility: podium plus ranks four onward in one fragment.
+export function WgiLeaderboardEntries({ entries = [], onSelectPolitician, children }) {
+  return <>
+    <WgiPodium entries={entries} onSelectPolitician={onSelectPolitician} />
+    <WgiRankingList entries={entries.slice(3)} onSelectPolitician={onSelectPolitician}>{children}</WgiRankingList>
+  </>
+}
+
 function LeaderboardSkeleton() {
-  return <div className="wgiSkeleton" aria-hidden="true">
-    <div className="wgiSkeletonPodium">
-      {[0, 1, 2].map(index => <span className="wgiSkeletonBlock" key={index} />)}
-    </div>
-    <div className="wgiSkeletonRows">
-      {[0, 1, 2].map(index => <span className="wgiSkeletonRow" key={index} />)}
-    </div>
+  return <div className="wgiSkeletonRows" aria-hidden="true">
+    {[0, 1, 2, 3].map(index => <span className="wgiSkeletonRow" key={index} />)}
+  </div>
+}
+
+function PodiumSkeleton() {
+  return <div className="wgiSkeletonPodium" aria-hidden="true">
+    {[0, 1, 2].map(index => <span className="wgiSkeletonBlock" key={index} />)}
   </div>
 }
 
@@ -133,7 +174,7 @@ export function Methodology({ calculatedAt, latestSourceUpdate, onClose }) {
     <p>Calculated for this leaderboard response: <strong>{updatedLabel(calculatedAt)}</strong>.</p>
     <p>Latest contributing record update among loaded entries: <strong>{updatedLabel(latestSourceUpdate)}</strong>. This is a system record timestamp, not the date of an independent real-world verification.</p>
     </details>
-    <button className="wgiControl" type="button" onClick={onClose}>Got it</button>
+    <button className="wgiControl wgiControlPrimary" type="button" onClick={onClose}>Got it</button>
   </BaseModal>
 }
 
@@ -208,36 +249,56 @@ export default function WgiLeaderboard({ defaultPoliticians = [], onSelectPoliti
     setVisibleCount(next)
     if (state.entries.length < Math.min(next, state.totalRanked)) setRefresh(value => value + 1)
   }
-  const controls = <div className="wgiControls">
-    {!expanded && total > COLLAPSED_LIMIT && <button className="wgiControl" type="button" aria-expanded="false" onClick={showMore}>View Full Leaderboard ({total})</button>}
-    {expanded && <>
-      {remaining > 0 && <button className="wgiControl" type="button" disabled={moreLoading} onClick={showMore}>Show {Math.min(PAGE_STEP, remaining)} more</button>}
-      <button className="wgiControl" type="button" aria-expanded="true" onClick={() => { desiredCount.current = COLLAPSED_LIMIT; setVisibleCount(COLLAPSED_LIMIT); heading.current?.scrollIntoView({ block: 'start' }) }}>Collapse leaderboard</button>
-    </>}
-  </div>
+  function collapse() {
+    desiredCount.current = COLLAPSED_LIMIT
+    setVisibleCount(COLLAPSED_LIMIT)
+    heading.current?.scrollIntoView({ block: 'start' })
+  }
+  const controls = expanded && remaining > 0
+    ? <div className="wgiControls"><button className="wgiControl" type="button" disabled={moreLoading} onClick={showMore}>Show {Math.min(PAGE_STEP, remaining)} more</button></div>
+    : null
+
   return <section ref={heading} className="wgiLeaderboard" aria-label="WGI scores" aria-busy={isInitialLoad}>
-    <div className="wgiHeader">
-      <div>
+    <div className="wgiHero">
+      <div className="wgiHeroText">
+        <div className="wgiTitleRow">
+          <h2>WGI Leaderboard</h2>
+          {total > 0 && <span className="wgiCountChip"><strong>{total}</strong> profile{total === 1 ? '' : 's'}</span>}
+        </div>
+        <p className="wgiIntro">Politicians ranked by their position-aware WGI score, calculated from eligible published records.</p>
+        <div className="wgiHeroTags">
+          <span className="wgiTag">0–100 scale</span>
+          <span className="wgiTag">Published records only</span>
+        </div>
         <p className="wgiMeta" role="status">
           {moreLoading && state.status === 'ready'
             ? 'Updating scores…'
             : state.calculatedAt ? `Scores calculated ${updatedLabel(state.calculatedAt)}` : ''}
         </p>
+        <button className="wgiControl wgiExplainButton" type="button" onClick={() => setShowMethodology(true)}>How are scores calculated?</button>
       </div>
-      <button className="wgiControl wgiExplainButton" type="button" onClick={() => setShowMethodology(true)}>How are scores calculated?</button>
+      {visible.length > 0 ? <WgiPodium entries={visible} onSelectPolitician={onSelectPolitician} /> : isInitialLoad && <PodiumSkeleton />}
     </div>
+
     {state.error && <div className="wgiNotice wgiError" role="alert"><p>{state.status === 'ready' ? 'The latest WGI update could not be loaded. Showing the previous scores.' : 'WGI scores could not be loaded. Showing the default politician order.'} {state.error}</p><button className="wgiControl" type="button" onClick={() => setRefresh(value => value + 1)}>Retry leaderboard</button></div>}
-    <>
-      {isInitialLoad && <LeaderboardSkeleton />}
-      {visible.length ? <WgiLeaderboardEntries entries={visible} onSelectPolitician={onSelectPolitician}>{controls}</WgiLeaderboardEntries>
-        : state.status !== 'loading' && <p className="wgiNotice">No politician profiles are available yet.</p>}
-      {state.status !== 'loading' && <p className="wgiFootnote">{state.totalRanked} scored profile{state.totalRanked === 1 ? '' : 's'}{total > 0 ? ` · showing ${Math.min(visibleCount, total)} of ${total}` : ''}.</p>}
-    </>
+
+    {total > COLLAPSED_LIMIT && <div className="wgiTabs" role="group" aria-label="Leaderboard view">
+      <button type="button" className={!expanded ? 'active' : ''} aria-pressed={!expanded} onClick={collapse}>Top {COLLAPSED_LIMIT}</button>
+      <button type="button" className={expanded ? 'active' : ''} aria-pressed={expanded} onClick={() => { if (!expanded) showMore() }}>Full ranking ({total})</button>
+    </div>}
+
+    {isInitialLoad && <LeaderboardSkeleton />}
+    {visible.length
+      ? <WgiRankingList entries={visible.slice(3)} onSelectPolitician={onSelectPolitician}>{controls}</WgiRankingList>
+      : state.status !== 'loading' && <p className="wgiNotice">No politician profiles are available yet.</p>}
+    {state.status !== 'loading' && <p className="wgiFootnote">{state.totalRanked} scored profile{state.totalRanked === 1 ? '' : 's'}{total > 0 ? ` · showing ${Math.min(visibleCount, total)} of ${total}` : ''}.</p>}
+
     <div className="wgiReadingGuide" aria-label="Understanding WGI scores">
       <span><strong>0–100 scale</strong> · Higher means a higher result under this formula <InfoTip label="About the score scale">100 is the formula’s upper limit. Some offices have a lower attainable maximum because their weights and eligible factors differ. This is not a percentage grade.</InfoTip></span>
       <span><strong>0.0</strong> = a calculated score · <strong>Not yet scored</strong> = no eligible records <InfoTip label="About zero and missing scores">Zero is a valid calculated result. A profile without eligible published scoring records is not assigned zero or a WGI rank.</InfoTip></span>
     </div>
     <p className="wgiContextNote">Rankings reflect this methodology, not an objective judgment of a politician’s overall performance.</p>
-    {showMethodology && <Methodology calculatedAt={state.calculatedAt} latestSourceUpdate={latestSourceUpdate} onClose={() => setShowMethodology(false)} />}
+    {/* Rendered in <body> so the navigation bar can never cover the top of the dialog */}
+    {showMethodology && createPortal(<Methodology calculatedAt={state.calculatedAt} latestSourceUpdate={latestSourceUpdate} onClose={() => setShowMethodology(false)} />, document.body)}
   </section>
 }
