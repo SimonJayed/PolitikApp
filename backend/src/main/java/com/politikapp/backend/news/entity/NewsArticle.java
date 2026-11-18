@@ -66,6 +66,15 @@ public class NewsArticle {
     @Column(nullable = false, length = 80)
     private String category = "Government Announcements";
 
+    @Column(name = "automatic_topic", nullable = false, length = 80)
+    private String automaticTopic = "Government Announcements";
+
+    @jakarta.persistence.PrePersist
+    @jakarta.persistence.PreUpdate
+    private void refreshAutomaticTopic() {
+        automaticTopic = com.politikapp.backend.news.service.NewsTopics.category(this);
+    }
+
     @Column(name = "original_published_at")
     private Instant originalPublishedAt;
 

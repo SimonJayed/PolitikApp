@@ -51,7 +51,7 @@ public class NewsMapper {
                 article.getSource().getName(),
                 article.getSourceUrl(),
                 NewsTopics.category(article),
-                firstNonBlank(article.getAiSummary(), article.getOriginalContent()),
+                SourceExcerpt.summary(article),
                 splitKeyPoints(article.getAiKeyPoints()),
                 article.getOriginalPublishedAt(),
                 article.getPublishedAt(),

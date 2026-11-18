@@ -11,6 +11,21 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 class NewsAiServiceTests {
     @Test
+    void sourceOnlyDraftsFinishTheSentenceBeyondTheOldCharacterLimit() {
+        var service = new NewsAiService(new ObjectMapper(), org.mockito.Mockito.mock(com.politikapp.backend.politician.repository.PoliticianRepository.class));
+        ReflectionTestUtils.setField(service, "aiEnabled", false);
+        ReflectionTestUtils.setField(service, "mockMode", true);
+        String sentence = "The department " + "strengthens accountability and procurement reforms ".repeat(12) + "for public spending.";
+        var article = new NewsArticle();
+        article.setOriginalTitle("Procurement reforms");
+        article.setOriginalContent(sentence + " A later sentence follows.");
+        service.prepareDeterministicDraft(article);
+        assertEquals(sentence, article.getAiSummary());
+        service.processArticle(article);
+        assertEquals(sentence, article.getAiSummary());
+    }
+
+    @Test
     void mockModeCreatesPendingReviewArticleWithoutPublishing() {
         NewsAiService service = new NewsAiService(new ObjectMapper(), org.mockito.Mockito.mock(com.politikapp.backend.politician.repository.PoliticianRepository.class));
         ReflectionTestUtils.setField(service, "aiEnabled", false);

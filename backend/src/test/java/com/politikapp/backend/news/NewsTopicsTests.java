@@ -44,7 +44,7 @@ class NewsTopicsTests {
     }
 
     @Test
-    void existingArticlesHaveMatchingResponseTopicsDatabaseFiltersAndPaginationWithoutRewritingRecords() {
+    void storedAutomaticTopicsMatchResponseFiltersAndPaginationWhilePreservingReviewFields() {
         String marker = "topic-fixture-" + UUID.randomUUID();
         var admin = new AuthUser();
         admin.setUserId(UUID.randomUUID()); admin.setEmail(marker + "@test.invalid");
@@ -82,7 +82,13 @@ class NewsTopicsTests {
         for (var id : ids) {
             var stored = em.find(NewsArticle.class, id);
             assertEquals("Government Announcements", stored.getCategory());
+            assertEquals(NewsTopics.category(stored), stored.getAutomaticTopic());
             assertNotNull(stored.getReviewedAt()); assertEquals("PUBLISHED", stored.getStatus());
         }
+        var changed = em.find(NewsArticle.class, ids.get(0));
+        changed.setOriginalTitle("Senate files bill for public services");
+        em.flush(); em.clear();
+        assertEquals("Legislation", em.find(NewsArticle.class, ids.get(0)).getAutomaticTopic());
+        assertEquals(3, news.published("legislation", marker, PageRequest.of(0, 10, sort), null).getTotalElements());
     }
 }

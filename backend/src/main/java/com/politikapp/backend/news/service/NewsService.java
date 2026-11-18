@@ -204,7 +204,9 @@ public class NewsService {
             predicate = builder.and(predicate, builder.isNotNull(root.get("reviewedBy")),
                     builder.isNotNull(root.get("reviewedAt")), builder.isNotNull(root.get("publishedAt")));
             if (category != null) {
-                predicate = builder.and(predicate, builder.equal(builder.lower(NewsTopics.category(builder, root)), category.toLowerCase(java.util.Locale.ROOT)));
+                String topic = categories().stream().filter(value -> value.equalsIgnoreCase(category.trim()))
+                        .findFirst().orElse(category.trim());
+                predicate = builder.and(predicate, builder.equal(root.get("automaticTopic"), topic));
             }
             if (query != null) {
                 String like = "%" + query.toLowerCase() + "%";

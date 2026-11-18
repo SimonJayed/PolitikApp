@@ -124,7 +124,7 @@ public class NewsAiService {
                 String content = safeText(article.getOriginalContent());
                 article.setAiSummary(content.isBlank()
                         ? "Summary requires admin review because source content was unavailable."
-                        : truncate(content, 520));
+                        : SourceExcerpt.excerpt(content, 520));
             }
         } finally {
             article.setAiProcessedAt(Instant.now());
@@ -370,7 +370,7 @@ public class NewsAiService {
         article.setSuggestedTitle(article.getOriginalTitle());
         article.setAiSummary(content.isBlank()
                 ? "Summary requires admin review because the source feed did not provide article text."
-                : truncate(content, 520));
+                : SourceExcerpt.excerpt(content, 520));
         article.setAiKeyPoints("Retrieved from an approved government source.");
         article.setCategory(NewsTopics.category(article));
         article.setAiModel(truncate("mock-" + firstNonBlank(safeModelName(model), "default"), 120));
@@ -382,7 +382,7 @@ public class NewsAiService {
     /** A source-text excerpt for the retrieval prototype. This never calls Gemini. */
     public void prepareDeterministicDraft(NewsArticle article) {
         String content = safeText(article.getOriginalContent()).replaceAll("\\s+", " ").trim();
-        String excerpt = truncate(content, 500);
+        String excerpt = SourceExcerpt.excerpt(content, 500);
         String firstPoint = java.util.Arrays.stream(content.split("(?<=[.!?])\\s+(?=[A-Z0-9])"))
                 .map(String::trim).filter(sentence -> sentence.length() >= 25 && sentence.length() <= 220
                         && sentence.matches("(?s).*[.!?]$"))
