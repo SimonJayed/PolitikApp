@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../Skeletons"
 import React, { useEffect } from 'react';
 import SourceUrlInput from './SourceUrlInput';
 import SubmissionStatusAlert from './SubmissionStatusAlert';
@@ -151,7 +152,7 @@ export default function EditSubmissionForm({
 
         <div className="formFooter">
           <button disabled={state.status === 'loading'} type="submit">
-            {state.status === 'loading' ? 'Saving...' : 'Publish verified record'}
+            {state.status === 'loading' ? <LoadingSkeleton inline label="Saving" /> : 'Publish verified record'}
           </button>
         </div>
 

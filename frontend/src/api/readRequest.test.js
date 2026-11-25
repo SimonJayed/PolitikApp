@@ -11,7 +11,9 @@ test('temporary fetch failures recover automatically with a public GET', async c
   })
   assert.equal(await fetchReadWithRetry('/api/politicians', { retryDelay: 0 }), response)
   assert.equal(request.mock.callCount(), 3)
-  assert.deepEqual(request.mock.calls[0].arguments, ['/api/politicians', { signal: undefined }])
+  const [url, options] = request.mock.calls[0].arguments
+  assert.equal(url, '/api/politicians')
+  assert.ok(options.signal instanceof AbortSignal)
 })
 
 test('persistent transport failure stops after three attempts with an actionable message', async context => {

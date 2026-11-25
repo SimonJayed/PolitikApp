@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { congressRecordsPath, congressRequest } from '../../api/congress'
 import CongressRecord from '../../components/governance/CongressRecord'
@@ -235,7 +236,7 @@ export default function OpenCongress({ token, politicians = [] }) {
               <p className="cgHint">Compare every existing profile with imported people. This is read-only; it does not link identities or publish records.</p>
             </div>
             <button type="button" className="cgBtn" disabled={bulkPreviewState.loading} onClick={loadBulkPreview}>
-              {bulkPreviewState.loading ? 'Checking profiles...' : 'Preview bulk matches'}
+              {bulkPreviewState.loading ? <LoadingSkeleton inline label="Checking profiles" /> : 'Preview bulk matches'}
             </button>
           </div>
           {bulkPreviewState.error && <div className="cgAlert" role="alert">{bulkPreviewState.error}</div>}
@@ -249,7 +250,7 @@ export default function OpenCongress({ token, politicians = [] }) {
             </dl>
             {bulkPreview.ready > 0 && <div className="cgActions">
               <button type="button" className="cgBtn cgBtnPrimary" disabled={bulkLinkState.loading || bulkPreviewState.loading} onClick={applyBulkLinks}>
-                {bulkLinkState.loading ? 'Linking approved matches...' : `Link ${bulkPreview.ready} approved matches`}
+                {bulkLinkState.loading ? <LoadingSkeleton inline label="Linking approved matches" /> : `Link ${bulkPreview.ready} approved matches`}
               </button>
             </div>}
             {bulkLinkState.error && <div className="cgAlert" role="alert">{bulkLinkState.error} Refresh the preview before retrying.</div>}
@@ -307,7 +308,7 @@ export default function OpenCongress({ token, politicians = [] }) {
           <div className="cgSubHead">
             <div>
               <h3>Dataset changes</h3>
-              {job?.dryRun && job.state === 'RUNNING' && <p className="cgHint" role="status">Checking the dataset against imported records… {job.counts?.PROCESSED || 0} of {job.counts?.TOTAL || '?'} processed.</p>}
+              {job?.dryRun && job.state === 'RUNNING' && <LoadingSkeleton inline label="Checking the dataset against imported records" />}
               {job?.dryRun && job.state.startsWith('COMPLETED') && <p className="cgHint">{updates} changed records and {creates} new records in the latest preview. {updates || creates ? 'Review the preview under Dataset tools before importing.' : 'No new or changed records found.'}</p>}
               {!job?.dryRun && <p className="cgHint">The latest local source snapshot is checked when this page opens. Use the button to check again.</p>}
             </div>

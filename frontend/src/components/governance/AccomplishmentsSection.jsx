@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../Skeletons"
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import BaseModal from '../BaseModal'
@@ -128,7 +129,7 @@ export default function AccomplishmentsSection({ politicianId, isAdmin, token, s
       <h2 className="prCardTitle">Accomplishments</h2>
       {canManage && <button className="prBtn prBtnOutline" type="button" disabled={loading || busy || Boolean(error)} onClick={() => openEditor(null)}>Add accomplishment</button>}
     </div>}
-    {loading ? <p className="prMuted" role="status">Loading accomplishments…</p>
+    {loading ? <LoadingSkeleton label="Loading accomplishments" />
       : error ? <div role="alert"><p>{error}</p><button className="prBtn prBtnOutline" type="button" onClick={() => setRefresh(value => value + 1)}>Retry</button></div>
         : showPublic && <PublicAccomplishments records={records} />}
     {message && <p role="status">{message}</p>}
@@ -165,7 +166,7 @@ export default function AccomplishmentsSection({ politicianId, isAdmin, token, s
           </select></label>
           {formError && <p role="alert">{formError}</p>}
           <div className="prManageActions">
-            <button className="prBtn prBtnPrimaryDark" type="submit" disabled={busy}>{busy ? 'Saving…' : 'Save accomplishment'}</button>
+            <button className="prBtn prBtnPrimaryDark" type="submit" disabled={busy}>{busy ? <LoadingSkeleton inline label="Saving" /> : 'Save accomplishment'}</button>
             <button className="prBtn prBtnOutline" type="button" disabled={busy} onClick={() => setEditor(null)}>Cancel</button>
           </div>
         </form>

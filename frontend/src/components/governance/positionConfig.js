@@ -310,6 +310,8 @@ export function getKpisForPosition(position, profile) {
   return config.kpis.map((kpi) => {
     const rawValue = profile?.[kpi.key];
     return {
+      key: kpi.key,
+      unavailable: rawValue == null || rawValue === '',
       label: kpi.label,
       value: kpi.format(rawValue),
       isAlert: kpi.isAlert ? kpi.isAlert(rawValue) : false,

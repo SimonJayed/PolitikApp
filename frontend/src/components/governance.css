@@ -215,52 +215,22 @@
   color: var(--ph-gold, #b38f00) !important;
 }
 
-/* Modal Custom Scroll & Responsiveness */
-.wgiMethodologyModal {
-  max-width: 1000px;
-  width: 92%;
-  background: var(--bg-surface, #ffffff);
-  border-radius: var(--radius-xl, 16px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-  box-shadow: 0 24px 64px rgba(6, 16, 42, 0.35);
-  animation: modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
+.comparisonModal.sharedModal.wgiMethodologyModal { width: min(1000px, 100%); max-width: 1000px; }
+.sharedModal.wgiIndicatorModal { max-width: 580px; }
 .wgiMethodologyBody {
-  padding: 24px;
-  overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 24px;
-  flex-grow: 1;
 }
-
-@media (max-width: 768px) {
-  .wgiMethodologyBody {
-    grid-template-columns: 1fr;
-    padding: 16px;
-    gap: 16px;
-  }
-  .wgiMethodologyModal {
-    max-height: 95vh;
-    width: 95%;
-  }
+.wgiIndicatorBody p { margin: 0 0 12px; }
+.wgiIndicatorBody .wgiGuideLink { min-height: 44px; color: var(--ph-blue-light); text-decoration: underline; }
+.kpiCard { position: relative; }
+.kpiCard:has(.wgiMetricHelp) .ty-label { padding-inline-end: 32px; }
+.kpiCard .wgiMetricHelp {
+  position: absolute; inset: 8px 8px auto auto; display: grid; place-items: center;
+  width: 36px; min-height: 36px; padding: 0; border-radius: 50%;
+  background: var(--accent-soft); color: var(--ph-blue);
 }
-
-@keyframes modalScaleIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.96) translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1) translateY(0);
-  }
-}
-
 .wgiMethodologyBody::-webkit-scrollbar {
   width: 6px;
 }
@@ -311,3 +281,10 @@
 }
 
 
+
+:root { --audit-accent: #516985; --audit-bg: #edf3f9; --audit-border: #b8c9da; }
+.kpiCardAudit, .accountabilityAudit { border-inline-start: 3px solid var(--audit-accent); }
+.kpiCardAudit .ty-label, .accountabilityAudit .prBadge { color: #3f5872; }
+.accountabilityAudit .prBadge { background: var(--audit-bg); border-color: var(--audit-border); }
+.metricExplanation { margin: .25rem 0 0; color: var(--text-primary); font-size: .8rem; line-height: 1.5; }
+.wgiCardHighlight > .ty-label { padding-inline-end: 28px; }

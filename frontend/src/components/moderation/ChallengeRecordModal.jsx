@@ -1,3 +1,5 @@
+import BaseModal from '../BaseModal'
+import { LoadingSkeleton } from "../Skeletons"
 import { useState } from 'react'
 import { AlertTriangleIcon, CircleCheckIcon, CircleXIcon } from '../icons/Lucide'
 
@@ -84,86 +86,8 @@ export default function ChallengeRecordModal({
   }
 
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        backgroundColor: 'rgba(15, 23, 42, 0.65)',
-        backdropFilter: 'blur(4px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: '16px',
-      }}
-      onClick={handleClose}
-    >
-      <div
-        style={{
-          background: '#ffffff',
-          borderRadius: '14px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          maxWidth: '560px',
-          width: '100%',
-          overflow: 'hidden',
-          border: '1px solid #e2e8f0',
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div
-          style={{
-            padding: '20px 24px',
-            borderBottom: '1px solid #e2e8f0',
-            background: '#f8fafc',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: '#fee2e2',
-                color: '#dc2626',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '16px',
-                fontWeight: 'bold',
-              }}
-            >
-              <AlertTriangleIcon size={18} />
-            </span>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>
-                Challenge / Dispute Metric Record
-              </h3>
-              <p style={{ margin: 0, fontSize: '12px', color: '#64748b' }}>
-                Citizen Evidence Verification Pipeline
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            disabled={loading}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              fontSize: '20px',
-              color: '#94a3b8',
-              cursor: 'pointer',
-              padding: '4px 8px',
-              borderRadius: '6px',
-            }}
-          >
-            <CircleXIcon size={20} />
-          </button>
-        </div>
-
+    <BaseModal isOpen title="Challenge / dispute metric record" modalClassName="appealModalCompact"
+      isDismissDisabled={loading} onClose={handleClose}>
         {/* Modal Body */}
         <div style={{ padding: '24px' }}>
           {success ? (
@@ -336,13 +260,12 @@ export default function ChallengeRecordModal({
                     gap: '6px',
                   }}
                 >
-                  {loading ? 'Submitting Dispute...' : 'File Public Challenge'}
+                  {loading ? <LoadingSkeleton inline label="Submitting Dispute" /> : 'File Public Challenge'}
                 </button>
               </div>
             </form>
           )}
         </div>
-      </div>
-    </div>
+    </BaseModal>
   )
 }

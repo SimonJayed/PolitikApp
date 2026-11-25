@@ -3328,3 +3328,48 @@ button:disabled {
     align-items: flex-start;
   }
 }
+
+.loadingSkeleton { display: grid; gap: .65rem; width: 100%; min-width: 0; padding-block: .6rem; }
+.loadingSkeletonInline { display: inline-grid; width: auto; max-width: 100%; padding-block: 0; vertical-align: middle; }
+.loadingSkeletonInline .appSkeleton { max-width: 100%; }
+@media (prefers-reduced-motion: reduce) { .loadingSkeleton .appSkeleton { animation: none; } }
+
+.sharedModalBackdrop {
+  z-index: 10000;
+  background: color-mix(in srgb, var(--ph-blue) 55%, transparent);
+  backdrop-filter: blur(4px);
+}
+.comparisonModal.sharedModal {
+  position: static;
+  transform: none;
+  width: min(760px, 100%);
+  height: auto;
+  max-height: min(960px, calc(100dvh - 2 * var(--modal-padding)));
+  padding: 0;
+  gap: 0;
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(10, 29, 66, .35);
+  background: var(--bg-surface);
+}
+.comparisonModal.sharedModal[data-wide] { width: min(1200px, 100%); max-width: 1200px; }
+.sharedModalHeader {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: clamp(12px, 2vw, 16px) clamp(16px, 2.4vw, 24px);
+  background: linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+  color: var(--ph-white);
+}
+.sharedModal .sharedModalHeader h2 { margin: 0; color: inherit; font: 800 1.1rem/1.25 var(--display); }
+.sharedModalHeader button {
+  flex: none; padding: 8px 16px; min-height: 36px; border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: var(--radius-full); background: transparent; color: inherit; font: 700 12px/1 var(--display);
+}
+.sharedModalHeader button:hover { background: rgb(255 255 255 / 16%); }
+.sharedModalBody {
+  min-height: 0; min-width: 0; overflow: auto; overscroll-behavior: contain;
+  padding: clamp(16px, 2.4vw, 28px); background: var(--bg-inset);
+}
+.sharedModalBody > .comparisonModalBody { overflow: visible; padding: 0; }
+.comparisonModal.sharedModal.authPromptDialog { max-width: 500px; }
+.authPromptDialog ul { display: grid; gap: 8px; padding: 12px; margin-block: 16px; border: 1px solid var(--line-soft); border-radius: var(--radius-md); }
+.authPromptDialog li { display: flex; align-items: center; gap: 8px; }
+.authPromptDialog li svg { flex: none; color: var(--success); }

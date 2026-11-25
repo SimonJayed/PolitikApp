@@ -30,20 +30,27 @@ public class NewsMapper {
 
     public NewsArticleResponse toArticleResponse(NewsArticle article, boolean saved, boolean admin) {
         return toArticleResponse(article, saved, admin,
-                commentRepository.countByArticleIdAndHiddenFalseAndDeletedAtIsNull(article.getId()));
+                commentRepository.countByArticleIdAndHiddenFalseAndDeletedAtIsNull(article.getId()), true);
     }
 
     public org.springframework.data.domain.Page<NewsArticleResponse> toArticlePage(
             org.springframework.data.domain.Page<NewsArticle> articles, java.util.Set<java.util.UUID> savedIds, boolean admin) {
-        if (articles.isEmpty()) return articles.map(article -> toArticleResponse(article, false, admin, 0));
+        return toArticlePage(articles, savedIds, admin, true);
+    }
+
+    public org.springframework.data.domain.Page<NewsArticleResponse> toArticlePage(
+            org.springframework.data.domain.Page<NewsArticle> articles, java.util.Set<java.util.UUID> savedIds,
+            boolean admin, boolean includeOriginal) {
+        if (articles.isEmpty()) return articles.map(article -> toArticleResponse(article, false, admin, 0, includeOriginal));
         var ids = articles.getContent().stream().map(NewsArticle::getId).toList();
         var counts = commentRepository.countVisibleByArticleIds(ids).stream().collect(java.util.stream.Collectors.toMap(
                 NewsCommentRepository.ArticleCommentCount::getArticleId, NewsCommentRepository.ArticleCommentCount::getTotal));
         return articles.map(article -> toArticleResponse(article, savedIds.contains(article.getId()), admin,
-                counts.getOrDefault(article.getId(), 0L)));
+                counts.getOrDefault(article.getId(), 0L), includeOriginal));
     }
 
-    private NewsArticleResponse toArticleResponse(NewsArticle article, boolean saved, boolean admin, long commentCount) {
+    private NewsArticleResponse toArticleResponse(NewsArticle article, boolean saved, boolean admin, long commentCount, boolean includeOriginal) {
+        var metadata = extraction(article.getExtractionData());
         return new NewsArticleResponse(
                 article.getId(),
                 firstNonBlank(article.getSuggestedTitle(), article.getOriginalTitle()),
@@ -57,21 +64,20 @@ public class NewsMapper {
                 article.getPublishedAt(),
                 article.getStatus(),
                 article.getAiProcessingStatus(),
-                article.getOriginalContent(),
+                includeOriginal ? article.getOriginalContent() : null,
                 admin ? article.getReviewNotes() : null,
                 commentCount,
                 article.getReviewedAt() != null && "PUBLISHED".equals(article.getStatus()),
                 saved,
                 article.getRelatedPoliticians().stream().filter(p -> !"ARCHIVED".equals(p.getStatus())).map(p -> new com.politikapp.backend.news.dto.NewsDtos.RelatedPoliticianResponse(p.getPoliticianId(), p.getFullName())).toList(),
-                admin ? extraction(article.getExtractionData()) : json.createObjectNode(),
-                extraction(article.getExtractionData()).path("sourceMetadata").path("author").asText(null),
-                sourceImage(article)
+                admin ? metadata : json.createObjectNode(),
+                metadata.path("sourceMetadata").path("author").asText(null),
+                sourceImage(article, metadata.path("sourceMetadata").path("image"))
         );
     }
 
-    private com.politikapp.backend.news.dto.NewsDtos.SourceImageResponse sourceImage(NewsArticle article) {
+    private com.politikapp.backend.news.dto.NewsDtos.SourceImageResponse sourceImage(NewsArticle article, com.fasterxml.jackson.databind.JsonNode node) {
         try {
-            var node = extraction(article.getExtractionData()).path("sourceMetadata").path("image");
             if (!node.isObject() || node.path("license").asText("").isBlank()) return null;
             var image = json.treeToValue(node, com.politikapp.backend.news.dto.NewsDtos.SourceImageResponse.class);
             var uri = java.net.URI.create(image.url());

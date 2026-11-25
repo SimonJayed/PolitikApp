@@ -1,8 +1,12 @@
+import { LoadingSkeleton } from "./Skeletons"
+import { newsPath } from '../config/appRoutes'
+import { newsCacheFor } from '../api/readCache'
+import { updateNewsArticle } from '../features/news/newsArticleCache'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../api/client'
 import { BookmarkIcon, CircleCheckIcon, MessageCircleIcon } from './icons/Lucide'
+import ActionToast from './ActionToast'
 import './ProfileMatrix.css'
-import NewsArticleReader from './NewsArticleReader'
 
 
 const TABS = [
@@ -49,7 +53,7 @@ function settledError(result) {
   return result.status === 'rejected' ? result.reason?.message || 'Request failed.' : ''
 }
 
-function ActivityCard({ kind, title, body, date }) {
+function ActivityCard({ kind, title, body, date, children }) {
   const isComment = kind === 'comment'
   const Icon = isComment ? MessageCircleIcon : BookmarkIcon
   const parsed = parseDate(date)
@@ -65,6 +69,7 @@ function ActivityCard({ kind, title, body, date }) {
       </div>
       <h2 className="profileCardTitle">{title}</h2>
       {body && <p className={isComment ? 'profileCardQuote' : 'profileCardText'}>{body}</p>}
+      {children && <footer className="profileCardActions">{children}</footer>}
     </article>
   )
 }
@@ -95,18 +100,24 @@ function Notice({ Icon, title, hint, error, onRetry }) {
 }
 
 export default function UserProfileMatrixPanel({ token, user }) {
-  const [readingId, setReadingId] = useState(null)
   const [savingId, setSavingId] = useState(null)
-  const [saveError, setSaveError] = useState('')
+  const [toast, setToast] = useState(null)
+  const dismissToast = useCallback(() => setToast(null), [])
+
   async function unsave(id) {
+    if (savingId) return
     setSavingId(id)
-    setSaveError('')
     try {
       const response = await fetch(`${API_BASE_URL}/api/news/${id}/save`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
-      if (!response.ok) throw new Error('Could not remove saved article. Please try again.')
+      await readApiResponse(response)
+      updateNewsArticle(newsCacheFor(token), id, item => ({ ...item, saved: false }))
       setActivity(current => ({ ...current, saved: current.saved.filter(item => item.id !== id) }))
-    } catch (error) { setSaveError(error.message) }
-    finally { setSavingId(null) }
+      setToast({ text: 'Bookmark removed' })
+    } catch {
+      setToast({ text: 'Could not remove the bookmark. Please try again.', error: true })
+    } finally {
+      setSavingId(null)
+    }
   }
   const [profile, setProfile] = useState(user)
   const [tab, setTab] = useState('comments')
@@ -190,8 +201,6 @@ export default function UserProfileMatrixPanel({ token, user }) {
       </header>
 
       <div className="profileBody">
-        {readingId && <NewsArticleReader id={readingId} token={token} onClose={() => setReadingId(null)} />}
-        {saveError && <p role="alert">{saveError}</p>}
         <div className="profileMain">
           <div className="profileControls">
             <div className="profileTabs" role="tablist" aria-label="Your activity">
@@ -241,11 +250,12 @@ export default function UserProfileMatrixPanel({ token, user }) {
                     <ActivityCard key={item.id} kind="comment" title={item.articleTitle} body={item.content} date={item.createdAt} />
                   ))
                   : items.map((item) => (
-                    <div key={item.id}>
-                      <ActivityCard kind="saved" title={item.headline || item.originalTitle} body={item.summary || 'Saved government update.'} date={item.publishedAt} />
-                      <button onClick={() => setReadingId(item.id)}>Read article</button>
-                      <button disabled={savingId === item.id} onClick={() => unsave(item.id)}>{savingId === item.id ? 'Removing...' : 'Unsave'}</button>
-                    </div>
+                    <ActivityCard key={item.id} kind="saved" title={item.headline || item.originalTitle} body={item.summary || 'Saved government update.'} date={item.publishedAt}>
+                      <a href={newsPath(item.id)}>Read article</a>
+                      <button type="button" disabled={Boolean(savingId)} onClick={() => unsave(item.id)}>
+                        {savingId === item.id ? <LoadingSkeleton inline label="Removing" /> : 'Remove bookmark'}
+                      </button>
+                    </ActivityCard>
                   ))}
               </div>
             )}
@@ -253,6 +263,7 @@ export default function UserProfileMatrixPanel({ token, user }) {
         </div>
 
       </div>
+      <ActionToast message={toast} onDismiss={dismissToast} />
     </section>
   )
 }

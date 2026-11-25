@@ -552,10 +552,10 @@
   gap: 6px;
   margin-top: 2px;
   padding: 6px 11px;
-  border: 1px solid color-mix(in srgb, var(--ph-red) 28%, var(--ph-white));
+  border: 1px solid var(--audit-border);
   border-radius: 999px;
-  background: color-mix(in srgb, var(--ph-red) 7%, var(--ph-white));
-  color: var(--ph-red);
+  background: var(--audit-bg);
+  color: #3f5872;
   font: 800 11px/1 var(--display);
 }
 
@@ -682,3 +682,5 @@
     align-items: flex-start;
   }
 }
+.polSearch > label { font-weight: 650; }
+.polCard { text-decoration: none; min-width: 0; }

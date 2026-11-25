@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from '../../components/Skeletons'
 import { useEffect, useState } from 'react'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { formatDisplayName } from '../../features/congress/displayName'
@@ -27,17 +28,13 @@ export function MobileProfile({
   dbUser,
   token,
   user,
+  politiciansState,
 }) {
   const [activeTab, setActiveTab] = useState('overview')
   const [congressData, setCongressData] = useState(null)
   const [loadingCongress, setLoadingCongress] = useState(true)
 
-  const profile = politicians.find((p) => p.politicianId === politicianId) || {
-    politicianId,
-    fullName: 'Loading...',
-    position: 'OFFICIAL',
-    jurisdiction: 'NATIONAL',
-  }
+  const profile = politicians.find(p => p.politicianId === politicianId)
 
   useEffect(() => {
     let cancelled = false
@@ -57,6 +54,12 @@ export function MobileProfile({
       cancelled = true
     }
   }, [politicianId])
+
+  if (!profile) {
+    return politiciansState?.status === 'idle' || politiciansState?.status === 'loading'
+      ? <LoadingSkeleton label="Loading politician profile" rows={5} />
+      : <p>Politician profile unavailable.</p>
+  }
 
   return (
     <div style={{ paddingBottom: '32px' }}>

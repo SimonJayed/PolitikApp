@@ -1,3 +1,4 @@
+import { normalizeJurisdiction } from '../../components/jurisdiction.js'
 import { formatDisplayName } from './displayName.js'
 
 export function normalizePosition(value) {
@@ -80,4 +81,34 @@ export function sortDirectory(people, metadata, currentCongress, today) {
   return [...people].sort((left, right) => directoryRank(left, metadata, currentCongress, today) - directoryRank(right, metadata, currentCongress, today)
     || collator.compare(sortName(left), sortName(right)) || collator.compare(left.fullName, right.fullName)
     || String(left.politicianId).localeCompare(String(right.politicianId)))
+}
+
+function normalizeName(value) {
+  return String(value || '').normalize('NFKD').replace(/\p{M}/gu, '').toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, ' ').trim()
+}
+
+export function matchesDirectoryName(person, query, metadata) {
+  const words = normalizeName(query).split(' ').filter(Boolean)
+  if (!words.length) return true
+  const source = metadata.get(person.politicianId)
+  const names = [person.fullName, formatDisplayName(person.fullName).name,
+    [source?.firstName, source?.lastName].filter(Boolean).join(' ')]
+  return names.some(name => {
+    const normalized = normalizeName(name)
+    return words.every(word => normalized.includes(word))
+  })
+}
+
+export function directoryPositions(people, metadata) {
+  const values = people.filter(person => person.status !== 'ARCHIVED').flatMap(person => [
+    normalizePosition(person.position), ...memberships(person, metadata).map(member => normalizePosition(member.chamber)),
+  ])
+  return [...new Set(values.filter(Boolean))].sort((a, b) => a.localeCompare(b))
+}
+
+export function directoryJurisdictions(people, position, metadata) {
+  return [...new Set(people.filter(person => person.status !== 'ARCHIVED' && matchesPosition(person, position, metadata))
+    .map(person => normalizeJurisdiction(directoryJurisdiction(person, metadata))).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b))
 }

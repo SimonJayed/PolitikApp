@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useState } from 'react'
 import { useAuth } from '../../auth/AuthContext'
 import { ArrowLeftIcon } from '../../components/icons/Lucide'
@@ -247,7 +248,7 @@ export function MobileAuth({ initialMode = 'login', onBack }) {
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {loading ? 'Processing...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+            {loading ? <LoadingSkeleton inline label="Processing" /> : mode === 'login' ? 'Sign In' : 'Create Account'}
           </button>
         </form>
 

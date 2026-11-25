@@ -22,6 +22,7 @@ function CenterNavItem({ active, icon: Icon, label, onClick }) {
       type="button"
       onClick={onClick}
       aria-label={label}
+      aria-current={active ? 'page' : undefined}
       className={`ty-nav hoverNavItem${active ? ' isActive' : ''}`}
     >
       <span className="hoverNavItemIcon">
@@ -37,6 +38,7 @@ function MobileMenuItem({ active, icon: Icon, label, onClick }) {
     <button
       type="button"
       onClick={onClick}
+      aria-current={active ? 'page' : undefined}
       className={[
         'ty-nav flex min-h-[48px] w-full items-center gap-3.5 rounded-xl px-4 py-3 text-left transition-all duration-200 active:scale-[0.98]',
         active
@@ -100,21 +102,20 @@ function TopNav({
     }
   }, [mobileOpen, userMenuOpen])
 
-  // Automatically close mobile dropdown if viewport is resized to desktop/wide screen (>= 840px)
   useEffect(() => {
+    const desktop = window.matchMedia(currentRole === 'ADMIN' ? '(min-width: 1024px)' : '(min-width: 840px)')
     function handleResize() {
-      if (window.innerWidth >= 840) {
-        setMobileOpen(false)
-      }
+      if (desktop.matches) setMobileOpen(false)
+      else setUserMenuOpen(false)
     }
 
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
+    desktop.addEventListener('change', handleResize)
+    return () => desktop.removeEventListener('change', handleResize)
+  }, [currentRole])
 
   const navItems = useMemo(() => {
     const items = [
-      { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboardIcon },
+      { key: 'dashboard', label: 'News', icon: LayoutDashboardIcon },
       { key: 'politicians', label: 'Politicians', icon: UsersIcon },
       { key: 'compare', label: 'Compare', icon: GitCompareIcon },
     ]
@@ -153,6 +154,7 @@ function TopNav({
     >
       <div ref={navContainerRef} className="topNavFrame pointer-events-auto mx-auto">
         <div
+          data-admin={currentRole === 'ADMIN' || undefined}
           className="topNavShell border border-white/10 shadow-[0_24px_60px_rgba(10,29,66,0.45)] backdrop-blur-xl"
           style={{
             background:
@@ -162,7 +164,7 @@ function TopNav({
           <div className="topNavRow relative flex min-h-[58px] items-center justify-between gap-3 px-4 py-2 sm:min-h-[64px] sm:px-6 lg:min-h-[72px] lg:gap-4 lg:px-8 lg:py-2">
             <div className="flex shrink-0 items-center gap-2.5 sm:gap-3">
               <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[rgba(18,42,88,0.72)] ring-1 ring-white/10 sm:h-11 sm:w-11">
-                <img src={politikappLogo} alt="PolitikApp logo" className="topNavLogo" />
+                <img src={politikappLogo} alt="" width="36" height="36" className="topNavLogo" />
               </div>
 
               <div className="shrink-0">
@@ -177,7 +179,7 @@ function TopNav({
               {navItems.map((item) => (
                 <CenterNavItem
                   key={item.key}
-                  active={item.key === 'compare' ? isCompareActive : activeView === item.key}
+                  active={item.key === 'compare' ? isCompareActive : (activeView === item.key || (activeView === 'profile' && item.key === 'politicians'))}
                   icon={item.icon}
                   label={item.label}
                   onClick={() => navigate(item.key)}
@@ -190,7 +192,7 @@ function TopNav({
               <button
                 type="button"
                 onClick={() => setMobileOpen((v) => !v)}
-                className={`ty-nav topNavHamburgerBtn inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white/90 ring-1 ring-white/10 transition sm:h-12 sm:w-12 active:scale-95 ${
+                className={`ty-nav topNavHamburgerBtn inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-3 text-white/90 ring-1 ring-white/10 transition sm:h-12 active:scale-95 ${
                   mobileOpen
                     ? 'bg-[rgba(42,68,120,0.95)] text-white ring-white/25'
                     : 'bg-[rgba(18,42,88,0.72)] hover:bg-[rgba(42,68,120,0.95)] hover:text-white'
@@ -199,7 +201,8 @@ function TopNav({
                 aria-controls="mobile-nav-dropdown"
                 aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
               >
-                {mobileOpen ? <XIcon size={24} /> : <MenuIcon size={24} />}
+                {mobileOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
+                <span>Menu</span>
               </button>
 
               {/* Wide Screen Horizontal Actions: Shown on >= 840px, hidden on < 840px where they tuck into hamburger */}
@@ -299,7 +302,7 @@ function TopNav({
                 {navItems.map((item) => (
                   <MobileMenuItem
                     key={`m-${item.key}`}
-                    active={item.key === 'compare' ? isCompareActive : activeView === item.key}
+                    active={item.key === 'compare' ? isCompareActive : (activeView === item.key || (activeView === 'profile' && item.key === 'politicians'))}
                     icon={item.icon}
                     label={item.label}
                     onClick={() => navigate(item.key)}

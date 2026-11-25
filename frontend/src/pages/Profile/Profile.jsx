@@ -1,3 +1,6 @@
+import { Methodology } from '../../components/WgiLeaderboard'
+import { profileSections } from '../../config/appRoutes'
+import { safeNewsUrl } from '../../features/news/newsPresentation'
 import { useEffect, useState } from 'react'
 import { BarChart3Icon, FolderIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
@@ -81,13 +84,17 @@ export default function PoliticianProfilePage({
   onModalOpenChange,
   onPoliticianUpdate,
   onReload,
+  onDirectory,
+  onSectionChange,
+  profileHref,
+  section = 'overview',
   politicianId,
   politicians,
   state,
   token,
 }) {
   const fallback = politicians.find((p) => p.politicianId === politicianId)
-  const profile = state.data || fallback
+  const profile = state.status === 'notFound' ? null : state.data || fallback
   const dashboardMatchesProfile = state.data?.politicianId === politicianId
   const entries = dashboardMatchesProfile
     ? (state.data?.publishedTimelineLedger || state.data?.timeline || state.data?.entries || [])
@@ -95,8 +102,10 @@ export default function PoliticianProfilePage({
   const verifiedEntries = entries.filter((entry) => entry.actionDetails?.sourceReported !== true)
   const relatedNews = state.data?.relatedNews || []
   const [recordQuery, setRecordQuery] = useState('')
+  const [showScoreGuide, setShowScoreGuide] = useState(false)
   const [recordType, setRecordType] = useState('ALL')
   const [recordPage, setRecordPage] = useState(1)
+  const [curatedPage, setCuratedPage] = useState(1)
   const [draftPage, setDraftPage] = useState(1)
   const [managePage, setManagePage] = useState(1)
   const [accomplishments, setAccomplishments] = useState({ records: [], loading: true, error: '' })
@@ -113,22 +122,6 @@ export default function PoliticianProfilePage({
   useEffect(() => { setArchived(false); setCongressDrafts([]); setDraftReview(null); setRecordPage(1); setDraftPage(1); setManagePage(1) }, [politicianId])
 
   // The "Profiles / Published Profile Dashboard" heading comes from the app shell, not from this page.
-  // Until it is deleted at its source, hide it (matched by its text) while this page is open.
-  useEffect(() => {
-    const page = document.querySelector('.profilePage')
-    if (!page) return undefined
-    const pattern = /published profile dashboard/i
-    let node = page
-    for (let depth = 0; node && depth < 5; depth += 1, node = node.parentElement) {
-      const sibling = node.previousElementSibling
-      if (sibling && pattern.test(sibling.textContent || '') && !sibling.querySelector('.profilePage')) {
-        const previousDisplay = sibling.style.display
-        sibling.style.display = 'none'
-        return () => { sibling.style.display = previousDisplay }
-      }
-    }
-    return undefined
-  }, [])
   useEffect(() => { setRecordPage(1) }, [recordQuery, recordType])
 
   useEffect(() => {
@@ -230,10 +223,13 @@ export default function PoliticianProfilePage({
       </section>
     )
   }
-  if (!politicianId) {
+  if (!politicianId || state.status === 'notFound' || (!profile && state.status === 'error')) {
     return (
       <section className="workspace profilePage">
-        <p className="prEmpty">Select a politician first.</p>
+        <h1>{state.status === 'error' ? 'Profile unavailable' : 'Politician profile not found'}</h1>
+        {state.status === 'error' && <p role="alert">{state.message}</p>}
+        {state.status === 'error' && <button className="prBtn prBtnOutline" type="button" onClick={() => onReload(politicianId)}>Retry profile</button>}
+        <button className="prBtn prBtnOutline" type="button" onClick={onDirectory}>Browse politicians</button>
       </section>
     )
   }
@@ -242,6 +238,9 @@ export default function PoliticianProfilePage({
   const recordsPaged = paginate(visibleEntries, recordPage)
   const draftsPaged = paginate(congressDrafts, draftPage)
   const managePaged = paginate(verifiedEntries, managePage)
+  const curatedBills = verifiedEntries.filter(entry => entry.actionIdentifier === 'SPONSORED_LEGISLATION')
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')) || String(a.timelineId).localeCompare(String(b.timelineId)))
+  const curatedPaged = paginate(curatedBills, curatedPage, 10)
   const position = profile ? (profile.position ? formatPosition(profile.position) : 'Current office unverified') : ''
   const jurisdiction = profile ? formatJurisdiction(profile.jurisdiction) || 'Unspecified jurisdiction' : ''
   const party = profile ? profile.partyAffiliation || 'Party affiliation unavailable' : ''
@@ -252,6 +251,7 @@ export default function PoliticianProfilePage({
   return (
     <section className="workspace profilePage">
       <StatusLine state={state} />
+      {state.status === 'error' && <button className="prBtn prBtnOutline" type="button" onClick={() => onReload(politicianId)}>Retry profile</button>}
       {state.status === 'loading' && !profile && <ProfileSkeleton />}
 
       {profile && (
@@ -293,20 +293,146 @@ export default function PoliticianProfilePage({
             )}
           </header>
 
-          <section className="prKpis" aria-label="Key figures">
-            <KpiGrid profile={profile} />
-          </section>
+          <nav className="prTabs" aria-label="Profile sections">
+            {profileSections.map((value, index) => <a key={value} href={profileHref(value)}
+              aria-current={section === value ? 'page' : undefined} onClick={event => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                event.preventDefault()
+                onSectionChange(value)
+              }}>{['Overview', 'Accountability Records', 'Legislative Records', 'Accomplishments'][index]}</a>)}
+          </nav>
+          <StatusLine state={recordState} />
 
-          <div className="prLayout">
+          {section === 'overview' && <div className="prLayout">
             <div className="prMain">
               <section className="prCard prBio">
                 <h2 className="prCardTitle">Biography</h2>
                 <p>{profile.biography || 'No biography available.'}</p>
               </section>
 
-              <CongressSourceSection key={`congress-source:${politicianId}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />
+              <section className="prCard">
+                <h2 className="prCardTitle">Accountability summary</h2>
+                <p>{profile.wgiCompositeScore == null ? 'Accountability data is currently unavailable.' :
+                  'WGI Composite score ' + Number(profile.wgiCompositeScore).toLocaleString('en-PH', { maximumFractionDigits: 2 }) + ' out of 100'}</p>
+                <a href={profileHref('accountability')} onClick={event => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                  event.preventDefault()
+                  onSectionChange('accountability')
+                }}>View accountability records</a>
+              </section>
+              <section className="prCard prNewsCard" aria-label="Related published news">
+                <h2 className="prCardTitle">Related government news</h2>
+                {relatedNews.length === 0 ? (
+                  <p className="prMuted">No reviewed news articles are linked to this politician.</p>
+                ) : (
+                  <ul className="prNews">
+                    {relatedNews.map((item) => (
+                      <li key={item.id}>
+                        {safeNewsUrl(item.sourceUrl) ? <a href={safeNewsUrl(item.sourceUrl)} target="_blank" rel="noopener noreferrer">{item.headline}</a> : <strong>{item.headline}</strong>}
+                        <p className="prNewsMeta">{item.sourceName} · {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('en-PH') : 'Date unavailable'}</p>
+                        <p className="prMuted">{item.summary}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
-              <StatusLine state={recordState} />
+            </div>
+            <aside className="prAside" aria-label="Profile details">
+              <section className="prCard">
+                <h2 className="prCardTitle">Quick facts</h2>
+                <dl className="prFacts">
+                  <div><dt>Position</dt><dd>{position}</dd></div>
+                  <div><dt>Jurisdiction</dt><dd>{jurisdiction}</dd></div>
+                  <div><dt>Party</dt><dd>{party}</dd></div>
+                  <div><dt>Term</dt><dd>{term}</dd></div>
+                </dl>
+              </section>
+
+            </aside>
+          </div>}
+
+          {section === 'accountability' && <div className="prMain">
+            <section className="prCard prMetricGuide" aria-label="How to read the scores">
+              <div className="prCardHead">
+                <h2 className="prCardTitle">How to read the scores</h2>
+                <button type="button" className="prBtn prBtnOutline" onClick={() => setShowScoreGuide(true)}>How are scores calculated?</button>
+              </div>
+              {showScoreGuide && <Methodology onClose={() => setShowScoreGuide(false)} />}
+              <KpiGrid profile={profile} showExplanations />
+            </section>
+              <section className="prCard prTimeline" aria-label="Accountability records">
+                <div className="prCardHead">
+                  <div>
+                    <h2 className="prCardTitle">Browse accountability records</h2>
+                    <p className="prCardHint">Search and filter, {RECORDS_PER_PAGE} records per page.</p>
+                  </div>
+                  <span className="prCount">{visibleEntries.length}</span>
+                </div>
+
+                <div className="prToolbar" role="search" aria-label="Filter accountability records">
+                  <label className="prField prSearch">
+                    <span>Search accountability records</span>
+                    <input value={recordQuery} onChange={(event) => { setRecordQuery(event.target.value); setRecordPage(1) }} placeholder="Title, category, description, or year" />
+                  </label>
+                  <label className="prField">
+                    <span>Record type</span>
+                    <select value={recordType} onChange={(event) => { setRecordType(event.target.value); setRecordPage(1) }}>
+                      <option value="ALL">All records</option>
+                      <option value="PROJECT_COMPLETION">Project Completion</option>
+                      <option value="BUDGET_ALLOCATION">Budget Allocation</option>
+                      <option value="COA_FINDING">COA Audit Findings</option>
+                      <option value="ACCOMPLISHMENT">Accomplishments</option>
+                    </select>
+                  </label>
+                </div>
+
+                <AccountabilityRecords entries={recordsPaged.pageItems} loading={state.status === 'loading' || accomplishments.politicianId !== politicianId || accomplishments.loading} emptyMessage={recordType === 'COA_FINDING' && !recordQuery.trim() ? 'No COA findings available.' : 'No accountability records match this selection.'} />
+                {state.status === 'success' && <Pager paged={recordsPaged} onChange={setRecordPage} label="Record pagination" />}
+                <AccomplishmentsSection key={`accomplishments:${politicianId}:${isAdmin}`} politicianId={politicianId} isAdmin={isAdmin} token={token} embedded showPublic={false} onRecordsChange={setAccomplishments} />
+              </section>
+
+              {isAdmin && verifiedEntries.length > 0 && (
+                <details className="prCard prManage">
+                  <summary>Manage published records <span className="prCount">{verifiedEntries.length}</span></summary>
+                  <p className="prMuted">All curated records, including Sponsored Legislation, remain available here for editing and removal. Curated legislation is preserved separately from dataset-reported authored bills.</p>
+                  <div className="prManageList">
+                    {managePaged.pageItems.map((entry) => (
+                      <div className="prManageRow" key={entry.timelineId}>
+                        <p>{entry.summary}</p>
+                        <div className="prManageActions">
+                          <button
+                            className="prBtn prBtnOutline"
+                            type="button"
+                            disabled={isLoading}
+                            onClick={() => { setRecord({ ...entry, impactSummary: entry.summary }); setRecordState({ status: 'idle', message: '' }) }}
+                          >
+                            Edit record
+                          </button>
+                          <button className="prBtn prBtnDangerOutline" type="button" disabled={isLoading} onClick={() => hideRecord(entry)}>Remove record</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <Pager paged={managePaged} onChange={setManagePage} label="Manage records pagination" />
+                </details>
+              )}
+              <section className="prCard">
+                <h2 className="prCardTitle">Export records</h2>
+                <p className="prCardHint">Download this politician’s published timeline.</p>
+                <div className="prExports">
+                  <button className="prBtn prBtnFull prBtnCsv" type="button" onClick={() => exportLedger(entries, profile, 'csv')}>
+                    <BarChart3Icon size={16} /> Export CSV
+                  </button>
+                  <button className="prBtn prBtnFull prBtnJson" type="button" onClick={() => exportLedger(entries, profile, 'json')}>
+                    <FolderIcon size={16} /> Export JSON
+                  </button>
+                </div>
+              </section>
+          </div>}
+
+          {section === 'legislative-records' && <div className="prMain">
+              <CongressSourceSection key={`congress-source:${politicianId}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />
 
               {isAdmin && (
                 <CongressProfilePanel key={`congress-admin:${politicianId}`} politicianId={politicianId} token={token} onDraftCreated={loadCongressDrafts} />
@@ -380,107 +506,17 @@ export default function PoliticianProfilePage({
                 </section>
               )}
 
-              <section className="prCard prTimeline" aria-label="Accountability records">
-                <div className="prCardHead">
-                  <div>
-                    <h2 className="prCardTitle">Browse accountability records</h2>
-                    <p className="prCardHint">Search and filter, {RECORDS_PER_PAGE} records per page.</p>
-                  </div>
-                  <span className="prCount">{visibleEntries.length}</span>
-                </div>
 
-                <div className="prToolbar" role="search" aria-label="Filter accountability records">
-                  <label className="prField prSearch">
-                    <span>Search accountability records</span>
-                    <input value={recordQuery} onChange={(event) => setRecordQuery(event.target.value)} placeholder="Title, category, description, or year" />
-                  </label>
-                  <label className="prField">
-                    <span>Record type</span>
-                    <select value={recordType} onChange={(event) => setRecordType(event.target.value)}>
-                      <option value="ALL">All records</option>
-                      <option value="PROJECT_COMPLETION">Project Completion</option>
-                      <option value="BUDGET_ALLOCATION">Budget Allocation</option>
-                      <option value="COA_FINDING">COA Audit Findings</option>
-                      <option value="ACCOMPLISHMENT">Accomplishments</option>
-                    </select>
-                  </label>
-                </div>
+            {curatedBills.length > 0 && <section className="prCard" aria-label="Verified legislative records">
+              <h2 className="prCardTitle">Verified legislative records</h2>
+              <AccountabilityRecords entries={curatedPaged.pageItems} />
+              <Pager paged={curatedPaged} onChange={setCuratedPage} label="Verified legislation pagination" />
+            </section>}
+          </div>}
 
-                <AccountabilityRecords entries={recordsPaged.pageItems} loading={state.status === 'loading' || accomplishments.politicianId !== politicianId || accomplishments.loading} />
-                <Pager paged={recordsPaged} onChange={setRecordPage} label="Record pagination" />
-                <AccomplishmentsSection key={`accomplishments:${politicianId}:${isAdmin}`} politicianId={politicianId} isAdmin={isAdmin} token={token} embedded showPublic={false} onRecordsChange={setAccomplishments} />
-              </section>
-
-              <section className="prCard prNewsCard" aria-label="Related published news">
-                <h2 className="prCardTitle">Related government news</h2>
-                {relatedNews.length === 0 ? (
-                  <p className="prMuted">No reviewed news articles are linked to this politician.</p>
-                ) : (
-                  <ul className="prNews">
-                    {relatedNews.map((item) => (
-                      <li key={item.id}>
-                        <a href={item.sourceUrl} target="_blank" rel="noreferrer">{item.headline}</a>
-                        <p className="prNewsMeta">{item.sourceName} · {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('en-PH') : 'Date unavailable'}</p>
-                        <p className="prMuted">{item.summary}</p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-              {isAdmin && verifiedEntries.length > 0 && (
-                <details className="prCard prManage">
-                  <summary>Manage published records <span className="prCount">{verifiedEntries.length}</span></summary>
-                  <p className="prMuted">All curated records, including Sponsored Legislation, remain available here for editing and removal. Curated legislation is preserved separately from dataset-reported authored bills.</p>
-                  <div className="prManageList">
-                    {managePaged.pageItems.map((entry) => (
-                      <div className="prManageRow" key={entry.timelineId}>
-                        <p>{entry.summary}</p>
-                        <div className="prManageActions">
-                          <button
-                            className="prBtn prBtnOutline"
-                            type="button"
-                            disabled={isLoading}
-                            onClick={() => { setRecord({ ...entry, impactSummary: entry.summary }); setRecordState({ status: 'idle', message: '' }) }}
-                          >
-                            Edit record
-                          </button>
-                          <button className="prBtn prBtnDangerOutline" type="button" disabled={isLoading} onClick={() => hideRecord(entry)}>Remove record</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  <Pager paged={managePaged} onChange={setManagePage} label="Manage records pagination" />
-                </details>
-              )}
-            </div>
-
-            <aside className="prAside" aria-label="Profile details">
-              <section className="prCard">
-                <h2 className="prCardTitle">Quick facts</h2>
-                <dl className="prFacts">
-                  <div><dt>Position</dt><dd>{position}</dd></div>
-                  <div><dt>Jurisdiction</dt><dd>{jurisdiction}</dd></div>
-                  <div><dt>Party</dt><dd>{party}</dd></div>
-                  <div><dt>Term</dt><dd>{term}</dd></div>
-                  <div><dt>Accountability records</dt><dd>{publicEntries.length}</dd></div>
-                </dl>
-              </section>
-
-              <section className="prCard">
-                <h2 className="prCardTitle">Export records</h2>
-                <p className="prCardHint">Download this politician’s published timeline.</p>
-                <div className="prExports">
-                  <button className="prBtn prBtnFull prBtnCsv" type="button" onClick={() => exportLedger(entries, profile, 'csv')}>
-                    <BarChart3Icon size={16} /> Export CSV
-                  </button>
-                  <button className="prBtn prBtnFull prBtnJson" type="button" onClick={() => exportLedger(entries, profile, 'json')}>
-                    <FolderIcon size={16} /> Export JSON
-                  </button>
-                </div>
-              </section>
-            </aside>
-          </div>
+          {section === 'accomplishments' && <section className="prCard">
+            <AccomplishmentsSection key={politicianId} politicianId={politicianId} isAdmin={isAdmin} token={token} embedded />
+          </section>}
 
           {isAdmin && editing && (
             <PoliticianEditor

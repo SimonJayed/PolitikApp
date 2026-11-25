@@ -81,8 +81,11 @@ public class NewsDtos {
     ) {}
 
     public record VoteRequest(
-            @NotBlank String voteType
-    ) {}
+            @NotBlank String voteType,
+            Boolean active
+    ) {
+        public VoteRequest(String voteType) { this(voteType, null); }
+    }
 
     public record ReviewArticleRequest(
             @NotBlank @Size(max = 300) String suggestedTitle,

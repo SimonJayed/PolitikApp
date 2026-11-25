@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "./Skeletons"
 import { useEffect, useState } from 'react'
 import AdminAdjudicationTable from './moderation/AdminAdjudicationTable'
 import { FileTextIcon, RefreshCwIcon, ScaleIcon, ShieldCheckIcon, UsersIcon } from './icons/Lucide'
@@ -194,7 +195,7 @@ export default function ModerationPanel({ token, user }) {
                   color: '#475569',
                 }}
               >
-                {citizenLoading ? 'Loading...' : <><RefreshCwIcon size={14} /> Refresh</>}
+                {citizenLoading ? <LoadingSkeleton inline label="Loading" /> : <><RefreshCwIcon size={14} /> Refresh</>}
               </button>
             </div>
 

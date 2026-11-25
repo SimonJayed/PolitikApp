@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 
 export function useCachedRead(cache, key, loader, empty, refreshKey = 0, maxAge = 60000) {
   const snapshot = () => {
+    if (!key) return { ...empty, status: 'idle', message: '' }
     const cached = cache.peek(key)
     return { ...(cached ?? empty), status: cached === undefined ? 'loading' : 'success', message: '' }
   }
@@ -9,6 +10,7 @@ export function useCachedRead(cache, key, loader, empty, refreshKey = 0, maxAge 
   // A changed filter or login must never briefly render the previous response.
   const state = stored.cache === cache && stored.key === key ? stored.state : snapshot()
   useEffect(() => {
+    if (!key) return undefined
     let cancelled = false
     const cached = cache.peek(key)
     setStored({ cache, key, state: { ...(cached ?? empty), status: cached === undefined ? 'loading' : 'success', message: '' } })

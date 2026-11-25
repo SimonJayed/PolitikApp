@@ -16,8 +16,17 @@ function resolveWgiScore(politician) {
   );
 }
 
-export default function KPIWidget({ profile, compact = false, onModalOpenChange }) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const descriptions = {
+  billsAuthored: 'Number of sponsored bills or ordinances in verified records. Enactment is shown in the legislative record when available.',
+  projectCompletions: 'Number of verified project completion records. When a record reports partial completion, its percentage appears with the record.',
+  trackedBudgetAllocated: 'Budget allocations in the verified records, shown in Philippine pesos.',
+  coaAuditDiscrepancies: 'Number of recorded Commission on Audit observations about public spending or compliance. The cited report can describe the audit period, agency response, and any later resolution.',
+  legislativeEfficiencyRatio: 'Recorded project completions divided by sponsored bills or ordinances, expressed as a percentage. Higher values reflect more project completion per sponsored measure. The ratio is recorded as zero when there are no sponsored measures.',
+}
+
+export default function KPIWidget({ profile, compact = false, onModalOpenChange, showExplanations = false }) {
+  const [dialog, setDialog] = useState(null);
+  const isModalOpen = Boolean(dialog);
 
   React.useEffect(() => {
     onModalOpenChange?.(isModalOpen);
@@ -27,7 +36,7 @@ export default function KPIWidget({ profile, compact = false, onModalOpenChange 
 
   const metrics = getKpisForPosition(profile.position, profile);
   const groupLabel = getPositionGroupLabel(profile.position);
-  const wgiScore = resolveWgiScore(profile);
+  const wgiScore = showExplanations && profile.wgiCompositeScore == null ? null : resolveWgiScore(profile);
 
   return (
     <>
@@ -47,11 +56,11 @@ export default function KPIWidget({ profile, compact = false, onModalOpenChange 
           }}
         >
           <span className="ty-label">WGI Composite Score</span>
-          <strong style={{ color: 'var(--text-primary)' }}>{wgiScore.toFixed(1)}</strong>
+          <strong style={{ color: 'var(--text-primary)' }}>{wgiScore == null || !Number.isFinite(wgiScore) ? 'Unavailable' : wgiScore.toFixed(1)}</strong>
           <span className="kpi-wgi-pillar">Overall Performance Index</span>
           {!compact && (
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => setDialog({})}
               type="button"
               className="wgiMethodologyTrigger"
               style={{
@@ -68,32 +77,33 @@ export default function KPIWidget({ profile, compact = false, onModalOpenChange 
                 padding: '4px',
                 borderRadius: '50%',
               }}
-              title="How is this calculated? Open WGI Methodology Guide"
+              aria-label="Open WGI scoring methodology"
+              title="Open WGI scoring methodology"
             >
               <HelpCircleIcon size={16} />
             </button>
           )}
         </article>
 
-        {metrics.map(({ label, value, isAlert, wgiPillar }) => (
-          <article
-            className={`kpiCard ${isAlert ? 'kpi-card-alert' : ''}`}
-            key={label}
-            title={`WGI Pillar: ${wgiPillar}`}
-            style={isAlert ? { borderLeft: '3px solid var(--ph-gold)', background: '#fef9e8' } : {}}
-          >
+        {metrics.map(({ key, label, value, unavailable, wgiPillar }) => (
+          <article className={key === 'coaAuditDiscrepancies' ? 'kpiCard kpiCardAudit' : 'kpiCard'} key={label}>
             <span className="ty-label">{label}</span>
-            <strong style={isAlert ? { color: '#92660a' } : {}}>{value ?? 'N/A'}</strong>
-            <span className="kpi-wgi-pillar" aria-label={`WGI Pillar: ${wgiPillar}`}>{wgiPillar}</span>
+            <strong>{unavailable ? 'Unavailable' : value ?? 'Unavailable'}</strong>
+            <span className="kpi-wgi-pillar">{wgiPillar}</span>
+            {showExplanations && descriptions[key] && <button type="button" className="wgiMetricHelp"
+              aria-label={'About ' + label} onClick={() => setDialog({ label, wgiPillar, description: descriptions[key] })}>
+              <HelpCircleIcon size={16} />
+            </button>}
           </article>
         ))}
       </section>
 
-      <WgiMethodologyModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+      {dialog && <WgiMethodologyModal
+        isOpen
+        onClose={() => setDialog(null)}
         initialPosition={profile.position}
-      />
+        indicator={dialog.label ? { ...dialog, onOpenGuide: () => setDialog({}) } : null}
+      />}
     </>
   );
 }

@@ -736,22 +736,7 @@
 }
 
 /* ---------- Methodology modal ---------- */
-/* The dialog sits above the floating navigation bar and never runs under it */
-.comparisonModalBackdrop:has(.wgiLeaderboardMethodology) {
-  z-index: 10000;
-  align-items: center;
-  padding: clamp(12px, 3vw, 32px);
-}
 
-.wgiLeaderboardMethodology {
-  width: min(760px, calc(100vw - 28px));
-  max-height: calc(100dvh - clamp(24px, 6vw, 64px));
-  padding: 28px;
-  overflow-y: auto;
-  border-radius: var(--w-radius-lg);
-  background: var(--w-surface);
-  color: var(--w-text);
-}
 
 .wgiLeaderboardMethodology h2 {
   margin-top: 0;

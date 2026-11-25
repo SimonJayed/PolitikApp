@@ -73,7 +73,8 @@ public class CongressPublicService {
         List<SourceRecord> rows = new ArrayList<>(bills.stream()
                 .filter(row -> congress == null || String.valueOf(congress).equals(row.congress())).toList());
         rows.sort(Comparator.comparing((SourceRecord row) -> congressNumber(row.congress()), Comparator.reverseOrder())
-                .thenComparing(SourceRecord::title, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)));
+                .thenComparing(SourceRecord::title, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))
+                .thenComparing(SourceRecord::key));
         int start = Math.min(Math.max(0, offset), rows.size());
         int size = Math.max(1, Math.min(50, limit));
         return new Page(rows.subList(start, Math.min(rows.size(), start + size)), rows.size(), start, size, memberships, congresses);
@@ -224,9 +225,11 @@ public class CongressPublicService {
     }
 
     private static String governmentSource(JsonNode urls) {
-        if (urls.isArray()) for (JsonNode value : urls) {
-            String url = value.asText(null);
-            if (OriginalSourceService.sourceUri(url) != null) return url;
+        if (urls == null || urls.isNull()) return null;
+        Iterable<JsonNode> candidates = urls.isArray() ? urls : List.of(urls);
+        for (JsonNode value : candidates) {
+            var uri = OriginalSourceService.sourceUri(value.asText(null));
+            if (uri != null) return uri.toASCIIString();
         }
         return null;
     }

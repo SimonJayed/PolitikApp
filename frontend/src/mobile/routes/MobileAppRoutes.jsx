@@ -2,7 +2,6 @@ import TopNav from '../../components/TopNav'
 import AuthPromptModal from '../../components/AuthPromptModal'
 import WgiMethodologyModal from '../../components/governance/WgiMethodologyModal'
 import AppRoutes from '../../routes/AppRoutes'
-import { AlertTriangleIcon } from '../../components/icons/Lucide'
 import '../styles/mobile.css'
 
 export default function MobileAppRoutes(props) {
@@ -30,7 +29,6 @@ export default function MobileAppRoutes(props) {
     isProfileModalOpen,
     isWgiMethodologyOpen,
     navigateTo,
-    notFoundNotice,
     onLogout,
     onUserUpdate,
     openPoliticianProfile,
@@ -48,7 +46,6 @@ export default function MobileAppRoutes(props) {
     setIsPoliticiansModalOpen,
     setIsProfileModalOpen,
     setIsWgiMethodologyOpen,
-    setNotFoundNotice,
     setWgiMethodologyOpen,
     showHeaderTitles,
     submissionState,
@@ -100,44 +97,8 @@ export default function MobileAppRoutes(props) {
           </header>
         )}
 
-        {notFoundNotice && (
-          <div
-            style={{
-              margin: '12px 0 20px',
-              padding: '12px 20px',
-              borderRadius: '12px',
-              background: '#fef3c7',
-              border: '1px solid #f59e0b',
-              color: '#92400e',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              fontSize: '14px',
-              fontWeight: '500',
-            }}
-          >
-            <span>
-              <AlertTriangleIcon size={16} /> {notFoundNotice}
-            </span>
-            <button
-              type="button"
-              onClick={() => setNotFoundNotice?.('')}
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: '#92400e',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-              }}
-              aria-label="Dismiss notice"
-            >
-              ×
-            </button>
-          </div>
-        )}
-
         <AppRoutes
+          {...props}
           activeUser={activeUser}
           activeView={activeView}
           authMode={authMode}

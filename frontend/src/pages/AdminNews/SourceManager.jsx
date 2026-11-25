@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useEffect, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { isRemovedGovernmentSource } from '../../features/news/sourceReference'
@@ -6,15 +7,18 @@ const empty = { name: '', baseUrl: '', feedUrl: '', retrievalType: 'RSS', active
 
 export default function SourceManager({ token, refreshSignal }) {
   const [sources, setSources] = useState([])
+  const [loading, setLoading] = useState(true)
   const [draft, setDraft] = useState(empty)
   const [id, setId] = useState(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   useEffect(() => {
     const controller = new AbortController()
+    setLoading(true)
     fetch(`${API_BASE_URL}/api/admin/news/sources`, { headers: { Authorization: `Bearer ${token}` }, signal: controller.signal })
       .then(readApiResponse).then(rows => setSources(rows.filter(source => !isRemovedGovernmentSource(source))))
       .catch(error => { if (error.name !== 'AbortError') setMessage(error.message) })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
   }, [token, refreshSignal])
 
@@ -38,11 +42,12 @@ export default function SourceManager({ token, refreshSignal }) {
   }
 
   return <details className="adminReviewPanel admSrcManager">
-    <summary>Manage approved government sources <span className="admSrcCount">{sources.length}</span></summary>
+    <summary>Manage approved government sources <span className="admSrcCount">{loading ? <LoadingSkeleton inline label="Loading source count" /> : sources.length}</span></summary>
     <div className="admSrcBody">
       <p className="adminNote">Manage government news sources here. Previously retrieved articles retain their original source attribution when a source is removed.</p>
       <p className="adminMeta">DBM source: https://www.dbm.gov.ph/ · RSS: https://www.dbm.gov.ph/index.php/management-2?format=feed&amp;type=rss</p>
       {message && <p className="adminNote" role="status">{message}</p>}
+      {loading && <LoadingSkeleton label="Loading approved sources" />}
       <ul className="admSrcList">{sources.map(source => {
         return <li className="admSrcRow" key={source.id}>
           <div className="admSrcRowMain">
@@ -63,7 +68,7 @@ export default function SourceManager({ token, refreshSignal }) {
         </select></label>
         <label className="admCheckLabel"><input type="checkbox" checked={draft.active} onChange={event => setDraft({ ...draft, active: event.target.checked })} />Approve source for retrieval</label>
         <div className="admFormActions">
-          <button className="adminBtn adminBtnPrimary" disabled={busy} type="submit">{busy ? 'Saving...' : 'Save source'}</button>
+          <button className="adminBtn adminBtnPrimary" disabled={busy} type="submit">{busy ? <LoadingSkeleton inline label="Saving" /> : 'Save source'}</button>
           {id && <button className="adminBtn adminBtnSecondary" disabled={busy} type="button" onClick={() => { setId(null); setDraft(empty) }}>Cancel edit</button>}
         </div>
       </form>

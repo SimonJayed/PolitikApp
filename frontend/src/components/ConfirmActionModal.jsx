@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "./Skeletons"
 import BaseModal from './BaseModal'
 
 function ConfirmActionModal({
@@ -18,18 +19,6 @@ function ConfirmActionModal({
   const isDanger = severity === 'danger'
   return (
     <BaseModal isDismissDisabled={isSubmitting} isOpen={isOpen} modalClassName="appealModalCompact" onClose={onCancel} title={title}>
-      <header className="comparisonModalHeader">
-        <h2 className="ty-section-title">{title}</h2>
-        <button
-          aria-label="Close"
-          className="comparisonModalClose"
-          disabled={isSubmitting}
-          onClick={onCancel}
-          type="button"
-        >
-          Close
-        </button>
-      </header>
       <div className="comparisonModalBody">
         <div className="confirmModalBody">
           <p className="ty-body">{description}</p>
@@ -55,7 +44,7 @@ function ConfirmActionModal({
               onClick={onConfirm}
               type="submit"
             >
-              {isSubmitting ? 'Processing...' : confirmLabel}
+              {isSubmitting ? <LoadingSkeleton inline label="Processing" /> : confirmLabel}
             </button>
           </div>
         </div>

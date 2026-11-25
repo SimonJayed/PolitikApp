@@ -66,3 +66,13 @@ export function ModerationCardsSkeleton({ count = 2 }) {
     </div>
   )
 }
+
+export function LoadingSkeleton({ label, rows = 3, inline = false }) {
+  return (
+    <span className={inline ? 'loadingSkeleton loadingSkeletonInline' : 'loadingSkeleton'} role="status" aria-label={label}>
+      {Array.from({ length: inline ? 1 : rows }, (_, index) => (
+        <SkeletonLine key={index} width={inline ? '5rem' : ['88%', '100%', '65%'][index % 3]} />
+      ))}
+    </span>
+  )
+}

@@ -510,76 +510,13 @@
 /* =========================================================
    Result modal
    ========================================================= */
-.cmpBackdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: grid;
-  place-items: center;
-  padding: clamp(12px, 3vw, 32px);
-  background: color-mix(in srgb, var(--ph-blue) 55%, transparent);
-  backdrop-filter: blur(4px);
-  animation: cmpFade 0.18s ease-out;
-}
-
-.cmpModal {
+.cmpResult {
   --d-line: color-mix(in srgb, var(--ph-blue) 13%, var(--ph-white));
   --d-text: var(--ph-blue);
   --d-muted: color-mix(in srgb, var(--ph-blue) 55%, var(--ph-white));
   --d-inset: color-mix(in srgb, var(--ph-blue) 4%, var(--ph-white));
   --d-primary: var(--ph-blue-light);
   --d-accent: var(--ph-gold);
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  width: min(1200px, 100%);
-  max-height: min(92vh, 960px);
-  overflow: hidden;
-  border-radius: var(--d-radius-lg, 18px);
-  background: var(--ph-white);
-  box-shadow: 0 24px 64px rgba(10, 29, 66, 0.35);
-}
-
-.cmpModalHead {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
-  color: var(--ph-white);
-}
-
-.cmpModalHead h2 {
-  margin: 0;
-  color: var(--ph-white);
-  font: 800 1.1rem/1.2 var(--display);
-}
-
-.cmpModalHead button {
-  width: auto;
-  height: auto;
-  min-height: 0;
-  padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 999px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--ph-white);
-  font: 700 12px/1 var(--display);
-  cursor: pointer;
-}
-
-.cmpModalHead button:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
-
-.cmpModalBody {
-  overflow-y: auto;
-  padding: clamp(16px, 2.4vw, 28px);
-  background: var(--d-inset);
-}
-
-.cmpResult {
   display: grid;
   gap: 24px;
 }

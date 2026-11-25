@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import BaseModal from '../BaseModal';
+import { getPositionGroupLabel } from './positionConfig';
 import { AlertTriangleIcon } from '../icons/Lucide';
 
 // Inline HelpCircleIcon to avoid external imports
@@ -28,12 +30,10 @@ const WGI_CEILING_BILLS = 50;
 const WGI_CEILING_PROJECTS = 30;
 const WGI_CEILING_BUDGET = 500_000_000;
 
-export default function WgiMethodologyModal({ isOpen, onClose, initialPosition = 'LEGISLATIVE' }) {
-  const [activeTab, setActiveTab] = useState(
-    ['LEGISLATIVE', 'EXECUTIVE', 'VICE_EXECUTIVE', 'COUNCIL'].includes(initialPosition)
-      ? initialPosition
-      : 'LEGISLATIVE'
-  );
+export default function WgiMethodologyModal({ isOpen, onClose, initialPosition = 'LEGISLATIVE', indicator }) {
+  const group = getPositionGroupLabel(initialPosition).toUpperCase().replace(/[- ]/g, '_');
+  const groups = ['LEGISLATIVE', 'EXECUTIVE', 'VICE_EXECUTIVE', 'COUNCIL'];
+  const [activeTab, setActiveTab] = useState(groups.find(value => value === initialPosition || value === group) || 'LEGISLATIVE');
 
   // Simulator States
   const [simBills, setSimBills] = useState(15);
@@ -109,38 +109,13 @@ export default function WgiMethodologyModal({ isOpen, onClose, initialPosition =
         : 'Critical Risk';
 
   return (
-    <div
-      className="comparisonModalBackdrop"
-      onClick={onClose}
-      aria-hidden="true"
-    >
-      <section
-        className="comparisonModal wgiMethodologyModal"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label="WGI Score Methodology & Simulator"
-      >
-        {/* Modal Header */}
-        <header className="comparisonModalHeader">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <HelpCircleIcon size={20} style={{ color: 'var(--ph-gold)' }} />
-            <h2 className="ty-section-title" style={{ margin: 0 }}>
-              WGI Governance Index Methodology Guide
-            </h2>
-          </div>
-          <button
-            aria-label="Close"
-            className="comparisonModalClose"
-            onClick={onClose}
-            type="button"
-          >
-            X
-          </button>
-        </header>
-
-        {/* Scrollable Container */}
-        <div className="comparisonModalBody wgiMethodologyBody">
+    <BaseModal isOpen onClose={onClose} title={indicator?.label || 'WGI Governance Index Methodology Guide'}
+      modalClassName={indicator ? 'wgiIndicatorModal' : 'wgiMethodologyModal'}>
+        {indicator ? <div className="comparisonModalBody wgiIndicatorBody">
+          <p className="ty-label">{indicator.wgiPillar}</p>
+          <p className="ty-body">{indicator.description}</p>
+          <button type="button" className="wgiGuideLink" onClick={indicator.onOpenGuide}>View scoring methodology</button>
+        </div> : <div className="comparisonModalBody wgiMethodologyBody">
           {/* Left Column: Education / Formula Guide */}
           <div className="wgiEducation" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div>
@@ -502,9 +477,7 @@ export default function WgiMethodologyModal({ isOpen, onClose, initialPosition =
               </div>
             </div>
           </div>
-        </div>
-
-      </section>
-    </div>
+        </div>}
+    </BaseModal>
   );
 }

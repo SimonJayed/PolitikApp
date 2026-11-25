@@ -1,3 +1,4 @@
+import { profilePath } from '../config/appRoutes'
 import ModerationPanel from '../components/ModerationPanel'
 import RestrictedModerationAccess from '../components/moderation/RestrictedModerationAccess'
 import OpenCongress from '../pages/OpenCongress/OpenCongress'
@@ -54,6 +55,12 @@ export default function AppRoutes({
   handleSubmission,
   isAuthenticated,
   navigateTo,
+  loadPoliticians,
+  profileSection,
+  reloadProfile,
+  newsArticleId,
+  newsOriginal,
+  openNewsArticle,
   onUserUpdate,
   openPoliticianProfile,
   openSubmitContributionForPolitician,
@@ -104,6 +111,7 @@ export default function AppRoutes({
       <PoliticiansLoaderPanel
         dbUser={currentUser}
         onViewProfile={openPoliticianProfile}
+        onRetry={loadPoliticians}
         politicians={politiciansState.data}
         politiciansState={politiciansState}
         state={dashboardState}
@@ -142,7 +150,12 @@ export default function AppRoutes({
       <PoliticianProfilePage
         onAddContribution={openSubmitContributionForPolitician}
         onPoliticianUpdate={handlePoliticianLocalUpdate}
-        onReload={openPoliticianProfile}
+        key={selectedPoliticianId}
+        onReload={reloadProfile}
+        section={profileSection}
+        onSectionChange={section => navigateTo('profile', selectedPoliticianId, false, section)}
+        profileHref={section => profilePath(selectedPoliticianId, section) + window.location.search}
+        onDirectory={() => navigateTo('politicians')}
         onUserUpdate={onUserUpdate}
         onAppealModalOpenChange={setIsAppealModalOpen}
         onModalOpenChange={setIsProfileModalOpen}
@@ -161,7 +174,11 @@ export default function AppRoutes({
     return (
       <Dashboard
         isLoading={politiciansState.status === 'loading'}
-        onNavigate={navigateTo}
+        loadPoliticians={loadPoliticians}
+        articleId={newsArticleId}
+        original={newsOriginal}
+        onOpenArticle={openNewsArticle}
+        onAuthPrompt={triggerAuthPrompt}
         onOpenProfile={openPoliticianProfile}
         politicians={politiciansState.data}
         user={activeUser}
@@ -204,5 +221,8 @@ export default function AppRoutes({
       : <ModerationPanel token={token} user={activeUser} />
   }
 
-  return null
+  return <section className="workspace"><h1>Page not found</h1>
+    <button type="button" onClick={() => navigateTo('politicians')}>Browse politicians</button>
+    <button type="button" onClick={() => navigateTo('dashboard')}>Browse government news</button>
+  </section>
 }

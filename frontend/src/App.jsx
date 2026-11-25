@@ -1,8 +1,8 @@
+import { LoadingSkeleton } from "./components/Skeletons"
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from './api/client'
 import { fetchReadWithRetry } from './api/readRequest'
-import { prefetchDirectory } from './features/congress/useDirectory'
-import { prefetchLeaderboard } from './features/congress/leaderboardReads'
+import { newsPath, profilePath, readAppLocation } from './config/appRoutes'
 import './App.css'
 import PlatformRouter from './routes/PlatformRouter'
 import ModerationPanel from './components/ModerationPanel'
@@ -92,16 +92,9 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const activeUser = isAuthenticated ? resolvedUser : null
   const currentRole = activeUser?.role || 'CONTRIBUTOR'
 
-  const initialParams = useMemo(() => new URLSearchParams(window.location.search), [])
-  const initialPath = useMemo(() => window.location.pathname, [])
-  const initialViewParam = initialParams.get('view')
-  const initialPoliticianParam = initialParams.get('id') || initialParams.get('politicianId')
-
-  const [activeView, setActiveView] = useState(() => {
-    if (initialPath === '/admin/dashboard') return 'adminNews'
-    if (initialViewParam) return initialViewParam
-    return isAuthenticated ? 'dashboard' : 'landing'
-  })
+  const [route, setRoute] = useState(() => readAppLocation(window.location))
+  const activeView = route.view || (isAuthenticated ? 'dashboard' : 'landing')
+  const returnAfterSignIn = useRef(null)
   const [politiciansState, setPoliticiansState] = useState({
     data: [],
     message: '',
@@ -110,9 +103,8 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   })
   const [formData, setFormData] = useState(emptySubmission)
   const [submissionState, setSubmissionState] = useState({ status: 'idle', message: '' })
-  const [dashboardId, setDashboardId] = useState('')
   const [dashboardState, setDashboardState] = useState({ status: 'idle', message: '', data: null })
-  const [selectedPoliticianId, setSelectedPoliticianId] = useState(() => initialPoliticianParam || '')
+  const [selectedPoliticianId, setSelectedPoliticianId] = useState(() => route.id || '')
   const [compareIds, setCompareIds] = useState({ idA: '', idB: '' })
   const [comparisonState, setComparisonState] = useState({ status: 'idle', message: '', data: null })
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false)
@@ -123,14 +115,15 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   const [authMode, setAuthMode] = useState('login')
   const [authModalConfig, setAuthModalConfig] = useState({ isOpen: false, actionType: 'general' })
   const [isWgiMethodologyOpen, setIsWgiMethodologyOpen] = useState(false)
-  const [notFoundNotice, setNotFoundNotice] = useState('')
 
   useEffect(() => {
     setResolvedUser(currentUser || null)
 
     if (!isAuthenticated && wasAuthenticated.current) {
-      setActiveView('landing')
-      setAuthModalConfig({ isOpen: false, actionType: 'general' })
+      if (guestRestrictedViews.has(activeView)) {
+        window.history.replaceState(null, '', '/')
+        setRoute({ view: 'landing' })
+      }
       setIsCompareModalOpen(false)
       setIsAppealModalOpen(false)
       setIsPoliticiansModalOpen(false)
@@ -138,11 +131,12 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
 
     wasAuthenticated.current = isAuthenticated
-  }, [currentUser, isAuthenticated])
+  }, [currentUser, isAuthenticated, activeView])
 
   const triggerAuthPrompt = useCallback((actionType = 'general') => {
+    if (actionType === 'session') onLogout?.()
     setAuthModalConfig({ isOpen: true, actionType })
-  }, [])
+  }, [onLogout])
 
   const activeHeader = {
     account: ['Account', 'User Account'],
@@ -158,7 +152,7 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     submit: ['Submissions', 'Evidence Submission Console'],
   }[activeView] || ['Dashboard', 'Source-First Profile Aggregator']
 
-  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'adminNews', 'openCongress', 'submit', 'moderation', 'landing', 'auth', 'profileMatrix'])
+  const headerTitleHiddenFor = new Set(['dashboard', 'politicians', 'compare', 'adminNews', 'openCongress', 'submit', 'moderation', 'landing', 'auth', 'profile', 'profileMatrix'])
   const showHeaderTitles = !headerTitleHiddenFor.has(activeView)
 
   const politicianRequest = useRef(null)
@@ -176,19 +170,11 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     return politicianRequest.current
   }, [])
 
-  const politicianListRequested = useRef(false)
-  // Reuse recent data and refresh older lists without hiding existing cards.
   useEffect(() => {
-    if (!politicianListRequested.current || (activeView === 'dashboard' && Date.now() - politicianLoadedAt.current >= 60000)) {
-      politicianListRequested.current = true
-      loadPoliticians()
-    }
-  }, [activeView, loadPoliticians])
-
-  useEffect(() => {
-    prefetchDirectory().catch(() => {})
-    prefetchLeaderboard().catch(() => {})
-  }, [])
+    const needsDirectory = ['landing', 'politicians', 'compare', 'openCongress', 'submit', 'adminNews'].includes(activeView)
+      || (activeView === 'profile' && currentRole === 'ADMIN')
+    if (needsDirectory && Date.now() - politicianLoadedAt.current >= 60000) loadPoliticians()
+  }, [activeView, currentRole, loadPoliticians])
 
   useEffect(() => {
     let cancelled = false
@@ -257,64 +243,84 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
   }
 
-  async function loadDashboardById(politicianId) {
+  const profileRequest = useRef(null)
+  const loadDashboardById = useCallback(async (politicianId) => {
+    profileRequest.current?.abort()
     if (!politicianId) {
-      setDashboardState({ status: 'error', message: 'Select a politician first.', data: null })
-      return { ok: false }
+      setDashboardState({ politicianId, status: 'notFound', message: 'Politician profile not found.', data: null })
+      return
     }
-    setDashboardState({ status: 'loading', message: 'Loading dashboard...', data: null })
+    const request = new AbortController()
+    profileRequest.current = request
+    setDashboardState({ politicianId, status: 'loading', message: 'Loading profile…', data: null })
     try {
-      const data = await fetch(`${API_BASE_URL}/api/politicians/${politicianId}/dashboard`).then(readApiResponse)
-      setDashboardState({ status: 'success', message: '', data })
-      return { ok: true, data }
+      const response = await fetchReadWithRetry(
+        API_BASE_URL + '/api/politicians/' + encodeURIComponent(politicianId) + '/dashboard',
+        { signal: request.signal },
+      )
+      const data = await readApiResponse(response)
+      if (data.politicianId !== politicianId) throw new Error('The server returned a different politician profile.')
+      if (!request.signal.aborted) setDashboardState({ politicianId, status: 'success', message: '', data })
     } catch (error) {
-      setDashboardState({ status: 'error', message: error.message, data: null })
-      return { ok: false, error }
-    }
-  }
-
-  const navigateTo = useCallback((viewKey, politicianId = null, replace = false) => {
-    setNotFoundNotice('')
-    setActiveView(viewKey)
-    if (politicianId !== null) {
-      setSelectedPoliticianId(politicianId)
-    }
-
-    try {
-      const url = new URL(window.location.href)
-      if (viewKey === 'adminNews') {
-        url.pathname = '/admin/dashboard'
-        url.searchParams.delete('view')
-      } else if (viewKey && viewKey !== 'landing') {
-        if (url.pathname === '/admin/dashboard') {
-          url.pathname = '/'
-        }
-        url.searchParams.set('view', viewKey)
-      } else {
-        if (url.pathname === '/admin/dashboard') {
-          url.pathname = '/'
-        }
-        url.searchParams.delete('view')
+      if (!request.signal.aborted) {
+        const notFound = error.status === 404 || error.status === 400
+        setDashboardState({ politicianId, status: notFound ? 'notFound' : 'error',
+          message: notFound ? 'Politician profile not found.' : error.message, data: null })
       }
-
-      if (politicianId) {
-        url.searchParams.set('id', politicianId)
-        url.searchParams.delete('politicianId')
-      } else if (politicianId === '') {
-        url.searchParams.delete('id')
-        url.searchParams.delete('politicianId')
-      }
-
-      if (replace) {
-        window.history.replaceState({ view: viewKey, id: politicianId }, '', url.toString())
-      } else {
-        window.history.pushState({ view: viewKey, id: politicianId }, '', url.toString())
-      }
-    } catch {
-      // Ignore URL manipulation failures
     }
+  }, [])
 
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+  const profileId = activeView === 'profile' ? route.id || '' : null
+  useEffect(() => {
+    if (profileId === null) return
+    loadDashboardById(profileId)
+    return () => profileRequest.current?.abort()
+  }, [profileId, loadDashboardById])
+
+  const navigateTo = useCallback((viewKey, politicianId = null, replace = false, section = 'overview') => {
+    const url = new URL(window.location.href)
+    if (viewKey === 'auth') returnAfterSignIn.current = readAppLocation(url).view === 'dashboard' ? url.pathname + url.search : null
+    const restoreNews = viewKey === 'dashboard' && returnAfterSignIn.current && readAppLocation(url).view === 'auth'
+    if (restoreNews) {
+      const target = new URL(returnAfterSignIn.current, url.origin)
+      returnAfterSignIn.current = null
+      window.history.replaceState(null, '', target.pathname + target.search)
+      setRoute(readAppLocation(target))
+      return
+    }
+    const preserveQuery = (viewKey === 'profile' && readAppLocation(url).view === 'profile')
+      || (viewKey === 'dashboard' && readAppLocation(url).view === 'dashboard')
+    if (!preserveQuery) url.search = ''
+    url.searchParams.delete('view')
+    url.searchParams.delete('id')
+    url.searchParams.delete('politicianId')
+    url.hash = ''
+    if (viewKey === 'adminNews') url.pathname = '/admin/dashboard'
+    else if (viewKey === 'politicians') url.pathname = '/politicians'
+    else if (viewKey === 'profile' && politicianId) url.pathname = profilePath(politicianId, section)
+    else if (viewKey === 'dashboard') url.pathname = newsPath()
+    else {
+      url.pathname = '/'
+      if (viewKey) url.searchParams.set('view', viewKey)
+      if (politicianId) url.searchParams.set('id', politicianId)
+    }
+    if (politicianId !== null) setSelectedPoliticianId(politicianId)
+    if (viewKey !== 'auth') returnAfterSignIn.current = null
+    const sameUrl = url.href === window.location.href
+    if (!sameUrl) window.history[replace ? 'replaceState' : 'pushState'](null, '', url)
+    setRoute(readAppLocation(url))
+    if (!sameUrl) window.scrollTo({ top: 0, behavior: 'auto' })
+  }, [])
+
+  const openNewsArticle = useCallback((id, original = false) => {
+    const url = new URL(window.location.href)
+    url.pathname = newsPath(id, original)
+    for (const name of ['view', 'id', 'articleId', 'original']) url.searchParams.delete(name)
+    if (url.href !== window.location.href) {
+      window.history.pushState(null, '', url)
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    }
+    setRoute(readAppLocation(url))
   }, [])
 
   const selectView = useCallback((viewKey) => {
@@ -330,50 +336,22 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
   }, [currentRole, isAuthenticated, triggerAuthPrompt, navigateTo])
 
   useEffect(() => {
-    const initialRestrictedView = initialPath === '/admin/dashboard' ? 'adminNews' : initialViewParam
-    if (!isAuthenticated && initialRestrictedView && guestRestrictedViews.has(initialRestrictedView)) {
-      navigateTo('landing', null, true)
-      return
-    }
     function handlePopState() {
-      const params = new URLSearchParams(window.location.search)
-      const requestedView = window.location.pathname === '/admin/dashboard' ? 'adminNews' : params.get('view')
-      const v = !isAuthenticated && guestRestrictedViews.has(requestedView)
-        ? 'landing'
-        : requestedView || (isAuthenticated ? 'dashboard' : 'landing')
-      const id = params.get('id') || params.get('politicianId') || ''
-      setActiveView(v)
-      if (id) {
-        setSelectedPoliticianId(id)
-        setDashboardId(id)
-        loadDashboardById(id)
-      }
+      const next = readAppLocation(window.location)
+      setRoute(next)
+      if (next.id) setSelectedPoliticianId(next.id)
     }
     window.addEventListener('popstate', handlePopState)
     return () => window.removeEventListener('popstate', handlePopState)
-  }, [initialPath, initialViewParam, isAuthenticated, navigateTo])
+  }, [])
 
-  const coldLoadHandled = useRef(false)
   useEffect(() => {
-    if (coldLoadHandled.current || politiciansState.status !== 'success') return
-    coldLoadHandled.current = true
-
-    if (initialViewParam === 'profile' && initialPoliticianParam) {
-      const found = politiciansState.data.some((p) => p.politicianId === initialPoliticianParam)
-      if (found) {
-        setSelectedPoliticianId(initialPoliticianParam)
-        setDashboardId(initialPoliticianParam)
-        loadDashboardById(initialPoliticianParam)
-      } else {
-        setNotFoundNotice(`Politician profile "${initialPoliticianParam}" was not found. Redirected to Politicians.`)
-        navigateTo('politicians', '', true)
-      }
-    }
-  }, [politiciansState.status, politiciansState.data, initialViewParam, initialPoliticianParam, navigateTo])
+    if (!isAuthenticated && guestRestrictedViews.has(activeView)) navigateTo('landing', null, true)
+  }, [activeView, isAuthenticated, navigateTo])
 
   useEffect(() => {
     if (isAuthenticated && (activeView === 'auth' || activeView === 'landing')) {
-      navigateTo(currentRole === 'ADMIN' ? 'adminNews' : 'dashboard', null, true)
+      navigateTo(returnAfterSignIn.current || currentRole !== 'ADMIN' ? 'dashboard' : 'adminNews', null, true)
       return
     }
     if (isAuthenticated && ['adminNews', 'openCongress'].includes(activeView) && currentRole !== 'ADMIN') {
@@ -381,12 +359,8 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
     }
   }, [activeView, currentRole, isAuthenticated, navigateTo])
 
-  async function openPoliticianProfile(politicianId) {
-    if (!politicianId) return
-    setSelectedPoliticianId(politicianId)
-    setDashboardId(politicianId)
-    await loadDashboardById(politicianId)
-    navigateTo('profile', politicianId)
+  function openPoliticianProfile(politicianId) {
+    if (typeof politicianId === 'string' && politicianId.trim()) navigateTo('profile', politicianId)
   }
 
   function openSubmitContributionForPolitician(politicianId) {
@@ -459,7 +433,8 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       comparisonState={comparisonState}
       currentRole={currentRole}
       currentUser={currentUser}
-      dashboardState={dashboardState}
+      dashboardState={dashboardState.politicianId === profileId ? dashboardState
+        : { status: 'loading', message: 'Loading profile…', data: null }}
       formData={formData}
       handleComparisonLookup={handleComparisonLookup}
       handlePoliticianLocalCreate={handlePoliticianLocalCreate}
@@ -473,13 +448,18 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       isProfileModalOpen={isProfileModalOpen}
       isWgiMethodologyOpen={isWgiMethodologyOpen}
       navigateTo={navigateTo}
-      notFoundNotice={notFoundNotice}
+      profileSection={route.section}
+      newsArticleId={route.articleId}
+      newsOriginal={route.original}
+      openNewsArticle={openNewsArticle}
+      loadPoliticians={loadPoliticians}
+      reloadProfile={loadDashboardById}
       onLogout={onLogout}
       onUserUpdate={onUserUpdate}
       openPoliticianProfile={openPoliticianProfile}
       openSubmitContributionForPolitician={openSubmitContributionForPolitician}
       politiciansState={politiciansState}
-      selectedPoliticianId={selectedPoliticianId}
+      selectedPoliticianId={profileId ?? selectedPoliticianId}
       selectView={selectView}
       setAuthModalConfig={setAuthModalConfig}
       setAuthMode={setAuthMode}
@@ -491,7 +471,6 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
       setIsPoliticiansModalOpen={setIsPoliticiansModalOpen}
       setIsProfileModalOpen={setIsProfileModalOpen}
       setIsWgiMethodologyOpen={setIsWgiMethodologyOpen}
-      setNotFoundNotice={setNotFoundNotice}
       setWgiMethodologyOpen={setIsWgiMethodologyOpen}
       showHeaderTitles={showHeaderTitles}
       submissionState={submissionState}
@@ -1471,7 +1450,7 @@ function LegacyComparisonPanel({ compareIds, onChange, onModalOpenChange, onSubm
 
           <button disabled={compareDisabled} type="submit" className="compareSubmitButton">
             <ScaleIcon size={18} />
-            <span>{state.status === 'loading' ? 'Comparing...' : 'Compare Selected'}</span>
+            <span>{state.status === 'loading' ? <LoadingSkeleton inline label="Comparing" /> : 'Compare Selected'}</span>
           </button>
 
           <span className="compareDivider" aria-hidden="true" />
@@ -1631,11 +1610,7 @@ function StatusLine({ state }) {
   if (state.status === 'loading') {
     return (
       <div className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-slate-600 shadow-xs">
-        <div className="flex items-center gap-3">
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-100 border-t-blue-500" aria-hidden="true" />
-          <span className="sr-only">{state.message}</span>
-          <div className="h-2 w-40 rounded-full bg-slate-100 animate-pulse" aria-hidden="true" />
-        </div>
+        <LoadingSkeleton label={state.message} rows={2} />
       </div>
     )
   }

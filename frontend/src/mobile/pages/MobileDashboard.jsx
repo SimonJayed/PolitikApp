@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { newsCacheFor, publicReadCache } from '../../api/readCache'
@@ -231,7 +232,7 @@ export function MobileDashboard({ onNavigate, onOpenProfile, politicians = [], u
             gap: '10px',
           }}>
             {commentsState.loading ? (
-              <p style={{ color: '#64748B', fontSize: '0.875rem' }}>Loading verified remarks...</p>
+              <LoadingSkeleton label="Loading verified remarks" />
             ) : commentsState.items.length === 0 ? (
               <p style={{ color: '#64748B', fontSize: '0.875rem' }}>No public remarks yet. Be the first to verify or comment.</p>
             ) : (

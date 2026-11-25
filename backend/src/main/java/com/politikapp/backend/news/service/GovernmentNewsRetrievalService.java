@@ -170,6 +170,7 @@ public class GovernmentNewsRetrievalService {
             article.setOriginalPublishedAt(publishedAt);
             ai.prepareRetrievedDraft(article);
             var sourceMetadata = json.createObjectNode();
+            if (extracted.originalHtml() != null) sourceMetadata.put("originalHtml", extracted.originalHtml());
             if (extracted.author() != null) sourceMetadata.put("author", extracted.author());
             if (extracted.image() != null) sourceMetadata.set("image", json.valueToTree(extracted.image()));
             if (!sourceMetadata.isEmpty()) {

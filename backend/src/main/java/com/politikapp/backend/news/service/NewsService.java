@@ -56,19 +56,30 @@ public class NewsService {
 
     @Transactional(readOnly = true)
     public Page<NewsArticleResponse> published(String category, String query, Pageable pageable, UUID userId) {
+        return published(category, query, pageable, userId, true);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<NewsArticleResponse> published(String category, String query, Pageable pageable, UUID userId, boolean includeOriginal) {
         String normalizedCategory = category == null || category.equalsIgnoreCase("All") || category.equalsIgnoreCase("Latest") || category.isBlank() ? null : category;
         String normalizedQuery = query == null || query.isBlank() ? null : query.trim();
         var articles = articleRepository.findAll(publishedSpec(normalizedCategory, normalizedQuery), pageable);
         var savedIds = userId == null || articles.isEmpty() ? Set.<UUID>of()
                 : savedPostRepository.findSavedArticleIds(userId, articles.getContent().stream().map(NewsArticle::getId).toList());
-        return mapper.toArticlePage(articles, savedIds, false);
+        return mapper.toArticlePage(articles, savedIds, false, includeOriginal);
     }
 
     @Transactional(readOnly = true)
     public NewsArticleResponse publishedById(UUID id, UUID userId) {
-        NewsArticle article = articleRepository.findByIdAndStatus(id, "PUBLISHED")
-                .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
+        NewsArticle article = requirePublicArticle(id);
         return mapper.toArticleResponse(article, isSaved(userId, article.getId()), false);
+    }
+
+    @Transactional(readOnly = true)
+    public OriginalArticleService.StoredOriginal originalSnapshot(UUID id) {
+        var article = requirePublicArticle(id);
+        return new OriginalArticleService.StoredOriginal(article.getSourceUrl(), article.getSource().getBaseUrl(),
+                article.getOriginalContent(), article.getExtractionData());
     }
 
     public List<String> categories() {
@@ -77,8 +88,7 @@ public class NewsService {
 
     @Transactional(readOnly = true)
     public List<NewsCommentResponse> comments(UUID articleId, UUID userId) {
-        articleRepository.findByIdAndStatus(articleId, "PUBLISHED")
-                .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
+        requirePublicArticle(articleId);
         return commentRepository.findByArticleIdAndHiddenFalseAndDeletedAtIsNull(articleId, Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
                 .map(comment -> mapper.toCommentResponse(comment, userId))
@@ -87,8 +97,7 @@ public class NewsService {
 
     @Transactional
     public NewsCommentResponse addComment(UUID articleId, CreateCommentRequest request, UUID userId) {
-        NewsArticle article = articleRepository.findByIdAndStatus(articleId, "PUBLISHED")
-                .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
+        NewsArticle article = requirePublicArticle(articleId);
         AuthUser user = user(userId);
         NewsComment comment = new NewsComment();
         comment.setArticle(article);
@@ -103,33 +112,37 @@ public class NewsService {
         if (!List.of("UP", "DOWN").contains(voteType)) {
             throw new HttpResponseException(400, "voteType must be UP or DOWN.");
         }
-        NewsComment comment = commentRepository.findById(commentId)
+        AuthUser user = user(userId);
+        NewsComment comment = commentRepository.lockById(commentId)
                 .orElseThrow(() -> new HttpResponseException(404, "Comment not found."));
         if (comment.isHidden() || comment.getDeletedAt() != null || !publicArticle(comment.getArticle())) {
             throw new HttpResponseException(409, "This comment cannot be voted on.");
         }
-        AuthUser user = user(userId);
         CommentVote vote = voteRepository.findByCommentIdAndUserUserId(commentId, userId).orElse(null);
-        if (vote != null) {
-            if (voteType.equals(vote.getVoteType())) {
-                voteRepository.delete(vote);
-                return mapper.toCommentResponse(comment, userId);
-            }
-            throw new HttpResponseException(409, "You already selected the other vote type. Take it back before switching.");
+        boolean selected = vote != null && voteType.equals(vote.getVoteType());
+        if (request.active() == null && vote != null && !selected) {
+            throw new HttpResponseException(409, "Take back the current vote before switching.");
         }
-        vote = new CommentVote();
-        vote.setComment(comment);
-        vote.setUser(user);
-        vote.setVoteType(voteType);
-        voteRepository.save(vote);
+        boolean active = request.active() == null ? !selected : request.active();
+        if (active) {
+            if (vote == null) {
+                vote = new CommentVote();
+                vote.setComment(comment);
+                vote.setUser(user);
+            }
+            vote.setVoteType(voteType);
+            voteRepository.save(vote);
+        } else if (selected) {
+            voteRepository.delete(vote);
+        }
+        voteRepository.flush();
         return mapper.toCommentResponse(comment, userId);
     }
 
     @Transactional
     public void savePost(UUID articleId, UUID userId) {
-        user(userId);
-        NewsArticle article = articleRepository.findByIdAndStatus(articleId, "PUBLISHED")
-                .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
+        lockUser(userId);
+        NewsArticle article = requirePublicArticle(articleId);
         if (!savedPostRepository.existsByIdUserIdAndIdNewsId(userId, articleId)) {
             savedPostRepository.save(new SavedPost(userId, article));
         }
@@ -137,7 +150,7 @@ public class NewsService {
 
     @Transactional
     public void unsavePost(UUID articleId, UUID userId) {
-        user(userId);
+        lockUser(userId);
         savedPostRepository.deleteByIdUserIdAndIdNewsId(userId, articleId);
     }
 
@@ -180,6 +193,17 @@ public class NewsService {
             );
     }
 
+    private NewsArticle requirePublicArticle(UUID articleId) {
+        return articleRepository.findByIdAndStatus(articleId, "PUBLISHED").filter(this::publicArticle)
+                .orElseThrow(() -> new HttpResponseException(404, "Published news article not found."));
+    }
+
+    private void lockUser(UUID userId) {
+        if (userId == null || userRepository.lockById(userId).isEmpty()) {
+            throw new HttpResponseException(401, "Authentication required.");
+        }
+    }
+
     private AuthUser user(UUID userId) {
         if (userId == null) throw new HttpResponseException(401, "Authentication required.");
         return userRepository.findById(userId).orElseThrow(() -> new HttpResponseException(401, "Authenticated user not found."));
@@ -195,7 +219,7 @@ public class NewsService {
     }
 
     private String sanitize(String content) {
-        return content.trim(); // React renders comments as text, never HTML.
+        return content.strip(); // React renders comments as text, never HTML.
     }
 
     private Specification<NewsArticle> publishedSpec(String category, String query) {
@@ -209,10 +233,11 @@ public class NewsService {
                 predicate = builder.and(predicate, builder.equal(root.get("automaticTopic"), topic));
             }
             if (query != null) {
-                String like = "%" + query.toLowerCase() + "%";
+                String like = "%" + query.toLowerCase(java.util.Locale.ROOT)
+                        .replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
                 Expression<String> headline = builder.lower(builder.coalesce(root.get("suggestedTitle"), root.get("originalTitle")));
                 Expression<String> body = builder.lower(builder.coalesce(root.get("aiSummary"), root.get("originalContent")));
-                predicate = builder.and(predicate, builder.or(builder.like(headline, like), builder.like(body, like)));
+                predicate = builder.and(predicate, builder.or(builder.like(headline, like, '\\'), builder.like(body, like, '\\')));
             }
             return predicate;
         };

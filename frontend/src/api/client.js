@@ -8,7 +8,7 @@ export async function readApiResponse(response) {
   }
   const body = await response.json().catch(() => null)
   if (!response.ok) {
-    throw new Error(body?.message || `Request failed with status ${response.status}`)
+    throw Object.assign(new Error(body?.message || `Request failed with status ${response.status}`), { status: response.status })
   }
   if (body === null) throw new Error('The API returned invalid data. Check VITE_API_BASE_URL and the backend route.')
   return body

@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { emphasisParts, newsImage, newsPresentation, safeNewsUrl } from '../features/news/newsPresentation'
+import { emphasisParts, initials, newsImage, newsPresentation, safeNewsUrl } from '../features/news/newsPresentation'
 import { summaryLabel } from '../features/news/newsWorkflow'
+import { ExternalLinkIcon, ShieldCheckIcon } from './icons/Lucide'
 import './NewsCardContent.css'
 
 const SENTENCES = /[^.!?]+[.!?]+["”')\]]*\s*|[^.!?]+$/g
@@ -52,6 +53,45 @@ export function ArticleImage({ article }) {
   </figure>
 }
 
+
+
+function formatDate(value) {
+  if (!value) return 'Date unavailable'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'Date unavailable'
+  return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(date)
+}
+
+export function ArticleMeta({ article }) {
+  const date = article.originalPublishedAt || article.publishedAt
+  return (
+    <header className="postMeta">
+      <span className="sourceBadge" aria-hidden="true">{initials(article.sourceName)}</span>
+      <div>
+        <strong>{article.sourceName}</strong>
+        <time dateTime={date || undefined} title={article.originalPublishedAt ? 'Original publication date' : 'Publication date on PolitikApp'}>
+          {date ? formatDate(date) : 'Publication date unavailable'}
+        </time>
+      </div>
+      {article.adminVerified && <span className="verifiedPill"><ShieldCheckIcon size={14} /> Admin reviewed</span>}
+    </header>
+  )
+}
+
+export function ArticleCategory({ category }) {
+  return category ? <span className="categoryPill"><i className="categoryDot" />{category}</span> : null
+}
+
+export function PublisherLink({ url }) {
+  const href = safeNewsUrl(url)
+  return href ? (
+    <a className="sourceLink" href={href} target="_blank" rel="noopener noreferrer">
+      <ExternalLinkIcon size={17} />
+      <span>Publisher website</span>
+    </a>
+  ) : null
+}
+
 export default function NewsCardContent({ article, expanded, onToggle }) {
   const content = newsPresentation(article, expanded)
   const isOpen = Boolean(expanded)
@@ -60,7 +100,7 @@ export default function NewsCardContent({ article, expanded, onToggle }) {
   const previewParagraphs = summaryParagraphs(content.summary)
   return <div className="postBody newsCardContent">
     <ArticleImage article={article} />
-    <span className="categoryPill"><i className="categoryDot" />{article.category}</span>
+    <ArticleCategory category={article.category} />
     <h2>{article.headline}</h2>
 
     {previewParagraphs.length > 0 && <div className={`newsCollapse newsPreviewWrap${isOpen ? '' : ' open'}`} aria-hidden={isOpen}>

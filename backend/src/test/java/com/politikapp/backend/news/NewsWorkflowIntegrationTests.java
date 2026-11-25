@@ -100,6 +100,19 @@ class NewsWorkflowIntegrationTests {
                     .contentType(MediaType.APPLICATION_JSON).content("{\"voteType\":\"UP\"}"))
                     .andExpect(status().isOk()).andExpect(jsonPath("$.upvotes").value(expected));
         }
+        for (String voteType : new String[]{"UP", "DOWN", "DOWN"}) {
+            mvc.perform(post("/api/comments/{id}/vote", commentId).header("Authorization", "Bearer " + user)
+                    .contentType(MediaType.APPLICATION_JSON).content("{\"voteType\":\"" + voteType + "\",\"active\":true}"))
+                    .andExpect(status().isOk()).andExpect(jsonPath("$.voteType").value(voteType))
+                    .andExpect(jsonPath("$.upvotes").value("UP".equals(voteType) ? 1 : 0))
+                    .andExpect(jsonPath("$.downvotes").value("DOWN".equals(voteType) ? 1 : 0));
+        }
+        mvc.perform(get("/api/news/{id}/comments", id).header("Authorization", "Bearer " + user))
+                .andExpect(status().isOk()).andExpect(jsonPath("$[0].voteType").value("DOWN"));
+        mvc.perform(post("/api/comments/{id}/vote", commentId).header("Authorization", "Bearer " + user)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"voteType\":\"DOWN\",\"active\":false}"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.downvotes").value(0))
+                .andExpect(jsonPath("$.voted").value(false));
         mvc.perform(post("/api/news/{id}/save", id).header("Authorization", "Bearer " + user))
                 .andExpect(status().isNoContent());
         mvc.perform(get("/api/me/saved-posts").header("Authorization", "Bearer " + user))

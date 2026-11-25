@@ -12,11 +12,25 @@ import java.util.regex.Pattern;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.safety.Safelist;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.NodeTraversor;
+import org.jsoup.select.NodeVisitor;
 import org.springframework.stereotype.Component;
 import com.politikapp.backend.news.dto.NewsDtos.SourceImageResponse;
 
 @Component
 public class SourceTextExtractor {
+    private static final Safelist ARTICLE_MARKUP = new Safelist()
+            .addTags("p", "div", "section", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote",
+                    "ul", "ol", "li", "dl", "dt", "dd", "strong", "b", "em", "i", "u",
+                    "br", "hr", "pre", "code", "sup", "sub", "a")
+            .addAttributes("a", "href").addProtocols("a", "href", "https", "http")
+            .addAttributes("ol", "start").addAttributes("li", "value");
+
     public Extracted extract(ApprovedSourceClient.Download download) throws IOException {
         String type = String.valueOf(download.contentType()).toLowerCase(java.util.Locale.ROOT);
         if (type.contains("pdf") || download.uri().getPath().toLowerCase(java.util.Locale.ROOT).endsWith(".pdf")) {
@@ -51,7 +65,9 @@ public class SourceTextExtractor {
         }
         SourceImageResponse image = articleImage(document, download.uri(), title);
         document.select("script,style,nav,footer,header,aside,form").remove();
-        var main = document.selectFirst("[itemprop=articleBody], .com-content-article__body, .entry-content, .post-content, .article-content, .article-body, article, main, [role=main]");
+        var articleBody = document.selectFirst("[itemprop=articleBody], .com-content-article__body, .entry-content, .post-content, .article-content, .article-body");
+        var main = articleBody == null ? document.selectFirst("article") : articleBody;
+        if (main == null) main = document.selectFirst("main, [role=main]");
         if (publishedAt == null && heading != null) {
             String bodyText = document.body().text();
             int titleAt = bodyText.indexOf(heading.text());
@@ -73,7 +89,30 @@ public class SourceTextExtractor {
             String noCredit = node.text().replaceFirst("(?i)\\s*#{0,3}\\s*\\(By [^()]{1,180};[^()]{0,120}(?:photo|image)\\)\\s*$", "").trim();
             if (!noCredit.equals(node.text())) node.text(noCredit);
         }
-        return new Extracted(title, bounded(cleanLeadingMetadata(body.text(), title)), publishedAt, author, image);
+        // Keep the historical text projection to verify structure recovered for older stored copies.
+        String legacyText = bounded(cleanLeadingMetadata(body.text(), title));
+        body.select("dl.article-info, .article-info-term, .page-header, .tags, .pagenavigation, .pagination").remove();
+        for (var node : body.select("h1,h2,h3,p")) {
+            if (node.text().equalsIgnoreCase(title)) node.remove();
+        }
+        String text = bounded(cleanLeadingMetadata(readableText(body), title));
+        // Some publishers use a leaf div for each paragraph. Preserve those existing boundaries.
+        for (var block : body.select("div, p")) {
+            if (block.text().isBlank() && block.select("img, hr").isEmpty()) {
+                block.remove();
+            } else if (block.normalName().equals("div") && !block.text().isBlank()
+                    && block.getAllElements().stream().skip(1).noneMatch(Element::isBlock)) {
+                block.tagName("p");
+            }
+        }
+        var publishingFormat = new Document.OutputSettings().prettyPrint(false);
+        var clean = Jsoup.parseBodyFragment(Jsoup.clean(body.html(), download.uri().toString(),
+                ARTICLE_MARKUP, publishingFormat));
+        clean.outputSettings(publishingFormat);
+        for (var paragraph : clean.select("p:empty")) paragraph.remove();
+        String html = clean.body().html();
+        return new Extracted(title, text, publishedAt, author, image,
+                text.isBlank() || html.length() > 180_000 ? null : html, legacyText, articleBody != null);
     }
 
     private Instant parsePublishedDate(String value) {
@@ -137,13 +176,36 @@ public class SourceTextExtractor {
         return null;
     }
 
+    private String readableText(Element body) {
+        StringBuilder text = new StringBuilder();
+        NodeTraversor.traverse(new NodeVisitor() {
+            @Override public void head(Node node, int depth) {
+                if (node instanceof TextNode value) {
+                    text.append(value.getWholeText().replaceAll("\\s+", " "));
+                } else if (node instanceof Element element) {
+                    if ("br".equals(element.normalName())) text.append('\n');
+                    else if (element.isBlock()) text.append("\n\n");
+                }
+            }
+
+            @Override public void tail(Node node, int depth) {
+                if (node instanceof Element element && element.isBlock() && !"br".equals(element.normalName())) {
+                    text.append("\n\n");
+                }
+            }
+        }, body);
+        return text.toString();
+    }
+
     private String bounded(String text) {
-        String cleaned = text == null ? "" : text.replaceAll("\\s+", " ").trim();
+        String cleaned = text == null ? "" : text.replaceAll("\\R", "\n").replaceAll("[\\t\\x0B\\f ]+", " ")
+                .replaceAll(" *\\n *", "\n").replaceAll("\\n{3,}", "\n\n").strip();
         return cleaned.substring(0, Math.min(cleaned.length(), 60000));
     }
 
-    public record Extracted(String title, String text, Instant publishedAt, String author, SourceImageResponse image) {
-        public Extracted(String title, String text, Instant publishedAt) { this(title, text, publishedAt, null, null); }
-        public Extracted(String title, String text) { this(title, text, null, null, null); }
+    public record Extracted(String title, String text, Instant publishedAt, String author, SourceImageResponse image,
+                            String originalHtml, String legacyText, boolean scopedBody) {
+        public Extracted(String title, String text, Instant publishedAt) { this(title, text, publishedAt, null, null, null, null, false); }
+        public Extracted(String title, String text) { this(title, text, null, null, null, null, null, false); }
     }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangleIcon, CircleCheckIcon } from '../icons/Lucide';
+import { FileTextIcon, CircleCheckIcon } from '../icons/Lucide';
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0));
@@ -14,7 +14,7 @@ export default function AuditSummaryCard({ coaDiscrepancies = 0, flaggedAmount =
       style={{
         background: 'var(--bg-surface)',
         border: '1px solid var(--line-soft)',
-        borderLeft: `4px solid ${hasDiscrepancies ? 'var(--ph-gold)' : 'var(--success)'}`,
+        borderLeft: `4px solid ${hasDiscrepancies ? 'var(--audit-accent)' : 'var(--success)'}`,
         borderRadius: 'var(--radius-md)',
         padding: '20px',
         display: 'flex',
@@ -29,8 +29,8 @@ export default function AuditSummaryCard({ coaDiscrepancies = 0, flaggedAmount =
           Commission on Audit (COA) Summary
         </h3>
         {hasDiscrepancies && (
-          <span style={{ color: 'var(--ph-gold)', display: 'inline-flex', alignItems: 'center' }}>
-            <AlertTriangleIcon size={18} />
+          <span style={{ color: 'var(--audit-accent)', display: 'inline-flex', alignItems: 'center' }}>
+            <FileTextIcon size={18} />
           </span>
         )}
       </div>
@@ -38,13 +38,13 @@ export default function AuditSummaryCard({ coaDiscrepancies = 0, flaggedAmount =
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div>
           <span className="ty-label" style={{ display: 'block', color: 'var(--text-muted)' }}>Discrepancies Logged</span>
-          <strong style={{ fontSize: '20px', fontWeight: '800', color: hasDiscrepancies ? 'var(--ph-gold)' : 'var(--text-primary)' }}>
+          <strong style={{ fontSize: '20px', fontWeight: '800', color: hasDiscrepancies ? 'var(--audit-accent)' : 'var(--text-primary)' }}>
             {coaDiscrepancies}
           </strong>
         </div>
         <div>
           <span className="ty-label" style={{ display: 'block', color: 'var(--text-muted)' }}>Flagged Amount</span>
-          <strong style={{ fontSize: '20px', fontWeight: '800', color: hasDiscrepancies ? 'var(--danger)' : 'var(--text-primary)' }}>
+          <strong style={{ fontSize: '20px', fontWeight: '800', color: hasDiscrepancies ? 'var(--text-primary)' : 'var(--text-primary)' }}>
             {formatCurrency(flaggedAmount)}
           </strong>
         </div>
@@ -53,17 +53,17 @@ export default function AuditSummaryCard({ coaDiscrepancies = 0, flaggedAmount =
       {hasDiscrepancies ? (
         <div
           style={{
-            background: '#fef9e8',
-            border: '1px solid #f0c040',
+            background: 'var(--audit-bg)',
+            border: '1px solid var(--audit-border)',
             borderRadius: 'var(--radius-sm)',
             padding: '10px 12px',
             fontSize: '12px',
-            color: '#92660a',
+            color: 'var(--text-primary)',
             lineHeight: '1.5',
             marginTop: '4px',
           }}
         >
-          <strong>Warning:</strong> Commission on Audit has flagged {coaDiscrepancies} potential discrepancies. Prioritizing transparency review is highly recommended.
+          The records contain {coaDiscrepancies} audit observations. Read the cited reports for the audit periods and agency responses.
         </div>
       ) : (
         <div

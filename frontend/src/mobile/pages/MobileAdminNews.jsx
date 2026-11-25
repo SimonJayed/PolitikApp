@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useEffect, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { ArticleImage, SummaryText } from '../../components/NewsCardContent'
@@ -114,7 +115,7 @@ export function MobileAdminNews({ token, user }) {
       {/* Article Review Cards */}
       {loading ? (
         <div className="mobileCard" style={{ textAlign: 'center', padding: '32px 16px' }}>
-          <p style={{ margin: 0, color: '#64748B' }}>Loading review queue...</p>
+          <LoadingSkeleton label="Loading review queue" />
         </div>
       ) : articles.length === 0 ? (
         <div className="mobileCard" style={{ textAlign: 'center', padding: '32px 16px' }}>

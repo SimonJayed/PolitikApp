@@ -1,0 +1,50 @@
+.actionToastRegion {
+  position: fixed;
+  z-index: 1000;
+  inset-inline-end: max(1rem, env(safe-area-inset-right));
+  inset-block-end: max(1rem, env(safe-area-inset-bottom));
+  width: min(23rem, calc(100% - 2rem));
+  pointer-events: none;
+}
+
+.actionToast {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: .65rem;
+  padding: .5rem .5rem .5rem .85rem;
+  border: 1px solid var(--line-soft);
+  border-inline-start: 3px solid var(--ph-blue);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  color: var(--ph-blue);
+  box-shadow: var(--shadow-md);
+  pointer-events: auto;
+}
+
+.actionToast[data-error] { border-inline-start-color: var(--danger); }
+.actionToast[data-error] > svg { color: var(--danger); }
+.actionToast p {
+  margin: 0;
+  color: var(--text-primary);
+  font: 600 .875rem/1.45 var(--sans);
+  overflow-wrap: anywhere;
+}
+
+.actionToast .actionToastClose {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: .5rem;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+}
+
+.actionToast .actionToastClose:hover { background: var(--accent-soft); color: var(--ph-blue); }
+.actionToast .actionToastClose:focus-visible { outline: 2px solid var(--ph-blue); outline-offset: 2px; }

@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useEffect, useMemo, useState } from 'react'
 import { aiActionNotice, canProcessAi, canRejectArticle, planBulkNewsAction, runConcurrentNewsActions } from '../../features/news/newsWorkflow'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
@@ -284,7 +285,7 @@ export default function AdminNews({ token, user, politicians = [] }) {
         </div>
         <button className={`adminBtn adminBtnGold${retrieving ? ' isBusy' : ''}`} disabled={busy || retrieving} type="button" onClick={fetchLatest}>
           <span className={retrieving ? 'adminSpin' : undefined}><RefreshCwIcon size={17} /></span>
-          <span>{retrieving ? 'Fetching…' : 'Fetch Latest News'}</span>
+          <span>{retrieving ? <LoadingSkeleton inline label="Fetching" /> : 'Fetch Latest News'}</span>
         </button>
       </header>
 
@@ -339,12 +340,7 @@ export default function AdminNews({ token, user, politicians = [] }) {
         <p>Filter by status, then select articles on this page. Approve requires Pending Review and a summary; incomplete articles cannot be approved or published.</p>
       </div>
 
-      {(busy || retrieving) && <div className="adminNewsLoading" role="status" aria-live="polite">
-        <span className="adminLoadingSpinner" aria-hidden="true" />
-        <span>{bulkProgress ? `${bulkProgress.label} articles: ${bulkProgress.processed} of ${bulkProgress.total}`
-          : retrieving ? 'Fetching government articles...'
-            : actionState.status === 'loading' ? actionState.message : 'Loading news...'}</span>
-      </div>}
+      {(actionState.status === "loading" || retrieving) && <LoadingSkeleton label={actionState.message || "Fetching government articles"} rows={2} />}
 
       {state.status === 'error' && state.message && <div className={`adminNewsNotice ${state.status}`}>{state.message}</div>}
       {actionState.message && actionState.status !== 'loading' && <div className={`adminNewsNotice ${actionState.status}`}>{actionState.message}</div>}
@@ -372,7 +368,7 @@ export default function AdminNews({ token, user, politicians = [] }) {
               <span>{selectedIds.length} selected</span>
               {bulkActions.map(action => <button key={action.path} className={`adminBtn adminBtnSm adminBtn${action.tone}`}
                 disabled={busy || !bulkPlans[action.path].eligible.length} type="button" onClick={() => runBulkAction(action.path)}>
-                {bulkProgress?.path === action.path && <span className="adminLoadingSpinner" aria-hidden="true" />}
+                {bulkProgress?.path === action.path && <LoadingSkeleton inline label="Updating news" />}
                 {action.label} ({bulkPlans[action.path].eligible.length})
               </button>)}
               <span className="adminBulkHint">Counts show eligible selected articles.</span>

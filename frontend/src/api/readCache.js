@@ -12,6 +12,11 @@ export function createReadCache({ capacity = 40, now = Date.now } = {}) {
   }
   return {
     peek, set,
+    updateMatching(predicate, update) {
+      for (const [key, entry] of entries) {
+        if (predicate(key)) entries.set(key, { ...entry, data: update(key, entry.data) })
+      }
+    },
     retain(keys) { for (const key of entries.keys()) if (!keys.includes(key)) entries.delete(key) },
     load(key, loader, { maxAge = 60000, force = false } = {}) {
       if (pending.has(key)) return pending.get(key)

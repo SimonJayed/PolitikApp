@@ -1,11 +1,12 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
+import { profilePath } from '../../config/appRoutes'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { API_BASE_URL, readApiResponse } from '../../api/client'
-import { fetchReadWithRetry } from '../../api/readRequest'
-import { AlertTriangleIcon, SearchIcon } from '../../components/icons/Lucide'
+import { FileTextIcon, SearchIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { membershipSummary, ordinal } from '../../features/congress/congressHistory'
-import { chamberForPosition, congressOptions, directoryJurisdiction, matchesCongress, matchesPosition, normalizePosition, sortDirectory } from '../../features/congress/politicianDirectory'
+import { chamberForPosition, congressOptions, directoryJurisdiction, matchesCongress, matchesPosition, directoryPositions, directoryJurisdictions, matchesDirectoryName, sortDirectory } from '../../features/congress/politicianDirectory'
+import { useDirectoryFilters } from '../../features/congress/useDirectoryFilters'
 import { useDirectory } from '../../features/congress/useDirectory'
 import { formatDisplayName } from '../../features/congress/displayName'
 import { initialsFor, PaginationMini, StatusLine } from '../pageHelpers'
@@ -16,7 +17,6 @@ import WgiLeaderboard from '../../components/WgiLeaderboard'
 
 const PAGE_SIZE = 9
 const INACTIVE_STATUSES = ['INACTIVE', 'SUSPENDED', 'ARCHIVED']
-const JURISDICTION_LABELS = { NATIONAL: 'National', CEBU_CITY: 'Cebu City' }
 
 // Active = status ACTIVE; inactive = INACTIVE / SUSPENDED / ARCHIVED.
 // With no usable status, fall back to the recorded term (same rule as the profile page).
@@ -69,72 +69,34 @@ export default function PoliticiansLoaderPanel({
   onPoliticianCreate,
   token,
 }) {
-  const [query, setQuery] = useState('')
-  const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
-  const [positionFilter, setPositionFilter] = useState('ALL')
-  const [congressFilter, setCongressFilter] = useState('ALL')
-  const [activeOnly, setActiveOnly] = useState(false)
+  const { query, setQuery, jurisdictionFilter, setJurisdictionFilter, positionFilter, setPositionFilter,
+    congressFilter, setCongressFilter, activeOnly, setActiveOnly, resetFilters } = useDirectoryFilters()
   const [directoryRefresh, setDirectoryRefresh] = useState(0)
   const directory = useDirectory(directoryRefresh)
-  const [searchResults, setSearchResults] = useState(null)
-  const [searchState, setSearchState] = useState({ status: 'idle', message: '' })
   const [page, setPage] = useState(1)
   const [creating, setCreating] = useState(false)
   const resultsRef = useRef(null)
 
-  useEffect(() => {
-    const trimmedQuery = query.trim()
-    if (!trimmedQuery) {
-      setSearchResults(null)
-      setSearchState({ status: 'idle', message: '' })
-      return undefined
-    }
-
-    const controller = new AbortController()
-    setSearchState({ status: 'loading', message: '' })
-    const params = new URLSearchParams({ name: trimmedQuery })
-    fetchReadWithRetry(`${API_BASE_URL}/api/politicians/search?${params}`, { signal: controller.signal })
-      .then(readApiResponse)
-      .then(results => {
-        if (!controller.signal.aborted) {
-          setSearchResults(results)
-          setSearchState({ status: 'ready', message: '' })
-        }
-      })
-      .catch(error => {
-        if (!controller.signal.aborted) {
-          setSearchResults([])
-          setSearchState({ status: 'error', message: error.message })
-        }
-      })
-    return () => controller.abort()
-  }, [query])
-
   const membershipIndex = useMemo(() => new Map(directory.people.map(person => [person.politicianId, person])), [directory.people])
-  const displayedPoliticians = query.trim() ? (searchResults || []) : politicians
   const defaultPoliticians = useMemo(() => sortDirectory(
     politicians.filter(person => person.status !== 'ARCHIVED').map(person => ({ ...person, jurisdiction: directoryJurisdiction(person, membershipIndex) })),
     membershipIndex, directory.currentCongress, directory.asOfDate,
   ), [politicians, membershipIndex, directory.currentCongress, directory.asOfDate])
   const congresses = useMemo(() => congressOptions(politicians, positionFilter, membershipIndex), [politicians, positionFilter, membershipIndex])
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase()
     const today = new Date().toISOString().slice(0, 10)
-    const matches = displayedPoliticians.filter((politician) =>
+    const matches = politicians.filter((politician) =>
       politician.status !== 'ARCHIVED' && matchesJurisdiction(directoryJurisdiction(politician, membershipIndex), jurisdictionFilter)
       && (!activeOnly || isActiveProfile(politician, today))
       && matchesPosition(politician, positionFilter, membershipIndex)
       && matchesCongress(politician, positionFilter, congressFilter, membershipIndex)
-      && (!q || [politician.fullName, politician.position, membershipSummary(membershipIndex.get(politician.politicianId)?.memberships).chamber]
-        .some(value => String(value || '').toLowerCase().includes(q))))
+      && matchesDirectoryName(politician, query, membershipIndex))
     return sortDirectory(matches, membershipIndex, directory.currentCongress, directory.asOfDate)
-  }, [jurisdictionFilter, displayedPoliticians, positionFilter, congressFilter, activeOnly, query, membershipIndex, directory.currentCongress, directory.asOfDate])
+  }, [jurisdictionFilter, politicians, positionFilter, congressFilter, activeOnly, query, membershipIndex, directory.currentCongress, directory.asOfDate])
 
-  const positions = useMemo(
-    () => Array.from(new Set(['SENATOR', 'HOUSE_REPRESENTATIVE', ...politicians.filter(person => person.status !== 'ARCHIVED')
-      .map(person => normalizePosition(person.position)).filter(Boolean)])).sort((left, right) => left.localeCompare(right)),
-    [politicians],
-  )
+  const positions = useMemo(() => directoryPositions(politicians, membershipIndex), [politicians, membershipIndex])
+  const jurisdictions = useMemo(() => directoryJurisdictions(politicians, positionFilter, membershipIndex),
+    [politicians, positionFilter, membershipIndex])
 
   useEffect(() => setPage(1), [query, jurisdictionFilter, positionFilter, congressFilter, activeOnly])
   useEffect(() => {
@@ -145,8 +107,8 @@ export default function PoliticiansLoaderPanel({
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
-  const isLoading = politiciansState.status === 'loading' || directory.status === 'loading' || searchState.status === 'loading'
-  const hasError = politiciansState.status === 'error' || directory.status === 'error' || searchState.status === 'error'
+  const isLoading = ['idle', 'loading'].includes(politiciansState.status) || directory.status === 'loading'
+  const hasError = politiciansState.status === 'error' || directory.status === 'error'
   const filtersActive = query.trim() !== '' || jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL' || congressFilter !== 'ALL' || activeOnly
   const isAdmin = dbUser?.role === 'ADMIN'
   const showSkeleton = isLoading && filtered.length === 0
@@ -160,9 +122,9 @@ export default function PoliticiansLoaderPanel({
   // Removable chips so people can see, and undo, each filter that is narrowing the list.
   const activeChips = []
   if (query.trim()) activeChips.push({ key: 'query', label: `Search: “${query.trim()}”`, clear: () => setQuery('') })
-  if (positionFilter !== 'ALL') activeChips.push({ key: 'position', label: positionLabel(positionFilter), clear: () => { setPositionFilter('ALL'); setCongressFilter('ALL') } })
+  if (positionFilter !== 'ALL') activeChips.push({ key: 'position', label: positionLabel(positionFilter), clear: () => setPositionFilter('ALL', jurisdictionFilter) })
   if (congressFilter !== 'ALL') activeChips.push({ key: 'congress', label: `${ordinal(congressFilter)} Congress`, clear: () => setCongressFilter('ALL') })
-  if (jurisdictionFilter !== 'ALL') activeChips.push({ key: 'jurisdiction', label: JURISDICTION_LABELS[jurisdictionFilter] || jurisdictionFilter, clear: () => setJurisdictionFilter('ALL') })
+  if (jurisdictionFilter !== 'ALL') activeChips.push({ key: 'jurisdiction', label: formatJurisdiction(jurisdictionFilter), clear: () => setJurisdictionFilter('ALL') })
   if (activeOnly) activeChips.push({ key: 'active', label: 'Active only', clear: () => setActiveOnly(false) })
 
   const rangeStart = filtered.length === 0 ? 0 : (safePage - 1) * PAGE_SIZE + 1
@@ -190,14 +152,15 @@ export default function PoliticiansLoaderPanel({
         </div>
 
         <div className={`polFilters${chamberForPosition(positionFilter) ? ' withCongress' : ''}`} role="search" aria-label="Politician filters">
-          <label className="polField polSearch">
-            <span>Search</span>
+          <div className="polField polSearch">
+            <label htmlFor="politician-search">Search</label>
             <div>
               <SearchIcon size={16} />
               <input
+                id="politician-search"
                 name="dashboardSearch"
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search by name or position"
+                placeholder="Search politicians by name…"
                 type="search"
                 autoComplete="off"
                 value={query}
@@ -206,11 +169,15 @@ export default function PoliticiansLoaderPanel({
                 <button className="polClear" type="button" aria-label="Clear search" onClick={() => setQuery('')}>×</button>
               )}
             </div>
-          </label>
+          </div>
 
           <label className="polField">
             <span>Position</span>
-            <select name="dashboardPosition" onChange={(event) => { setPositionFilter(event.target.value); setCongressFilter('ALL') }} value={positionFilter}>
+            <select name="dashboardPosition" onChange={event => {
+              const position = event.target.value
+              const nextJurisdictions = directoryJurisdictions(politicians, position, membershipIndex)
+              setPositionFilter(position, nextJurisdictions.includes(jurisdictionFilter) ? jurisdictionFilter : 'ALL')
+            }} value={positionFilter}>
               <option value="ALL">All Positions</option>
               {positions.map((position) => (
                 <option key={position} value={position}>{positionLabel(position)}</option>
@@ -229,9 +196,8 @@ export default function PoliticiansLoaderPanel({
           <label className="polField">
             <span>Jurisdiction</span>
             <select name="dashboardJurisdiction" onChange={(event) => setJurisdictionFilter(event.target.value)} value={jurisdictionFilter}>
-              <option value="ALL">All</option>
-              <option value="NATIONAL">National</option>
-              <option value="CEBU_CITY">Cebu City</option>
+              <option value="ALL">All Jurisdictions</option>
+              {jurisdictions.map(value => <option key={value} value={value}>{formatJurisdiction(value)}</option>)}
             </select>
           </label>
 
@@ -248,7 +214,7 @@ export default function PoliticiansLoaderPanel({
         </div>
       </header>
 
-      {!query.trim() && <WgiLeaderboard defaultPoliticians={defaultPoliticians} onSelectPolitician={onViewProfile} />}
+      {!filtersActive && <WgiLeaderboard defaultPoliticians={defaultPoliticians} onSelectPolitician={onViewProfile} />}
       {creating && isAdmin && <PoliticianEditor token={token} onClose={() => setCreating(false)} onSaved={onPoliticianCreate} />}
 
       {(politiciansState.status === 'error' || Boolean(directory.error)) && <div className="statusLine error" role="alert">
@@ -256,14 +222,11 @@ export default function PoliticiansLoaderPanel({
           : `Congress membership filters and ordering could not be loaded. ${directory.error}`}</p>
         <button className="polReset" type="button" disabled={isLoading} onClick={() => { onRetry?.(); setDirectoryRefresh(value => value + 1) }}>Retry</button>
       </div>}
-      {searchState.status === 'error' && <div className="statusLine error" role="alert">
-        <p>Politician search could not be completed. {searchState.message}</p>
-      </div>}
       <StatusLine state={state} />
 
       <div className="polResultsBar" ref={resultsRef}>
         <p aria-live="polite">
-          {isLoading && filtered.length === 0 ? 'Loading politicians…' : <>
+          {isLoading && filtered.length === 0 ? <LoadingSkeleton inline label="Loading politicians" /> : <>
             Showing <strong>{rangeStart}–{rangeEnd}</strong> of <strong>{filtered.length}</strong>
           </>}
         </p>
@@ -277,6 +240,7 @@ export default function PoliticiansLoaderPanel({
                 </button>
               </li>
             ))}
+            {activeChips.some(chip => chip.key !== "query") && <li><button className="polReset" type="button" onClick={resetFilters}>Reset filters</button></li>}
           </ul>
         )}
       </div>
@@ -298,11 +262,15 @@ export default function PoliticiansLoaderPanel({
           const displayName = formatDisplayName(politician.fullName)
           const membership = membershipSummary(membershipIndex.get(politician.politicianId)?.memberships)
           return (
-            <button
+            <a
               className={`polCard${isNational ? ' national' : ''}`}
               key={politician.politicianId}
-              onClick={() => onViewProfile(politician.politicianId)}
-              type="button"
+              href={politician.politicianId ? profilePath(politician.politicianId) : undefined}
+              onClick={event => {
+                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                event.preventDefault()
+                onViewProfile(politician.politicianId)
+              }}
             >
               <span className="polCardBanner" aria-hidden="true" />
               <CardAvatar name={politician.fullName} src={politician.profileImageUrl} />
@@ -316,13 +284,13 @@ export default function PoliticiansLoaderPanel({
                 </span>
                 {politician.coaAuditDiscrepancies > 0 && (
                   <span className="polCoaChip">
-                    <AlertTriangleIcon size={14} /> COA Findings ({politician.coaAuditDiscrepancies})
+                    <FileTextIcon size={14} /> COA Findings ({politician.coaAuditDiscrepancies})
                   </span>
                 )}
               </span>
 
-              <span className="polCardFooter">View profile <i aria-hidden="true">›</i></span>
-            </button>
+              <span className="polCardFooter">{politician.politicianId ? 'View profile' : 'Profile unavailable'} <i aria-hidden="true">›</i></span>
+            </a>
           )
         })}
       </section>

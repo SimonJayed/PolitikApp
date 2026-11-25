@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useEffect, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { useAuth } from '../../auth/AuthContext'
@@ -81,7 +82,7 @@ export default function Account({ token, user }) {
           </div>
           <div className="settingsFormFooter">
             <StatusLine state={state} />
-            <button type="submit" disabled={state.status === 'loading'}>{state.status === 'loading' ? 'Saving...' : 'Save Changes'}</button>
+            <button type="submit" disabled={state.status === 'loading'}>{state.status === 'loading' ? <LoadingSkeleton inline label="Saving" /> : 'Save Changes'}</button>
           </div>
         </form>
 

@@ -1,10 +1,11 @@
+import { LoadingSkeleton } from "../Skeletons"
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { congressRequest, publicCongressRecords, sourceHref } from '../../api/congress'
 import { PaginationMini } from '../../pages/pageHelpers'
 import { groupBillsByCongress, ordinal, summarizeMemberships } from '../../features/congress/congressHistory'
 import { authoredBills, billTitle, chronologicalHistory, recordDate, reportedStatuses } from '../../features/congress/legislativeRecords'
 
-const PAGE_LIMIT = 5
+const PAGE_LIMIT = 10
 
 function ExternalLink({ href, children }) {
   const safe = sourceHref(href)
@@ -29,7 +30,8 @@ function StatusBlock({ value }) {
 
 export function LegislativeCard({ record }) {
   const history = chronologicalHistory(record.history)
-  const available = record.originalSourceStatus === 'AVAILABLE' && sourceHref(record.sourceUrl)
+  const citation = sourceHref(record.sourceUrl)
+  const available = citation && record.originalSourceStatus !== 'UNAVAILABLE'
   return <article className="csRecord">
     <h3 className="csTitle">{billTitle(record)}</h3>
     <p className="csAuthorship">Authorship: <span>Source-reported author</span></p>
@@ -43,8 +45,10 @@ export function LegislativeCard({ record }) {
     </details> : <p className="csMeta">Legislative history unavailable</p>}
     <p className="csReview">Source-reported information; not independently verified.{record.reviewState === 'ADMIN_REVIEWED_SOURCE' ? ' An administrator reviewed this dataset revision for display.' : ''}</p>
     <div className="csLinks">{available
-      ? <ExternalLink href={record.sourceUrl}>Original Source</ExternalLink>
-      : <span className="csMeta">{record.originalSourceStatus === 'UNCHECKED' ? 'Checking original source…' : 'Original source unavailable'}</span>}
+      ? <ExternalLink href={citation}>{record.originalSourceStatus === 'AVAILABLE' ? 'Original Source' : 'Open official citation'}</ExternalLink>
+      : <span className="csMeta">Original source unavailable</span>}
+      {available && record.originalSourceStatus === 'UNCONFIRMED' && <span className="csMeta">Publisher availability could not be confirmed.</span>}
+      {available && record.originalSourceStatus === 'UNCHECKED' && <LoadingSkeleton inline label="Checking publisher availability" />}
     </div>
   </article>
 }
@@ -60,6 +64,7 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
   const [busy, setBusy] = useState(false)
   const [loading, setLoading] = useState(true)
   const version = useRef(0)
+  const headingRef = useRef(null)
 
   const load = useCallback(async (offset = 0, refresh = false) => {
     const requestVersion = ++version.current
@@ -115,9 +120,16 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
   const pendingTotalPages = Math.max(1, Math.ceil(pending.length / PAGE_LIMIT))
   const pendingSafePage = Math.min(pendingPage, pendingTotalPages)
   const pendingStart = (pendingSafePage - 1) * PAGE_LIMIT
+  const currentPage = Math.floor(page.offset / PAGE_LIMIT) + 1
+
+  function goToPage(next) {
+    headingRef.current?.focus()
+    load((next - 1) * PAGE_LIMIT)
+  }
+
   return <section className="prCard csSection" aria-label="Legislative Records">
     <div className="prCardHead"><div>
-      <h2 className="prCardTitle">Legislative Records</h2>
+      <h2 className="prCardTitle" tabIndex={-1} ref={headingRef}>Legislative Records</h2>
       <p className="prCardHint">Authored bills reported by the BetterGovPH Open Congress dataset.</p>
     </div><span className="prCount">{page.total} authored bills</span></div>
     <p className="csDisclaimer">Source-reported information; not independently verified. Authorship does not mean a bill became law. Dates and statuses may be incomplete.</p>
@@ -132,17 +144,21 @@ export default function CongressSourceSection({ politicianId, isAdmin, token }) 
     </label>
     {error && <div role="alert"><p className="csAlert">{error}</p><button className="prBtn prBtnOutline" type="button" onClick={() => load(0, true)}>Retry legislative records</button></div>}
     {sourceError && <p className="csMeta" role="status">{sourceError}</p>}
-    {loading ? <p role="status">Loading authored bills…</p> : <>
+    {loading ? <LoadingSkeleton label="Loading authored bills" /> : <>
       {!records.length && !error && <p className="csEmpty">No source-reported authored bills are available for this selection.</p>}
       {groupBillsByCongress(records).map(([label, rows]) => <section className="csCongressGroup" key={label} aria-label={label}>
         <h3 className="csSubTitle">{label}</h3>
         <ul className="csList">{rows.map(record => <li key={record.key}><LegislativeCard record={record} /></li>)}</ul>
       </section>)}
-      {page.total > 0 && <nav className="prPager" aria-label="Authored bill pagination">
-        <p>Showing <strong>{records.length ? page.offset + 1 : 0}–{Math.min(page.offset + records.length, page.total)}</strong> of <strong>{page.total}</strong> authored bills</p>
-        <PaginationMini page={Math.floor(page.offset / PAGE_LIMIT) + 1} totalPages={totalPages} onChange={next => load((next - 1) * PAGE_LIMIT)} />
-      </nav>}
-      {records.some(row => ['UNAVAILABLE', 'UNCONFIRMED'].includes(row.originalSourceStatus)) && <p className="csMeta">Original source unavailable means the stored link is invalid, missing, or could not be reached by the latest server check. This does not establish that the document no longer exists. No replacement URL is inferred.</p>}
+      {page.total > 0 && <div className="prPager" role="group" aria-label="Authored bill pagination">
+        <p>Page {currentPage} of {totalPages}. Showing <strong>{records.length ? page.offset + 1 : 0}–{Math.min(page.offset + records.length, page.total)}</strong> of <strong>{page.total}</strong> authored bills</p>
+        {totalPages > 1 && <label className="prField"><span>Go to page</span>
+          <select value={currentPage} onChange={event => goToPage(Number(event.target.value))}>
+            {Array.from({ length: totalPages }, (_, index) => index + 1).map(number => <option key={number} value={number}>{number}</option>)}
+          </select>
+        </label>}
+        <PaginationMini page={currentPage} totalPages={totalPages} onChange={goToPage} />
+      </div>}
     </>}
 
     {isAdmin && <section className="csPending" aria-label="New Congress updates awaiting review">

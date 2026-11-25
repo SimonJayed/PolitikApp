@@ -1,3 +1,13 @@
+// Category colors come from the App.css flag palette (--ph-*), so they follow the theme.
+export const categoryColors = {
+  Legislation: 'var(--ph-blue)',
+  'Government Projects': 'var(--ph-gold)',
+  'Public Spending': 'var(--ph-red)',
+  'Audit Reports': 'var(--ph-gold-light)',
+  'Government Announcements': 'var(--ph-blue-light)',
+}
+export const colorFor = (category) => categoryColors[category] || 'var(--ph-blue-light)'
+
 const MONTH = '(?:January|February|March|April|May|June|July|August|September|October|November|December)'
 const BYLINE = new RegExp(`^(?:Author|Written by|Published by|Posted by)\\s*:\\s*[^|\\n]{1,120}\\s*\\|\\s*(?:\\d{1,2}\\s+${MONTH}\\s+\\d{4}|${MONTH}\\s+\\d{1,2},?\\s+\\d{4})\\s*[|:–—-]?\\s*`, 'i')
 const boilerplate = /^(?:Retrieved from an approved government source\.?|Needs administrator verification before publication\.?|Summary requires admin review.*)$/i
@@ -97,4 +107,8 @@ export function emphasisParts(value) {
   }
   if (offset < text.length) parts.push({ text: text.slice(offset), bold: false })
   return parts.length ? parts : [{ text, bold: false }]
+}
+
+export function initials(name = '') {
+  return String(name).split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'PH'
 }

@@ -37,7 +37,7 @@ test('history handles JSON strings, nested actions, text, and dated maps without
   assert.deepEqual(chronologicalHistory([{}, null, { date: '' }]), [])
 })
 
-test('bill display separates title/authorship, retains dates/status/history and only confirmed original links', () => {
+test('bill display separates title/authorship, retains dates/status/history and original citation availability', () => {
   assert.equal(billTitle(bill), 'SB 2145: Acquisition of Right-of-Way')
   assert.equal(bill.title, 'ACQUISITION OF RIGHT-OF-WAY')
   const html = renderToStaticMarkup(createElement(LegislativeCard, { record: bill }))
@@ -46,11 +46,12 @@ test('bill display separates title/authorship, retains dates/status/history and 
   assert.ok(html.includes('target="_blank"') && html.includes('rel="noopener noreferrer"'))
   assert.ok(!html.includes('github.com') && !html.includes('Dataset record'))
   assert.equal((html.match(/<li>/g) || []).length, 2)
-  for (const status of ['UNAVAILABLE', 'UNCONFIRMED']) {
-    const unavailable = renderToStaticMarkup(createElement(LegislativeCard, { record: { ...bill, history: [{}], originalSourceStatus: status } }))
-    assert.ok(unavailable.includes('Original source unavailable') && unavailable.includes('Legislative history unavailable'))
-    assert.ok(!unavailable.includes('href=') && !unavailable.includes('<li>'))
-  }
+  const unavailable = renderToStaticMarkup(createElement(LegislativeCard, { record: { ...bill, history: [{}], originalSourceStatus: 'UNAVAILABLE' } }))
+  assert.ok(unavailable.includes('Original source unavailable') && unavailable.includes('Legislative history unavailable'))
+  assert.ok(!unavailable.includes('href=') && !unavailable.includes('<li>'))
+  const unconfirmed = renderToStaticMarkup(createElement(LegislativeCard, { record: { ...bill, originalSourceStatus: 'UNCONFIRMED' } }))
+  assert.ok(unconfirmed.includes('Publisher availability could not be confirmed') && unconfirmed.includes('Open official citation'))
+  assert.ok(unconfirmed.includes('congress=16&amp;q=SBN-2145'))
 })
 
 test('public accountability lists exclude legislation and hidden/source-reported records while retaining visible accomplishments', () => {

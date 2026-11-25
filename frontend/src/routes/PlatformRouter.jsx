@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../components/Skeletons"
 import { lazy, Suspense } from 'react'
 import { useIsMobile } from '../mobile/hooks/useIsMobile'
 
@@ -21,7 +22,9 @@ function PlatformLoadingFallback() {
       role="status"
       aria-label="Loading application layout"
     >
-      <span>Loading PolitikApp...</span>
+      <div style={{ width: "min(42rem, calc(100% - 32px))" }}>
+        <LoadingSkeleton label="Loading PolitikApp" rows={4} />
+      </div>
     </div>
   )
 }

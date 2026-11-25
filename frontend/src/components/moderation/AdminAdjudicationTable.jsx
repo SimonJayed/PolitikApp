@@ -1,3 +1,5 @@
+import BaseModal from '../BaseModal'
+import { LoadingSkeleton } from "../Skeletons"
 import { useState, useEffect } from 'react'
 import { AlertTriangleIcon, CircleCheckIcon, CircleXIcon, FileTextIcon, FolderIcon, RefreshCwIcon, ScaleIcon, SearchIcon } from '../icons/Lucide'
 import { PageSkeleton } from '../../pages/pageHelpers'
@@ -290,7 +292,7 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
               cursor: 'pointer',
             }}
           >
-            {loading ? 'Refreshing...' : <><RefreshCwIcon size={14} /> Refresh Queue</>}
+            {loading ? <LoadingSkeleton inline label="Refreshing" /> : <><RefreshCwIcon size={14} /> Refresh Queue</>}
           </button>
         </div>
       </div>
@@ -680,35 +682,8 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
 
       {/* Adjudication Ruling Dialog Modal */}
       {adjudicationTarget && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.6)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '16px',
-          }}
-          onClick={() => !isSubmittingAdjudication && setAdjudicationTarget(null)}
-        >
-          <div
-            style={{
-              background: '#ffffff',
-              borderRadius: '12px',
-              maxWidth: '520px',
-              width: '100%',
-              padding: '24px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              border: '1px solid #e2e8f0',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ margin: '0 0 6px 0', fontSize: '17px', fontWeight: '700', color: '#0f172a' }}>
-              Confirm Administrative Ruling
-            </h3>
+        <BaseModal isOpen title="Confirm administrative ruling" modalClassName="appealModalCompact"
+          isDismissDisabled={isSubmittingAdjudication} onClose={() => setAdjudicationTarget(null)}>
             <p style={{ margin: '0 0 16px 0', fontSize: '13px', color: '#64748b' }}>
               Transitioning <strong>{adjudicationTarget.politicianName}</strong> item to{' '}
               <span
@@ -813,66 +788,18 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
                     cursor: isSubmittingAdjudication ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {isSubmittingAdjudication ? 'Processing Ruling...' : 'Execute Adjudication Ruling'}
+                  {isSubmittingAdjudication ? <LoadingSkeleton inline label="Processing Ruling" /> : 'Execute Adjudication Ruling'}
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </BaseModal>
       )}
 
       {/* Direct Add Verified Metric Modal */}
       {isCurateModalOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            backgroundColor: 'rgba(15, 23, 42, 0.65)',
-            backdropFilter: 'blur(4px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10000,
-            padding: '16px',
-          }}
-          onClick={() => !isCurating && setIsCurateModalOpen(false)}
-        >
-          <div
-            style={{
-              background: '#ffffff',
-              borderRadius: '14px',
-              maxWidth: '560px',
-              width: '100%',
-              padding: '24px',
-              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-              border: '1px solid #e2e8f0',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: '17px', fontWeight: '700', color: '#0f172a' }}>
-                  Direct Admin Metric Curation
-                </h3>
-                <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#64748b' }}>
-                  Directly publish verified bills, projects, or COA findings with instant deterministic WGI update.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsCurateModalOpen(false)}
-                disabled={isCurating}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '18px',
-                  cursor: 'pointer',
-                  color: '#94a3b8',
-                }}
-              >
-                <CircleXIcon size={20} />
-              </button>
-            </div>
-
+        <BaseModal isOpen title="Direct admin metric curation" modalClassName="appealModalCompact"
+          isDismissDisabled={isCurating} onClose={() => setIsCurateModalOpen(false)}>
+            <p className="ty-body mb-4">Publish verified bills, projects, or COA findings and update the WGI score.</p>
             {curateSuccess ? (
               <div style={{ padding: '30px', textAlign: 'center', background: '#f0fdf4', borderRadius: '10px' }}>
                 <CircleCheckIcon size={36} style={{ marginBottom: '8px' }} />
@@ -1026,13 +953,12 @@ export default function AdminAdjudicationTable({ token, user, onAdjudicationComp
                     disabled={isCurating}
                     style={{ padding: '8px 18px', borderRadius: '6px', border: 'none', background: '#0284c7', color: '#ffffff', fontSize: '13px', fontWeight: '600', cursor: isCurating ? 'not-allowed' : 'pointer' }}
                   >
-                    {isCurating ? 'Publishing...' : 'Directly Publish Metric'}
+                    {isCurating ? <LoadingSkeleton inline label="Publishing metric" /> : 'Directly Publish Metric'}
                   </button>
                 </div>
               </form>
             )}
-          </div>
-        </div>
+        </BaseModal>
       )}
     </div>
   )

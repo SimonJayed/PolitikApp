@@ -2,6 +2,9 @@ package com.politikapp.backend.news.repository;
 
 import com.politikapp.backend.news.entity.NewsComment;
 import java.util.UUID;
+import java.util.Optional;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +13,10 @@ import java.util.List;
 import java.time.Instant;
 
 public interface NewsCommentRepository extends JpaRepository<NewsComment, UUID> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from NewsComment c where c.id = :id")
+    Optional<NewsComment> lockById(@Param("id") UUID id);
+
     interface ArticleCommentCount {
         UUID getArticleId();
         long getTotal();

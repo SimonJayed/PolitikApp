@@ -8,6 +8,7 @@ import com.politikapp.backend.news.dto.NewsDtos.UserCommentResponse;
 import com.politikapp.backend.news.dto.NewsDtos.DashboardSummaryResponse;
 import com.politikapp.backend.news.dto.NewsDtos.VoteRequest;
 import com.politikapp.backend.news.service.NewsService;
+import com.politikapp.backend.news.service.OriginalArticleService;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import java.time.Instant;
@@ -34,8 +35,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class NewsController {
     private final NewsService newsService;
 
-    public NewsController(NewsService newsService) {
+    private final OriginalArticleService originals;
+
+    public NewsController(NewsService newsService, OriginalArticleService originals) {
         this.newsService = newsService;
+        this.originals = originals;
     }
 
     @GetMapping("/news")
@@ -45,15 +49,21 @@ public class NewsController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "newest") String sort,
+            @RequestParam(defaultValue = "full") String view,
             @AuthenticationPrincipal AuthPrincipal principal
     ) {
         Sort.Direction direction = "oldest".equalsIgnoreCase(sort) ? Sort.Direction.ASC : Sort.Direction.DESC;
-        return newsService.published(category, q, PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 50)), Sort.by(direction, "publishedAt")), userId(principal));
+        return newsService.published(category, q, PageRequest.of(Math.max(0, page), Math.max(1, Math.min(size, 50)), Sort.by(direction, "publishedAt", "id")), userId(principal), !"feed".equals(view));
     }
 
     @GetMapping("/news/{id}")
     public NewsArticleResponse getNews(@PathVariable UUID id, @AuthenticationPrincipal AuthPrincipal principal) {
         return newsService.publishedById(id, userId(principal));
+    }
+
+    @GetMapping("/news/{id}/original")
+    public OriginalArticleService.OriginalView original(@PathVariable UUID id) {
+        return originals.read(id);
     }
 
     @GetMapping("/news/categories")

@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../components/Skeletons"
 import { useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
 import './AuthPages.css'
@@ -315,7 +316,7 @@ export default function AuthPages({ initialMode = 'login', onBack }) {
 
             {state.error && <div className="authAlert error"><AlertTriangleIcon size={16} /><span>{state.error}</span></div>}
             <button id="auth-submit-btn" className="authSubmitButton" type="submit" disabled={state.loading}>
-              {state.loading ? <span className="authSubmitLoading"><span className="authSubmitSpinner" aria-hidden="true" />{isLogin ? 'Signing in...' : 'Creating account...'}</span> : isLogin ? 'Sign In' : 'Create Account'}
+              {state.loading ? <LoadingSkeleton inline label={isLogin ? "Signing in" : "Creating account"} /> : isLogin ? 'Sign In' : 'Create Account'}
             </button>
             <p className="authFormFooter">{isLogin ? "Don't have an account?" : 'Already have an account?'}<button type="button" onClick={() => switchMode(isLogin ? 'register' : 'login')}>{isLogin ? 'Create one' : 'Sign in'}</button></p>
           </form>

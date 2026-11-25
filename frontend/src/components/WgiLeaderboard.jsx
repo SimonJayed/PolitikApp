@@ -138,7 +138,6 @@ function InfoTip({ label, children }) {
 
 export function Methodology({ calculatedAt, latestSourceUpdate, onClose }) {
   return <BaseModal isOpen title="How are scores calculated?" onClose={onClose} modalClassName="wgiLeaderboardMethodology">
-    <h2>How are scores calculated?</h2>
     <p>WGI means Worldwide Governance Indicators. PolitikApp uses its own record-based score inspired by these indicators. It is not an official World Bank rating of individual politicians.</p>
     <h3>What goes into a score?</h3>
     <ul className="wgiPlainFactors">
@@ -171,8 +170,8 @@ export function Methodology({ calculatedAt, latestSourceUpdate, onClose }) {
     <p>Scores are ordered highest first. Equal unrounded scores are ordered by more bills, more projects, higher tracked budget, fewer COA findings, then name. Identical names use profile ID for consistency. Ranks are sequential after these tie-breaks. Displayed scores are rounded to one decimal.</p>
     <p>Missing records do not prove an absence of government activity. Scores are not normalized for time served or record completeness.</p>
     <p>These measures describe the project’s recorded indicators; they do not establish that one official is objectively better or worse. An audit finding is not itself proof of personal wrongdoing.</p>
-    <p>Calculated for this leaderboard response: <strong>{updatedLabel(calculatedAt)}</strong>.</p>
-    <p>Latest contributing record update among loaded entries: <strong>{updatedLabel(latestSourceUpdate)}</strong>. This is a system record timestamp, not the date of an independent real-world verification.</p>
+    {calculatedAt && <p>Calculated for this leaderboard response: <strong>{updatedLabel(calculatedAt)}</strong>.</p>}
+    {latestSourceUpdate && <p>Latest contributing record update among loaded entries: <strong>{updatedLabel(latestSourceUpdate)}</strong>. This is a system record timestamp.</p>}
     </details>
     <button className="wgiControl wgiControlPrimary" type="button" onClick={onClose}>Got it</button>
   </BaseModal>

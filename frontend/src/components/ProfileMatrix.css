@@ -359,6 +359,34 @@
   line-clamp: 3;
 }
 
+.profileCardActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--d-line);
+}
+
+.profileShell .profileCardActions > :is(a, button) {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 13px;
+  border: 1px solid var(--d-line);
+  border-radius: var(--radius-full);
+  background: var(--d-surface);
+  color: var(--d-primary);
+  font: 700 .8125rem/1.2 var(--display);
+  text-decoration: none;
+}
+
+.profileShell .profileCardActions > :is(a:hover, button:hover:not(:disabled)) {
+  background: var(--d-primary-soft);
+  border-color: var(--d-primary);
+}
+.profileShell .profileCardActions > button:disabled { opacity: .55; cursor: wait; }
+
 .profileCardQuote {
   margin: 0;
   padding: 14px 16px;

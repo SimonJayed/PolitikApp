@@ -1,3 +1,5 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
+import BaseModal from '../../components/BaseModal'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ScaleIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
@@ -149,7 +151,6 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
   const [pages, setPages] = useState({ left: 1, right: 1 })
   const [directoryRefresh, setDirectoryRefresh] = useState(0)
   const directory = useDirectory(directoryRefresh)
-  const closeRef = useRef(null)
   const modalCallback = useRef(onModalOpenChange)
   useEffect(() => { modalCallback.current = onModalOpenChange }, [onModalOpenChange])
 
@@ -189,13 +190,6 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
     return () => modalCallback.current?.(false)
   }, [isModalOpen])
 
-  useEffect(() => {
-    if (!isModalOpen) return undefined
-    closeRef.current?.focus()
-    const onKeyDown = (event) => { if (event.key === 'Escape') setIsModalOpen(false) }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [isModalOpen])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const pageItems = (key) => {
@@ -300,29 +294,15 @@ export default function ComparisonPanel({ compareIds, onChange, onModalOpenChang
         <BarSlot side={SIDES[0]} politician={selected.idA} onClear={() => setSide('idA', '')} />
         <button type="submit" className="cmpSubmit" disabled={isLoading || !compatiblePair}>
           <ScaleIcon size={18} />
-          <span>{isLoading ? 'Comparing...' : 'Compare selected'}</span>
+          <span>{isLoading ? <LoadingSkeleton inline label="Comparing" /> : 'Compare selected'}</span>
         </button>
         <BarSlot side={SIDES[1]} politician={selected.idB} onClear={() => setSide('idB', '')} />
       </form>
 
       {isModalOpen && state.data && (
-        <div className="cmpBackdrop" onClick={() => setIsModalOpen(false)}>
-          <section
-            className="cmpModal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cmp-modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <header className="cmpModalHead">
-              <h2 id="cmp-modal-title">Comparison result</h2>
-              <button type="button" ref={closeRef} onClick={() => setIsModalOpen(false)}>Close</button>
-            </header>
-            <div className="cmpModalBody">
-              <ComparisonResult comparison={state.data} />
-            </div>
-          </section>
-        </div>
+        <BaseModal isOpen wide modalClassName="cmpModal" title="Comparison result" onClose={() => setIsModalOpen(false)}>
+          <ComparisonResult comparison={state.data} />
+        </BaseModal>
       )}
       </>}
     </section>

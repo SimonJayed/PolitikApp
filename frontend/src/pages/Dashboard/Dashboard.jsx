@@ -1,3 +1,7 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
+import { updateNewsArticle } from '../../features/news/newsArticleCache'
+import { newsPath } from '../../config/appRoutes'
+import { fetchReadWithRetry } from '../../api/readRequest'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { newsCacheFor, publicReadCache } from '../../api/readCache'
@@ -5,7 +9,6 @@ import { useCachedRead } from '../../api/useCachedRead'
 import { useAuth } from '../../auth/AuthContext'
 import {
   BookmarkIcon,
-  ExternalLinkIcon,
   FileTextIcon,
   MessageCircleIcon,
   SearchIcon,
@@ -14,11 +17,12 @@ import {
   ThumbUpIcon,
 } from '../../components/icons/Lucide'
 import './Dashboard.css'
+import ActionToast from '../../components/ActionToast'
 import NewsArticleReader from '../../components/NewsArticleReader'
 import { PaginationMini } from '../pageHelpers'
-import NewsCardContent from '../../components/NewsCardContent'
-import { safeNewsUrl } from '../../features/news/newsPresentation'
-import { createOptimisticActions, relativeCommentTime } from '../../features/news/optimisticActions'
+import NewsCardContent, { ArticleMeta, PublisherLink } from '../../components/NewsCardContent'
+import { categoryColors, colorFor, initials } from '../../features/news/newsPresentation'
+import { relativeCommentTime } from '../../features/news/optimisticActions'
 import { commentsUrl, loadNewsComments, updateNewsComments } from '../../features/news/newsComments'
 
 const categories = ['All', 'Legislation', 'Government Projects', 'Public Spending', 'Audit Reports', 'Government Announcements']
@@ -27,17 +31,30 @@ const EMPTY_FEED = { items: [], totalPages: 1, totalElements: 0 }
 const EMPTY_INSIGHTS = { items: [], total: 0 }
 const EMPTY_SUMMARY = { data: null }
 const SUMMARY_URL = `${API_BASE_URL}/api/news/summary`
-const loadSummary = () => fetch(SUMMARY_URL).then(readApiResponse).then(data => ({ data }))
+const loadSummary = () => fetchReadWithRetry(SUMMARY_URL).then(readApiResponse).then(data => ({ data }))
 
-// Category colors come from the App.css flag palette (--ph-*), so they follow the theme.
-const categoryColors = {
-  Legislation: 'var(--ph-blue)',
-  'Government Projects': 'var(--ph-gold)',
-  'Public Spending': 'var(--ph-red)',
-  'Audit Reports': 'var(--ph-gold-light)',
-  'Government Announcements': 'var(--ph-blue-light)',
+
+const feedDefaults = { category: 'All', sort: 'newest', q: '', page: 0 }
+
+function readFeedFilters() {
+  const params = new URLSearchParams(window.location.search)
+  const page = Number(params.get('page'))
+  return {
+    category: categories.includes(params.get('category')) ? params.get('category') : feedDefaults.category,
+    sort: params.get('sort') === 'oldest' ? 'oldest' : feedDefaults.sort,
+    q: params.get('q') || '',
+    page: Number.isSafeInteger(page) && page >= 0 && page < 100000 ? page : 0,
+  }
 }
-const colorFor = (category) => categoryColors[category] || 'var(--ph-blue-light)'
+
+function updateFeedLocation(values) {
+  const url = new URL(window.location.href)
+  for (const [name, value] of Object.entries(values)) {
+    if (value === feedDefaults[name]) url.searchParams.delete(name)
+    else url.searchParams.set(name, value)
+  }
+  window.history.replaceState(window.history.state, '', url)
+}
 
 function localDayKey(date) {
   const month = String(date.getMonth() + 1).padStart(2, '0')
@@ -45,27 +62,29 @@ function localDayKey(date) {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
-export default function Dashboard({ onOpenProfile, politicians = [], user }) {
+export default function Dashboard({ articleId, original, onOpenArticle, onAuthPrompt, onOpenProfile, loadPoliticians, politicians = [], user }) {
   const { token } = useAuth()
-  const [activeCategory, setActiveCategory] = useState('All')
-  const [readingId, setReadingId] = useState(null)
-  const [sort, setSort] = useState('newest')
-  const [queryInput, setQueryInput] = useState('')
-  const [query, setQuery] = useState('')
-  const [page, setPage] = useState(0)
+  const initialFilters = useMemo(readFeedFilters, [])
+  const [activeCategory, setActiveCategory] = useState(initialFilters.category)
+  const [sort, setSort] = useState(initialFilters.sort)
+  const [queryInput, setQueryInput] = useState(initialFilters.q)
+  const [query, setQuery] = useState(initialFilters.q)
+  const [page, setPage] = useState(initialFilters.page)
   const [commentsByPost, setCommentsByPost] = useState({})
   const [openComments, setOpenComments] = useState({})
   const [drafts, setDrafts] = useState({})
-  const [actionMessage, setActionMessage] = useState('')
+  const [toast, setToast] = useState(null)
+  const dismissToast = useCallback(() => setToast(null), [])
+  const [savedById, setSavedById] = useState({})
+  const writes = useRef(new Set())
+  const activeToken = useRef(token)
+  useEffect(() => { activeToken.current = token; setSavedById({}) }, [token])
+
   const [busy, setBusy] = useState({})
   const [expanded, setExpanded] = useState({})
   const [reloadKey, setReloadKey] = useState(0)
   const feedTopRef = useRef(null)
-  const queryRef = useRef('')
-  const optimisticAction = useMemo(() => {
-    const enqueue = createOptimisticActions()
-    return (key, ...args) => enqueue(`${token || 'guest'}:${key}`, ...args)
-  }, [token])
+  const queryRef = useRef(initialFilters.q)
   const [commentNow, setCommentNow] = useState(Date.now)
   useEffect(() => {
     const interval = setInterval(() => setCommentNow(Date.now()), 60000)
@@ -73,36 +92,59 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   }, [])
 
   const newsCache = useMemo(() => newsCacheFor(token), [token])
-  const [summary] = useCachedRead(publicReadCache, SUMMARY_URL, loadSummary, EMPTY_SUMMARY, reloadKey)
-  const insightsUrl = `${API_BASE_URL}/api/news?${new URLSearchParams({ page: '0', size: String(INSIGHTS_SAMPLE_SIZE), sort: 'newest' })}`
+  const insightsUrl = `${API_BASE_URL}/api/news?${new URLSearchParams({ page: '0', size: String(INSIGHTS_SAMPLE_SIZE), sort: 'newest', view: 'feed' })}`
   const loadInsights = useCallback(async () => {
-    const data = await fetch(insightsUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(readApiResponse)
-    const items = Array.isArray(data.content) ? data.content : []
+    const data = await fetchReadWithRetry(insightsUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(readApiResponse)
+    if (!Array.isArray(data.content)) throw new Error('The news feed returned an unexpected response.')
+    const items = data.content
     return { items, total: Number(data.totalElements ?? items.length) }
   }, [insightsUrl, token])
-  const [insights, setInsights] = useCachedRead(newsCache, insightsUrl, loadInsights, EMPTY_INSIGHTS, reloadKey)
 
-  const feedParams = new URLSearchParams({ page: String(page), size: '8', sort })
+  const feedParams = new URLSearchParams({ page: String(page), size: '8', sort, view: 'feed' })
   if (activeCategory !== 'All' && activeCategory !== 'Latest') feedParams.set('category', activeCategory)
   if (query) feedParams.set('q', query)
   const feedUrl = `${API_BASE_URL}/api/news?${feedParams}`
   const loadFeed = useCallback(async () => {
-    const data = await fetch(feedUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(readApiResponse)
-    const items = Array.isArray(data.content) ? data.content : []
+    const data = await fetchReadWithRetry(feedUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} }).then(readApiResponse)
+    if (!Array.isArray(data.content)) throw new Error('The news feed returned an unexpected response.')
+    const items = data.content
     return { items, totalPages: Math.max(1, Number(data.totalPages || 1)), totalElements: Number(data.totalElements ?? items.length) }
   }, [feedUrl, token])
-  const [feed, setFeed] = useCachedRead(newsCache, feedUrl, loadFeed, EMPTY_FEED, reloadKey)
-  const commentPrefetchIds = feed.items.map(post => post.id).join('|')
+  const [feed, setFeed] = useCachedRead(newsCache, articleId ? null : feedUrl, loadFeed, EMPTY_FEED, reloadKey)
   useEffect(() => {
-    let cancelled = false
-    for (const id of commentPrefetchIds.split('|').filter(Boolean)) {
-      loadNewsComments(newsCache, id, token).then(items => {
-        if (!cancelled) setCommentsByPost(all => ({ ...all, [id]: { status: 'success', items } }))
-      }).catch(() => {}) // Opening the thread provides a retry and visible errors if needed.
+    if (feed.status !== 'success' || page < feed.totalPages) return
+    const next = feed.totalPages - 1
+    setPage(next)
+    updateFeedLocation({ page: next })
+  }, [feed.status, feed.totalPages, page])
+  const showInsights = !articleId && feed.status === 'success' && feed.items.length > 0
+  useEffect(() => {
+    if (showInsights && !politicians.length) loadPoliticians?.()
+  }, [showInsights, politicians.length, loadPoliticians])
+  const [summary] = useCachedRead(publicReadCache, showInsights ? SUMMARY_URL : null, loadSummary, EMPTY_SUMMARY, reloadKey)
+  const [insights] = useCachedRead(newsCache, showInsights ? insightsUrl : null, loadInsights, EMPTY_INSIGHTS, reloadKey)
+
+  useEffect(() => {
+    setCommentsByPost({})
+    setOpenComments({})
+    setBusy({})
+    setToast(null)
+  }, [newsCache])
+
+  useEffect(() => {
+    function restore() {
+      const filters = readFeedFilters()
+      queryRef.current = filters.q
+      setQuery(filters.q)
+      setQueryInput(filters.q)
+      setActiveCategory(filters.category)
+      setSort(filters.sort)
+      setPage(filters.page)
     }
-    return () => { cancelled = true }
-  }, [commentPrefetchIds, newsCache, token])
-  useEffect(() => { setCommentsByPost({}); setOpenComments({}) }, [newsCache])
+    window.addEventListener('popstate', restore)
+    return () => window.removeEventListener('popstate', restore)
+  }, [])
+
 
   // Debounced search: avoids a request on every keystroke
   useEffect(() => {
@@ -117,12 +159,13 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
     return () => clearTimeout(timer)
   }, [queryInput])
 
-  const changeCategory = (category) => { setActiveCategory(category); setPage(0) }
-  const changeSort = (value) => { setSort(value); setPage(0) }
-  const resetSearch = () => { queryRef.current = ''; setQueryInput(''); setQuery(''); setPage(0) }
-  const clearFilters = () => { resetSearch(); setActiveCategory('All'); setSort('newest') }
+  const changeCategory = (category) => { setActiveCategory(category); setPage(0); updateFeedLocation({ category, page: 0 }) }
+  const changeSort = (value) => { setSort(value); setPage(0); updateFeedLocation({ sort: value, page: 0 }) }
+  const resetSearch = () => { queryRef.current = ''; setQueryInput(''); setQuery(''); setPage(0); updateFeedLocation({ q: '', page: 0 }) }
+  const clearFilters = () => { resetSearch(); setActiveCategory('All'); setSort('newest'); updateFeedLocation({ category: 'All', sort: 'newest' }) }
   const goToPage = useCallback((next) => {
     setPage(next)
+    updateFeedLocation({ page: next })
     feedTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
@@ -153,116 +196,176 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   }, [insights.items])
 
   async function guarded(key, task) {
-    setActionMessage('')
-    setBusy((all) => ({ ...all, [key]: true }))
+    const requestKey = (token || 'guest') + ':' + key
+    if (writes.current.has(requestKey)) return
+    writes.current.add(requestKey)
+    setBusy(all => ({ ...all, [key]: true }))
     try {
       await task()
     } catch (error) {
-      setActionMessage(error.message || 'Something went wrong. Please try again.')
+      if (activeToken.current === token) {
+        if (error.status === 401) onAuthPrompt?.('session')
+        else setToast({ text: error.message || 'Something went wrong. Please try again.', error: true })
+      }
     } finally {
-      setBusy((all) => ({ ...all, [key]: false }))
+      writes.current.delete(requestKey)
+      if (activeToken.current === token) setBusy(all => ({ ...all, [key]: false }))
     }
   }
 
   async function loadComments(newsId) {
-    setOpenComments(all => ({ ...all, [newsId]: !all[newsId] }))
-    if (openComments[newsId]) return
     const cached = newsCache.peek(commentsUrl(newsId))
-    if (cached) setCommentsByPost(all => ({ ...all, [newsId]: { status: 'success', items: cached } }))
+    setCommentsByPost(all => ({ ...all, [newsId]: { status: cached ? 'success' : 'loading', items: cached || [] } }))
     try {
-      const comments = await loadNewsComments(newsCache, newsId, token)
-      setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'success', items: comments } }))
+      const items = await loadNewsComments(newsCache, newsId, token)
+      if (activeToken.current === token) setCommentsByPost(all => ({ ...all, [newsId]: { status: 'success', items } }))
     } catch (error) {
-      setCommentsByPost((all) => ({ ...all, [newsId]: { status: 'error', message: error.message, items: all[newsId]?.items || [] } }))
+      if (activeToken.current === token) setCommentsByPost(all => ({
+        ...all, [newsId]: { status: 'error', message: error.message, items: all[newsId]?.items || [] },
+      }))
     }
+  }
+
+  function toggleComments(newsId) {
+    setOpenComments(all => ({ ...all, [newsId]: !all[newsId] }))
+    if (!openComments[newsId]) loadComments(newsId)
   }
 
   function submitComment(event, newsId) {
     event.preventDefault()
-    if (!token) return
+    if (!token) { onAuthPrompt?.('comment'); return }
     const content = (drafts[newsId] || '').trim()
-    if (!content) return
-    return guarded(`comment-${newsId}`, async () => {
-      const comment = await fetch(`${API_BASE_URL}/api/news/${newsId}/comments`, {
+    if (!content || content.length > 1000) return
+    return guarded('comment-' + newsId, async () => {
+      const comment = await fetch(commentsUrl(newsId), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
         body: JSON.stringify({ content }),
       }).then(readApiResponse)
-      const receivedAt = Date.now()
-      setCommentNow(receivedAt)
-      setDrafts((all) => ({ ...all, [newsId]: '' }))
-      const items = updateNewsComments(newsCache, newsId, current => [{ ...comment, displayCreatedAt: new Date(receivedAt).toISOString() }, ...current.filter(item => item.id !== comment.id)])
-      setCommentsByPost((all) => ({
-        ...all,
-        [newsId]: { status: 'success', items },
-      }))
-      const bump = (item) => item.id === newsId ? { ...item, commentCount: Number(item.commentCount || 0) + 1 } : item
-      newsCache.retain([feedUrl, insightsUrl, ...feed.items.flatMap(post => [commentsUrl(post.id), `${API_BASE_URL}/api/news/${post.id}`])])
-      setFeed((current) => ({ ...current, items: current.items.map(bump) }))
-      setInsights((current) => ({ ...current, items: current.items.map(bump) }))
+      if (activeToken.current !== token) return
+      setCommentNow(Date.now())
+      setDrafts(all => ({ ...all, [newsId]: '' }))
+      const items = updateNewsComments(newsCache, newsId, current => [comment, ...current.filter(item => item.id !== comment.id)])
+      setCommentsByPost(all => ({ ...all, [newsId]: { status: 'success', items } }))
+      updateArticles(newsId, item => ({ ...item, commentCount: Number(item.commentCount || 0) + 1 }))
+      setToast({ text: 'Comment posted' })
     })
   }
 
-  function vote(commentId, newsId, voteType) {
-    if (!token) {
-      setActionMessage('Sign in to vote on comments.')
-      return
-    }
-    const comment = commentsByPost[newsId]?.items.find(item => item.id === commentId)
-    if (!comment || (comment.voted && comment.voteType !== voteType)) return
-    setActionMessage('')
-    const removing = comment.voteType === voteType
-    const desired = { ...comment, voted: !removing, voteType: removing ? null : voteType,
-      upvotes: Math.max(0, Number(comment.upvotes || 0) + (voteType === 'UP' ? (removing ? -1 : 1) : 0)),
-      downvotes: Math.max(0, Number(comment.downvotes || 0) + (voteType === 'DOWN' ? (removing ? -1 : 1) : 0)) }
-    const apply = updated => {
-      const items = updateNewsComments(newsCache, newsId, current => current.map(item => item.id === commentId ? { ...item, ...updated } : item))
-      setCommentsByPost(all => ({ ...all, [newsId]: {
-      ...(all[newsId] || { status: 'success' }),
-      items,
-    } })) }
-    const postVote = type => fetch(`${API_BASE_URL}/api/comments/${commentId}/vote`, {
+  function vote(comment, newsId, voteType) {
+    if (!token) { onAuthPrompt?.('vote'); return }
+    return guarded('vote-' + comment.id, async () => {
+      const updated = await fetch(API_BASE_URL + '/api/comments/' + encodeURIComponent(comment.id) + '/vote', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ voteType: type }),
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ voteType, active: comment.voteType !== voteType }),
       }).then(readApiResponse)
-    return optimisticAction(`vote-${commentId}`, comment, desired, apply, async (confirmed, target, confirm) => {
-      let updated = confirmed
-      if (updated.voteType && updated.voteType !== target.voteType) { updated = await postVote(updated.voteType); confirm(updated) }
-      if (target.voteType && updated.voteType !== target.voteType) { updated = await postVote(target.voteType); confirm(updated) }
-      return updated
-    }, error => setActionMessage(error.message || 'Your vote could not be saved. Please try again.'))
+      if (activeToken.current !== token) return
+      const items = updateNewsComments(newsCache, newsId, current => current.map(item => item.id === comment.id ? updated : item))
+      setCommentsByPost(all => ({ ...all, [newsId]: { ...all[newsId], items } }))
+      setToast({ text: updated.voteType ? 'Vote saved' : 'Vote removed' })
+    })
   }
 
-  function savePost(newsId) {
-    if (!token) {
-      setActionMessage('Sign in to save posts.')
-      return
-    }
-    const post = feed.items.find((item) => item.id === newsId)
-    if (!post) return
-    const isSaved = Boolean(post?.saved)
-    setActionMessage('')
-    const apply = saved => {
-      const toggle = item => item.id === newsId ? { ...item, saved } : item
-      newsCache.retain([feedUrl, insightsUrl, ...feed.items.flatMap(post => [commentsUrl(post.id), `${API_BASE_URL}/api/news/${post.id}`])])
-      setFeed(current => ({ ...current, items: current.items.map(toggle) }))
-      setInsights(current => ({ ...current, items: current.items.map(toggle) }))
-    }
-    return optimisticAction(`save-${newsId}`, isSaved, !isSaved, apply, async (confirmed, target) => {
-      if (confirmed === target) return confirmed
-      const response = await fetch(`${API_BASE_URL}/api/news/${newsId}/save`, {
+  function updateArticles(id, update) {
+    updateNewsArticle(newsCache, id, update)
+    if (!articleId) setFeed(data => ({ ...data, items: [...data.items] }))
+  }
+
+  function savePost(post) {
+    if (!token) { onAuthPrompt?.('bookmark'); return }
+    const target = !(savedById[post.id] ?? post.saved)
+    return guarded('save-' + post.id, async () => {
+      await fetch(API_BASE_URL + '/api/news/' + encodeURIComponent(post.id) + '/save', {
         method: target ? 'POST' : 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!response.ok) await readApiResponse(response)
-      return target
-    }, error => setActionMessage(error.message || 'Your bookmark could not be saved. Please try again.'))
+        headers: { Authorization: 'Bearer ' + token },
+      }).then(readApiResponse)
+      if (activeToken.current !== token) return
+      setSavedById(all => ({ ...all, [post.id]: target }))
+      updateArticles(post.id, item => ({ ...item, saved: target }))
+      setToast({ text: target ? 'Saved to bookmarks' : 'Bookmark removed' })
+    })
+  }
+
+  function bookmarkButton(post) {
+    const saved = Boolean(savedById[post.id] ?? post.saved)
+    const pending = Boolean(busy['save-' + post.id])
+    return <button className="saveIconButton" aria-pressed={saved} aria-busy={pending}
+      aria-label="Bookmark article" title={saved ? 'Remove bookmark' : 'Bookmark article'}
+      type="button" disabled={pending} onClick={() => savePost(post)}>
+      <BookmarkIcon fill={saved ? 'currentColor' : 'none'} size={17} aria-hidden="true" />
+      <span aria-hidden="true">{pending ? <LoadingSkeleton inline label="Saving" /> : saved ? 'Saved' : 'Bookmark'}</span>
+    </button>
+  }
+
+  function discussion(post) {
+    const id = post.id
+    const comments = commentsByPost[id]
+    const draft = drafts[id] || ''
+    const submitting = busy['comment-' + id]
+    return <section className="commentPanel" aria-label="Discussion">
+      <h2>Discussion{comments?.status === 'success' ? ' (' + comments.items.length + ')' : ''}</h2>
+      {token ? <form onSubmit={event => submitComment(event, id)}>
+        <label htmlFor={'comment-' + id}>Write a comment</label>
+        <textarea id={'comment-' + id} rows={3} maxLength={1000} required
+          placeholder="Share your thoughts…" value={draft} readOnly={submitting}
+          onChange={event => setDrafts(all => ({ ...all, [id]: event.target.value }))} />
+        <p className="commentHint">Comments appear anonymously. {draft.length}/1000</p>
+        <button disabled={!draft.trim() || submitting} type="submit">{submitting ? <LoadingSkeleton inline label="Posting" /> : 'Post Comment'}</button>
+      </form> : <p className="commentHint"><button type="button" onClick={() => onAuthPrompt?.('comment')}>Sign in</button> to join the discussion.</p>}
+      {comments?.status === 'loading' && <LoadingSkeleton label="Loading comments" />}
+      {comments?.status === 'error' && <div role="alert"><p>{comments.message}</p>
+        <button type="button" onClick={() => loadComments(id)}>Retry comments</button></div>}
+      {comments?.status === 'success' && !comments.items.length && <p className="commentHint">No comments yet.</p>}
+      {comments?.items.map(comment => <article className="commentRow" key={comment.id}>
+        <span className="commentAvatar" aria-hidden="true">{initials(comment.authorLabel)}</span>
+        <div className="commentText">
+          <strong>{comment.authorLabel}</strong>
+          <time dateTime={comment.createdAt}>{relativeCommentTime(comment.createdAt, commentNow)}</time>
+          <p>{comment.content}</p>
+        </div>
+        <div className="voteButtons" role="group" aria-label="Comment votes">
+          {[['UP', 'Upvote', comment.upvotes, ThumbUpIcon], ['DOWN', 'Downvote', comment.downvotes, ThumbDownIcon]]
+            .map(([type, label, count, Icon]) => {
+              const selected = comment.voteType === type
+              return <button key={type} className={(type === 'UP' ? 'voteUp' : 'voteDown') + (selected ? ' is-selected' : '')}
+                aria-label={label + ', ' + count} aria-pressed={selected}
+                title={selected ? 'Remove ' + label.toLowerCase() : label} disabled={busy['vote-' + comment.id]}
+                type="button" onClick={() => vote(comment, id, type)}>
+                <Icon size={16} className={selected ? 'voteIconSelected' : ''} /><span>{count}</span>
+              </button>
+            })}
+        </div>
+      </article>)}
+    </section>
+  }
+
+  const notification = <ActionToast message={toast} onDismiss={dismissToast} />
+  if (articleId) {
+    const feedParams = new URLSearchParams(window.location.search)
+    for (const key of ['view', 'id', 'articleId', 'original']) feedParams.delete(key)
+    const filterQuery = feedParams.size ? '?' + feedParams : ''
+    return <><NewsArticleReader key={articleId} id={articleId} original={original} token={token}
+      hrefFor={showOriginal => newsPath(articleId, showOriginal) + filterQuery}
+      backHref={newsPath() + filterQuery}
+      onChangeView={showOriginal => onOpenArticle(articleId, showOriginal)}
+      onClose={() => onOpenArticle(null)}
+      onOpenProfile={onOpenProfile}
+      renderActions={bookmarkButton}
+      renderDiscussionAction={post => {
+        const open = Boolean(openComments[post.id])
+        const count = commentsByPost[post.id]?.items.length ?? post.commentCount ?? 0
+        return <button type="button" aria-expanded={open} onClick={() => toggleComments(post.id)}>
+          <MessageCircleIcon size={17} />
+          <span>{open ? 'Hide comments' : count + (count === 1 ? ' comment' : ' comments')}</span>
+        </button>
+      }}
+      renderDiscussion={post => openComments[post.id] && discussion(post)} />{notification}</>
   }
 
   const suggestedPoliticians = politicians.slice(0, 4)
   const summaryValue = (value) =>
-    summary.status === 'loading' ? '—' : summary.status === 'error' ? 'N/A' : Number(value ?? 0).toLocaleString('en-PH')
+    summary.status === 'loading' ? <LoadingSkeleton inline label="Loading news totals" /> : summary.status === 'error' ? 'N/A' : Number(value ?? 0).toLocaleString('en-PH')
 
   const stats = [
     { label: 'Legislative records', value: summary.data?.legislativeRecordsTracked, Icon: FileTextIcon },
@@ -296,7 +399,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
   const weekTotal = analytics.publications.reduce((sum, day) => sum + day.value, 0)
 
   return (
-    <section className="newsFeedShell">
+    <><section className="newsFeedShell newsPageFrame">
       <header className="dashHero">
         <div className="dashHeroTop">
           <div className="dashHeroText">
@@ -338,7 +441,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
       </header>
 
       <div className="dashBody">
-        <main className="feedMain">
+        <div className="feedMain">
           <div className="feedControls" ref={feedTopRef} aria-label="News filters">
             <div className="categoryScroller" role="tablist" aria-label="Categories">
               {categories.map((category) => (
@@ -371,13 +474,6 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
             </div>
           </div>
 
-          {actionMessage && (
-            <p className="dashboardActionMessage" role="alert">
-              <span>{actionMessage}</span>
-              <button type="button" onClick={() => setActionMessage('')} aria-label="Dismiss message">×</button>
-            </p>
-          )}
-
           {feed.status === 'success' && feed.items.length > 0 && (
             <p className="feedResultMeta" aria-live="polite">
               <span>
@@ -389,12 +485,16 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
             </p>
           )}
 
-          {feed.status === 'loading' && <FeedSkeleton />}
+          {feed.status === 'loading' && <div role="status" aria-label="Loading news articles"><FeedSkeleton /></div>}
 
+          {feed.status === 'success' && feed.message && <div className="feedNotice" role="status">
+            <span>Showing previously loaded articles. Updates are temporarily unavailable.</span>
+            <button type="button" onClick={() => setReloadKey(key => key + 1)}>Retry</button>
+          </div>}
           {feed.status === 'error' && (
             <div className="feedNotice error" role="alert">
               <strong>We couldn’t load the feed.</strong>
-              <span>{feed.message}</span>
+              <span>Unable to load news articles. Please try again.</span>
               <button type="button" onClick={() => setReloadKey((key) => key + 1)}>Try again</button>
             </div>
           )}
@@ -411,16 +511,13 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
               ) : (
                 <>
                   <strong>No published government updates yet.</strong>
-                  <span>Admins can fetch official articles, review AI summaries, and publish approved posts.</span>
                 </>
               )}
             </div>
           )}
 
           <div className="postStack">
-            {readingId && <NewsArticleReader id={readingId} initialArticle={feed.items.find(post => post.id === readingId)} token={token} onClose={() => setReadingId(null)} onOpenProfile={onOpenProfile} />}
             {feed.status !== 'loading' && feed.items.map((post, index) => {
-              const comments = commentsByPost[post.id]
               const open = Boolean(openComments[post.id])
               const isFeatured = index === 0 && page === 0 && sort === 'newest' && !query && activeCategory === 'All'
 
@@ -433,102 +530,28 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
                   key={post.id}
                   style={{ '--cat': colorFor(post.category) }}
                 >
-                  <header className="postMeta">
-                    <span className="sourceBadge">{initials(post.sourceName)}</span>
-                    <div>
-                      <strong>{post.sourceName}</strong>
-                      <time dateTime={post.originalPublishedAt || post.publishedAt || undefined} title={post.originalPublishedAt ? 'Original publication date' : 'Publication date on PolitikApp'}>
-                        {post.originalPublishedAt || post.publishedAt ? formatDate(post.originalPublishedAt || post.publishedAt) : 'Publication date unavailable'}
-                      </time>
-                    </div>
-                    {post.adminVerified && <span className="verifiedPill"><ShieldCheckIcon size={14} /> Admin reviewed</span>}
-                  </header>
+                  <ArticleMeta article={post} />
 
                   <NewsCardContent article={post} expanded={isExpanded} onToggle={() => setExpanded(all => ({ ...all, [post.id]: !all[post.id] }))} />
                   <footer className="postActions">
-                    <button type="button" onClick={() => setReadingId(post.id)}>Read article</button>
-                    <button type="button" aria-expanded={open} onClick={() => loadComments(post.id)}>
-                      <MessageCircleIcon size={17} />
-                      <span>{open ? 'Hide comments' : `${post.commentCount ?? 0} comment${post.commentCount === 1 ? '' : 's'}`}</span>
-                    </button>
-                    <div className="postActionsEnd">
-                      {safeNewsUrl(post.sourceUrl) && <a className="sourceLink" href={safeNewsUrl(post.sourceUrl)} target="_blank" rel="noopener noreferrer">
-                        <ExternalLinkIcon size={17} />
-                        <span>Read original</span>
-                      </a>}
-                      <button
-                        className={`saveIconButton${post.saved ? ' saved' : ''}`}
-                        aria-label={post.saved ? 'Unsave update' : 'Save update'}
-                        aria-pressed={Boolean(post.saved)}
-                        title={token ? (post.saved ? 'Unsave update' : 'Save update') : 'Sign in to save posts'}
-                        type="button"
-                        onClick={() => savePost(post.id)}
-                      >
-                        <BookmarkIcon fill={post.saved ? 'currentColor' : 'none'} size={17} />
+                    <div className="postActionsStart">
+                      <a className="postReadLink" href={newsPath(post.id) + window.location.search} onClick={event => {
+                        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                        event.preventDefault()
+                        onOpenArticle(post.id)
+                      }}>Read article</a>
+                      <button type="button" aria-expanded={open} onClick={() => toggleComments(post.id)}>
+                        <MessageCircleIcon size={17} />
+                        <span>{open ? 'Hide comments' : `${post.commentCount ?? 0} comment${post.commentCount === 1 ? '' : 's'}`}</span>
                       </button>
+                    </div>
+                    <div className="postActionsEnd">
+                      <PublisherLink url={post.sourceUrl} />
+                      {bookmarkButton(post)}
                     </div>
                   </footer>
 
-                  {open && (
-                    <section className="commentPanel" aria-label="Comments">
-                      {token ? (
-                        <form onSubmit={(event) => submitComment(event, post.id)}>
-                          <input
-                            aria-label="Write a comment"
-                            maxLength={1000}
-                            placeholder="Add a comment. Your name stays hidden."
-                            value={drafts[post.id] || ''}
-                            onChange={(event) => setDrafts((all) => ({ ...all, [post.id]: event.target.value }))}
-                          />
-                          <button disabled={!(drafts[post.id] || '').trim() || busy[`comment-${post.id}`]} type="submit">
-                            {busy[`comment-${post.id}`] ? 'Posting…' : 'Post'}
-                          </button>
-                        </form>
-                      ) : (
-                        <p className="ty-meta commentHint">Sign in to join the discussion. Comments are anonymous.</p>
-                      )}
-                      {comments?.status === 'error' && <p className="ty-meta commentHint">{comments.message}</p>}
-                      {comments?.status === 'success' && comments.items?.length === 0 && (
-                        <p className="ty-meta commentHint">No comments yet. Start the discussion.</p>
-                      )}
-                      {comments?.items?.map((comment) => (
-                        <div className="commentRow" key={comment.id}>
-                          <span className="commentAvatar">{initials(comment.authorLabel)}</span>
-                          <div className="commentText">
-                            <strong>{comment.authorLabel}</strong>
-                            <time dateTime={comment.createdAt}>{relativeCommentTime(comment.displayCreatedAt || comment.createdAt, commentNow)}</time>
-                            <p>{comment.content}</p>
-                          </div>
-                          <div className="voteButtons">
-                            <button
-                              className={`voteUp${comment.voteType === 'UP' ? ' is-selected' : ''}`}
-                              aria-label="Upvote"
-                              title={token ? 'Upvote' : 'Sign in to vote'}
-                              aria-pressed={comment.voteType === 'UP'}
-                              disabled={comment.voted && comment.voteType !== 'UP'}
-                              type="button"
-                              onClick={() => vote(comment.id, post.id, 'UP')}
-                            >
-                              <ThumbUpIcon size={15} className={comment.voteType === 'UP' ? 'voteIconSelected' : ''} />
-                              <span>{comment.upvotes ?? 0}</span>
-                            </button>
-                            <button
-                              className={`voteDown${comment.voteType === 'DOWN' ? ' is-selected' : ''}`}
-                              aria-label="Downvote"
-                              title={token ? 'Downvote' : 'Sign in to vote'}
-                              aria-pressed={comment.voteType === 'DOWN'}
-                              disabled={comment.voted && comment.voteType !== 'DOWN'}
-                              type="button"
-                              onClick={() => vote(comment.id, post.id, 'DOWN')}
-                            >
-                              <ThumbDownIcon size={15} className={comment.voteType === 'DOWN' ? 'voteIconSelected' : ''} />
-                              <span>{comment.downvotes ?? 0}</span>
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </section>
-                  )}
+                  {open && discussion(post)}
                 </article>
               )
             })}
@@ -539,7 +562,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
               <PaginationMini page={page + 1} totalPages={feed.totalPages} onChange={(nextPage) => goToPage(nextPage - 1)} />
             </nav>
           )}
-        </main>
+        </div>
 
         <aside className="feedRail" aria-label="Insights and context">
           <section className="railCard">
@@ -552,7 +575,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
               <div className="donutWrap">
                 <div className="donut" style={{ background: donutGradient }} role="img" aria-label="Share of posts by category">
                   <div className="donutHole">
-                    <strong>{insights.status === 'loading' ? '—' : donutTotal}</strong>
+                    <strong>{insights.status === 'loading' ? <LoadingSkeleton inline label="Loading topic totals" /> : donutTotal}</strong>
                     <span>posts</span>
                   </div>
                 </div>
@@ -636,7 +659,7 @@ export default function Dashboard({ onOpenProfile, politicians = [], user }) {
           )}
         </aside>
       </div>
-    </section>
+    </section>{notification}</>
   )
 }
 
@@ -653,15 +676,4 @@ function FeedSkeleton() {
       ))}
     </div>
   )
-}
-
-function initials(name = '') {
-  return String(name).split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || 'PH'
-}
-
-function formatDate(value) {
-  if (!value) return 'Date unavailable'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Date unavailable'
-  return new Intl.DateTimeFormat('en-PH', { dateStyle: 'medium' }).format(date)
 }

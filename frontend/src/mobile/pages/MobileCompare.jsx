@@ -1,3 +1,4 @@
+import { LoadingSkeleton } from "../../components/Skeletons"
 import { useState } from 'react'
 import { ScaleIcon, GitCompareIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
@@ -111,7 +112,7 @@ export function MobileCompare({
               marginTop: '4px',
             }}
           >
-            {state.status === 'loading' ? 'Loading Comparison...' : 'Compare Side-by-Side'}
+            {state.status === 'loading' ? <LoadingSkeleton inline label="Loading Comparison" /> : 'Compare Side-by-Side'}
           </button>
         </div>
       </div>

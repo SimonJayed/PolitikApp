@@ -1,5 +1,5 @@
 .topNavFrame {
-  width: calc(100% - 2rem);
+  width: 100%;
 }
 
 .topNavShell {
@@ -7,8 +7,9 @@
 }
 
 .topNavLogo {
-  width: 32px;
-  height: 32px;
+  display: block;
+  width: 36px;
+  height: 36px;
   object-fit: contain;
 }
 
@@ -59,7 +60,7 @@
 
   .topNavRow {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    grid-template-columns: minmax(max-content, 1fr) auto minmax(max-content, 1fr);
   }
 
   .hoverNav {
@@ -89,13 +90,13 @@
   color: #e2e8f0;
   cursor: pointer;
   display: inline-flex;
-  flex: 0 0 40px;
-  gap: 8px;
+  flex: none;
+  gap: 0;
   height: 44px;
   justify-content: center;
   overflow: hidden;
-  padding: 0 9px;
-  transition: background-color 220ms var(--ease-out), color 220ms var(--ease-out), flex-basis 280ms var(--ease-out), justify-content 220ms var(--ease-out);
+  padding: 0 11px;
+  transition: background-color 220ms var(--ease-out), color 220ms var(--ease-out), gap 220ms var(--ease-out);
   white-space: nowrap;
 }
 
@@ -103,20 +104,16 @@
 .hoverNavItem:focus-visible {
   background: rgba(42, 68, 120, 0.95);
   color: #ffffff;
-  flex-basis: 138px;
-  justify-content: flex-start;
-  outline: none;
 }
 
-.hoverNavItem.isActive,
-.hoverNavItem.isActive:hover,
-.hoverNavItem.isActive:focus-visible {
-  color: var(--ph-gold-light);
+.hoverNavItem:focus-visible {
+  outline: 2px solid var(--ph-gold-light);
+  outline-offset: 2px;
 }
 
-.hoverNavItem.isActive:hover,
-.hoverNavItem.isActive:focus-visible {
+.hoverNavItem.isActive {
   background: rgba(184, 150, 42, 0.22);
+  color: var(--ph-gold-light);
 }
 
 .hoverNavItemIcon {
@@ -130,18 +127,20 @@
   font-family: var(--display);
   font-size: 12px;
   font-weight: 700;
-  max-width: 0;
-  opacity: 0;
+  max-inline-size: 0;
   overflow: hidden;
-  transform: translateX(-5px);
-  transition: max-width 220ms var(--ease-out), opacity 160ms ease, transform 220ms var(--ease-out);
+  opacity: 0;
+  transition: max-inline-size 220ms var(--ease-out), opacity 160ms var(--ease-out);
+  white-space: nowrap;
 }
 
-.hoverNavItem:hover .hoverNavItemLabel,
-.hoverNavItem:focus-visible .hoverNavItemLabel {
-  max-width: 94px;
+.hoverNavItem:is(:hover, :focus-visible, .isActive) {
+  gap: 7px;
+}
+
+.hoverNavItem:is(:hover, :focus-visible, .isActive) .hoverNavItemLabel {
+  max-inline-size: 8rem;
   opacity: 1;
-  transform: translateX(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -181,4 +180,12 @@
   .mobileNavDropdown {
     display: none !important;
   }
+}
+
+@media (min-width: 840px) and (max-width: 1023px) {
+  .topNavShell[data-admin] .topNavRow { display: flex; }
+  .topNavShell[data-admin] .topNavHorizontalNav,
+  .topNavShell[data-admin] .topNavHorizontalActions { display: none !important; }
+  .topNavShell[data-admin] .topNavHamburgerBtn { display: inline-flex !important; }
+  .topNavShell[data-admin] .mobileNavDropdown { display: block !important; }
 }

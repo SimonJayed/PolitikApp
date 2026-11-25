@@ -1332,3 +1332,13 @@
     padding: 18px;
   }
 }
+
+.prTabs { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: 1rem; }
+.prTabs a { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem .8rem; border: 1px solid var(--line-soft); border-radius: .6rem; color: var(--ph-blue); font-weight: 650; }
+.prTabs a[aria-current="page"] { background: var(--ph-blue); color: #fff; }
+.prTabs a:focus-visible { outline: 2px solid var(--ph-blue); outline-offset: 2px; }
+.prMetricGuide p, .prMetricGuide details { margin-block: .75rem; }
+.prMetricGuide summary { cursor: pointer; }
+.prMain, .prAside, .prCard, .csRecord { min-width: 0; overflow-wrap: anywhere; }
+.csSection h2 { scroll-margin-top: 7rem; }
+.csSection .prPager { flex-wrap: wrap; }
