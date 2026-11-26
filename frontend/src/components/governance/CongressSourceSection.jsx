@@ -34,9 +34,11 @@ export function LegislativeCard({ record }) {
   const available = citation && record.originalSourceStatus !== 'UNAVAILABLE'
   return <article className="csRecord">
     <h3 className="csTitle">{billTitle(record)}</h3>
-    <p className="csAuthorship">Authorship: <span>Source-reported author</span></p>
-    <p className="csMeta">Congress: {ordinal(record.congress) ? `${ordinal(record.congress)} Congress` : 'Congress unavailable'}</p>
-    <p className="csMeta">Filed: {record.filedDate ? recordDate(record.filedDate) : 'Filing date unavailable'}</p>
+    <div className="csRecordMeta">
+      <p className="csAuthorship">Authorship: <span>Source-reported author</span></p>
+      <p className="csMeta">Congress: {ordinal(record.congress) ? `${ordinal(record.congress)} Congress` : 'Congress unavailable'}</p>
+      <p className="csMeta">Filed: {record.filedDate ? recordDate(record.filedDate) : 'Filing date unavailable'}</p>
+    </div>
     <StatusBlock value={record.reportedStatus} />
     {history.length ? <details className="csHistory"><summary>Legislative history ({history.length})</summary>
       <ol className="csTimeline">{history.map((event, index) => <li key={index}>

@@ -16,18 +16,21 @@
   --p-gold-text: color-mix(in srgb, var(--ph-gold) 62%, var(--ph-blue));
   --p-red-soft: color-mix(in srgb, var(--ph-red) 7%, var(--ph-white));
   --p-red-line: color-mix(in srgb, var(--ph-red) 28%, var(--ph-white));
-  --p-green: #1b7a47;
-  --p-green-soft: color-mix(in srgb, var(--p-green) 10%, var(--ph-white));
-  --p-green-line: color-mix(in srgb, var(--p-green) 38%, var(--ph-white));
   --p-radius-lg: 18px;
   --p-radius-md: 12px;
   --p-shadow-sm: 0 1px 2px rgba(10, 29, 66, 0.05), 0 4px 14px rgba(10, 29, 66, 0.04);
   --p-shadow-md: 0 2px 4px rgba(10, 29, 66, 0.05), 0 12px 32px rgba(10, 29, 66, 0.09);
 }
 
+:root:has(.profilePage) {
+  scrollbar-gutter: stable;
+}
+
 .profilePage {
+  --p-gap: clamp(14px, 2vw, 24px);
+  --p-padding: clamp(16px, 2.5vw, 26px);
   display: grid;
-  gap: 20px;
+  gap: var(--p-gap);
   width: min(1240px, 100%);
   margin: 0 auto;
   padding: 20px clamp(16px, 3vw, 44px) 88px;
@@ -58,16 +61,13 @@
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 20px 32px;
+  gap: 16px 28px;
   overflow: hidden;
-  padding: clamp(24px, 3vw, 38px) clamp(22px, 3vw, 40px);
+  padding: clamp(18px, 3vw, 34px);
   border-radius: var(--p-radius-lg);
-  background:
-    radial-gradient(420px 220px at 100% 0%, color-mix(in srgb, var(--ph-red) 42%, transparent), transparent 70%),
-    radial-gradient(360px 220px at 0% 130%, color-mix(in srgb, var(--ph-gold) 32%, transparent), transparent 70%),
-    linear-gradient(135deg, var(--ph-blue), var(--ph-blue-mid));
+  background: linear-gradient(115deg, var(--ph-blue), var(--ph-blue-mid));
   color: var(--ph-white);
-  box-shadow: var(--p-shadow-md);
+  box-shadow: var(--p-shadow-sm);
 }
 
 .prHeroMain {
@@ -83,29 +83,27 @@
   display: grid;
   place-items: center;
   flex: 0 0 auto;
-  width: clamp(72px, 9vw, 104px);
-  height: clamp(72px, 9vw, 104px);
-  border: 3px solid var(--ph-gold-light);
-  border-radius: 50%;
+  width: clamp(56px, 8vw, 96px);
+  aspect-ratio: 1;
+  border: 2px solid color-mix(in srgb, var(--ph-gold-light) 68%, transparent);
+  border-radius: var(--p-radius-lg);
   background: color-mix(in srgb, var(--ph-white) 12%, transparent);
   color: var(--ph-white);
   font: 800 clamp(1.5rem, 3vw, 2.2rem)/1 var(--display);
   letter-spacing: 0.02em;
-  box-shadow: 0 0 0 6px color-mix(in srgb, var(--ph-white) 10%, transparent);
 }
 
 .prAvatar img {
   position: absolute;
   z-index: 1;
-  inset: 3px;
-  width: calc(100% - 6px);
-  height: calc(100% - 6px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center;
-  border-radius: 50%;
 }
 
-.prAvatar > span:last-child {
+.prAvatar > span {
   position: relative;
   z-index: 0;
 }
@@ -138,22 +136,23 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 12px;
+  gap: 6px;
   margin: 0;
-  color: color-mix(in srgb, var(--ph-white) 80%, transparent);
-  font: 600 14px/1.4 var(--sans);
+  color: var(--ph-white);
+  font: 600 13px/1.45 var(--sans);
 }
 
-.prIdentityMeta i {
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--ph-gold-light);
+.prIdentityMeta > span {
+  padding: 3px 9px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: var(--radius-full);
+  background: rgb(255 255 255 / 8%);
+  overflow-wrap: anywhere;
 }
 
 .prTerm {
   margin: 0;
-  color: color-mix(in srgb, var(--ph-white) 66%, transparent);
+  color: rgb(255 255 255 / 80%);
   font: 500 13px/1.4 var(--sans);
 }
 
@@ -268,11 +267,6 @@
   border-color: var(--ph-red);
 }
 
-.profilePage .prBtnFull {
-  width: 100%;
-  justify-content: flex-start;
-}
-
 /* ---------- Layout ---------- */
 .prKpis {
   min-width: 0;
@@ -280,14 +274,14 @@
 
 .prLayout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 29%);
+  gap: var(--p-gap);
   align-items: start;
 }
 
 .prMain {
   display: grid;
-  gap: 20px;
+  gap: var(--p-gap);
   min-width: 0;
 }
 
@@ -305,9 +299,9 @@
 /* ---------- Cards ---------- */
 .prCard {
   display: grid;
-  gap: 14px;
+  gap: 16px;
   min-width: 0;
-  padding: 24px;
+  padding: var(--p-padding, 24px);
   border: 1px solid var(--p-line);
   border-radius: var(--p-radius-lg);
   background: var(--p-surface);
@@ -316,6 +310,7 @@
 
 .prCardHead {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
@@ -328,7 +323,7 @@
 .prCardTitle {
   margin: 0;
   color: var(--p-text);
-  font: 800 16px/1.25 var(--display);
+  font: 750 clamp(1.0625rem, 1.8vw, 1.25rem)/1.3 var(--display);
 }
 
 .prCardHint {
@@ -355,15 +350,67 @@
   font-variant-numeric: tabular-nums;
 }
 
-.prBio {
-  border-left: 5px solid var(--ph-gold);
-}
-
 .prBio p {
   max-width: 72ch;
   margin: 0;
   color: var(--p-text-2);
   font: 400 15px/1.75 var(--sans);
+  white-space: pre-line;
+}
+
+.prScoreBody {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px 20px;
+  padding: 14px;
+  border: 1px solid var(--info-border);
+  border-radius: var(--p-radius-md);
+  background: var(--info-soft);
+}
+
+.prScoreReadout p { margin: 0; }
+
+.prScoreReadout {
+  display: grid;
+  gap: 4px;
+  color: var(--p-text-2);
+  font: 650 .8125rem/1.35 var(--sans);
+}
+
+.prScoreValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 6px;
+}
+
+.prScoreValue strong {
+  color: var(--p-text);
+  font: 800 clamp(1.75rem, 4vw, 2.5rem)/1 var(--display);
+  font-variant-numeric: tabular-nums;
+}
+
+.prPanelLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  color: var(--ph-blue-light);
+  font: 700 .875rem/1.4 var(--sans);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.prPanelLink:hover { color: var(--ph-blue); }
+.prPanelLink svg { flex: none; }
+
+.profilePage .prEmptyState {
+  padding: 14px 16px;
+  border: 1px dashed var(--p-line);
+  border-radius: var(--p-radius-md);
+  background: var(--p-inset);
 }
 
 /* ---------- Drafts & review ---------- */
@@ -474,7 +521,7 @@
 .prToolbar {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: 14px;
+  gap: 12px;
   padding: 14px;
   border: 1px solid var(--p-line-soft);
   border-radius: var(--p-radius-md);
@@ -488,17 +535,17 @@
 }
 
 .prField > span {
-  color: var(--p-muted);
-  font: 700 11px/1 var(--display);
+  color: var(--p-text-2);
+  font: 700 12px/1.3 var(--sans);
 }
 
 .profilePage .prField :is(input, select) {
   width: 100%;
-  min-height: 0;
+  min-height: 44px;
   height: auto;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border: 1px solid var(--p-line);
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   outline: 0;
   box-shadow: none;
   background: var(--p-surface);
@@ -537,6 +584,8 @@
   border-top: 0;
   padding-top: 4px;
 }
+
+.prNews li:last-child { padding-bottom: 0; }
 
 .prNews a {
   color: var(--ph-blue-light);
@@ -633,6 +682,8 @@
   padding-top: 0;
 }
 
+.prFacts div:last-child { padding-bottom: 0; }
+
 .prFacts dt {
   color: var(--p-muted);
   font: 700 12px/1.2 var(--display);
@@ -645,40 +696,18 @@
   overflow-wrap: anywhere;
 }
 
-.profilePage .prBtn.prBtnCsv {
-  border-color: var(--p-green-line);
-  background: var(--p-green-soft);
-  color: var(--p-green);
+.prExportCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.profilePage .prBtn.prBtnCsv:hover:not(:disabled) {
-  border-color: var(--p-green);
-  background: var(--p-green);
-  color: var(--ph-white);
-}
-
-.profilePage .prBtn.prBtnCsv:active:not(:disabled) {
-  background: color-mix(in srgb, var(--p-green) 82%, var(--ph-blue));
-}
-
-.profilePage .prBtn.prBtnJson {
-  border-color: color-mix(in srgb, var(--ph-blue-light) 38%, var(--ph-white));
-  background: color-mix(in srgb, var(--ph-blue-light) 9%, var(--ph-white));
-  color: var(--ph-blue-light);
-}
-
-.profilePage .prBtn.prBtnJson:hover:not(:disabled) {
-  border-color: var(--ph-blue-light);
-  background: var(--ph-blue-light);
-  color: var(--ph-white);
-}
-
-.profilePage .prBtn.prBtnJson:active:not(:disabled) {
-  background: var(--ph-blue-mid);
-}
+.prExportCard .prCardHint { margin: 4px 0 0; }
 
 .prExports {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -785,23 +814,6 @@
 }
 
 /* ---------- Congress information (CongressSourceSection + CongressProfilePanel) ---------- */
-.profilePage .csSection,
-.profilePage .csPanel,
-.profilePage .prTimeline,
-.profilePage .prNewsCard {
-  padding: 24px;
-  border: 1px solid var(--p-line);
-  border-radius: var(--p-radius-lg);
-  background: var(--p-surface);
-  box-shadow: var(--p-shadow-sm);
-}
-
-.profilePage .csSection,
-.profilePage .prTimeline,
-.profilePage .prNewsCard {
-  border-left: 5px solid var(--ph-blue-light);
-}
-
 /* The records list sits flat inside its card, with no second box around it */
 .profilePage .prLedger {
   padding: 0;
@@ -812,7 +824,7 @@
 }
 
 .profilePage .csPanel {
-  border-left: 5px solid var(--ph-gold);
+  border-inline-start: 3px solid var(--ph-gold);
 }
 
 .csDisclaimer {
@@ -873,11 +885,26 @@
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
 }
 
+.profilePage .csCongressGroup .csRecord {
+  border-inline-start-width: 3px;
+  padding: clamp(12px, 2vw, 20px);
+  box-shadow: none;
+}
+
 .csRecord:hover {
   border-left-color: var(--ph-gold);
   box-shadow: var(--p-shadow-md);
 }
 
+.profilePage .csCongressGroup .csRecord:hover {
+  border-inline-start-color: var(--ph-blue-light);
+  box-shadow: none;
+}
+
+.profilePage .csCongressGroup .csRecord:focus-within {
+  border-color: var(--info-border);
+  border-inline-start-color: var(--ph-blue-light);
+}
 .csRecord.selected {
   border-color: var(--ph-blue-light);
   border-left-color: var(--ph-gold);
@@ -902,6 +929,24 @@
 .csRecord > .csTitle { display: block; margin: 0; line-height: 1.55; }
 .csAuthorship { display: block; margin: 0; font: 600 13px/1.6 var(--sans); color: var(--p-text-2); }
 .csAuthorship span { font-weight: 500; }
+.profilePage .csRecordMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 16px;
+}
+
+.profilePage .csCongressGroup .csStatusBlock {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--p-inset);
+}
+
+.profilePage .csCongressGroup .csStatusBlock > .csMeta:first-of-type {
+  color: var(--p-text);
+  font-size: 13px;
+}
+
 .csMembershipSummary { display: grid; gap: 6px; padding: 12px 14px; border-radius: 10px; background: var(--p-inset); }
 .csCongressFilter { max-width: 280px; }
 .csCongressGroup { display: grid; min-width: 0; gap: 12px; }
@@ -909,6 +954,17 @@
 .csStatusBlock .csMeta { overflow-wrap: anywhere; }
 .accountabilityList { display: grid; min-width: 0; gap: 14px; }
 .accountabilityCard { display: grid; min-width: 0; gap: 10px; padding: 16px; border: 1px solid var(--p-line); border-radius: 12px; background: var(--p-surface); }
+.profilePage .accountabilityList,
+.profilePage .accomplishmentsSection > .accomplishmentList {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr));
+}
+
+.profilePage .accountabilityCard {
+  align-content: start;
+  background: var(--bg-inset);
+}
+
+.profilePage .accountabilityCard:focus-within { border-color: var(--ph-blue-light); }
 .accountabilityCard h3, .accountabilityCard p { margin: 0; }
 .accountabilityCard h3 { font: 750 16px/1.5 var(--display); overflow-wrap: anywhere; }
 .accountabilityLabels { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
@@ -1291,6 +1347,42 @@
 .accomplishmentList .prManageActions { margin-top: 12px; flex-wrap: wrap; }
 .accomplishmentsSection .prCardHead { flex-wrap: wrap; gap: 12px; }
 
+.profilePage .accomplishmentsSection > .accomplishmentList { margin: 0; }
+.profilePage .accomplishmentsSection > .accomplishmentList > li {
+  display: flex;
+  background: var(--bg-inset);
+}
+
+.profilePage .accomplishmentList article {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profilePage .accomplishmentList article h3 {
+  margin: 0;
+  color: var(--p-text);
+  font: 750 1rem/1.4 var(--display);
+}
+
+.profilePage .accomplishmentList article .accomplishmentDescription {
+  margin: 0;
+  color: var(--p-text-2);
+  font: 400 .9375rem/1.65 var(--sans);
+}
+
+.profilePage :is(.accountabilityCard, .accomplishmentList article) a {
+  align-self: start;
+  color: var(--ph-blue-light);
+  font: 650 .875rem/1.4 var(--sans);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.profilePage .accomplishmentList article a { margin-top: auto; padding-block: 8px 4px; }
+.profilePage :is(.accountabilityCard, .accomplishmentList article) a:hover { color: var(--ph-blue); }
+
 /* ---------- Motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   .profilePage *,
@@ -1327,16 +1419,68 @@
   .prToolbar {
     grid-template-columns: minmax(0, 1fr);
   }
+}
 
-  .prCard {
-    padding: 18px;
+.profilePage .prTabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 5px;
+  border: 1px solid var(--p-line);
+  border-radius: var(--p-radius-lg);
+  background: var(--p-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.profilePage .prTabs a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--p-radius-md);
+  color: var(--p-text-2);
+  font: 700 .875rem/1.35 var(--sans);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: background-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
+}
+
+.profilePage .prTabs a svg { flex: none; }
+
+.profilePage .prTabs a:hover {
+  background: var(--p-inset);
+  color: var(--p-text);
+}
+
+.profilePage .prTabs a[aria-current="page"] {
+  border-color: var(--info-border);
+  background: var(--info-soft);
+  color: var(--p-text);
+}
+
+@media (max-width: 720px) {
+  .profilePage .prTabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .profilePage .prTabs a { justify-content: flex-start; padding-inline: 8px; font-size: .8125rem; }
+}
+
+@media (max-width: 360px) {
+  .profilePage .prTabs a {
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-height: 60px;
+    text-align: center;
   }
 }
 
-.prTabs { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: 1rem; }
-.prTabs a { display: inline-flex; align-items: center; min-height: 44px; padding: .5rem .8rem; border: 1px solid var(--line-soft); border-radius: .6rem; color: var(--ph-blue); font-weight: 650; }
-.prTabs a[aria-current="page"] { background: var(--ph-blue); color: #fff; }
-.prTabs a:focus-visible { outline: 2px solid var(--ph-blue); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  .profilePage .prTabs a { transition: none; }
+}
+
 .prIndicators {
   container-type: inline-size;
 }

@@ -1,7 +1,7 @@
 import { profileSections } from '../../config/appRoutes'
 import { safeNewsUrl } from '../../features/news/newsPresentation'
 import { useEffect, useState } from 'react'
-import { BarChart3Icon, FolderIcon } from '../../components/icons/Lucide'
+import { ArrowRightIcon, CircleCheckIcon, FileTextIcon, FolderIcon, LayoutDashboardIcon, ScrollTextIcon, ShieldCheckIcon } from '../../components/icons/Lucide'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { KpiGrid, PaginationMini, ProfileSkeleton, StatusLine } from '../pageHelpers'
 import PoliticianEditor from '../../components/governance/PoliticianEditor'
@@ -19,6 +19,12 @@ import { congressRequest } from '../../api/congress'
 import './Profile.css'
 
 const RECORDS_PER_PAGE = 9
+const sectionDetails = {
+  overview: { label: 'Overview', Icon: LayoutDashboardIcon },
+  accountability: { label: 'Accountability Records', Icon: ShieldCheckIcon },
+  'legislative-records': { label: 'Legislative Records', Icon: ScrollTextIcon },
+  accomplishments: { label: 'Accomplishments', Icon: CircleCheckIcon },
+}
 
 function exportLedger(entries, profile, type) {
   const data = type === 'json'
@@ -257,6 +263,7 @@ export default function PoliticianProfilePage({
           <header className="prHero">
             <div className="prHeroMain">
               <span className="prAvatar">
+                <span aria-hidden="true">{initials(profile.fullName)}</span>
                 {profile.profileImageUrl && (
                   <img
                     alt={`${profile.fullName} profile`}
@@ -264,18 +271,17 @@ export default function PoliticianProfilePage({
                     src={profile.profileImageUrl}
                   />
                 )}
-                {!profile.profileImageUrl && <span aria-hidden="true">{initials(profile.fullName)}</span>}
               </span>
               <div className="prIdentity">
                 <h1>{displayName.name}</h1>
                 {displayName.needsReview && <p className="prNotice">Name formatting requires review</p>}
-                <CongressMembershipSummary politicianId={politicianId} detailed />
                 {(profile.position || profile.jurisdiction || profile.partyAffiliation) && <p className="prIdentityMeta">
                   {profile.position && <span>{position}</span>}
                   {profile.jurisdiction && <span>{jurisdiction}</span>}
                   {profile.partyAffiliation && <span>{party}</span>}
                 </p>}
                 {(profile.termStart || profile.termEnd) && <p className="prTerm">Recorded term: {term}.</p>}
+                <CongressMembershipSummary politicianId={politicianId} detailed />
                 {termEnded && (
                   <p className="prNotice">This term has ended; current office information may be outdated.</p>
                 )}
@@ -292,12 +298,18 @@ export default function PoliticianProfilePage({
           </header>
 
           <nav className="prTabs" aria-label="Profile sections">
-            {profileSections.map((value, index) => <a key={value} href={profileHref(value)}
-              aria-current={section === value ? 'page' : undefined} onClick={event => {
-                if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-                event.preventDefault()
-                onSectionChange(value)
-              }}>{['Overview', 'Accountability Records', 'Legislative Records', 'Accomplishments'][index]}</a>)}
+            {profileSections.map(value => {
+              const { label, Icon } = sectionDetails[value]
+              return <a key={value} href={profileHref(value)}
+                aria-current={section === value ? 'page' : undefined} onClick={event => {
+                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                  event.preventDefault()
+                  onSectionChange(value)
+                }}>
+                <Icon size={18} />
+                <span>{label}</span>
+              </a>
+            })}
           </nav>
           <StatusLine state={recordState} />
 
@@ -305,23 +317,31 @@ export default function PoliticianProfilePage({
             <div className="prMain">
               <section className="prCard prBio">
                 <h2 className="prCardTitle">Biography</h2>
-                <p>{profile.biography || 'No biography available.'}</p>
+                <p className={profile.biography ? undefined : 'prEmptyState'}>{profile.biography || 'No biography available.'}</p>
               </section>
 
               <section className="prCard">
                 <h2 className="prCardTitle">Accountability summary</h2>
-                <p>{profile.wgiCompositeScore == null ? 'Accountability data is currently unavailable.' :
-                  'WGI Composite score ' + Number(profile.wgiCompositeScore).toLocaleString('en-PH', { maximumFractionDigits: 2 }) + ' out of 100'}</p>
-                <a href={profileHref('accountability')} onClick={event => {
-                  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-                  event.preventDefault()
-                  onSectionChange('accountability')
-                }}>View accountability records</a>
+                <div className="prScoreBody">
+                  {profile.wgiCompositeScore == null ? <p className="prMuted">Accountability data is currently unavailable.</p> :
+                    <div className="prScoreReadout">
+                      <p>WGI Composite Score</p>
+                      <p className="prScoreValue">
+                        <strong>{Number(profile.wgiCompositeScore).toLocaleString('en-PH', { maximumFractionDigits: 2 })}</strong>
+                        <span>out of 100</span>
+                      </p>
+                    </div>}
+                  <a className="prPanelLink" href={profileHref('accountability')} onClick={event => {
+                    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                    event.preventDefault()
+                    onSectionChange('accountability')
+                  }}>View accountability records <ArrowRightIcon size={16} /></a>
+                </div>
               </section>
               <section className="prCard prNewsCard" aria-label="Related published news">
                 <h2 className="prCardTitle">Related government news</h2>
                 {relatedNews.length === 0 ? (
-                  <p className="prMuted">No reviewed news articles are linked to this politician.</p>
+                  <p className="prMuted prEmptyState">No reviewed news articles are linked to this politician.</p>
                 ) : (
                   <ul className="prNews">
                     {relatedNews.map((item) => (
@@ -410,14 +430,16 @@ export default function PoliticianProfilePage({
                   <Pager paged={managePaged} onChange={setManagePage} label="Manage records pagination" />
                 </details>
               )}
-              <section className="prCard">
-                <h2 className="prCardTitle">Export records</h2>
-                <p className="prCardHint">Download this politician’s published timeline.</p>
+              <section className="prCard prExportCard">
+                <div>
+                  <h2 className="prCardTitle">Export records</h2>
+                  <p className="prCardHint">Download this politician’s published timeline.</p>
+                </div>
                 <div className="prExports">
-                  <button className="prBtn prBtnFull prBtnCsv" type="button" onClick={() => exportLedger(entries, profile, 'csv')}>
-                    <BarChart3Icon size={16} /> Export CSV
+                  <button className="prBtn prBtnOutline" type="button" onClick={() => exportLedger(entries, profile, 'csv')}>
+                    <FileTextIcon size={16} /> Export CSV
                   </button>
-                  <button className="prBtn prBtnFull prBtnJson" type="button" onClick={() => exportLedger(entries, profile, 'json')}>
+                  <button className="prBtn prBtnOutline" type="button" onClick={() => exportLedger(entries, profile, 'json')}>
                     <FolderIcon size={16} /> Export JSON
                   </button>
                 </div>
@@ -507,9 +529,8 @@ export default function PoliticianProfilePage({
             </section>}
           </div>}
 
-          {section === 'accomplishments' && <section className="prCard">
-            <AccomplishmentsSection key={politicianId} politicianId={politicianId} isAdmin={isAdmin} token={token} embedded />
-          </section>}
+          {section === 'accomplishments' &&
+            <AccomplishmentsSection key={politicianId} politicianId={politicianId} isAdmin={isAdmin} token={token} />}
 
           {isAdmin && editing && (
             <PoliticianEditor

@@ -32,5 +32,5 @@ export default function AccountabilityRecords({ entries = [], loading, emptyMess
   if (loading) return <LoadingSkeleton label="Loading accountability records" />
   return entries.length ? <div className="accountabilityList">{entries.map(entry =>
     <AccountabilityCard key={entry.timelineId || entry.accomplishmentId} entry={entry} />)}</div>
-    : <p className="prMuted">{emptyMessage}</p>
+    : <p className="prMuted prEmptyState">{emptyMessage}</p>
 }

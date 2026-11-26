@@ -25,7 +25,7 @@ function Citation({ url }) {
 export function PublicAccomplishments({ records = [] }) {
   const visible = records.filter(entry => entry.visible)
   return visible.length === 0
-    ? <p className="prMuted">No accomplishments are currently available for this politician.</p>
+    ? <p className="prMuted prEmptyState">No accomplishments are currently available for this politician.</p>
     : <ul className="accomplishmentList">{visible.map(entry => <li key={entry.accomplishmentId}>
       <article>
         <h3>{entry.title}</h3>
