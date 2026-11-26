@@ -24,8 +24,8 @@
 .articleImage figcaption a { color: #174f8f; text-decoration: underline; text-underline-offset: 3px; }
 
 /* ---------- Headline ---------- */
-:is(.newsFeedShell, .readerPage) .postBody.newsCardContent :is(h2, .readerHeadline),
-:is(.newsFeedShell, .readerPage) .newsPost.featured .postBody.newsCardContent :is(h2, .readerHeadline) {
+:is(.newsFeedShell, .readerPage) .postBody.newsCardContent > :is(h2, .readerHeadline),
+:is(.newsFeedShell, .readerPage) .newsPost.featured .postBody.newsCardContent > :is(h2, .readerHeadline) {
   margin: 0; color: #0b1f45; font: 800 clamp(22px, 2.4vw, 29px)/1.28 var(--display);
   letter-spacing: -0.012em; max-width: 30ch; text-wrap: balance; overflow-wrap: anywhere;
 }
@@ -63,7 +63,7 @@
   :is(.newsFeedShell, .readerPage) .newsPost .commentPanel { margin: 0 18px 20px; }
   :is(.newsFeedShell, .readerPage) .postBody.newsCardContent .articleImage { width: calc(100% + 36px); margin: 0 -18px 2px; }
   :is(.newsFeedShell, .readerPage) .postBody.newsCardContent .articleImage figcaption { padding: 0 18px; }
-  :is(.newsFeedShell, .readerPage) .postBody.newsCardContent :is(h2, .readerHeadline), :is(.newsFeedShell, .readerPage) .newsPost.featured .postBody.newsCardContent :is(h2, .readerHeadline) { font-size: 22px; max-width: none; }
+  :is(.newsFeedShell, .readerPage) .postBody.newsCardContent > :is(h2, .readerHeadline), :is(.newsFeedShell, .readerPage) .newsPost.featured .postBody.newsCardContent > :is(h2, .readerHeadline) { font-size: 22px; max-width: none; }
   .summaryText p, :is(.newsFeedShell, .readerPage) .postBody.newsCardContent .newsPreview { font-size: 16px; line-height: 1.7; }
 }
 

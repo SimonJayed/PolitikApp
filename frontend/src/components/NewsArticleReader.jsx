@@ -70,26 +70,36 @@ export default function NewsArticleReader({
         {!article && !error && <LoadingSkeleton label="Loading article" rows={6} />}
         {article && !missing && <>
           <ArticleMeta article={article} />
-          <div className="postBody newsCardContent readerBody">
+          <div className="postBody newsCardContent">
             <ArticleImage article={article} />
             <ArticleCategory category={article.category} />
-            <h1 className={original ? 'readerHeadline readerOriginalHeadline' : 'readerHeadline'}>{original ? article.originalTitle || article.headline : article.headline}</h1>
+            <h1 className="readerHeadline">{article.headline || article.originalTitle}</h1>
             {article.sourceAuthor && <p className="newsSummaryLabel">By {article.sourceAuthor}</p>}
             <nav className="readerViews" aria-label="Article views">
               <a href={hrefFor(false)} aria-current={!original ? 'page' : undefined} onClick={event => navigate(event, false)}>Summary</a>
               {(originalText || original) && <a href={hrefFor(true)} aria-current={original ? 'page' : undefined}
                 onClick={event => navigate(event, true)}>Read Original</a>}
             </nav>
-            {original ? <OriginalArticleBody
-              html={originalLayout?.html}
-              text={originalText}
-              title={article.originalTitle}
-              sourceAvailable={Boolean(sourceUrl)}
-              loading={Boolean(originalText && !originalLayout)}
-            /> : <section className="readerSummarySection" aria-label="Reviewed summary">
-              <p className="newsSummaryLabel">{summaryLabel(article)}</p>
-              {content.summary ? <SummaryText text={content.summary} className="readerSummary" /> : <p>Administrator-reviewed summary unavailable.</p>}
-            </section>}
+            <section
+              className={`readerProse ${original ? 'readerOriginal' : 'readerSummarySection'}`}
+              aria-label={original ? 'Original article' : 'Reviewed summary'}
+              lang={original ? 'en' : undefined}
+            >
+              {original ? <>
+                {article.headline && article.originalTitle && article.originalTitle !== article.headline &&
+                  <h2>{article.originalTitle}</h2>}
+                <OriginalArticleBody
+                  html={originalLayout?.html}
+                  text={originalText}
+                  title={article.originalTitle}
+                  sourceAvailable={Boolean(sourceUrl)}
+                  loading={Boolean(originalText && !originalLayout)}
+                />
+              </> : <>
+                <p className="newsSummaryLabel">{summaryLabel(article)}</p>
+                {content.summary ? <SummaryText text={content.summary} className="readerSummary" /> : <p>Administrator-reviewed summary unavailable.</p>}
+              </>}
+            </section>
             {!sourceUrl && <p className="newsSummaryLabel">Original source link unavailable.</p>}
           </div>
           {article.relatedPoliticians?.length > 0 && <section className="readerRelated">

@@ -1,3 +1,7 @@
+:root:has(.readerPage) {
+  scrollbar-gutter: stable;
+}
+
 .readerPage .readerBack {
   display: inline-flex;
   align-items: center;
@@ -64,72 +68,78 @@
   color: #174f8f;
 }
 
-.newsArticleReader .readerOriginal,
-.newsArticleReader .readerSummarySection {
-  width: 100%;
-  min-width: 0;
-}
-
-.readerPage .newsPost .readerBody .readerOriginalHeadline {
-  max-width: 42ch;
-}
-
-.newsArticleReader .readerOriginal {
-  align-self: center;
+.readerProse {
   width: 100%;
   max-width: 86ch;
-  margin-inline: auto;
-  color: var(--text-secondary);
-  font: 400 clamp(16px, 1.15vw, 18px)/1.78 var(--sans);
+  color: #2b405b;
+  font: 400 17px/1.72 var(--sans);
+  text-align: left;
 }
 
-.newsArticleReader .readerOriginal p {
+.readerProse .readerSummary {
+  display: block;
+}
+
+.newsArticleReader .readerProse p {
   max-width: none;
+  margin: 0 0 14px;
   color: inherit;
   font: inherit;
 }
 
-.readerOriginal :is(p, ul, ol, dl, blockquote, pre) {
-  margin-block: 0 1.05em;
+.readerProse :is(div, section, ul, ol, dl, blockquote, pre) {
+  margin-block: 0 14px;
 }
 
-.readerOriginal :is(p, li, dd) {
+.newsArticleReader .readerProse .newsSummaryLabel {
+  margin-bottom: 12px;
+  color: #53657d;
+  font: 400 12px/1.6 var(--sans);
+}
+
+.newsArticleReader .readerProse :is(p, div, section, ul, ol, dl, blockquote, pre):last-child {
+  margin-bottom: 0;
+}
+
+.readerProse :is(p, li, dd) {
   white-space: pre-line;
 }
 
-.readerOriginal :is(ul, ol) { padding-inline-start: 1.55em; }
-.readerOriginal ul { list-style: disc; }
-.readerOriginal ol { list-style: decimal; }
-.readerOriginal li + li { margin-top: .35em; }
-.readerOriginal li > :is(p, ol, ul) { margin-block: .35em; }
-.readerOriginal :is(h2, h3, h4, h5, h6) {
-  margin-block: 1.3em .5em;
+.readerProse :is(strong, b) { color: #10264b; font-weight: 700; }
+.readerProse :is(ul, ol) { padding-inline-start: 1.55em; }
+.readerProse ul { list-style: disc; }
+.readerProse ol { list-style: decimal; }
+.readerProse li + li { margin-top: .35em; }
+.newsArticleReader .readerProse li > :is(p, ol, ul) { margin-block: .35em; }
+.newsArticleReader .readerProse :is(h2, h3, h4, h5, h6) {
+  max-width: none;
+  margin-block: 0 .5em;
   color: var(--text-primary);
   font: 750 1.15em/1.35 var(--display);
   text-wrap: balance;
 }
-.readerOriginal h2 { font-size: 1.4em; }
-.readerOriginal blockquote {
+.newsArticleReader .readerProse * + :is(h2, h3, h4, h5, h6) { margin-block-start: 1.3em; }
+.newsArticleReader .readerProse h2 { font-size: 1.4em; }
+.readerProse blockquote {
   padding: .7em 1em;
   border-inline-start: 3px solid var(--cat, var(--ph-blue));
   background: var(--bg-inset);
 }
-.readerOriginal blockquote > :last-child { margin-bottom: 0; }
-.readerOriginal pre { white-space: pre-wrap; }
-.readerOriginal a {
+.readerProse pre { white-space: pre-wrap; }
+.readerProse a {
   color: var(--ph-blue-light);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.newsArticleReader .readerOriginal .readerOriginalNote {
+.newsArticleReader .readerProse .readerOriginalNote {
   padding: .6em .85em;
   border-radius: var(--radius-sm);
   background: var(--bg-inset);
   color: var(--text-muted);
   font-size: .875rem;
 }
-@media (min-width: 900px) {
-  .readerOriginal p:not(.readerOriginalNote) { text-align: justify; hyphens: auto; }
+@media (max-width: 600px) {
+  .readerProse { font-size: 16px; line-height: 1.7; }
 }
 
 

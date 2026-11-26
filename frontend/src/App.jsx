@@ -314,11 +314,13 @@ function AppInner({ currentUser, isAuthenticated = false, onLogout, onUserUpdate
 
   const openNewsArticle = useCallback((id, original = false) => {
     const url = new URL(window.location.href)
+    const currentRoute = readAppLocation(url)
+    const switchingArticleView = id && currentRoute.view === 'dashboard' && currentRoute.articleId === id
     url.pathname = newsPath(id, original)
     for (const name of ['view', 'id', 'articleId', 'original']) url.searchParams.delete(name)
     if (url.href !== window.location.href) {
       window.history.pushState(null, '', url)
-      window.scrollTo({ top: 0, behavior: 'auto' })
+      if (!switchingArticleView) window.scrollTo({ top: 0, behavior: 'auto' })
     }
     setRoute(readAppLocation(url))
   }, [])

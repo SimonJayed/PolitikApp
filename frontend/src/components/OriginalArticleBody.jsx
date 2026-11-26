@@ -37,13 +37,13 @@ export default function OriginalArticleBody({ html, text, title, sourceAvailable
   const paragraphs = savedText?.split(/\r?\n[ \t]*\r?\n/).filter(paragraph => paragraph.trim()) || []
 
   return (
-    <section className="readerOriginal" aria-label="Original article" lang="en">
+    <>
       {body || (paragraphs.length ? <>
         {!loading && paragraphs.length === 1 && <p className="readerOriginalNote">
           Publisher formatting is unavailable for this saved copy.{sourceAvailable && ' The publisher website may have the original layout.'}
         </p>}
         {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}
       </> : <p>{sourceAvailable ? 'Original text is unavailable here. Visit the publisher website to read the article.' : 'Original source unavailable.'}</p>)}
-    </section>
+    </>
   )
 }
