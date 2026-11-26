@@ -2,6 +2,11 @@
   scrollbar-gutter: stable;
 }
 
+.newsPageFrame.readerPage {
+  max-width: 56rem;
+  padding-inline: clamp(16px, 3vw, 28px);
+}
+
 .readerPage .readerBack {
   display: inline-flex;
   align-items: center;
@@ -33,6 +38,11 @@
 
 .newsArticleReader > :is([role="alert"], .loadingSkeleton) {
   padding: 24px;
+}
+
+.readerPage .newsArticleReader.featured .postBody.newsCardContent > .readerHeadline {
+  max-width: none;
+  text-wrap: pretty;
 }
 
 .readerViews {
@@ -70,7 +80,6 @@
 
 .readerProse {
   width: 100%;
-  max-width: 86ch;
   color: #2b405b;
   font: 400 17px/1.72 var(--sans);
   text-align: left;

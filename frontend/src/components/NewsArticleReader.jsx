@@ -21,6 +21,7 @@ export default function NewsArticleReader({
   const article = loaded?.cache === cache ? loaded.article : cache.peek(url)
   const [originalLayout, setOriginalLayout] = useState(null)
   const originalText = article?.originalContent?.trim()
+  const originalLoading = original && Boolean(originalText) && originalLayout === null
 
   useEffect(() => {
     let current = true
@@ -35,14 +36,14 @@ export default function NewsArticleReader({
   }, [cache, url, token, retry])
 
   useEffect(() => {
-    if (!original || !originalText || originalLayout !== null) return
+    if (!originalLoading) return
     const controller = new AbortController()
     fetch(url + '/original', { signal: AbortSignal.any([controller.signal, AbortSignal.timeout(20_000)]) })
       .then(readApiResponse)
       .then(data => { if (!controller.signal.aborted) setOriginalLayout({ html: data.html }) })
       .catch(() => { if (!controller.signal.aborted) setOriginalLayout({ html: null }) })
     return () => controller.abort()
-  }, [original, originalLayout, originalText, url])
+  }, [originalLoading, originalText, url])
 
   function navigate(event, showOriginal) {
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
@@ -85,17 +86,16 @@ export default function NewsArticleReader({
               aria-label={original ? 'Original article' : 'Reviewed summary'}
               lang={original ? 'en' : undefined}
             >
-              {original ? <>
-                {article.headline && article.originalTitle && article.originalTitle !== article.headline &&
-                  <h2>{article.originalTitle}</h2>}
-                <OriginalArticleBody
-                  html={originalLayout?.html}
-                  text={originalText}
-                  title={article.originalTitle}
-                  sourceAvailable={Boolean(sourceUrl)}
-                  loading={Boolean(originalText && !originalLayout)}
-                />
-              </> : <>
+              {original ? (
+                originalLoading ? <LoadingSkeleton label="Loading original article" rows={6} /> : (
+                  <OriginalArticleBody
+                    html={originalLayout?.html}
+                    text={originalText}
+                    title={article.originalTitle}
+                    sourceAvailable={Boolean(sourceUrl)}
+                  />
+                )
+              ) : <>
                 <p className="newsSummaryLabel">{summaryLabel(article)}</p>
                 {content.summary ? <SummaryText text={content.summary} className="readerSummary" /> : <p>Administrator-reviewed summary unavailable.</p>}
               </>}

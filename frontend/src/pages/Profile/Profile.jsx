@@ -1,4 +1,3 @@
-import { Methodology } from '../../components/WgiLeaderboard'
 import { profileSections } from '../../config/appRoutes'
 import { safeNewsUrl } from '../../features/news/newsPresentation'
 import { useEffect, useState } from 'react'
@@ -102,7 +101,6 @@ export default function PoliticianProfilePage({
   const verifiedEntries = entries.filter((entry) => entry.actionDetails?.sourceReported !== true)
   const relatedNews = state.data?.relatedNews || []
   const [recordQuery, setRecordQuery] = useState('')
-  const [showScoreGuide, setShowScoreGuide] = useState(false)
   const [recordType, setRecordType] = useState('ALL')
   const [recordPage, setRecordPage] = useState(1)
   const [curatedPage, setCuratedPage] = useState(1)
@@ -353,14 +351,9 @@ export default function PoliticianProfilePage({
           </div>}
 
           {section === 'accountability' && <div className="prMain">
-            <section className="prCard prMetricGuide" aria-label="How to read the scores">
-              <div className="prCardHead">
-                <h2 className="prCardTitle">How to read the scores</h2>
-                <button type="button" className="prBtn prBtnOutline" onClick={() => setShowScoreGuide(true)}>How are scores calculated?</button>
-              </div>
-              {showScoreGuide && <Methodology onClose={() => setShowScoreGuide(false)} />}
+            <div className="prCard prIndicators">
               <KpiGrid profile={profile} showExplanations />
-            </section>
+            </div>
               <section className="prCard prTimeline" aria-label="Accountability records">
                 <div className="prCardHead">
                   <div>

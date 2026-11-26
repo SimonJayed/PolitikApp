@@ -26,7 +26,7 @@ function renderNode(node, key) {
   return createElement(tag === 'h1' ? 'h2' : tag, props, Array.from(node.childNodes, renderNode))
 }
 
-export default function OriginalArticleBody({ html, text, title, sourceAvailable, loading }) {
+export default function OriginalArticleBody({ html, text, title, sourceAvailable }) {
   const body = useMemo(() => {
     if (!html || typeof DOMParser === 'undefined') return null
     const parsed = new DOMParser().parseFromString(html, 'text/html')
@@ -39,7 +39,7 @@ export default function OriginalArticleBody({ html, text, title, sourceAvailable
   return (
     <>
       {body || (paragraphs.length ? <>
-        {!loading && paragraphs.length === 1 && <p className="readerOriginalNote">
+        {paragraphs.length === 1 && <p className="readerOriginalNote">
           Publisher formatting is unavailable for this saved copy.{sourceAvailable && ' The publisher website may have the original layout.'}
         </p>}
         {paragraphs.map((paragraph, index) => <p key={index}>{paragraph}</p>)}

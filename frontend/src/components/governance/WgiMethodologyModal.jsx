@@ -114,7 +114,6 @@ export default function WgiMethodologyModal({ isOpen, onClose, initialPosition =
         {indicator ? <div className="comparisonModalBody wgiIndicatorBody">
           <p className="ty-label">{indicator.wgiPillar}</p>
           <p className="ty-body">{indicator.description}</p>
-          <button type="button" className="wgiGuideLink" onClick={indicator.onOpenGuide}>View scoring methodology</button>
         </div> : <div className="comparisonModalBody wgiMethodologyBody">
           {/* Left Column: Education / Formula Guide */}
           <div className="wgiEducation" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

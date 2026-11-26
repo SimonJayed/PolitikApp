@@ -222,15 +222,9 @@
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 24px;
 }
-.wgiIndicatorBody p { margin: 0 0 12px; }
-.wgiIndicatorBody .wgiGuideLink { min-height: 44px; color: var(--ph-blue-light); text-decoration: underline; }
+.wgiIndicatorBody p { margin: 0; }
+.wgiIndicatorBody p + p { margin-top: 12px; }
 .kpiCard { position: relative; }
-.kpiCard:has(.wgiMetricHelp) .ty-label { padding-inline-end: 32px; }
-.kpiCard .wgiMetricHelp {
-  position: absolute; inset: 8px 8px auto auto; display: grid; place-items: center;
-  width: 36px; min-height: 36px; padding: 0; border-radius: 50%;
-  background: var(--accent-soft); color: var(--ph-blue);
-}
 .wgiMethodologyBody::-webkit-scrollbar {
   width: 6px;
 }
