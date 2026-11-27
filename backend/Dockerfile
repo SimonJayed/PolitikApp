@@ -4,6 +4,19 @@ WORKDIR /workspace
 
 COPY pom.xml ./
 
+# Use Google's Maven Central mirror to avoid 429 rate limits on shared build runners
+RUN mkdir -p /root/.m2 && printf '%s\n' \
+  '<settings>' \
+  '  <mirrors>' \
+  '    <mirror>' \
+  '      <id>google-maven-central</id>' \
+  '      <name>Google Maven Central Mirror</name>' \
+  '      <url>https://maven-central.storage-download.googleapis.com/maven2</url>' \
+  '      <mirrorOf>central</mirrorOf>' \
+  '    </mirror>' \
+  '  </mirrors>' \
+  '</settings>' > /root/.m2/settings.xml
+
 # Cache dependencies
 RUN mvn dependency:go-offline -B
 
