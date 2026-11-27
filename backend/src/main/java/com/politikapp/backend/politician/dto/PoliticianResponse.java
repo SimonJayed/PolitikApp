@@ -22,7 +22,7 @@ public record PoliticianResponse(
         BigDecimal trackedBudgetAllocated,
         long billsAuthored,
         long projectCompletions,
-        double wgiCompositeScore,
+        Double wgiCompositeScore,
         String profileOrigin
 ) {
 }

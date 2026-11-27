@@ -5,7 +5,7 @@ import { FileTextIcon, SearchIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
 import { membershipSummary, ordinal } from '../../features/congress/congressHistory'
-import { chamberForPosition, congressOptions, directoryJurisdiction, matchesCongress, matchesPosition, directoryPositions, directoryJurisdictions, matchesDirectoryName, sortDirectory } from '../../features/congress/politicianDirectory'
+import { chamberForPosition, congressOptions, directoryJurisdiction, matchesBranch, matchesCongress, matchesPosition, directoryPositions, directoryJurisdictions, matchesDirectoryName, sortDirectory } from '../../features/congress/politicianDirectory'
 import { useDirectoryFilters } from '../../features/congress/useDirectoryFilters'
 import { useDirectory } from '../../features/congress/useDirectory'
 import { formatDisplayName } from '../../features/congress/displayName'
@@ -69,7 +69,7 @@ export default function PoliticiansLoaderPanel({
   onPoliticianCreate,
   token,
 }) {
-  const { query, setQuery, jurisdictionFilter, setJurisdictionFilter, positionFilter, setPositionFilter,
+  const { query, setQuery, branchFilter, setBranchFilter, jurisdictionFilter, setJurisdictionFilter, positionFilter, setPositionFilter,
     congressFilter, setCongressFilter, activeOnly, setActiveOnly, resetFilters } = useDirectoryFilters()
   const [directoryRefresh, setDirectoryRefresh] = useState(0)
   const directory = useDirectory(directoryRefresh)
@@ -82,23 +82,25 @@ export default function PoliticiansLoaderPanel({
     politicians.filter(person => person.status !== 'ARCHIVED').map(person => ({ ...person, jurisdiction: directoryJurisdiction(person, membershipIndex) })),
     membershipIndex, directory.currentCongress, directory.asOfDate,
   ), [politicians, membershipIndex, directory.currentCongress, directory.asOfDate])
-  const congresses = useMemo(() => congressOptions(politicians, positionFilter, membershipIndex), [politicians, positionFilter, membershipIndex])
+  const branchPeople = useMemo(() => politicians.filter(person => matchesBranch(person, branchFilter, membershipIndex)),
+    [politicians, branchFilter, membershipIndex])
+  const congresses = useMemo(() => congressOptions(branchPeople, positionFilter, membershipIndex), [branchPeople, positionFilter, membershipIndex])
   const filtered = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
-    const matches = politicians.filter((politician) =>
+    const matches = branchPeople.filter((politician) =>
       politician.status !== 'ARCHIVED' && matchesJurisdiction(directoryJurisdiction(politician, membershipIndex), jurisdictionFilter)
       && (!activeOnly || isActiveProfile(politician, today))
       && matchesPosition(politician, positionFilter, membershipIndex)
       && matchesCongress(politician, positionFilter, congressFilter, membershipIndex)
       && matchesDirectoryName(politician, query, membershipIndex))
     return sortDirectory(matches, membershipIndex, directory.currentCongress, directory.asOfDate)
-  }, [jurisdictionFilter, politicians, positionFilter, congressFilter, activeOnly, query, membershipIndex, directory.currentCongress, directory.asOfDate])
+  }, [jurisdictionFilter, branchPeople, positionFilter, congressFilter, activeOnly, query, membershipIndex, directory.currentCongress, directory.asOfDate])
 
-  const positions = useMemo(() => directoryPositions(politicians, membershipIndex), [politicians, membershipIndex])
-  const jurisdictions = useMemo(() => directoryJurisdictions(politicians, positionFilter, membershipIndex),
-    [politicians, positionFilter, membershipIndex])
+  const positions = useMemo(() => directoryPositions(branchPeople, membershipIndex), [branchPeople, membershipIndex])
+  const jurisdictions = useMemo(() => directoryJurisdictions(branchPeople, positionFilter, membershipIndex),
+    [branchPeople, positionFilter, membershipIndex])
 
-  useEffect(() => setPage(1), [query, jurisdictionFilter, positionFilter, congressFilter, activeOnly])
+  useEffect(() => setPage(1), [query, branchFilter, jurisdictionFilter, positionFilter, congressFilter, activeOnly])
   useEffect(() => {
     onModalOpenChange?.(creating)
     return () => onModalOpenChange?.(false)
@@ -109,7 +111,7 @@ export default function PoliticiansLoaderPanel({
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
   const isLoading = ['idle', 'loading'].includes(politiciansState.status) || directory.status === 'loading'
   const hasError = politiciansState.status === 'error' || directory.status === 'error'
-  const filtersActive = query.trim() !== '' || jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL' || congressFilter !== 'ALL' || activeOnly
+  const filtersActive = query.trim() !== '' || branchFilter !== 'ALL' || jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL' || congressFilter !== 'ALL' || activeOnly
   const isAdmin = dbUser?.role === 'ADMIN'
   const showSkeleton = isLoading && filtered.length === 0
 
@@ -121,6 +123,7 @@ export default function PoliticiansLoaderPanel({
 
   // Removable chips so people can see, and undo, each filter that is narrowing the list.
   const activeChips = []
+  if (branchFilter !== 'ALL') activeChips.push({ key: 'branch', label: branchFilter === 'EXECUTIVE' ? 'Executive' : 'Legislative', clear: () => setBranchFilter('ALL') })
   if (query.trim()) activeChips.push({ key: 'query', label: `Search: “${query.trim()}”`, clear: () => setQuery('') })
   if (positionFilter !== 'ALL') activeChips.push({ key: 'position', label: positionLabel(positionFilter), clear: () => setPositionFilter('ALL', jurisdictionFilter) })
   if (congressFilter !== 'ALL') activeChips.push({ key: 'congress', label: `${ordinal(congressFilter)} Congress`, clear: () => setCongressFilter('ALL') })
@@ -172,10 +175,19 @@ export default function PoliticiansLoaderPanel({
           </div>
 
           <label className="polField">
+            <span>Branch</span>
+            <select value={branchFilter} onChange={event => setBranchFilter(event.target.value)}>
+              <option value="ALL">All Branches</option>
+              <option value="EXECUTIVE">Executive</option>
+              <option value="LEGISLATIVE">Legislative</option>
+            </select>
+          </label>
+
+          <label className="polField">
             <span>Position</span>
             <select name="dashboardPosition" onChange={event => {
               const position = event.target.value
-              const nextJurisdictions = directoryJurisdictions(politicians, position, membershipIndex)
+              const nextJurisdictions = directoryJurisdictions(branchPeople, position, membershipIndex)
               setPositionFilter(position, nextJurisdictions.includes(jurisdictionFilter) ? jurisdictionFilter : 'ALL')
             }} value={positionFilter}>
               <option value="ALL">All Positions</option>

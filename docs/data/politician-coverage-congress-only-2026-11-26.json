@@ -1,0 +1,1283 @@
+{
+    "scope": "Retain only profiles with a documented membership from the 15th Congress onward",
+    "affected": {
+        "accomplishments_to_delete": 0,
+        "timeline_entries_to_delete": 8,
+        "open_congress_links_to_detach": 49,
+        "profile_submissions_to_delete": 0,
+        "curation_audit_events_to_delete": 0,
+        "moderation_queue_rows_to_delete": 0,
+        "news_politician_associations_to_delete": 0,
+        "open_congress_person_revisions_retained": 49,
+        "article_bookmarks_on_linked_news_retained": 0,
+        "open_congress_membership_relationships_retained": 120,
+        "open_congress_bill_authorship_relationships_retained": 3028,
+        "published_scoring_records_for_executive_profiles_to_reuse": 0
+    },
+    "blockers": [
+    ],
+    "deletion_list": [
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Abraham Kahlil Blanco Mitra",
+            "person_id": "01K5ST4A6PMKWZ79VHBAD0HMVS",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "2b6be324-8932-3720-9723-845156a14150",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Alberto Gatmaitan Romulo",
+            "person_id": "01K715K76ZSVX00Z8W7WAJ8EPJ",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "3cd43cf6-419d-3c55-abce-9a0b66896b0a",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Alfredo Siojo Lim",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0JB",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "37739ae9-268e-3c2b-b714-cb7de23fe44e",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_PRESIDENTIAL_ASSISTANT_FOR_MARITIME_CONCERNS",
+            "full_name": "Andres C. Centino",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "bda511ba-4334-4fbf-a37e-b309cad158e0",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_CHIEF_PRESIDENTIAL_LEGAL_COUNSEL",
+            "full_name": "Anna Liza G. Logan",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "f4a50348-fad9-688f-12d9-7fea71f9e85e",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Antonino P Roman",
+            "person_id": "01K5ST4CYXGYZSESGANB64M2YH",
+            "congresses": null,
+            "politician_id": "9638261a-66fb-32b9-9bb8-9478705621a3",
+            "executive_service": false
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_MINDANAO_CONCERNS",
+            "full_name": "Antonio H Cerilles",
+            "person_id": "01K5ST43M4N2VX0WBANPHC61RW",
+            "congresses": [
+                "10",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "6ebe2a4e-9784-34f4-8ca8-16db9c4a12c8",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Aquilino Quilinging Pimentel Jr",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0JN",
+            "congresses": [
+                "11",
+                "12",
+                "13",
+                "14",
+                "8"
+            ],
+            "politician_id": "394cd122-5739-3829-a0e0-29cf0645f163",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_ECONOMY_PLANNING_AND_DEVELOPMENT",
+            "full_name": "Arsenio M. Balisacan",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "e09f219c-248c-4d69-c811-19c3eef8f554",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Arturo Modesto Tolentino",
+            "person_id": "01K718STDR2VH22WGMJHJJT831",
+            "congresses": [
+                "9"
+            ],
+            "politician_id": "790bd7e7-f199-32dd-a81e-b536b0aa6491",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Benigno Simeon Cojuangco Aquino III",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0HH",
+            "congresses": [
+                "11",
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "d6b23b63-7975-30a1-bfaa-2a3a8824c368",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_CABINET_SECRETARY",
+            "full_name": "Benjamin De Castro Abalos Jr",
+            "person_id": "01K5ST3ZMGJ7J2QZSP8D03NQ2Z",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "ef19826e-d830-325f-a73b-41112d4c0d1e",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Blas Fajardo Ople",
+            "person_id": "01K6ZZJT6CF4BHPP00PZN7D1H3",
+            "congresses": [
+                "10",
+                "11",
+                "12",
+                "9"
+            ],
+            "politician_id": "8a6ea8f5-fa09-3171-871e-ad2b23094bb5",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Carmencita Ongsiako Reyes",
+            "person_id": "01K5ST4C7495GNX8WTH3H6T36R",
+            "congresses": [
+                "10",
+                "14",
+                "9"
+            ],
+            "politician_id": "a51a20a1-ba92-32db-b200-9bbe3f6ab9f6",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Darlene Magnolia Ricasa Antonino-Custodio",
+            "person_id": "01K5ST40T7FDT8BNC3627ERZVK",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "9c4afbe0-f455-3c8e-a03c-abc5c9131a6e",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Datu Pax S Mangudadatu",
+            "person_id": "01K5ST49GN134K7VBQ4JEZYZFS",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "8606195b-2f85-3afd-b096-9e7a7aae93d3",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Del R De Guzman",
+            "person_id": "01K5ST44QQJ8R2GE8AS8CCCMS1",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "4d278113-e90b-3846-a491-968106204b18",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Douglas Ra Cagas",
+            "person_id": "01K5ST42V1NV35B5V6CR18W2J0",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "13b14922-1e74-3622-8c1c-97df3750e996",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Eduardo Nonato N Joson",
+            "person_id": "01K5ST48AG28NAHFW0PDNA1YF1",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "667491e9-7184-3382-9850-bcf57caaa1ee",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_NATIONAL_SECURITY_ADVISER",
+            "full_name": "Eduardo S. L. Oban Jr.",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "0f12bc0b-ccf5-2857-9d1b-7be0d56b3c49",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_HEALTH",
+            "full_name": "Edwin M. Mercado",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "d3280f41-0d9f-2795-e04b-3a534bc8c4e7",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_HEAD_OF_THE_PRESIDENTIAL_MANAGEMENT_STAFF",
+            "full_name": "Elaine T. Masukat",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "cee7bddd-5470-abb3-f19c-c8d41333c568",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Emilio C Macias II",
+            "person_id": "01K5ST497THAYWHWAE12PG9ASG",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "f40aceba-8bd4-3c71-8a78-c7e4bddb84eb",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Ernesto Madarang Maceda Sr",
+            "person_id": "01K715E1V2B58V64T4FEBZDS9F",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "4ca27489-7aab-3e50-9e3a-583d148e0780",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Exequiel B Javier",
+            "person_id": "01K5ST488SZAVXNQABGGZ90CYD",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "29be1d81-15a1-39e4-b8ec-297c2efc0f2f",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_AGRICULTURE",
+            "full_name": "Francisco P. Tiu Laurel Jr.",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "937443ba-b47f-3bfb-fece-34e177375b19",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Francisco Sarmiento Tatad",
+            "person_id": "01K714GQHJ64MX97X6NVS7PP2H",
+            "congresses": [
+                "10",
+                "11",
+                "9"
+            ],
+            "politician_id": "4aaa0911-a8a2-3e58-8e41-62942bda3597",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_JUSTICE",
+            "full_name": "Fredderick A. Vida",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "cb18b2af-8423-cd33-d204-522cb2cd287b",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_FINANCE",
+            "full_name": "Frederick D. Go",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "480ab0c1-3828-1498-f646-7b77dc5213ef",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_DIRECTOR_GENERAL_OF_THE_PHILIPPINE_SPACE_AGENCY",
+            "full_name": "Gay Jane P. Perez",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "38c80659-09b9-f9a3-b5ca-862fac9d055a",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_NATIONAL_DEFENSE",
+            "full_name": "Gilberto Eduardo Gerardo Cojuangco Teodoro Jr",
+            "person_id": "01K5ST4F43B4F680J36240VVYH",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "dab59b3a-25d0-3522-9b62-7054d5acf79b",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_PUBLIC_WORKS_AND_HIGHWAYS",
+            "full_name": "Giovanni Z. Lopez",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "cfebb619-2fd0-00f2-26aa-fefaeeb0a126",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_MIGRANT_WORKERS",
+            "full_name": "Hans Leo J. Cacdac",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "af6e8c92-1e61-35a3-7fbe-bb20b277da42",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Heherson Turingan Alvarez",
+            "person_id": "01K715TC3735G6HWDGSNJDWFEK",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "d1b8b22b-efa5-3969-8495-a000215a8077",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Herminia M Ramiro",
+            "person_id": "01K5ST4BXJV0KP25P86Y5YXNVA",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "09c97d68-8ffd-3971-8d28-5ce369ed4e44",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Hernani A Braganza",
+            "person_id": "01K5ST42GC5PMC9EW73R55VZ6B",
+            "congresses": [
+                "10",
+                "11"
+            ],
+            "politician_id": "8f2868a5-fb28-324d-b8db-f14780661256",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Jose Antonio G Lopez",
+            "person_id": "01K5ST4902M2TZ8K1WMR5E901X",
+            "congresses": null,
+            "politician_id": "aeb5c4ab-3631-3751-a42c-5059a8f47e52",
+            "executive_service": false
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Jose David Lina Jr",
+            "person_id": "01K718MA5CP89GN3GRM13V6CC8",
+            "congresses": [
+                "8",
+                "9"
+            ],
+            "politician_id": "b4977db7-37e0-38a2-b8f6-e1a8c5c5704d",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_HUMAN_SETTLEMENTS_AND_URBAN_DEVELOPMENT",
+            "full_name": "Jose Ramon P. Aliling",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "bd70c9f2-191e-526a-2d05-e3219ea7dffb",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_ON_PASIG_RIVER_REHABILITATION",
+            "full_name": "Jose Rizalino L. Acuzar",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "a2976714-221d-70c9-d626-6ff14bee14df",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Joseph Ejercito Estrada",
+            "person_id": "01K7193R1EEZ5CW6GTAY6NPSMR",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "b2d6a539-c671-3397-8436-30f4e39dd810",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ARCHIVED",
+            "position": "MAYOR",
+            "full_name": "Juan Dela Cruz",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "149b22e2-6265-4b1c-a7f6-00960a5e4c64",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Juan Martin Flavier",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0J3",
+            "congresses": [
+                "10",
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "cbe33e2e-874a-3e65-877d-d03ae0eb095a",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_ENVIRONMENT_AND_NATURAL_RESOURCES",
+            "full_name": "Juan Miguel T. Cuna",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "6dc26072-c975-a69e-8f2e-2a5d66962e3b",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Juan Romeo Nereus Olaivar Acosta",
+            "person_id": "01K5ST401CSY6SDZVYN1NK5FJH",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "65eb5a42-9b0e-3cbe-945a-0bae4811e231",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_THE_INTERIOR_AND_LOCAL_GOVERNMENT",
+            "full_name": "Juanito Victor C. Remulla",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "20b527aa-825c-9d24-e454-89229dbfad07",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_BUDGET_AND_MANAGEMENT",
+            "full_name": "Kim Robert C. De Leon",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "737343c3-1fcb-e70b-3732-1a76766535de",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_CHAIRPERSON_OF_THE_MINDANAO_DEVELOPMENT_AUTHORITY",
+            "full_name": "Leo Tereso A. Magno",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "76583886-a543-b9b1-a698-39172066b180",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Leonardo Q Montemayor",
+            "person_id": "01K5ST4A7WAPBN8KHGT8N40X2G",
+            "congresses": [
+                "10",
+                "11",
+                "14",
+                "9"
+            ],
+            "politician_id": "18049f04-b43e-3ad8-b58f-1e0d6158613b",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Liwayway Pimentel Vinzons-Chato",
+            "person_id": "01K5ST4GR758J15GZJDDK01RFS",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "8f776605-a65c-36f7-8a2e-95a7fadf7dec",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_TRADE_AND_INDUSTRY",
+            "full_name": "Ma. Cristina Aldeguer-Roque",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "e3740d83-486d-b142-536d-9c6ad6bf11e0",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_SUSTAINABLE_AND_RESILIENT_COMMUNITIES",
+            "full_name": "Ma. Esperanza Christina C. Frasco",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "d7067c8a-a8e3-78f7-5714-09ee961612e8",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_FOREIGN_AFFAIRS",
+            "full_name": "Ma. Theresa P. Lazaro",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "47b57210-cc86-f146-5e97-23257943efb7",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Manuel C Ortega",
+            "person_id": "01K5ST4AZ3WRDG35D743KXHN1Q",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "e0d61600-d2be-38dd-b307-3dd40c19d246",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Manuel Leuterio de Castro Jr",
+            "person_id": "01K6ZZ7KB8DBJ3RF3H6X028G6Z",
+            "congresses": [
+                "12"
+            ],
+            "politician_id": "4d3052b3-5423-37a6-b500-3d01096676de",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Manuel N Mamba",
+            "person_id": "01K5ST49ESA51E0WDPN7WVZY35",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "f504fbfb-8085-3e4b-a1de-ab58251637dc",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Mar Araneta Roxas",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0JT",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "f1c359f3-65f7-354d-8cd3-dc48b40dd402",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_TOURISM",
+            "full_name": "Maria Bernardita A. Mathay",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "3481a505-272f-f2e6-b434-8536f83c189f",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "INACTIVE",
+            "position": "MAYOR",
+            "full_name": "Michael Lopez Rama",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "2f8dc25c-bcda-4d3a-ba4b-21f62873dc41",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ARCHIVED",
+            "position": "MAYOR",
+            "full_name": "Mock Politician",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Monico Ogtong Puentevella",
+            "person_id": "01K5ST4BQ94C5DBWKVW1PJ7Z8G",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "f04d6b96-ea29-36cc-8d68-7b0b717efaf0",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "MAYOR",
+            "full_name": "Nestor D. Archival Sr.",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "e09fd7ca-2639-4fb9-92f6-b63756cee6fc",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Orlando Sanchez Mercado",
+            "person_id": "01K7160KSSBJXY0ZSRT190XTJD",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "b047746d-5e19-3ab2-95b5-a0a44ba2b882",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Oyie Matias Umali",
+            "person_id": "01K5ST4FNSD6Q8WNQVTVVMM8YM",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "9b41b538-450f-345a-8cc3-f96a1f1cac3d",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_PRESIDENTIAL_ASSISTANT_FOR_THE_VISAYAS",
+            "full_name": "Philip G. Lo",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "1cca88c7-2012-4a5f-7227-ee54f854742f",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Proceso J Alcala",
+            "person_id": "01K5ST40991CMWRE708EW3R2GY",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "47129ecb-e64c-3f87-bc96-5bfb9e3d4a34",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Raul Sagarbarria Roco",
+            "person_id": "01K714X88CYZX2W2YP41G7180H",
+            "congresses": [
+                "10",
+                "11",
+                "9"
+            ],
+            "politician_id": "5f871bcb-3740-36e8-b7f2-24ae73896fb6",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Raul Sevilla Manglapus",
+            "person_id": "01K719560B420SFNQBAT1RVHYD",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "44bdb671-d1be-3391-ae4d-73334eefc8c5",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_SCIENCE_AND_TECHNOLOGY",
+            "full_name": "Renato U. Solidum Jr.",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "e6b44409-2f72-1677-f6b8-a7aaa012b3b2",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_INFORMATION_AND_COMMUNICATIONS_TECHNOLOGY",
+            "full_name": "Robert Joseph de Claro",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "ae1d8b10-3d0d-adde-8e64-59a45c0137cd",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Robert Zabala Barbers",
+            "person_id": "01K6ZZ15X5KD9S618V0C1AJ96J",
+            "congresses": [
+                "11",
+                "12"
+            ],
+            "politician_id": "8c3d5c78-7a5a-30c8-b722-d1d7ce556216",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "VICE_PRESIDENT",
+            "full_name": "Sara Zimmerman Duterte",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "c62bd1fd-c297-2267-3ea7-38657251ecef",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_CHAIRPERSON_OF_THE_COMMISSION_ON_HIGHER_EDUCATION",
+            "full_name": "Shirley C. Agrupis",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "e62d0019-8f7c-8c28-c411-ccf80ddd6a67",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Teodoro L Locsin Jr",
+            "person_id": "01K5ST48YTMGJ2WZXDG52QBWAT",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "59036ac2-e21e-3a3a-8273-4defc3963d5f",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Teofisto Tayko Guingona Jr",
+            "person_id": "01K714JBASQ05NDDJB0882Q20A",
+            "congresses": [
+                "11",
+                "8",
+                "9"
+            ],
+            "politician_id": "9ac2526f-fc15-34ad-a061-7c80247e409f",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Vicente Tirona Paterno",
+            "person_id": "01K7196AJ6SKB9AQC2F19RGPJ4",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "20d1d796-7843-3a11-94b5-85151f910991",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Victor Aguedo E Agbayani",
+            "person_id": "01K5ST404C0YGF67WG02AA70SM",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "31099678-e4e1-3efc-a43f-fe92a31f57c6",
+            "executive_service": true
+        },
+        {
+            "reason": "No qualifying membership documented",
+            "status": "ACTIVE",
+            "position": "EXECUTIVE_SECRETARY_OF_TRANSPORTATION",
+            "full_name": "Vince Dizon",
+            "person_id": null,
+            "congresses": null,
+            "politician_id": "f12397c4-3166-293f-b552-7581d2d4011d",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Wahab M Akbar",
+            "person_id": "01K5ST406VC5X8GM9PTY8MSTEE",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "574ad2ed-256c-3207-9e39-9a553a9087a7",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Wilhelmino Manucdoc Sy-Alvarado",
+            "person_id": "01K5ST4EQGT4MWAN43867YHZHV",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "4997d5c1-bd09-3a53-b395-2b930a600cc6",
+            "executive_service": true
+        },
+        {
+            "reason": "Only pre-15th Congress memberships",
+            "status": "INACTIVE",
+            "position": null,
+            "full_name": "Yusop H Jikiri",
+            "person_id": "01K5ST489SYRSRN8MHRF5FS5XH",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "9c714ce8-b6d1-3626-8808-5cb983bd8a2e",
+            "executive_service": true
+        }
+    ],
+    "current_profiles": 1029,
+    "executive_roster": null,
+    "retained_profiles": 948,
+    "eligible_for_deletion": 81,
+    "current_public_profiles": 1027,
+    "expected_final_profiles": 948,
+    "affected_rows_fingerprint": "edb77c819064a39f15bc98e80b22c6ff",
+    "executive_profiles_to_add": 0,
+    "executive_profiles_to_reuse": 0,
+    "protected_executive_profiles": 14,
+    "expected_final_public_profiles": 948,
+    "retained_with_recent_membership": 948,
+    "candidates_with_executive_service": 79,
+    "verified_former_executive_exemptions": [
+        {
+            "name": "Abraham Kahlil Blanco Mitra",
+            "office": "Former Games and Amusements Board chairperson",
+            "source": "https://www.dbm.gov.ph/wp-content/uploads/AboutDBM/2020-govt-directory-for-posting-08262020.pdf",
+            "profile_id": "2b6be324-8932-3720-9723-845156a14150"
+        },
+        {
+            "name": "Alberto Gatmaitan Romulo",
+            "office": "Former Executive Secretary",
+            "source": "https://www.dbm.gov.ph/wp-content/uploads/DBCC/2024/DBCC-50-years-in-harmony.pdf",
+            "profile_id": "3cd43cf6-419d-3c55-abce-9a0b66896b0a"
+        },
+        {
+            "name": "Alfredo Siojo Lim",
+            "office": "Former Interior and Local Government Secretary and Manila mayor",
+            "source": "https://legacy.senate.gov.ph/press_release/2020/0819_prib3.asp",
+            "profile_id": "37739ae9-268e-3c2b-b714-cb7de23fe44e"
+        },
+        {
+            "name": "Aquilino Quilinging Pimentel Jr",
+            "office": "Former Local Government Minister",
+            "source": "https://www.pna.gov.ph/articles/1083705",
+            "profile_id": "394cd122-5739-3829-a0e0-29cf0645f163"
+        },
+        {
+            "name": "Arturo Modesto Tolentino",
+            "office": "Former Minister of Foreign Affairs",
+            "source": "https://legacy.senate.gov.ph/senators/senpres/tolentino.asp",
+            "profile_id": "790bd7e7-f199-32dd-a81e-b536b0aa6491"
+        },
+        {
+            "name": "Benigno Simeon Cojuangco Aquino III",
+            "office": "Former President",
+            "source": "https://issuances-library.senate.gov.ph/sites/default/files/2023-02/ra%252010397.pdf",
+            "profile_id": "d6b23b63-7975-30a1-bfaa-2a3a8824c368"
+        },
+        {
+            "name": "Blas Fajardo Ople",
+            "office": "Former Labor and Foreign Affairs Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/blas_ople.htm",
+            "profile_id": "8a6ea8f5-fa09-3171-871e-ad2b23094bb5"
+        },
+        {
+            "name": "Carmencita Ongsiako Reyes",
+            "office": "Former Marinduque governor",
+            "source": "https://marinduque.gov.ph/history/",
+            "profile_id": "a51a20a1-ba92-32db-b200-9bbe3f6ab9f6"
+        },
+        {
+            "name": "Darlene Magnolia Ricasa Antonino-Custodio",
+            "office": "Former General Santos mayor",
+            "source": "https://www.pna.gov.ph/articles/1051298",
+            "profile_id": "9c4afbe0-f455-3c8e-a03c-abc5c9131a6e"
+        },
+        {
+            "name": "Datu Pax S Mangudadatu",
+            "office": "Former Sultan Kudarat governor",
+            "source": "https://cpbrd.congress.gov.ph/wp-content/uploads/2026/04/CSP-65-STATISTICAL-INVENTORY-OF-POTENTIAL-POLITICAL-DYNASTS.pdf",
+            "profile_id": "8606195b-2f85-3afd-b096-9e7a7aae93d3"
+        },
+        {
+            "name": "Del R De Guzman",
+            "office": "Former Marikina mayor",
+            "source": "https://www.marikina.gov.ph/facts/2023%20Facts%20and%20Figures.pdf",
+            "profile_id": "4d278113-e90b-3846-a491-968106204b18"
+        },
+        {
+            "name": "Douglas Ra Cagas",
+            "office": "Former Davao del Sur governor",
+            "source": "https://www.pna.gov.ph/articles/1143207",
+            "profile_id": "13b14922-1e74-3622-8c1c-97df3750e996"
+        },
+        {
+            "name": "Eduardo Nonato N Joson",
+            "office": "Former Nueva Ecija governor and National Food Authority administrator",
+            "source": "https://congress.gov.ph/index.php/media/press-releases/9253",
+            "profile_id": "667491e9-7184-3382-9850-bcf57caaa1ee"
+        },
+        {
+            "name": "Emilio C Macias II",
+            "office": "Former Negros Oriental governor",
+            "source": "https://www.negor.gov.ph/history/",
+            "profile_id": "f40aceba-8bd4-3c71-8a78-c7e4bddb84eb"
+        },
+        {
+            "name": "Ernesto Madarang Maceda Sr",
+            "office": "Former Executive Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/senpres/maceda.asp",
+            "profile_id": "4ca27489-7aab-3e50-9e3a-583d148e0780"
+        },
+        {
+            "name": "Exequiel B Javier",
+            "office": "Former Antique governor",
+            "source": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/61612",
+            "profile_id": "29be1d81-15a1-39e4-b8ec-297c2efc0f2f"
+        },
+        {
+            "name": "Francisco Sarmiento Tatad",
+            "office": "Former Public Information Minister",
+            "source": "https://www.pna.gov.ph/opinion/pieces/790-reminiscing-on-the-1976-1978-batasang-bayan-membership",
+            "profile_id": "4aaa0911-a8a2-3e58-8e41-62942bda3597"
+        },
+        {
+            "name": "Heherson Turingan Alvarez",
+            "office": "Former Cabinet secretary",
+            "source": "https://web.senate.gov.ph/lisdata/3254729423%21.pdf",
+            "profile_id": "d1b8b22b-efa5-3969-8495-a000215a8077"
+        },
+        {
+            "name": "Herminia M Ramiro",
+            "office": "Former Misamis Occidental governor",
+            "source": "https://www.dbm.gov.ph/wp-content/uploads/AboutDBM/2017%20govt%20directory6-2.pdf",
+            "profile_id": "09c97d68-8ffd-3971-8d28-5ce369ed4e44"
+        },
+        {
+            "name": "Hernani A Braganza",
+            "office": "Former Agrarian Reform Secretary",
+            "source": "https://peace.gov.ph/2017/04/peace-talks-resume-gph-cpp-npa-ndf/",
+            "profile_id": "8f2868a5-fb28-324d-b8db-f14780661256"
+        },
+        {
+            "name": "Jose David Lina Jr",
+            "office": "Former Laguna governor",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/joey_lina.htm",
+            "profile_id": "b4977db7-37e0-38a2-b8f6-e1a8c5c5704d"
+        },
+        {
+            "name": "Joseph Ejercito Estrada",
+            "office": "Former President and Vice President",
+            "source": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/67196",
+            "profile_id": "b2d6a539-c671-3397-8436-30f4e39dd810"
+        },
+        {
+            "name": "Juan Martin Flavier",
+            "office": "Former Health Secretary",
+            "source": "https://legacy.senate.gov.ph/press_release/2014/1104_prib1.asp",
+            "profile_id": "cbe33e2e-874a-3e65-877d-d03ae0eb095a"
+        },
+        {
+            "name": "Juan Romeo Nereus Olaivar Acosta",
+            "office": "Former Presidential Adviser for Environmental Protection",
+            "source": "https://llda.gov.ph/wp-content/uploads/dox/ldbem/2013-2014/ldbem2013-2014.pdf",
+            "profile_id": "65eb5a42-9b0e-3cbe-945a-0bae4811e231"
+        },
+        {
+            "name": "Leonardo Q Montemayor",
+            "office": "Former Agriculture Secretary",
+            "source": "https://www.da.gov.ph/da-nta-sets-international-forum-amplifying-campaign-against-illicit-tobacco-trade-addresses-industry-growth/",
+            "profile_id": "18049f04-b43e-3ad8-b58f-1e0d6158613b"
+        },
+        {
+            "name": "Liwayway Pimentel Vinzons-Chato",
+            "office": "Former Commissioner of Internal Revenue",
+            "source": "https://bir-cdn.bir.gov.ph/local/pdf/BIR%20Chronicles_02242016_for%20web.pdf",
+            "profile_id": "8f776605-a65c-36f7-8a2e-95a7fadf7dec"
+        },
+        {
+            "name": "Manuel C Ortega",
+            "office": "Former La Union governor",
+            "source": "https://www.congress.gov.ph/media/press-releases/1010",
+            "profile_id": "e0d61600-d2be-38dd-b307-3dd40c19d246"
+        },
+        {
+            "name": "Manuel Leuterio de Castro Jr",
+            "office": "Former Vice President",
+            "source": "https://officialgazette.gov.ph/2004/10/29/speech-of-president-arroyo-during-the-afp-change-of-command-ceremony/",
+            "profile_id": "4d3052b3-5423-37a6-b500-3d01096676de"
+        },
+        {
+            "name": "Manuel N Mamba",
+            "office": "Former Cagayan governor",
+            "source": "https://cagayan.gov.ph/talambuhay-ni-governor-mamba-inilunsad-ngayong-hunyo-25-2025-kasabay-ng-pagdiriwang-ng-442nd-aggao-nac-cagayan/",
+            "profile_id": "f504fbfb-8085-3e4b-a1de-ab58251637dc"
+        },
+        {
+            "name": "Mar Araneta Roxas",
+            "office": "Former Interior and Local Government Secretary",
+            "source": "https://www.napocor.gov.ph/wp-content/uploads/Transparency_Seal/Reports/Annual_Reports/2015_NPC_Annual_Report.pdf",
+            "profile_id": "f1c359f3-65f7-354d-8cd3-dc48b40dd402"
+        },
+        {
+            "name": "Monico Ogtong Puentevella",
+            "office": "Former Bacolod mayor",
+            "source": "https://bacolodcity.gov.ph/the-unveiling-of-former-mayor-monicos-frame/",
+            "profile_id": "f04d6b96-ea29-36cc-8d68-7b0b717efaf0"
+        },
+        {
+            "name": "Orlando Sanchez Mercado",
+            "office": "Former National Defense Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/orlando_mercado.htm",
+            "profile_id": "b047746d-5e19-3ab2-95b5-a0a44ba2b882"
+        },
+        {
+            "name": "Oyie Matias Umali",
+            "office": "Nueva Ecija governor",
+            "source": "https://calabarzon.dilg.gov.ph/dilg-ensures-succession-following-suspension-of-gov-umali/",
+            "profile_id": "9b41b538-450f-345a-8cc3-f96a1f1cac3d"
+        },
+        {
+            "name": "Proceso J Alcala",
+            "office": "Former Agriculture Secretary",
+            "source": "https://www.napocor.gov.ph/wp-content/uploads/Transparency_Seal/Reports/Annual_Reports/2015_NPC_Annual_Report.pdf",
+            "profile_id": "47129ecb-e64c-3f87-bc96-5bfb9e3d4a34"
+        },
+        {
+            "name": "Raul Sagarbarria Roco",
+            "office": "Former Education Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/raul_roco.htm",
+            "profile_id": "5f871bcb-3740-36e8-b7f2-24ae73896fb6"
+        },
+        {
+            "name": "Raul Sevilla Manglapus",
+            "office": "Former Foreign Affairs Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/raul_manglapus.htm",
+            "profile_id": "44bdb671-d1be-3391-ae4d-73334eefc8c5"
+        },
+        {
+            "name": "Robert Zabala Barbers",
+            "office": "Former Interior and Local Government Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/robert_barbers.htm",
+            "profile_id": "8c3d5c78-7a5a-30c8-b722-d1d7ce556216"
+        },
+        {
+            "name": "Teodoro L Locsin Jr",
+            "office": "Former Foreign Affairs Secretary",
+            "source": "https://www.pna.gov.ph/index.php/articles/1051376",
+            "profile_id": "59036ac2-e21e-3a3a-8273-4defc3963d5f"
+        },
+        {
+            "name": "Teofisto Tayko Guingona Jr",
+            "office": "Former Vice President",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/teofisto_guingona_jr.htm",
+            "profile_id": "9ac2526f-fc15-34ad-a061-7c80247e409f"
+        },
+        {
+            "name": "Vicente Tirona Paterno",
+            "office": "Former Industry Minister",
+            "source": "https://www.pna.gov.ph/opinion/pieces/790-reminiscing-on-the-1976-1978-batasang-bayan-membership",
+            "profile_id": "20d1d796-7843-3a11-94b5-85151f910991"
+        },
+        {
+            "name": "Victor Aguedo E Agbayani",
+            "office": "Former Pangasinan governor",
+            "source": "https://www.pangasinan.gov.ph/wp-content/uploads/issuances/114-2004.pdf",
+            "profile_id": "31099678-e4e1-3efc-a43f-fe92a31f57c6"
+        },
+        {
+            "name": "Wahab M Akbar",
+            "office": "Former Basilan governor",
+            "source": "https://www.comelec.gov.ph/php-tpls-attachments/ListElectedCandidates/2001_list_of_elected_provincial_candidates.pdf",
+            "profile_id": "574ad2ed-256c-3207-9e39-9a553a9087a7"
+        },
+        {
+            "name": "Wilhelmino Manucdoc Sy-Alvarado",
+            "office": "Former Bulacan governor",
+            "source": "https://bulacan.gov.ph/general-info/provincial-governors/wilhelmino-sy-alvarado/",
+            "profile_id": "4997d5c1-bd09-3a53-b395-2b930a600cc6"
+        },
+        {
+            "name": "Yusop H Jikiri",
+            "office": "Former Sulu governor",
+            "source": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/45109",
+            "profile_id": "9c714ce8-b6d1-3626-8808-5cb983bd8a2e"
+        }
+    ],
+    "candidates_with_older_only_memberships": 47,
+    "candidates_without_confirmed_membership": 34,
+    "published_potential_scoring_submissions_to_delete": 0,
+    "published_potential_scoring_timeline_rows_to_delete": 8,
+    "protected_executive_profiles_with_older_only_memberships": 0,
+    "retained_without_confirmed_recent_or_exclusively_older_memberships": 0
+}

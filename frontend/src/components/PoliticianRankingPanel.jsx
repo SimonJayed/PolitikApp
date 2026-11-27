@@ -3,6 +3,7 @@ import { AlertTriangleIcon, ArrowLeftIcon, ArrowRightIcon } from './icons/Lucide
 import { matchesJurisdiction } from './jurisdiction'
 import { RankingRowsSkeleton } from './Skeletons'
 import { computeWgiCompositeScore, formatPosition } from './governance/positionConfig'
+import { formatCompactPhp } from '../features/formatCurrency'
 
 const STORAGE_KEY = 'politikapp:rankingFilter'
 
@@ -17,14 +18,6 @@ function getSavedSort() {
 
 function formatDecimal(value) {
   return `${Number(value || 0).toFixed(1)}`
-}
-
-function formatCurrency(value) {
-  return Number(value || 0).toLocaleString('en-PH', {
-    currency: 'PHP',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  })
 }
 
 function formatCount(value) {
@@ -64,7 +57,7 @@ const SORT_OPTIONS = [
     label: 'Budget Tracked',
     cardLabel: 'Budget',
     getValue: (p) => Number(p.trackedBudgetAllocated || 0),
-    format: formatCurrency,
+    format: formatCompactPhp,
     title: 'Total tracked budget allocation (PHP)',
     lowerBetter: false,
   },

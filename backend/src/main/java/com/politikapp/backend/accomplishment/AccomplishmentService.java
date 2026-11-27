@@ -4,6 +4,7 @@ import com.politikapp.backend.accomplishment.AccomplishmentDtos.*;
 import com.politikapp.backend.common.HttpResponseException;
 import com.politikapp.backend.politician.repository.PoliticianRepository;
 import com.politikapp.backend.submission.service.SourceValidationService;
+import com.politikapp.backend.submission.service.CitationUrls;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
@@ -86,7 +87,7 @@ public class AccomplishmentService {
         entry.setAccomplishmentDate(request.accomplishmentDate());
         entry.setAccomplishmentYear(request.accomplishmentYear());
         entry.setCategory(request.category() == null || request.category().isBlank() ? null : request.category().trim());
-        entry.setSourceUrl(request.sourceUrl().trim());
+        entry.setSourceUrl(CitationUrls.removeTracking(request.sourceUrl()));
         entry.setVisible(request.visible());
     }
 }

@@ -52,10 +52,7 @@ public class PoliticianMapper {
         long projectCompletions = countByAction(submissions, "PROJECT_COMPLETION");
         int coaDiscrepancies = Math.toIntExact(countByAction(submissions, "COA_FINDING"));
 
-        BigDecimal totalBudget = submissions.stream()
-                .filter(submission -> "BUDGET_ALLOCATION".equals(submission.getActionIdentifier()))
-                .map(this::allocationAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalBudget = dashboardMetricsService.trackedBudget(submissions);
 
         double efficiencyRatio = 0.0;
         try {
@@ -70,7 +67,8 @@ public class PoliticianMapper {
         double effProjects = dashboardMetricsService.sumEffectiveProjects(submissions);
         BigDecimal totalFlagged = dashboardMetricsService.sumFlaggedAmount(submissions);
 
-        double wgiScore = dashboardMetricsService.computeWgiCompositeScore(
+        Double wgiScore = submissions.isEmpty() && DashboardMetricsService.isNationalExecutive(politician.getPosition())
+                ? null : dashboardMetricsService.computeWgiCompositeScore(
                 politician.getPosition(),
                 effBills,
                 effProjects,
@@ -104,22 +102,6 @@ public class PoliticianMapper {
         return submissions.stream()
                 .filter(submission -> actionIdentifier.equals(submission.getActionIdentifier()))
                 .count();
-    }
-
-    private BigDecimal allocationAmount(ProfileEditSubmission submission) {
-        Map<String, Object> details = submission.getActionDetails();
-        if (details == null || !details.containsKey("allocationAmount")) {
-            return BigDecimal.ZERO;
-        }
-        Object value = details.get("allocationAmount");
-        if (value == null) {
-            return BigDecimal.ZERO;
-        }
-        try {
-            return new BigDecimal(value.toString());
-        } catch (NumberFormatException exception) {
-            return BigDecimal.ZERO;
-        }
     }
 
     private String clean(String value) {

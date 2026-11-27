@@ -19,7 +19,7 @@ public record DashboardCompositeResponse(
         double legislativeEfficiencyRatio,
         int coaAuditDiscrepancies,
         BigDecimal trackedBudgetAllocated,
-        double wgiCompositeScore,
+        Double wgiCompositeScore,
         List<TimelineEntryResponse> publishedTimelineLedger,
         List<ProfileNewsItem> relatedNews,
         String profileOrigin

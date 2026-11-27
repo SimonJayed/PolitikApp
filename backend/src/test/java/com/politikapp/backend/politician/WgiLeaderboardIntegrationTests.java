@@ -7,6 +7,7 @@ import com.politikapp.backend.politician.entity.Politician;
 import com.politikapp.backend.politician.entity.TimelineEntry;
 import com.politikapp.backend.politician.repository.PoliticianRepository;
 import com.politikapp.backend.politician.repository.TimelineEntryRepository;
+import com.politikapp.backend.politician.service.DashboardMetricsService;
 import com.politikapp.backend.politician.service.PoliticianMapper;
 import com.politikapp.backend.politician.service.WgiLeaderboardService;
 import com.politikapp.backend.submission.entity.ProfileEditSubmission;
@@ -28,6 +29,7 @@ class WgiLeaderboardIntegrationTests {
     @Autowired TimelineEntryRepository timelines;
     @Autowired WgiLeaderboardService leaderboard;
     @Autowired PoliticianMapper mapper;
+    @Autowired DashboardMetricsService metrics;
     @Autowired MockMvc mvc;
 
     Politician person(String name, String position) {
@@ -83,6 +85,19 @@ class WgiLeaderboardIntegrationTests {
         timeline(sourceOnly,"SPONSORED_LEGISLATION",Map.of("sourceReported",true,"legislativeStatus","ENACTED"),"PUBLISHED",false);
         var page=leaderboard.leaderboard(0,8);
         assertTrue(page.entries().isEmpty());assertEquals(0,page.totalRanked());assertEquals(3,page.unrankedCount());
+    }
+
+    @Test
+    void cabinetProfilesUsePublishedExecutiveEvidenceForTheirScore() {
+        var secretary = person("Cabinet Secretary", "EXECUTIVE_SECRETARY_OF_EDUCATION");
+        assertNull(mapper.toResponse(secretary).wgiCompositeScore());
+        assertNull(metrics.buildKpiPayload(secretary).wgiCompositeScore());
+        assertEquals(1, leaderboard.leaderboard(0, 8).unrankedCount());
+
+        record(secretary, "PROJECT_COMPLETION", Map.of("completionPercentage", 100));
+        var ranked = leaderboard.leaderboard(0, 8).entries().get(0);
+        assertEquals(secretary.getPoliticianId(), ranked.politicianId());
+        assertEquals(mapper.toResponse(secretary).wgiCompositeScore(), ranked.wgiCompositeScore());
     }
 
     @Test

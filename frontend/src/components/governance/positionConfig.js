@@ -1,3 +1,5 @@
+import { formatCompactPhp } from '../../features/formatCurrency';
+
 /**
  * positionConfig.js
  * ─────────────────────────────────────────────────────────────────────────────
@@ -98,6 +100,7 @@ export const MOCK_APPROVED_DOMAINS = [
  */
 function resolvePositionGroup(position) {
   if (!position) return 'DEFAULT';
+  if (position.toUpperCase().startsWith('EXECUTIVE_')) return 'EXECUTIVE';
   switch (position.toUpperCase()) {
     case 'PRESIDENT':
     case 'MAYOR':
@@ -113,17 +116,6 @@ function resolvePositionGroup(position) {
     default:
       return 'DEFAULT';
   }
-}
-
-/**
- * Currency formatter (PHP).
- */
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-PH', {
-    currency: 'PHP',
-    maximumFractionDigits: 0,
-    style: 'currency',
-  }).format(Number(value || 0));
 }
 
 /**
@@ -151,7 +143,7 @@ const POSITION_KPI_CONFIG = {
         key: 'trackedBudgetAllocated',
         label: 'Budget Tracked',
         wgiPillar: 'Government Effectiveness',
-        format: (v) => formatCurrency(v),
+        format: formatCompactPhp,
       },
       {
         key: 'legislativeEfficiencyRatio',
@@ -182,7 +174,7 @@ const POSITION_KPI_CONFIG = {
         key: 'trackedBudgetAllocated',
         label: 'Budget Tracked',
         wgiPillar: 'Government Effectiveness',
-        format: (v) => formatCurrency(v),
+        format: formatCompactPhp,
       },
       {
         key: 'legislativeEfficiencyRatio',
@@ -219,7 +211,7 @@ const POSITION_KPI_CONFIG = {
         key: 'trackedBudgetAllocated',
         label: 'Budget Tracked',
         wgiPillar: 'Government Effectiveness',
-        format: (v) => formatCurrency(v),
+        format: formatCompactPhp,
       },
       {
         key: 'legislativeEfficiencyRatio',
@@ -250,7 +242,7 @@ const POSITION_KPI_CONFIG = {
         key: 'trackedBudgetAllocated',
         label: 'Budget Tracked',
         wgiPillar: 'Regulatory Quality',
-        format: (v) => formatCurrency(v),
+        format: formatCompactPhp,
       },
     ],
   },
@@ -281,7 +273,7 @@ const POSITION_KPI_CONFIG = {
         key: 'trackedBudgetAllocated',
         label: 'Budget Tracked',
         wgiPillar: 'Government Effectiveness',
-        format: (v) => formatCurrency(v),
+        format: formatCompactPhp,
       },
       {
         key: 'legislativeEfficiencyRatio',
@@ -464,9 +456,10 @@ export function formatPosition(position) {
   const opt = POSITION_OPTIONS.find((o) => o.value === position.toUpperCase());
   if (opt) return opt.label;
 
-  return position
+  return position.replace(/^EXECUTIVE_/, '')
     .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((word, index) => position.startsWith('EXECUTIVE_') && index > 0 && ['OF', 'THE', 'AND', 'TO'].includes(word)
+      ? word.toLowerCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 }
 

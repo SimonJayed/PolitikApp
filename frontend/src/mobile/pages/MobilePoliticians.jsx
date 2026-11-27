@@ -1,19 +1,22 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { SearchIcon, ChevronLeftIcon, ChevronRightIcon, AlertTriangleIcon } from '../../components/icons/Lucide'
 import { matchesJurisdiction } from '../../components/jurisdiction'
 import { formatJurisdiction, formatPosition } from '../../components/governance/positionConfig'
-import { membershipSummary } from '../../features/congress/congressHistory'
+import { membershipSummary, ordinal } from '../../features/congress/congressHistory'
 import {
   congressOptions,
   directoryJurisdiction,
+  directoryPositions,
+  matchesBranch,
   matchesCongress,
+  matchesDirectoryName,
   matchesPosition,
-  normalizePosition,
   sortDirectory,
 } from '../../features/congress/politicianDirectory'
 import { useDirectory } from '../../features/congress/useDirectory'
 import { formatDisplayName } from '../../features/congress/displayName'
 import { formatWgiScore } from '../../features/congress/wgiLeaderboard'
+import { useLeaderboardFirstPage } from '../../features/congress/leaderboardReads'
 import MobileBottomSheet from '../components/layout/MobileBottomSheet'
 import MobileLeaderboardPodium from '../components/cards/MobileLeaderboardPodium'
 
@@ -38,59 +41,55 @@ export function MobilePoliticians({
   const [query, setQuery] = useState('')
   const [jurisdictionFilter, setJurisdictionFilter] = useState('ALL')
   const [positionFilter, setPositionFilter] = useState('ALL')
+  const [branchFilter, setBranchFilter] = useState('ALL')
   const [congressFilter, setCongressFilter] = useState('ALL')
   const [activeOnly, setActiveOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [filterSheetOpen, setFilterSheetOpen] = useState(false)
+  const positionFilterId = useId()
 
   const directory = useDirectory(0)
+  const leaderboard = useLeaderboardFirstPage()
 
   const membershipIndex = useMemo(
     () => new Map(directory.people.map((person) => [person.politicianId, person])),
     [directory.people]
   )
 
-  const congresses = useMemo(
-    () => congressOptions(politicians, positionFilter, membershipIndex),
-    [politicians, positionFilter, membershipIndex]
+  const branchPeople = useMemo(
+    () => politicians.filter(person => matchesBranch(person, branchFilter, membershipIndex)),
+    [politicians, branchFilter, membershipIndex]
   )
+  const congresses = useMemo(() => congressOptions(branchPeople, positionFilter, membershipIndex),
+    [branchPeople, positionFilter, membershipIndex])
 
   const positions = useMemo(
-    () =>
-      Array.from(
-        new Set([
-          'SENATOR',
-          'HOUSE_REPRESENTATIVE',
-          ...politicians
-            .filter((person) => person.status !== 'ARCHIVED')
-            .map((person) => normalizePosition(person.position))
-            .filter(Boolean),
-        ])
-      ).sort((a, b) => a.localeCompare(b)),
-    [politicians]
+    () => directoryPositions(branchPeople, membershipIndex),
+    [branchPeople, membershipIndex]
   )
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     const today = new Date().toISOString().slice(0, 10)
-    const matches = politicians.filter(
+    const matches = branchPeople.filter(
       (politician) =>
         politician.status !== 'ARCHIVED' &&
         matchesJurisdiction(directoryJurisdiction(politician, membershipIndex), jurisdictionFilter) &&
         (!activeOnly || isActiveProfile(politician, today)) &&
         matchesPosition(politician, positionFilter, membershipIndex) &&
         matchesCongress(politician, positionFilter, congressFilter, membershipIndex) &&
-        (!q ||
+        (matchesDirectoryName(politician, query, membershipIndex) ||
           [
             politician.fullName,
             politician.position,
+            formatPosition(politician.position),
             membershipSummary(membershipIndex.get(politician.politicianId)?.memberships).chamber,
           ].some((val) => String(val || '').toLowerCase().includes(q)))
     )
     return sortDirectory(matches, membershipIndex, directory.currentCongress, directory.asOfDate)
   }, [
     jurisdictionFilter,
-    politicians,
+    branchPeople,
     positionFilter,
     congressFilter,
     activeOnly,
@@ -102,20 +101,20 @@ export function MobilePoliticians({
 
   useEffect(() => {
     setPage(1)
-  }, [query, jurisdictionFilter, positionFilter, congressFilter, activeOnly])
+  }, [query, branchFilter, jurisdictionFilter, positionFilter, congressFilter, activeOnly])
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
   const safePage = Math.min(page, totalPages)
   const pageItems = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE)
 
   const hasActiveFilters =
-    jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL' || congressFilter !== 'ALL' || activeOnly
+    branchFilter !== 'ALL' || jurisdictionFilter !== 'ALL' || positionFilter !== 'ALL' || congressFilter !== 'ALL' || activeOnly
 
   return (
     <div style={{ paddingBottom: '24px' }}>
       {/* Top 3 Podium Cards */}
       <MobileLeaderboardPodium
-        entries={politicians}
+        entries={leaderboard.entries}
         onSelectPolitician={onViewProfile}
       />
 
@@ -193,6 +192,7 @@ export function MobilePoliticians({
           <button
             type="button"
             onClick={() => {
+              setBranchFilter('ALL')
               setJurisdictionFilter('ALL')
               setPositionFilter('ALL')
               setCongressFilter('ALL')
@@ -283,7 +283,7 @@ export function MobilePoliticians({
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}>
-                    {formatDisplayName(person.fullName)}
+                    {formatDisplayName(person.fullName).name}
                   </h3>
 
                   <div style={{
@@ -322,7 +322,7 @@ export function MobilePoliticians({
                       fontWeight: 800,
                       color: '#1E40AF',
                     }}>
-                      {formatWgiScore(person.wgiScore || person.overallScore)}
+                      {formatWgiScore(person.wgiCompositeScore ?? person.wgiScore ?? person.overallScore)}
                     </span>
                     <span style={{ fontSize: '0.625rem', color: '#94A3B8' }}>
                       WGI Score
@@ -389,6 +389,19 @@ export function MobilePoliticians({
         title="Filter Public Officials"
       >
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', padding: '8px 0' }}>
+          <label style={{ display: 'grid', gap: '6px', fontSize: '0.8125rem', fontWeight: 700, color: '#334155' }}>
+            Branch
+            <select value={branchFilter} onChange={event => {
+              setBranchFilter(event.target.value)
+              setPositionFilter('ALL')
+              setCongressFilter('ALL')
+              setJurisdictionFilter('ALL')
+            }} style={{ minHeight: '48px', borderRadius: '10px', border: '1px solid #CBD5E1', padding: '0 12px' }}>
+              <option value="ALL">All Branches</option>
+              <option value="EXECUTIVE">Executive</option>
+              <option value="LEGISLATIVE">Legislative</option>
+            </select>
+          </label>
           <div>
             <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '6px', color: '#334155' }}>
               Jurisdiction
@@ -413,12 +426,16 @@ export function MobilePoliticians({
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '6px', color: '#334155' }}>
+            <label htmlFor={positionFilterId} style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 700, marginBottom: '6px', color: '#334155' }}>
               Position / Office
             </label>
             <select
+              id={positionFilterId}
               value={positionFilter}
-              onChange={(e) => setPositionFilter(e.target.value)}
+              onChange={(e) => {
+                setPositionFilter(e.target.value)
+                setCongressFilter('ALL')
+              }}
               style={{
                 width: '100%',
                 height: '48px',
@@ -444,6 +461,7 @@ export function MobilePoliticians({
             </label>
             <select
               value={congressFilter}
+              disabled={congresses.length === 0}
               onChange={(e) => setCongressFilter(e.target.value)}
               style={{
                 width: '100%',
@@ -456,9 +474,9 @@ export function MobilePoliticians({
               }}
             >
               <option value="ALL">All Terms</option>
-              {congresses.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
+              {congresses.map((congress) => (
+                <option key={congress} value={congress}>
+                  {ordinal(congress)} Congress
                 </option>
               ))}
             </select>

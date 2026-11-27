@@ -1,9 +1,5 @@
-import React from 'react';
 import { FileTextIcon, CircleCheckIcon } from '../icons/Lucide';
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0));
-}
+import { formatCompactPhp } from '../../features/formatCurrency';
 
 export default function AuditSummaryCard({ coaDiscrepancies = 0, flaggedAmount = 0 }) {
   const hasDiscrepancies = coaDiscrepancies > 0;
@@ -45,7 +41,7 @@ export default function AuditSummaryCard({ coaDiscrepancies = 0, flaggedAmount =
         <div>
           <span className="ty-label" style={{ display: 'block', color: 'var(--text-muted)' }}>Flagged Amount</span>
           <strong style={{ fontSize: '20px', fontWeight: '800', color: hasDiscrepancies ? 'var(--text-primary)' : 'var(--text-primary)' }}>
-            {formatCurrency(flaggedAmount)}
+            {formatCompactPhp(flaggedAmount)}
           </strong>
         </div>
       </div>

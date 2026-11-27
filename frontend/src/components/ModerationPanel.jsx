@@ -1,6 +1,7 @@
 import { LoadingSkeleton } from "./Skeletons"
 import { useEffect, useState } from 'react'
 import AdminAdjudicationTable from './moderation/AdminAdjudicationTable'
+import CitationReviewPanel from './moderation/CitationReviewPanel'
 import { FileTextIcon, RefreshCwIcon, ScaleIcon, ShieldCheckIcon, UsersIcon } from './icons/Lucide'
 import { PageSkeleton } from '../pages/pageHelpers'
 
@@ -15,6 +16,7 @@ export default function ModerationPanel({ token, user }) {
   const [citizenItems, setCitizenItems] = useState([])
   const [citizenLoading, setCitizenLoading] = useState(false)
   const [citizenError, setCitizenError] = useState(null)
+  const [citationReviewsOpen, setCitationReviewsOpen] = useState(false)
 
   const effectiveToken = token || localStorage.getItem('token') || localStorage.getItem('jwt')
 
@@ -94,7 +96,13 @@ export default function ModerationPanel({ token, user }) {
 
       {/* Main Panel Content */}
       {isAdmin ? (
-        <AdminAdjudicationTable token={effectiveToken} user={user} onAdjudicationComplete={() => {}} />
+        <>
+          <details onToggle={event => setCitationReviewsOpen(event.currentTarget.open)}>
+            <summary>Review source citations</summary>
+            {citationReviewsOpen && <CitationReviewPanel token={effectiveToken} />}
+          </details>
+          <AdminAdjudicationTable token={effectiveToken} user={user} onAdjudicationComplete={() => {}} />
+        </>
       ) : (
         /* Citizen-Facing View */
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>

@@ -7,6 +7,8 @@ import com.politikapp.backend.submission.repository.ProfileEditSubmissionReposit
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -43,16 +45,24 @@ public class DashboardMetricsService {
 
     List<ProfileEditSubmission> includeVerifiedTimeline(List<ProfileEditSubmission> submissions,
             List<com.politikapp.backend.politician.entity.TimelineEntry> entries) {
-        var result = new java.util.ArrayList<>(submissions);
+        var result = new java.util.ArrayList<>(submissions.stream()
+                .filter(record -> !"BUDGET_ALLOCATION".equals(record.getActionIdentifier())
+                        || !isSourceReported(record.getActionDetails())).toList());
         for (var entry : entries) {
-            if (entry.getSubmissionId() != null || (entry.getActionDetails() != null
-                    && Boolean.TRUE.equals(entry.getActionDetails().get("sourceReported")))) continue;
+            if (entry.getSubmissionId() != null || isSourceReported(entry.getActionDetails())) continue;
             var record = new ProfileEditSubmission();
+            record.setSubmissionId(entry.getTimelineId());
             record.setActionIdentifier(entry.getActionIdentifier());
             record.setActionDetails(entry.getActionDetails());
+            record.setSourceUrl(entry.getSourceUrl());
+            record.setImpactSummary(entry.getSummary());
             result.add(record);
         }
         return result;
+    }
+
+    private static boolean isSourceReported(Map<String, Object> details) {
+        return details != null && Boolean.TRUE.equals(details.get("sourceReported"));
     }
 
     public SymmetricalKpiPayload buildKpiPayload(Politician politician) {
@@ -66,10 +76,7 @@ public class DashboardMetricsService {
         double billsAuthored = countByAction(submissions, "SPONSORED_LEGISLATION");
         double projectCompletions = countByAction(submissions, "PROJECT_COMPLETION");
         int coaDiscrepancies = Math.toIntExact(countByAction(submissions, "COA_FINDING"));
-        BigDecimal totalBudget = submissions.stream()
-                .filter(submission -> "BUDGET_ALLOCATION".equals(submission.getActionIdentifier()))
-                .map(this::allocationAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal totalBudget = trackedBudget(submissions);
         BigDecimal totalFlagged = sumFlaggedAmount(submissions);
 
         double efficiencyRatio = 0.0;
@@ -81,7 +88,7 @@ public class DashboardMetricsService {
             efficiencyRatio = 0.0;
         }
 
-        double wgiScore = computeWgiCompositeScore(
+        Double wgiScore = submissions.isEmpty() && isNationalExecutive(politician.getPosition()) ? null : computeWgiCompositeScore(
                 politician.getPosition(),
                 sumEffectiveLegislation(submissions),
                 sumEffectiveProjects(submissions),
@@ -271,6 +278,8 @@ public class DashboardMetricsService {
     private String resolvePositionGroup(String position) {
         if (position == null)
             return "DEFAULT";
+        if (position.startsWith("EXECUTIVE_"))
+            return "EXECUTIVE";
         return switch (position.toUpperCase()) {
             case "PRESIDENT", "MAYOR" -> "EXECUTIVE";
             case "VICE_PRESIDENT", "VICE_MAYOR" -> "VICE_EXECUTIVE";
@@ -280,18 +289,42 @@ public class DashboardMetricsService {
         };
     }
 
+    static boolean isNationalExecutive(String position) {
+        return position != null && (position.startsWith("EXECUTIVE_")
+                || "PRESIDENT".equals(position) || "VICE_PRESIDENT".equals(position));
+    }
+
     private long countByAction(List<ProfileEditSubmission> submissions, String actionIdentifier) {
         return submissions.stream()
                 .filter(submission -> actionIdentifier.equals(submission.getActionIdentifier()))
                 .count();
     }
 
-    private BigDecimal allocationAmount(ProfileEditSubmission submission) {
-        Map<String, Object> details = submission.getActionDetails();
-        if (details == null || !details.containsKey("allocationAmount")) {
-            return BigDecimal.ZERO;
-        }
-        Object value = details.get("allocationAmount");
+    record BudgetContribution(ProfileEditSubmission record, BigDecimal amount) {}
+
+    List<BudgetContribution> budgetContributions(List<ProfileEditSubmission> records) {
+        var seen = new HashSet<UUID>();
+        return records.stream()
+                .filter(record -> "BUDGET_ALLOCATION".equals(record.getActionIdentifier()))
+                .filter(record -> record.getActionDetails() != null
+                        && !Boolean.TRUE.equals(record.getActionDetails().get("sourceReported")))
+                .filter(record -> seen.add(record.getSubmissionId()))
+                .map(record -> new BudgetContribution(record, allocationAmount(record.getActionDetails())))
+                .filter(contribution -> contribution.amount().signum() != 0)
+                .toList();
+    }
+
+    BigDecimal trackedBudget(List<ProfileEditSubmission> records) {
+        return sumBudgetContributions(budgetContributions(records));
+    }
+
+    static BigDecimal sumBudgetContributions(List<BudgetContribution> contributions) {
+        return contributions.stream().map(BudgetContribution::amount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    static BigDecimal allocationAmount(Map<String, Object> details) {
+        Object value = details == null ? null : details.get("allocationAmount");
         if (value == null) {
             return BigDecimal.ZERO;
         }

@@ -2,6 +2,7 @@ package com.politikapp.backend.politician.entity;
 
 import com.politikapp.backend.submission.entity.ProfileEditSubmission;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -31,6 +32,7 @@ public class TimelineEntry {
     private String actionIdentifier;
 
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Convert(converter = ActionDetailsConverter.class)
     @Column(name = "action_details")
     private Map<String, Object> actionDetails;
 

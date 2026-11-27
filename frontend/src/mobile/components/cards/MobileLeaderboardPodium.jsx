@@ -1,5 +1,5 @@
 import { formatJurisdiction, formatPosition } from '../../../components/governance/positionConfig'
-import { formatWgiScore } from '../../../features/congress/wgiLeaderboard'
+import { formatWgiScore, rankedLeaderboardEntries } from '../../../features/congress/wgiLeaderboard'
 
 function RankBadge({ rank }) {
   const colors = {
@@ -31,7 +31,7 @@ function RankBadge({ rank }) {
 }
 
 export function MobileLeaderboardPodium({ entries = [], onSelectPolitician }) {
-  const topThree = entries.slice(0, 3)
+  const topThree = rankedLeaderboardEntries(Array.isArray(entries) ? entries : []).slice(0, 3)
   if (topThree.length === 0) return null
 
   return (
@@ -54,9 +54,6 @@ export function MobileLeaderboardPodium({ entries = [], onSelectPolitician }) {
         }}>
           Top WGI Leaders
         </h2>
-        <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.6)' }}>
-          Manila Standard
-        </span>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -84,7 +81,7 @@ export function MobileLeaderboardPodium({ entries = [], onSelectPolitician }) {
                 touchAction: 'manipulation',
               }}
             >
-              <RankBadge rank={entry.rank || 1} />
+              <RankBadge rank={entry.rank} />
 
               <div style={{
                 width: '36px',
@@ -139,7 +136,7 @@ export function MobileLeaderboardPodium({ entries = [], onSelectPolitician }) {
                 flexShrink: 0,
               }}>
                 <span style={{ fontSize: '0.875rem', fontWeight: 800, color: '#FCD34D' }}>
-                  {formatWgiScore(entry.overallScore)}
+                  {formatWgiScore(entry.wgiCompositeScore)}
                 </span>
                 <span style={{ fontSize: '0.625rem', color: 'rgba(255, 255, 255, 0.6)' }}>
                   WGI Score

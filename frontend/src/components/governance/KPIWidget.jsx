@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { getKpisForPosition, getPositionGroupLabel, computeWgiCompositeScore } from './positionConfig';
 import WgiMethodologyModal, { HelpCircleIcon } from './WgiMethodologyModal';
 import { BarChart3Icon, CircleCheckIcon, FileTextIcon, LandmarkIcon, ScaleIcon, SearchIcon } from '../icons/Lucide';
+import { BudgetBreakdownAction, BudgetBreakdownModal } from './BudgetBreakdown';
+import { useBudgetBreakdown } from '../../features/useBudgetBreakdown';
+import { formatCompactPhp } from '../../features/formatCurrency';
 
 function resolveWgiScore(politician) {
   if (politician.wgiCompositeScore != null && Number.isFinite(Number(politician.wgiCompositeScore))) {
@@ -20,7 +23,6 @@ function resolveWgiScore(politician) {
 const descriptions = {
   billsAuthored: 'Number of sponsored bills or ordinances in verified records. Enactment is shown in the legislative record when available.',
   projectCompletions: 'Number of verified project completion records. When a record reports partial completion, its percentage appears with the record.',
-  trackedBudgetAllocated: 'Budget allocations in the verified records, shown in Philippine pesos.',
   coaAuditDiscrepancies: 'Number of recorded Commission on Audit observations about public spending or compliance. The cited report can describe the audit period, agency response, and any later resolution.',
   legislativeEfficiencyRatio: 'Recorded project completions divided by sponsored bills or ordinances, expressed as a percentage. Higher values reflect more project completion per sponsored measure. The ratio is recorded as zero when there are no sponsored measures.',
 }
@@ -36,7 +38,8 @@ const indicatorIcons = {
 
 export default function KPIWidget({ profile, compact = false, onModalOpenChange, showExplanations = false }) {
   const [dialog, setDialog] = useState(null);
-  const isModalOpen = Boolean(dialog);
+  const budgetView = useBudgetBreakdown(profile?.politicianId, profile?.trackedBudgetAllocated);
+  const isModalOpen = Boolean(dialog) || budgetView.isOpen;
 
   React.useEffect(() => {
     onModalOpenChange?.(isModalOpen);
@@ -45,7 +48,8 @@ export default function KPIWidget({ profile, compact = false, onModalOpenChange,
   if (!profile) return null;
 
   const groupLabel = getPositionGroupLabel(profile.position);
-  const wgiScore = showExplanations && profile.wgiCompositeScore == null ? null : resolveWgiScore(profile);
+  const wgiScore = profile.wgiCompositeScore === null || (showExplanations && profile.wgiCompositeScore === undefined)
+    ? null : resolveWgiScore(profile);
   const metrics = [
     {
       key: 'wgiCompositeScore',
@@ -68,6 +72,7 @@ export default function KPIWidget({ profile, compact = false, onModalOpenChange,
 
         {metrics.map(({ key, label, value, unavailable, wgiPillar }) => {
           const composite = key === 'wgiCompositeScore';
+          const isBudget = key === 'trackedBudgetAllocated';
           const Icon = indicatorIcons[key];
           const description = descriptions[key];
           const className = showExplanations ? 'kpiCard'
@@ -81,15 +86,18 @@ export default function KPIWidget({ profile, compact = false, onModalOpenChange,
               } : undefined}>
               {showExplanations && <div className="kpiIndicatorTop">
                 {Icon && <span className="kpiIndicatorIcon"><Icon size={20} /></span>}
-                {(composite || description) && <button type="button" className="kpiIndicatorHelp"
+                {(composite || description || (isBudget && profile.politicianId)) && <button type="button" className="kpiIndicatorHelp"
                   aria-label={composite ? 'Open WGI scoring methodology' : 'About ' + label} aria-haspopup="dialog"
-                  onClick={() => setDialog(composite ? {} : { label, wgiPillar, description })}>
+                  onClick={isBudget ? budgetView.open : () => setDialog(composite ? {} : { label, wgiPillar, description })}>
                   <HelpCircleIcon size={20} />
                 </button>}
               </div>}
               <span className="ty-label">{label}</span>
-              <strong>{unavailable ? 'Unavailable' : value ?? 'Unavailable'}</strong>
+              <strong className={isBudget ? 'metricCurrency' : undefined}>
+                {isBudget ? formatCompactPhp(budgetView.exactTotal) : unavailable ? 'Unavailable' : value ?? 'Unavailable'}
+              </strong>
               <span className="kpi-wgi-pillar">{wgiPillar}</span>
+              {isBudget && showExplanations && profile.politicianId && <BudgetBreakdownAction onClick={budgetView.open} />}
               {composite && !showExplanations && !compact && (
                 <button
                   onClick={() => setDialog({})}
@@ -126,6 +134,7 @@ export default function KPIWidget({ profile, compact = false, onModalOpenChange,
         initialPosition={profile.position}
         indicator={dialog.label ? dialog : null}
       />}
+      <BudgetBreakdownModal view={budgetView} />
     </>
   );
 }

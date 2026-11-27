@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import './LandingPage.css';
 import { formatPosition, formatJurisdiction } from './governance/positionConfig';
 import { selectFeaturedPoliticians } from '../features/congress/featuredPoliticians';
+import { formatCompactPhp } from '../features/formatCurrency';
 import {
   BanIcon,
   GitCompareIcon,
@@ -35,7 +36,7 @@ export default function LandingPage({
     return {
       politiciansCount: totalPoliticians,
       recordsVerified: total('billsAuthored') + total('projectCompletions') + total('coaAuditDiscrepancies'),
-      budgetTracked: new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', notation: 'compact' }).format(total('trackedBudgetAllocated')),
+      budgetTracked: formatCompactPhp(total('trackedBudgetAllocated')),
       citationTrust: total('coaAuditDiscrepancies'),
     };
   }, [politicians]);

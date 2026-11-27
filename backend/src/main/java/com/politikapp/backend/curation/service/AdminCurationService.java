@@ -3,6 +3,7 @@ package com.politikapp.backend.curation.service;
 import com.politikapp.backend.common.HttpResponseException;
 import com.politikapp.backend.politician.entity.Politician;
 import com.politikapp.backend.submission.entity.ProfileEditSubmission;
+import com.politikapp.backend.submission.service.CitationUrls;
 import com.politikapp.backend.politician.entity.TimelineEntry;
 import com.politikapp.backend.politician.repository.PoliticianRepository;
 import com.politikapp.backend.submission.repository.ProfileEditSubmissionRepository;
@@ -58,7 +59,7 @@ public class AdminCurationService {
         ProfileEditSubmission submission = ProfileEditSubmission.directPublished(
                 request.politicianId(),
                 adminId,
-                request.primarySourceUrl().trim(),
+                CitationUrls.removeTracking(request.primarySourceUrl()),
                 request.categoryTag().trim(),
                 request.actionIdentifier().trim(),
                 request.actionDetails() != null ? request.actionDetails() : Collections.emptyMap(),
@@ -95,7 +96,7 @@ public class AdminCurationService {
         timeline.setActionIdentifier(request.actionIdentifier().trim());
         timeline.setActionDetails(request.actionDetails() != null ? request.actionDetails() : Collections.emptyMap());
         timeline.setSummary(request.impactSummary().trim());
-        timeline.setSourceUrl(request.primarySourceUrl().trim());
+        timeline.setSourceUrl(CitationUrls.removeTracking(request.primarySourceUrl()));
         timeline.setVerificationNotes(request.verificationNotes());
 
         if (timeline.getSubmissionId() != null) {
@@ -104,7 +105,7 @@ public class AdminCurationService {
                 sub.setActionIdentifier(request.actionIdentifier().trim());
                 sub.setActionDetails(request.actionDetails() != null ? request.actionDetails() : Collections.emptyMap());
                 sub.setImpactSummary(request.impactSummary().trim());
-                sub.setSourceUrl(request.primarySourceUrl().trim());
+                sub.setSourceUrl(timeline.getSourceUrl());
                 sub.setVerificationNotes(request.verificationNotes());
                 submissionRepository.save(sub);
             });

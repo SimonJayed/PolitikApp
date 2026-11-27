@@ -34,6 +34,8 @@ class CongressPopulationTests {
         fixture.jdbc.update("insert into politicians(politician_id,full_name,status,position) values (?,?,'ACTIVE','PRESIDENT')",existing,"Ferdinand Marcos Jr");
         fixture.person("existing","Ferdinand Marcos Jr","Ferdinand","Marcos","Jr");
         fixture.person("new-person","Maria Santos","Maria","Santos","");
+        fixture.membership("existing", "rev", "{\"congress\":15}");
+        fixture.membership("new-person", "rev", "{\"congress\":20}");
         var preview=fixture.service.preview(COMMIT);
         assertEquals(1,preview.created()); assertEquals(1,preview.existingLinked());
         assertEquals(1,fixture.jdbc.queryForObject("select count(*) from politicians",Integer.class));
@@ -54,6 +56,8 @@ class CongressPopulationTests {
         var fixture=new Fixture();
         fixture.person("one","Mercedes C Cagas","Mercedes","Cagas","");
         fixture.person("two","Mercedes C Cagas","Mercedes","Cagas","");
+        fixture.membership("one", "rev", "{\"congress\":15}");
+        fixture.membership("two", "rev", "{\"congress\":16}");
         var result=fixture.tx.execute(status -> fixture.service.populate(COMMIT));
         assertEquals(2,result.skipped()); assertEquals(0,result.created());
         assertEquals(0,fixture.jdbc.queryForObject("select count(*) from politicians",Integer.class));
@@ -63,10 +67,54 @@ class CongressPopulationTests {
     @Test
     void auditFailureRollsBackProfileCreationAndLinks() throws Exception {
         var fixture=new Fixture(); fixture.person("new","Maria Santos","Maria","Santos","");
+        fixture.membership("new", "rev", "{\"congress\":15}");
         fixture.jdbc.execute("drop table open_congress_population_runs");
         assertThrows(Exception.class,() -> fixture.tx.execute(status -> fixture.service.populate(COMMIT)));
         assertEquals(0,fixture.jdbc.queryForObject("select count(*) from politicians",Integer.class));
         assertEquals(0,fixture.jdbc.queryForObject("select count(politician_id) from open_congress_entities",Integer.class));
+    }
+
+    @Test
+    void populationRequiresQualifyingMembershipAndKeepsAllHistoryForEligiblePeople() throws Exception {
+        var fixture = new Fixture();
+        fixture.person("old", "Ana Santos", "Ana", "Santos", "");
+        fixture.membership("old", "rev", "{\"congress\":14}");
+        fixture.person("mixed", "Bea Santos", "Bea", "Santos", "");
+        fixture.membership("mixed", "rev", "{\"congress\":15}");
+        fixture.membership("mixed", "rev", "{\"congress\":12}");
+        fixture.person("unknown", "Cam Santos", "Cam", "Santos", "");
+        fixture.membership("unknown", "rev", "{\"congress\":13}");
+        fixture.membership("unknown", "rev", "{}");
+        fixture.person("stale", "Dia Santos", "Dia", "Santos", "");
+        fixture.membership("stale", "prior", "{\"congress\":13}");
+        fixture.person("missing", "Eva Santos", "Eva", "Santos", "");
+        fixture.person("prior", "Fay Santos", "Fay", "Santos", "");
+        fixture.membership("prior", "prior", "{\"congress\":16}");
+
+        var result = fixture.tx.execute(status -> fixture.service.populate(COMMIT));
+
+        assertEquals(2, result.created());
+        assertEquals(4, result.skipped());
+        assertEquals(0, fixture.jdbc.queryForObject("""
+                select count(*) from open_congress_entities
+                where id in ('old','unknown','stale','missing') and politician_id is not null
+                """, Integer.class));
+        assertEquals(2, fixture.jdbc.queryForObject("select count(*) from open_congress_relationships where entity_id='mixed'", Integer.class));
+    }
+
+    @Test
+    void populationDoesNotRecreateExcludedLocalOfficialsWithQualifyingMemberships() throws Exception {
+        var fixture = new Fixture();
+        String personId = "01K5ST4B0EK582X48JBZH7PCED";
+        fixture.person(personId, "Tomas Osmena", "Tomas", "Osmena", "");
+        fixture.membership(personId, "rev", "{\"congress\":15}");
+
+        var result = fixture.tx.execute(status -> fixture.service.populate(COMMIT));
+
+        assertEquals(0, result.created());
+        assertEquals(1, result.skipped());
+        assertEquals(1, fixture.jdbc.queryForObject(
+                "select count(*) from open_congress_relationships where entity_id=?", Integer.class, personId));
     }
 
     private class Fixture {
@@ -81,7 +129,7 @@ class CongressPopulationTests {
             jdbc.execute("create table politicians(politician_id uuid primary key,full_name varchar(150) unique,status varchar(30),position varchar(100),jurisdiction varchar(100),term_start date,term_end date,profile_origin varchar(40) default 'ADMIN_CURATED',created_at timestamp,updated_at timestamp)");
             jdbc.execute("create table open_congress_entities(id varchar primary key,kind varchar,current_revision varchar,politician_id uuid unique,linked_at timestamp)");
             jdbc.execute("create table open_congress_revisions(entity_id varchar,revision varchar,title varchar,payload varchar,dataset_commit varchar,imported_at timestamp)");
-            jdbc.execute("create table open_congress_relationships(entity_id varchar,revision varchar,relationship varchar,target_id varchar)");
+            jdbc.execute("create table open_congress_relationships(entity_id varchar,revision varchar,relationship varchar,target_id varchar,details varchar)");
             jdbc.execute("create table open_congress_population_runs(id uuid,dataset_commit varchar,report jsonb)");
             service=new CongressPopulationService(jdbc,json);
             tx=new TransactionTemplate(new DataSourceTransactionManager(ds));
@@ -90,6 +138,10 @@ class CongressPopulationTests {
             jdbc.update("insert into open_congress_entities(id,kind,current_revision) values (?,'PERSON','rev')",id);
             jdbc.update("insert into open_congress_revisions(entity_id,revision,title,payload,dataset_commit,imported_at) values (?,'rev',?,?,?,now())",id,name,
                     json.writeValueAsString(Map.of("first_name",first,"last_name",last,"name_suffix",suffix)),COMMIT);
+        }
+        void membership(String id, String revision, String details) {
+            jdbc.update("insert into open_congress_relationships(entity_id,revision,relationship,details) values (?,?,'MEMBER_OF',?)",
+                    id, revision, details);
         }
     }
 }

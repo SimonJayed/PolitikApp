@@ -1,11 +1,7 @@
-import React from 'react';
-
-function formatCurrency(value) {
-  return new Intl.NumberFormat('en-PH', { currency: 'PHP', maximumFractionDigits: 0, style: 'currency' }).format(Number(value || 0));
-}
+import { formatCompactPhp } from '../../features/formatCurrency';
 
 export default function BudgetAllocationCard({ budgetAllocated = 0, projectCompletions = 0, efficiencyRatio = 0 }) {
-  const formattedBudget = formatCurrency(budgetAllocated);
+  const formattedBudget = formatCompactPhp(budgetAllocated);
 
   return (
     <article
@@ -30,7 +26,7 @@ export default function BudgetAllocationCard({ budgetAllocated = 0, projectCompl
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
         <div>
           <span className="ty-label" style={{ display: 'block', color: 'var(--text-muted)' }}>Tracked Budget</span>
-          <strong style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ph-blue)' }}>{formattedBudget}</strong>
+          <strong className="metricCurrency" style={{ fontSize: '20px', fontWeight: '800', color: 'var(--ph-blue)' }}>{formattedBudget}</strong>
         </div>
         <div>
           <span className="ty-label" style={{ display: 'block', color: 'var(--text-muted)' }}>Projects Completed</span>

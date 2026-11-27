@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { congressOptions, directoryJurisdiction, directoryRank, matchesCongress, matchesPosition, normalizePosition, sortDirectory } from './politicianDirectory.js'
+import { congressOptions, directoryJurisdiction, directoryRank, matchesBranch, matchesCongress, matchesPosition, normalizePosition, sortDirectory } from './politicianDirectory.js'
 
 const today = '2026-11-12'
 const person = (id, position = null, extra = {}) => ({ politicianId: id, fullName: id, position, status: 'ACTIVE', ...extra })
@@ -28,6 +28,17 @@ test('Senate and House filters include source-only profiles and people who serve
   assert.equal(matchesPosition(person('h-z'), 'SENATOR', metadata), true)
   assert.equal(matchesPosition(person('old-h'), 'SENATOR', metadata), false)
   assert.equal(matchesPosition(person('manual', 'House Representative'), 'HOUSE_REPRESENTATIVE', metadata), true)
+})
+
+test('branch filters prioritize verified executive offices while retaining legislative history', () => {
+  const secretary = person('s-z', 'EXECUTIVE_SECRETARY_OF_EDUCATION')
+  assert.equal(matchesBranch(secretary, 'EXECUTIVE', metadata), true)
+  assert.equal(matchesBranch(secretary, 'LEGISLATIVE', metadata), false)
+  assert.equal(matchesPosition(secretary, 'SENATOR', metadata), true)
+  assert.equal(matchesCongress(secretary, 'HOUSE_REPRESENTATIVE', '19', metadata), true)
+  assert.equal(matchesBranch(person('old-h'), 'LEGISLATIVE', metadata), true)
+  assert.equal(matchesBranch(person('unknown'), 'LEGISLATIVE', metadata), false)
+  assert.equal(matchesBranch(person('unknown'), 'ALL', metadata), true)
 })
 
 test('Congress selection matches chamber and Congress together without leaking the other chamber', () => {

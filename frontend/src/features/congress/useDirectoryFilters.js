@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const defaults = { q: '', jurisdiction: 'ALL', position: 'ALL', congress: 'ALL', active: '' }
+const defaults = { q: '', branch: 'ALL', jurisdiction: 'ALL', position: 'ALL', congress: 'ALL', active: '' }
 
 function readFilters() {
   const params = new URLSearchParams(window.location.search)
@@ -27,6 +27,8 @@ export function useDirectoryFilters() {
 
   return {
     query: filters.q, setQuery: q => change({ q }),
+    branchFilter: ['EXECUTIVE', 'LEGISLATIVE'].includes(filters.branch) ? filters.branch : 'ALL',
+    setBranchFilter: branch => change({ branch, position: 'ALL', congress: 'ALL', jurisdiction: 'ALL' }),
     jurisdictionFilter: filters.jurisdiction, setJurisdictionFilter: jurisdiction => change({ jurisdiction }),
     positionFilter: filters.position,
     setPositionFilter: (position, jurisdiction = filters.jurisdiction) => change({ position, congress: 'ALL', jurisdiction }),

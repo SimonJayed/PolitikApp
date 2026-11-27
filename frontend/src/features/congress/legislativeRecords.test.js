@@ -73,10 +73,25 @@ test('numeric cards show PHP amounts and completion percentages without inventin
   assert.equal(accountabilityMetric({ actionIdentifier: 'PROJECT_COMPLETION', actionDetails: { completionPercentage: 101 } }), 'Completion percentage unavailable')
   assert.equal(accountabilityMetric({ actionIdentifier: 'BUDGET_ALLOCATION', actionDetails: { allocationAmount: null } }), 'Allocated amount unavailable')
   const html = renderToStaticMarkup(createElement(AccountabilityCard, { entry: { actionIdentifier: 'COA_FINDING', categoryTag: 'Audit', summary: 'Documented finding.', actionDetails: { flaggedAmount: 25000 }, sourceUrl: 'https://www.coa.gov.ph/report' } }))
-  for (const text of ['COA Audit Finding', 'Category: Audit', 'Administrator-verified record', '₱25,000.00', 'Documented finding.', 'does not by itself establish personal wrongdoing', 'Supporting source']) assert.ok(html.includes(text), text)
+  for (const text of ['COA Audit Finding', 'Category: Audit', 'Unverified', '₱25,000.00', 'Documented finding.', 'Attribution is unconfirmed', 'does not by itself establish personal wrongdoing', 'Supporting source']) assert.ok(html.includes(text), text)
   assert.ok(!html.includes('FindingAudit'))
   const unsafe = renderToStaticMarkup(createElement(AccountabilityCard, { entry: { actionIdentifier: 'BUDGET_ALLOCATION', sourceUrl: 'javascript:alert(1)' } }))
   assert.ok(!unsafe.includes('href=') && unsafe.includes('Supporting citation unavailable'))
   const dataset = renderToStaticMarkup(createElement(AccountabilityCard, { entry: { actionIdentifier: 'BUDGET_ALLOCATION', sourceUrl: bill.datasetUrl } }))
   assert.ok(!dataset.includes('href=') && !dataset.includes('github.com'))
+})
+
+test('citation review determines the public evidence label, link, and COA attribution', () => {
+  const entry = { actionIdentifier: 'COA_FINDING', sourceUrl: 'https://coa.gov.ph/old.pdf' }
+  const verified = renderToStaticMarkup(createElement(AccountabilityCard, { entry, review: {
+    status: 'VERIFIED', sourceUrl: 'https://coa.gov.ph/report.pdf', sourceOrganization: 'Commission on Audit',
+    attribution: 'ASSOCIATED_AGENCY',
+  } }))
+  assert.match(verified, /Verified.*Commission on Audit/)
+  assert.match(verified, /associated government agency/)
+  assert.match(verified, /href="https:\/\/coa\.gov\.ph\/report\.pdf"/)
+  assert.doesNotMatch(verified, /old\.pdf/)
+  const invalid = renderToStaticMarkup(createElement(AccountabilityCard, { entry, review: { status: 'INVALID_SOURCE' } }))
+  assert.match(invalid, /Invalid source/)
+  assert.doesNotMatch(invalid, /href=/)
 })

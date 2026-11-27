@@ -1,0 +1,333 @@
+{
+  "status": "PROPOSED_DO_NOT_IMPORT_WITHOUT_APPROVAL",
+  "preparedDate": "2026-11-27",
+  "congress": 20,
+  "openCongressRevision": "6e853ee027790427c5b5961c6318ff907cf717d5",
+  "downloadedSourceSha256": {
+    "https://docs.congress.hrep.online/legisdocs/journals_20/J11-2RS-20261012.pdf": "171c5d6b771fa33bcac60793bd9ff0f655212f006c48bcea482d3fd3ac04a689"
+  },
+  "recordCount": 18,
+  "records": [
+    {
+      "politicianId": "9b4d8d95-1c8b-4170-b070-2b1addcd009b",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0HM",
+      "politicianName": "Paolo Benigno \"Bam\" Aquino IV",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "ATTENDANCE",
+        "decision": "PRESENT",
+        "reference": "1RS Session 60",
+        "eventDate": "2026-05-05",
+        "sourceUrl": "https://legacy.senate.gov.ph/lisdata/4979845652%21.pdf",
+        "verificationNotes": "Journal 60 names Aquino, B. in the May 5 roll call. This establishes presence for the recorded session."
+      }
+    },
+    {
+      "politicianId": "9b4d8d95-1c8b-4170-b070-2b1addcd009b",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0HM",
+      "politicianName": "Paolo Benigno \"Bam\" Aquino IV",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "VOTE",
+        "decision": "YES",
+        "title": "Support for basic education in isolated communities",
+        "reference": "SBN 1937 · third reading · 1RS Journal 56",
+        "eventDate": "2026-03-16",
+        "sourceUrl": "https://legacy.senate.gov.ph/lisdata/4945345353%21.pdf",
+        "verificationNotes": "Journal 56 pages 9–10 identifies SBN 1937 and lists Aquino under votes in favor. The measure title is shortened."
+      }
+    },
+    {
+      "politicianId": "9b4d8d95-1c8b-4170-b070-2b1addcd009b",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0HM",
+      "politicianName": "Paolo Benigno \"Bam\" Aquino IV",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "COMMITTEE",
+        "decision": "CHAIR",
+        "title": "Committee on Basic Education",
+        "eventDate": null,
+        "endDate": null,
+        "sourceUrl": "https://legacy.senate.gov.ph/committee/permanent_ctte20th.pdf#page=5",
+        "verificationNotes": "The Senate's 20th Congress roster lists Bam Aquino as chair. No appointment or end date is asserted."
+      }
+    },
+    {
+      "politicianId": "536b36a0-c97a-45ed-938a-c75216c14ea6",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0HT",
+      "politicianName": "Pia S. Cayetano",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "ATTENDANCE",
+        "decision": "PRESENT",
+        "reference": "1RS Session 60",
+        "eventDate": "2026-05-05",
+        "sourceUrl": "https://legacy.senate.gov.ph/lisdata/4979845652%21.pdf",
+        "verificationNotes": "Journal 60 names Cayetano, P. S. in the May 5 roll call. This establishes presence for the recorded session."
+      }
+    },
+    {
+      "politicianId": "536b36a0-c97a-45ed-938a-c75216c14ea6",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0HT",
+      "politicianName": "Pia S. Cayetano",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "VOTE",
+        "decision": "YES",
+        "title": "Support for basic education in isolated communities",
+        "reference": "SBN 1937 · third reading · 1RS Journal 56",
+        "eventDate": "2026-03-16",
+        "sourceUrl": "https://legacy.senate.gov.ph/lisdata/4945345353%21.pdf",
+        "verificationNotes": "Journal 56 pages 9–10 identifies SBN 1937 and lists Cayetano (P) under votes in favor. The measure title is shortened."
+      }
+    },
+    {
+      "politicianId": "536b36a0-c97a-45ed-938a-c75216c14ea6",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0HT",
+      "politicianName": "Pia S. Cayetano",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "COMMITTEE",
+        "decision": "MEMBER",
+        "title": "Committee on Basic Education",
+        "eventDate": null,
+        "endDate": null,
+        "sourceUrl": "https://legacy.senate.gov.ph/committee/permanent_ctte20th.pdf#page=5",
+        "verificationNotes": "The Senate's 20th Congress roster names Pia S. Cayetano in the members section. No appointment or end date is asserted."
+      }
+    },
+    {
+      "politicianId": "c2d8fa32-2c81-4f59-94e5-4b6e6f0b9d2e",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0JG",
+      "politicianName": "Imee R. Marcos",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "ATTENDANCE",
+        "decision": "PRESENT",
+        "reference": "1RS Session 60",
+        "eventDate": "2026-05-05",
+        "sourceUrl": "https://legacy.senate.gov.ph/lisdata/4979845652%21.pdf",
+        "verificationNotes": "Journal 60 names Marcos, I. R. in the May 5 roll call. This establishes presence for the recorded session."
+      }
+    },
+    {
+      "politicianId": "c2d8fa32-2c81-4f59-94e5-4b6e6f0b9d2e",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0JG",
+      "politicianName": "Imee R. Marcos",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "VOTE",
+        "decision": "YES",
+        "title": "Support for basic education in isolated communities",
+        "reference": "SBN 1937 · third reading · 1RS Journal 56",
+        "eventDate": "2026-03-16",
+        "sourceUrl": "https://legacy.senate.gov.ph/lisdata/4945345353%21.pdf",
+        "verificationNotes": "Journal 56 pages 9–10 identifies SBN 1937 and lists Marcos under votes in favor. The measure title is shortened."
+      }
+    },
+    {
+      "politicianId": "c2d8fa32-2c81-4f59-94e5-4b6e6f0b9d2e",
+      "openCongressPersonId": "01K5S6MAZ4YBST5GDJV827A0JG",
+      "politicianName": "Imee R. Marcos",
+      "importBlocker": null,
+      "input": {
+        "chamber": "SENATE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "COMMITTEE",
+        "decision": "VICE_CHAIR",
+        "title": "Committee on Public Works",
+        "eventDate": null,
+        "endDate": null,
+        "sourceUrl": "https://legacy.senate.gov.ph/committee/permanent_ctte20th.pdf#page=30",
+        "verificationNotes": "The Senate's 20th Congress roster includes Imee R. Marcos under vice-chairpersons. No appointment or end date is asserted."
+      }
+    },
+    {
+      "politicianId": "b5a70f7b-1b0a-3460-9877-d20cc9cbc820",
+      "openCongressPersonId": "01K5ST3ZXC61Q2SRYH67K0WBEP",
+      "politicianName": "Jude Avorque Acidre",
+      "importBlocker": "Current V30 validator rejects the House journal's exact document host docs.congress.hrep.online.",
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "ATTENDANCE",
+        "decision": "PRESENT",
+        "reference": "2RS Journal 11",
+        "eventDate": "2026-10-12",
+        "sourceUrl": "https://docs.congress.hrep.online/legisdocs/journals_20/J11-2RS-20261012.pdf#page=1",
+        "verificationNotes": "Journal 11 page 1 lists Acidre in the October 12 roll call. This establishes presence for the recorded session."
+      }
+    },
+    {
+      "politicianId": "b5a70f7b-1b0a-3460-9877-d20cc9cbc820",
+      "openCongressPersonId": "01K5ST3ZXC61Q2SRYH67K0WBEP",
+      "politicianName": "Jude Avorque Acidre",
+      "importBlocker": "Current V30 validator rejects the House journal's exact document host docs.congress.hrep.online.",
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "VOTE",
+        "decision": "YES",
+        "title": "Child safety on social media and online gaming",
+        "reference": "HB 11566 · third reading · 2RS Journal 11",
+        "eventDate": "2026-10-12",
+        "sourceUrl": "https://docs.congress.hrep.online/legisdocs/journals_20/J11-2RS-20261012.pdf#page=31",
+        "verificationNotes": "Journal 11 pages 30–32 identifies HB 11566 and lists Acidre under affirmative votes. Page 42 corrects the affirmative tally without changing the named negative decisions. The measure title is shortened."
+      }
+    },
+    {
+      "politicianId": "b5a70f7b-1b0a-3460-9877-d20cc9cbc820",
+      "openCongressPersonId": "01K5ST3ZXC61Q2SRYH67K0WBEP",
+      "politicianName": "Jude Avorque Acidre",
+      "importBlocker": null,
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "COMMITTEE",
+        "decision": "CHAIR",
+        "title": "Committee on Higher and Technical Education",
+        "eventDate": null,
+        "endDate": null,
+        "sourceUrl": "https://www.congress.gov.ph/media/press-releases/9943",
+        "verificationNotes": "The July 25, 2026 House Press and Public Affairs Bureau release identifies Tingog representative Jude Acidre as chair. The release date establishes an observation and does not give the appointment date."
+      }
+    },
+    {
+      "politicianId": "3d2d26c3-0d1b-3b78-b269-b9ba5088fb53",
+      "openCongressPersonId": "01K5ST441S2EA31PR8C0H7VY78",
+      "politicianName": "Renee Louise M Co",
+      "importBlocker": "Current V30 validator rejects the House journal's exact document host docs.congress.hrep.online.",
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "ATTENDANCE",
+        "decision": "PRESENT",
+        "reference": "2RS Journal 11",
+        "eventDate": "2026-10-12",
+        "sourceUrl": "https://docs.congress.hrep.online/legisdocs/journals_20/J11-2RS-20261012.pdf#page=1",
+        "verificationNotes": "Journal 11 page 1 lists Co in the October 12 roll call. The same journal gives Renee Louise M. Co’s full name on page 31. This establishes presence for the recorded session."
+      }
+    },
+    {
+      "politicianId": "3d2d26c3-0d1b-3b78-b269-b9ba5088fb53",
+      "openCongressPersonId": "01K5ST441S2EA31PR8C0H7VY78",
+      "politicianName": "Renee Louise M Co",
+      "importBlocker": "Current V30 validator rejects the House journal's exact document host docs.congress.hrep.online.",
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "VOTE",
+        "decision": "NO",
+        "title": "Child safety on social media and online gaming",
+        "reference": "HB 11566 · third reading · 2RS Journal 11",
+        "eventDate": "2026-10-12",
+        "sourceUrl": "https://docs.congress.hrep.online/legisdocs/journals_20/J11-2RS-20261012.pdf#page=32",
+        "verificationNotes": "Journal 11 pages 30–32 identifies HB 11566 and lists Co under negative votes. Page 42 corrects the affirmative tally without changing the named negative decisions. The measure title is shortened."
+      }
+    },
+    {
+      "politicianId": "3d2d26c3-0d1b-3b78-b269-b9ba5088fb53",
+      "openCongressPersonId": "01K5ST441S2EA31PR8C0H7VY78",
+      "politicianName": "Renee Louise M Co",
+      "importBlocker": null,
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "COMMITTEE",
+        "decision": "MEMBER",
+        "title": "Committee on Appropriations",
+        "eventDate": "2025-08-12",
+        "endDate": null,
+        "sourceUrl": "https://congress.gov.ph/committees/committee/view/0504",
+        "verificationNotes": "The House roster shows Renee Louise M. Co as a member for the minority, elected August 12, 2025. Journal 6 documents the appointment context. This records the election date and leaves the end date blank."
+      },
+      "additionalEvidence": [
+        "https://docs.congress.hrep.online/legisdocs/journals_20/Journal-01597-20250811.pdf"
+      ]
+    },
+    {
+      "politicianId": "f7aa65c3-5a78-3068-b248-ab36049063c3",
+      "openCongressPersonId": "01K5ST45K9883DAHGYZM97WRSR",
+      "politicianName": "Sarah Jane I Elago",
+      "importBlocker": "Current V30 validator rejects the House journal's exact document host docs.congress.hrep.online.",
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "ATTENDANCE",
+        "decision": "PRESENT",
+        "reference": "2RS Journal 11",
+        "eventDate": "2026-10-12",
+        "sourceUrl": "https://docs.congress.hrep.online/legisdocs/journals_20/J11-2RS-20261012.pdf#page=1",
+        "verificationNotes": "Journal 11 page 1 lists Elago in the October 12 roll call. This establishes presence for the recorded session."
+      }
+    },
+    {
+      "politicianId": "f7aa65c3-5a78-3068-b248-ab36049063c3",
+      "openCongressPersonId": "01K5ST45K9883DAHGYZM97WRSR",
+      "politicianName": "Sarah Jane I Elago",
+      "importBlocker": "Current V30 validator rejects the House journal's exact document host docs.congress.hrep.online.",
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "VOTE",
+        "decision": "NO",
+        "title": "Child safety on social media and online gaming",
+        "reference": "HB 11566 · third reading · 2RS Journal 11",
+        "eventDate": "2026-10-12",
+        "sourceUrl": "https://docs.congress.hrep.online/legisdocs/journals_20/J11-2RS-20261012.pdf#page=32",
+        "verificationNotes": "Journal 11 pages 30–32 identifies HB 11566 and lists Elago under negative votes. Page 42 corrects the affirmative tally without changing the named negative decisions. The measure title is shortened."
+      }
+    },
+    {
+      "politicianId": "f7aa65c3-5a78-3068-b248-ab36049063c3",
+      "openCongressPersonId": "01K5ST45K9883DAHGYZM97WRSR",
+      "politicianName": "Sarah Jane I Elago",
+      "importBlocker": null,
+      "input": {
+        "chamber": "HOUSE",
+        "congress": 20,
+        "verificationStatus": "PENDING_VERIFICATION",
+        "kind": "COMMITTEE",
+        "decision": "MEMBER",
+        "title": "Special Committee on Globalization and WTO",
+        "eventDate": "2025-10-07",
+        "endDate": null,
+        "sourceUrl": "https://congress.gov.ph/committees/committee/view/D504",
+        "verificationNotes": "The House roster names Sarah Jane I. Elago a member for the minority and records October 7, 2025 as the election date. The end date is unconfirmed."
+      }
+    }
+  ]
+}

@@ -1,0 +1,2500 @@
+{
+    "affected": {
+        "accomplishments_to_delete": 0,
+        "timeline_entries_to_delete": 0,
+        "open_congress_links_to_detach": 174,
+        "profile_submissions_to_delete": 0,
+        "curation_audit_events_to_delete": 0,
+        "moderation_queue_rows_to_delete": 0,
+        "news_politician_associations_to_delete": 0,
+        "open_congress_person_revisions_retained": 174,
+        "article_bookmarks_on_linked_news_retained": 0,
+        "open_congress_membership_relationships_retained": 411,
+        "open_congress_bill_authorship_relationships_retained": 10958,
+        "published_scoring_records_for_executive_profiles_to_reuse": 18
+    },
+    "blockers": [
+    ],
+    "deletion_list": [
+        {
+            "status": "INACTIVE",
+            "full_name": "Abdulghani A Salapuddin",
+            "person_id": "01K5ST4DFCF77CFBEY390K89ES",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "4c2251b7-9bf6-3e39-965d-b0140afa3e4e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Adam Relson L Jala",
+            "person_id": "01K5ST486W0Q65KRFD4N2KSQSW",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "e2664abe-52ca-32d4-8794-5ba4a027d905"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Adeline Rodriguez-Zaldarriaga",
+            "person_id": "01K5ST4CYKA299G7KHZHWWA7FQ",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "05872020-98df-353a-9b29-2d41c9b8aa7c"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Agapito A Aquino",
+            "person_id": "01K5ST40WV6Y8KXK69R7058VMK",
+            "congresses": [
+                "11",
+                "12",
+                "13",
+                "8",
+                "9"
+            ],
+            "politician_id": "35485380-467d-3a55-a3b8-35f41544dc83"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Alipio Cirilo V Badelles",
+            "person_id": "01K5ST41BV97SXM9WH3TP8KSK9",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "830ca405-ee3c-3d5a-8187-1352ae2ced94"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Alvin S Sandoval",
+            "person_id": "01K5ST4DTQF3C573JHMYWW2RBV",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "ab2ffd5c-58de-318f-a48a-b8d8ceeecf12"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Anacleto D Badoy Jr",
+            "person_id": "01K718EXDF72JY9G15S0JZX74R",
+            "congresses": [
+                "8",
+                "9"
+            ],
+            "politician_id": "c86504b8-775b-3b81-944b-4c6ad5ea6c2d"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Angelito C Gatlabayan",
+            "person_id": "01K5ST4737H0ZB12T2RWC70PST",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "46eb9287-826e-3f9c-b942-b747b64ec8ee"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Anna Dominique Marquez-Lim Coseteng",
+            "person_id": "01K714RSHK0J8MH34ER2FRSH3X",
+            "congresses": [
+                "10",
+                "11",
+                "9"
+            ],
+            "politician_id": "0133e1b7-dfc0-317e-bd0a-d5d636f4ede3"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Anthony C Miranda",
+            "person_id": "01K5ST4A6HSXHYMVSA8KSGD1BT",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "725de068-93bd-3adb-9233-5ee03f01032b"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Antonio Macedaz Serapio",
+            "person_id": "01K5ST4E45C3Q4C6REC46AB57X",
+            "congresses": [
+                "13",
+                "8"
+            ],
+            "politician_id": "52bfd937-9087-3131-86e1-8ec5bf4e2a74"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Antonio P Yapha Jr",
+            "person_id": "01K5ST4H188X1T21HV3VKX69SC",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "aac8eab4-10b7-3bf0-9ee3-6c0228528837"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Antonio Veloso Cuenco V",
+            "person_id": "01K5ST44BC8J173S93WJRTZH8W",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "190f3fa1-2d5b-3d0f-b1db-a872c7171927"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ariel C Hernandez",
+            "person_id": "01K5ST47XE2KN2KDZM16C1H259",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "6a55d3d4-382c-337d-aef6-c1b1df0b86da"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Arrel Reyes Olaño",
+            "person_id": "01K5ST4APYYDE5G157R8W6MENJ",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "bb070567-031a-3767-a593-95e45df1fc69"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Arthur Y Pingoy Jr",
+            "person_id": "01K5ST4BHN88WT373847AZ4MG7",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "93af32ce-bad8-35bb-aa15-7f3aabe414e0"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Augusto H Baculio",
+            "person_id": "01K5ST41BJJZ1FW8TGFTNGGE8N",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "d1a854d0-7d99-3126-bd30-d635aa2fc3cc"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Baisendig G Dilangalen",
+            "person_id": "01K5ST45449K60RZZAKMQQYXVX",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "3e14d41e-ff5f-3f7c-a37d-8cc190e737d2"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Benasing O Macarambon Jr",
+            "person_id": "01K5ST495VSVK1QTF0CPJ2X2AP",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "172a0bbe-dc94-3ca2-b33c-7093b3bfabd3"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Benjamin A Cruz",
+            "person_id": "01K5ST446A607ZE9RDRG352X7G",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "bf09dbe8-49ed-3617-9953-8b4b6817baad"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Bernardo Fantin Piñol Jr",
+            "person_id": "01K5ST4BJ1TZC73S5DV98K3RAJ",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "1caa2f28-d523-3818-92cb-0b966e14a965"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Bobbit L Carlos",
+            "person_id": "01K5ST4359HDZT743CHJRVEWGD",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "4c56934a-3c69-37cf-b3a5-079757599ca3"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Candido P Pancrudo Jr",
+            "person_id": "01K5ST4BBCZZ21DD1C2XDNYYJ3",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "92a72f24-b1c0-32a7-b35f-3418b49d7163"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Carlo Oliver D Diasnes",
+            "person_id": "01K5ST453DHCAQ1R9VYXPWV8G7",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "6b544151-11ac-3059-af7a-8ff1ee96d7a5"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Carlos R Imperial",
+            "person_id": "01K5ST485RP5EQA3B670QKBX63",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "9"
+            ],
+            "politician_id": "e8019efb-168a-3f72-b1fc-b957bbc4ab86"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Carmen L Cari",
+            "person_id": "01K5ST434VERZ09T5FZBEH4C8V",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "a3b3c912-a3cc-3240-afc3-1b02069c077e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Catalino Figueroa V",
+            "person_id": "01K5ST46BJ56J7RFKZGX5Z0W1K",
+            "congresses": [
+                "10",
+                "13",
+                "9"
+            ],
+            "politician_id": "5ea94d55-9b39-3984-b213-e0c79f3319b8"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ceasar A Cobrador",
+            "person_id": "01K5ST43V79B69QMRAZS6B96F8",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "4e9877e7-ffba-3032-b9d0-3f088b319c63"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Cecilia G Jalosjos-Carreon",
+            "person_id": "01K5ST487FXBTCYC1KBEF5MKY2",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "221f33fc-1b5f-3a42-b5fb-05d4b3e9721f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Cecilia M Seares-Luna",
+            "person_id": "01K5ST4E3TK9GAGRYJBNBDYKQK",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "282b9d14-2545-305b-990d-29ef3bf02be5"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Christian Maaño Señeres",
+            "person_id": "01K5ST4E3V7V9ANA95BMMJK5HK",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "368482fe-125d-3d48-8736-05d7fc6d2606"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Clavel A Martinez",
+            "person_id": "01K5ST49VGWBD4JJZMCF79F92J",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "182081ca-5f22-359c-b3a4-bab30c5d086f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Constantino G Jaraula",
+            "person_id": "01K5ST488DMYEVD0NSSEK59Z8F",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "6a833de1-c21c-32e1-8900-6d12d221ac30"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Consuelo A Dy",
+            "person_id": "01K5ST45DMQQGN5Z7NHH6SGG7J",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "afe67b3d-8698-3ddd-8731-0942a94381be"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Crispin B Beltran",
+            "person_id": "01K5ST422E33NSJ5KGAF2AVHP7",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "3f9b4a1a-c127-358b-aec0-bc58397277f2"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Danilo P Lagbas",
+            "person_id": "01K5ST48HGF1W50NF81AX94RC7",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "69beef1c-919f-330f-bfad-e883c0851644"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Danton Q Bueser",
+            "person_id": "01K5ST42NXNAH45S6GF4ZAX4E4",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "cc925e8f-8623-3419-9ffd-58485a1ba645"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Didagen P Dilangalen",
+            "person_id": "01K5ST45449K60RZZAKMQQYXVY",
+            "congresses": [
+                "10",
+                "11",
+                "12",
+                "14"
+            ],
+            "politician_id": "9bdcccfe-b330-38cc-90c8-c75217436375"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Diogenes S Osabel",
+            "person_id": "01K5ST4B0CT3NXKE3B24901EGY",
+            "congresses": [
+                "11",
+                "14"
+            ],
+            "politician_id": "8d05d697-4708-3639-8bc3-9565c2e04e50"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Edelmiro Atega Amante Sr",
+            "person_id": "01K5ST40KRR9V0N8N278NRWZ2S",
+            "congresses": [
+                "12",
+                "14",
+                "9"
+            ],
+            "politician_id": "f053c7d0-f58d-3a19-b339-21f3df767d4e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Edgar L Valdez",
+            "person_id": "01K5ST4FTAX7E3X70E6MRSD6Y4",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "ae15b63c-b92f-3260-9683-c2543b4bed99"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Edgar T Espinosa",
+            "person_id": "01K5ST46232WB9HEK25R015WF7",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "6732d3cb-51f3-3c04-b169-bf05f682a571"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Edgardo E Tumangan",
+            "person_id": "01K715PW4CWYS3XGMS2XA3PHH3",
+            "congresses": [
+                "10",
+                "9"
+            ],
+            "politician_id": "fca345f4-7397-3c20-b704-4e3180b50fc9"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Edmundo O Reyes Jr",
+            "person_id": "01K5ST4C8PW9EEV8YES47C7BNX",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "c0f8d3c7-60e1-37cd-b1db-0f96ae82ff2a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eduardo C Firmalo",
+            "person_id": "01K5ST46D3FAQG5VNMX1FQS5DH",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "8a42f53c-f117-3d93-a2cf-aafd97248fe1"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eduardo Castro Zialcita",
+            "person_id": "01K5ST4HBQC7VTKPWTC02XE66B",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "5f40eb17-ab3d-31d2-9dbb-7dee91dcd2e7"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eduardo K Veloso",
+            "person_id": "01K5ST4G2Q6PA24T4A1P0JRDT5",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "803fae95-4d56-3957-b3aa-66d289b036cc"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eduardo V Roquero",
+            "person_id": "01K5ST4DBY3QTWF70C297RZ9MM",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "98272c90-2ea5-30b5-8dff-fb037109f255"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Edwin C Uy",
+            "person_id": "01K5ST4FRV9T6Z0H9W5B8FDYFR",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "d8216242-fb4f-38f5-ac34-4e7c66f860c1"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Edwin P Acoba",
+            "person_id": "01K7191XGWNH3XAKGFCD1SX73B",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "086e09af-0faf-37ab-b5f5-3d47b2baf0fe"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eladio M Jala",
+            "person_id": "01K5ST486ZTBJEQB431JV8ZPXV",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "0af4d8b6-f4d5-318b-9635-330cb51f4c38"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eleuterio R Violago",
+            "person_id": "01K5ST4GRB41P6X2JAFRWSR8BE",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "9"
+            ],
+            "politician_id": "9d0932e5-2aae-3228-89ba-034c47f091cc"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Emilio R Espinosa Jr",
+            "person_id": "01K5ST4628WVXH05G416JTZDJS",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "8bf1c274-57f0-3c99-b3cc-7c6b557278a0"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Emmylou Jacolo Taliño",
+            "person_id": "01K5ST4ESSNVE0TNRN1WYAKV4F",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "399dec7d-76f2-3da3-a8f9-b915a756335e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eriberto M Bernal",
+            "person_id": "01K7190KYVNZSAJ9X98BTV5B0N",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "8bfc4537-2f05-36c5-a16a-61829ba0ee6f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ernesto A Nieva",
+            "person_id": "01K5ST4AE5FJ0C53J9R48094AQ",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "1c45eb81-f6bd-328a-bc7d-752e51fa63a9"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ernesto C Pablo",
+            "person_id": "01K5ST4B1H0JD05W51XZ041K33",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "984a42aa-8fb9-34c6-9155-bd53d0810c1f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ernesto Falar Herrera",
+            "person_id": "01K715X2D2MSFX80N4YTBMMB3J",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "a2fc335a-697f-3d62-911e-42ac78a1270c"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ernesto S Gidaya",
+            "person_id": "01K5ST474VYCZWCWNCJ4P416CA",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "8c151de9-e979-3e3a-85b9-dd78785cb4db"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ernie D Clarete",
+            "person_id": "01K5ST43T108CQN25V2A5WTM5V",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "965259cb-c73e-36b1-a66e-a39a55289244"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Erwin L Chiongbian",
+            "person_id": "01K5ST43QHZRED6KKAPGNGAEHZ",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "7a6c4efc-6ee9-3528-93eb-c6055a6217c3"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Estrella Dl Santos",
+            "person_id": "01K5ST4DY04SV81FJM3HYTP37Z",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "e6a126bf-598e-3b43-a5e8-86933e668565"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Eufrocino M Codilla Sr",
+            "person_id": "01K5ST43W0XPYP69374C34DH53",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "41d1d83c-0996-31c1-becc-bc02010b9901"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Faysah Rpm Dumarpa",
+            "person_id": "01K5ST45B9DHM2V87D461WZH4T",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "d3198926-d892-3054-a2f2-28a60cfd2c99"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Felix R Alfelor Jr",
+            "person_id": "01K5ST40BCC4RW6W13GMETT3SE",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "6d6ce85e-aa45-3013-b9b6-57acb06ae0b0"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Florencio Liquigan Vargas",
+            "person_id": "01K5ST4FYWYFSJ0HGFN9C7YB23",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "ebb198ff-a457-3a6d-8ba2-06aa57023f43"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Francis Lumanlan Nepomuceno",
+            "person_id": "01K5ST4ABQS7MWZ2XB5YRBH52V",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "d18a39d9-61e8-3ea6-99c4-66c17457d19e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Freddie Nelle Webb",
+            "person_id": "01K7163KASAQDFTFZYJR5WFGSW",
+            "congresses": [
+                "10",
+                "9"
+            ],
+            "politician_id": "b2b3fe16-5801-355e-8dec-04db8c63e902"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Genaro Rafael K Alvarez III",
+            "person_id": "01K5ST40H6Y49DCFSD4TJ8R27C",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "c16dda79-92b6-31e2-b3c8-9e32ab510f60"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Generoso Dc Tulagan",
+            "person_id": "01K5ST4FE6Z9Q2RXF918SBVNTQ",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "101f0a9f-ecee-3146-9636-ebc43c2c3f70"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Gilbert Cesar Catibayan Remulla",
+            "person_id": "01K5ST4C1Q3XAX88KH94XSEB28",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "6fe228b6-fd62-343d-800b-3fcc828f4baf"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Glenda B Ecleo",
+            "person_id": "01K5ST45J7BZKRV9J4TEXF5W4W",
+            "congresses": [
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "5bd4a266-9110-315d-94da-57fc85cf6543"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Glenn A Chong",
+            "person_id": "01K5ST43RCG2SJ24FTSXWVQCP3",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "a78b5d0d-1cfb-3472-ba37-aee2384455a2"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Gregorio T Ipong",
+            "person_id": "01K5ST485W4964W8G3CSGDRKAX",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "ce3c3a10-0c22-333d-b98c-45d651202af6"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Guillermo P Cua",
+            "person_id": "01K5ST447REBZQXQH8CAS7B652",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "8341949f-b3da-3060-bc70-e70b554fd1ea"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Haron D Omar",
+            "person_id": "01K5ST4AVH8HDK1JTS40VVY2JY",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "ac0f8b31-a26f-354a-b3a4-5009f0961a0f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Henry Montes Dueñas Jr",
+            "person_id": "01K5ST45AK58CSF0JAJ2VN54F0",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "6c9300d6-39b2-3591-bb4a-9a854a69e376"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Herminio Guivelondo Teves",
+            "person_id": "01K5ST4F6B0NG58ASRY6TDJG3C",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "fe8eb205-9a3f-31a0-80f2-e20cb4e9b6a0"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Hezel P Gacutan",
+            "person_id": "01K714KX81ZC0Y46N1F4BQ4TW5",
+            "congresses": [
+                "10",
+                "11"
+            ],
+            "politician_id": "65c76774-74df-3e9c-9b51-2d988ebfd89d"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Isidoro E Real Jr",
+            "person_id": "01K5ST4BYEX2PBBMDCJHXYQDPD",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "41d7fa57-4a68-35a4-9237-d6c338c860bb"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jacinto Villegas Paras",
+            "person_id": "01K5ST4BCZX68RJ69C9B4Q22AG",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "f4431417-3357-32fb-a57c-56714453c772"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jaime C Lopez",
+            "person_id": "01K5ST48ZGQK5Q7P8541EFGQ7A",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "b23fdfa7-8598-3f36-9587-b79e918088d5"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jesus Reynaldo Bondoc Aquino",
+            "person_id": "01K5ST40YB0ZFJN7FK7CZ0N6PX",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "12cc6a80-0a8b-3db4-ab8a-8a2556b1f5b8"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Joel B Maglunsod",
+            "person_id": "01K5ST499NRFFQEY5ZH40B292B",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "a86c8af1-929b-3fce-bca3-49f6a5589d8b"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Joel G Virador",
+            "person_id": "01K5ST4GVD7GWGFDFV7TBVDP8S",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "d3eb929c-b3cc-3960-80b8-89347bc15c53"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Joey D Hizon",
+            "person_id": "01K5ST481HWMMM1GHXGG2GAK65",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "1c761491-e602-36cb-8695-c08044c7a8a6"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "John Henry Renner Osmeña",
+            "person_id": "01K6ZZNN2NWNNWSAE8NG80TM7W",
+            "congresses": [
+                "11",
+                "12",
+                "8",
+                "9"
+            ],
+            "politician_id": "9a49b0dd-cbbd-392d-89d3-6d20fbccbe63"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jose Acuña Bautista",
+            "person_id": "01K6ZZTHWPF0H6FFF458FK4DXS",
+            "congresses": [
+                "10",
+                "11",
+                "12",
+                "9"
+            ],
+            "politician_id": "808f57d1-dd58-3540-8521-90fd94608021"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jose Antonio F Roxas",
+            "person_id": "01K5ST4DCX771ECVNSZ0XESVFV",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "f6056b5c-3c1b-388e-9937-452d9657ffa7"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jose Carlos V Lacson",
+            "person_id": "01K5ST48F0CMQD27DBR1YRE68P",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "a2d593cf-7158-3dbd-ad7f-9387f057af5a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jose Claveria De Venecia Jr",
+            "person_id": "01K5ST451RVXQV9S61ZXETKMV9",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "654ef861-f8e2-350b-a3be-160ef837b51f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jose G Solis",
+            "person_id": "01K5ST4E9TJG34MG802F5DK7HA",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "031d26c2-2bdc-3c4c-91c4-029f0f3fd7e2"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jose Yap V",
+            "person_id": "01K5ST4H1NCMY7Y8XYYJKPMBMT",
+            "congresses": [
+                "10",
+                "14",
+                "9"
+            ],
+            "politician_id": "2e99cbfb-60af-32a4-9e02-e354271f4bf0"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Joseph A Santiago",
+            "person_id": "01K5ST4DW6ZT9J9NK0WH3XBBE3",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "32053194-0f45-3808-bd2c-eda66cb82d4f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jovito Reyes Salonga",
+            "person_id": "01K718VD26QK1PEWCCPQAGFZ8X",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "1969f165-e22c-3482-9284-bb325c328dd0"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Jovito Salvaña Palparan Jr",
+            "person_id": "01K5ST4B8FQYTR73Y0QEXKA3Y7",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "535c6a61-b3f7-3c4f-8085-cd36562de27a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Judy Syjuco",
+            "person_id": "01K5ST4ERMP63MERCMNBM1YC3J",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "85209971-01d9-3294-a6bf-a4f424898525"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Laurence B Wacnang",
+            "person_id": "01K5ST4GVMQ9W0EQ803ZP2YGPX",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "602a62b3-6054-3ee8-b0d9-558d30b419c3"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Leovigildo B Banaag",
+            "person_id": "01K5ST41H2GH9AMQXJ33Q4VHFW",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "c4bfd468-70f1-3355-8008-497d62ea1aff"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Leticia Valdez Ramos-Shahani",
+            "person_id": "01K715GR9K1F6S2XSY0HBXSM6A",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "a1210300-8f94-3594-b3af-882390541119"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Liza L Maza",
+            "person_id": "01K5ST49ZK8AHFHTEBX5679DA2",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "0d12aef6-6141-3240-98a9-d4780486e615"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Lorenzo E Leynes Jr",
+            "person_id": "01K715RJWBPRNC874M1B9YSQ32",
+            "congresses": [
+                "10"
+            ],
+            "politician_id": "bd7f33c4-7ab5-3f3e-af57-0c4ca152838a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Loretta Ann Pargas Rosales",
+            "person_id": "01K5ST4DCC3SVMHHNC7E1HKT8S",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "6e91a12c-c427-36fa-9af6-875104d30851"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Luis A Asistio",
+            "person_id": "01K5ST415GT6X7FEAMGTWHC4J4",
+            "congresses": [
+                "10",
+                "11",
+                "13",
+                "9"
+            ],
+            "politician_id": "6037867e-66b0-37ee-9eef-235c7be35f16"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Luis P Bersamin Jr",
+            "person_id": "01K5ST4269Y49186637JJSRH17",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "645c307f-998e-3a57-8051-b4205fc59066"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Luisa Pimentel Ejercito Estrada",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0J2",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "67ed4d87-37ab-35b7-b4ba-4d63b8c9be3c"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "M. A. Abad Santos Madrigal",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0JH",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "c3a6269b-896a-3890-a84d-624132a1795f"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ma. Carissa O Coscolluela",
+            "person_id": "01K5ST443Q4RK3DM74060DGJ01",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "06cae356-3218-35f4-93af-fdbc2b87eb78"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Mamintal Abdul Jabbar Tamano",
+            "person_id": "01K71994GF02NDEH3MCT9AF6DD",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "de2b6a72-6d4b-339d-a12c-466b0aae1f07"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Marcelo B Fernan",
+            "person_id": "01K714C2SBBENQ6D2ARDZBPDGW",
+            "congresses": [
+                "10",
+                "11"
+            ],
+            "politician_id": "6d36f120-6a88-3d86-bb4a-098e5b387b8e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Maria Teresa Aquino Aquino-Oreta",
+            "person_id": "01K6ZYVERHJR3W52XGX6STNJAF",
+            "congresses": [
+                "11",
+                "12"
+            ],
+            "politician_id": "09eea3c0-e7f5-30a6-bb05-9ac46cbf4fce"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Marina P Clarete",
+            "person_id": "01K5ST43T3V16P4XBXGZ77VWSK",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "4fc33e7f-e26d-379d-b935-3b0867ca0490"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Mario Joyo Aguja",
+            "person_id": "01K5ST40690KPW7DCKKS36DVED",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "b1aac464-afd1-3963-843c-2245da1ab737"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Mary Ann L Susano",
+            "person_id": "01K5ST4EN8ZSNRX95E715FSHE3",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "36a88ad5-fa16-35ce-9ae2-4ef86d47b512"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Matias Villarico Defensor Jr",
+            "person_id": "01K5ST44PZFBHETHGSJAHK9BA7",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "38c93910-137a-3299-99c9-f92eef07a301"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Miles M Roces",
+            "person_id": "01K5ST4CEJ404HNNWNA0WKYA0C",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "d044c04b-ef6c-353e-beb9-d3206add382e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Monica Louise Prieto-Teodoro",
+            "person_id": "01K5ST4BNKFHNR2817FQJKNQW3",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "428713b3-c74b-3588-849f-820f5df49e2e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Nanette Castelo-Daza",
+            "person_id": "01K5ST43781TP34EZAB03XSD3A",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "7a4634d8-bf5f-370a-bc42-0f075a20f634"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Narciso D Santiago III",
+            "person_id": "01K5ST4DWDWQKPBHCJMAJS6GRM",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "5ba11da2-3466-3c28-8c2b-dc23b23ee6de"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Neptali Alvaro Gonzales Sr",
+            "person_id": "01K71688F8FVM6A7Y0XPWBGWYS",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "997bb19f-28dc-393c-b16d-ec20859c123b"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Nerissa Corazon Soon-Ruiz",
+            "person_id": "01K5ST4EAVWJNGSGXARXYS2AXP",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "280316ac-3480-35df-83ff-a3b1a76f048b"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Orlando A Fua Jr",
+            "person_id": "01K5ST46JHSTACR37GTV82MGFF",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "df450701-9c53-36cb-999b-461a819f6bef"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Oscar D Francisco",
+            "person_id": "01K5ST46GG7EBT5EZG2BGQK75E",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "e35a1922-8bb3-3ced-8b75-3e9d585c5bfe"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Oscar L Gozos",
+            "person_id": "01K5ST47M6DV67CC6WBB5ZNGST",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "d08d42db-6176-3eba-99aa-77470408d4f9"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Peter Paul Jed C Falcon",
+            "person_id": "01K5ST46482YTRDKWC0JZ3WF6W",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "799c1a70-b7a7-3136-9018-4b0217ba71f5"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Prospero Rafael Castillo Nograles",
+            "person_id": "01K5ST4AKG6FQSJ0DJQJKMSXXX",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "9dd4cb09-c620-3697-a5a8-ceffa1b6d3c1"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Prospero Sybico Amatong",
+            "person_id": "01K5ST40NVM9504XGVBTESWJJH",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "8f1e2221-a8b6-3165-9757-7bb74ad0c37b"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rafael Puchero Nantes",
+            "person_id": "01K5ST4A9CZYFP4ZG5PR5GVNMJ",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "3a751d00-176e-3502-96ba-05b23eea6c75"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ramon Banzon Magsaysay Jr",
+            "person_id": "01K5S6MAZ4YBST5GDJV827A0JJ",
+            "congresses": [
+                "10",
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "fda1dedf-c854-3fb7-a8b9-b2f10fd0af84"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Raul T Gonzalez Jr",
+            "person_id": "01K5ST47JEFK0DFGKE60QXYMZ8",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "ba51f633-eeb9-332d-872f-f45e5a0cda53"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Remedios L Petilla",
+            "person_id": "01K5ST4BDZKM0AW31CDGVMACPA",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "b8c059a0-c095-33d8-8a50-a31f3dd8f302"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Renato B Magtubo",
+            "person_id": "01K5ST49C8VH3CGD535RX68AVW",
+            "congresses": [
+                "11",
+                "13"
+            ],
+            "politician_id": "47599d73-12d1-38f8-849d-c67c17a23cb0"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Renato Luna Cayetano",
+            "person_id": "01K6ZZ4CF4SC2PVB2AN8W8QY8A",
+            "congresses": [
+                "11",
+                "12"
+            ],
+            "politician_id": "09308356-bf8b-377d-be04-35cb34fc8f16"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rene Augusto Verceluz Saguisag",
+            "person_id": "01K7197VBFYRC6A419HZSYRD5P",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "80f16447-5338-322a-9f9d-3e8e1ba30754"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rene M Velarde",
+            "person_id": "01K5ST4G0XSPBB2H9RV7NRDGXX",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "7cc8dc6c-f7b3-3a7b-a915-b9860876374b"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Reno G Lim",
+            "person_id": "01K5ST48XWCBXZPD6W7PNHPK52",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "76fade1f-ef04-3bd3-a22b-43ab0282bd90"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Reylina Gustavo Nicolas",
+            "person_id": "01K5ST4ABYH2WGQZN0YKYZ3VH6",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "3022927c-ff63-3b25-a817-7ca73adef606"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Reynaldo S Uy",
+            "person_id": "01K5ST4FSSSXX80BQKGW1EXE54",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "2ebf650c-fee9-3336-958b-dcf57348869b"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rizalina Seachon-Lanete",
+            "person_id": "01K5ST4E3RMYNEZWT7ZZA85GXQ",
+            "congresses": [
+                "13",
+                "14"
+            ],
+            "politician_id": "a839823a-5247-3454-9c94-be7864377b9a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Robert Vincent Jude Bautista Jaworski Jr",
+            "person_id": "01K5ST489PAYV40BVRQQ2GF6R0",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "a743f36d-46b3-3e05-8908-32a96dd92453"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Robert Vincent Salazar Jaworski Sr",
+            "person_id": "01K6ZZD6T8NRY1P4WRKZ49V3X9",
+            "congresses": [
+                "11",
+                "12"
+            ],
+            "politician_id": "cd4fa466-fd82-3cf7-a095-8ad674e3c017"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Roberto C Cajes",
+            "person_id": "01K5ST42XN1BDJPRWV7HACWY76",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "6a810cdc-56f6-34e8-8427-53f76f789c40"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rodolfo C Bacani",
+            "person_id": "01K5ST41BEZP5X03D9QAT4Z4WS",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "b5c9f627-1444-3f8e-b8a3-d36bcba9a6fb"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rodolfo Galido Plaza",
+            "person_id": "01K5ST4BKAJ6FY89C1ZVQW91A4",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "274171b3-8d5f-3297-80ae-660719a13a71"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rodolfo Q Agbayani",
+            "person_id": "01K5ST4049ZACHDQK3DD29T2W6",
+            "congresses": [
+                "13"
+            ],
+            "politician_id": "20c47a60-9889-3f1f-8642-6e1a5afd7650"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rodolfo T Albano III",
+            "person_id": "01K5ST4094J9YJ4DSNP1E5XBHR",
+            "congresses": [
+                "11",
+                "13",
+                "14"
+            ],
+            "politician_id": "23cf470a-91aa-340e-aecb-6b3751b0933d"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rodriguez D Dadivas",
+            "person_id": "01K5ST44E16BVQR8QGZHH1HNN5",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "f4e3d735-05d3-325e-a451-a4f9b747efff"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Rolex T Suplico",
+            "person_id": "01K5ST4EMK38PX4A2VE95YPKH1",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "e8e371ac-93fd-39af-95fc-96a00c02e4d7"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Romualdo T Vicencio",
+            "person_id": "01K5ST4G8K1XHH0HV9XAN0QSB2",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "7027fdd4-a838-3e99-b7b6-d36395ba8269"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Roque Ravelo Ablan Jr",
+            "person_id": "01K5ST3ZSG8MQCKAXZ37BWQN86",
+            "congresses": [
+                "10",
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "0cf5b38e-1787-3aae-9a36-f311a947cbb5"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Roseller L Barinaga",
+            "person_id": "01K5ST41N78RNAN3SQV2RZS2RM",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "00ebecc3-3482-31d0-8f25-eca2f918643d"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ruy Elias C Lopez",
+            "person_id": "01K5ST490VSWD4BVE461MC6SZA",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "bca11cdb-8ef5-3106-8e0c-fe055b2426a1"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Salacnib F Baterina",
+            "person_id": "01K5ST41TH4REKW2WG334AQFDY",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "d9515a0c-7e32-30b3-8710-5184363c172c"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Salvador B Britanico",
+            "person_id": "01K5ST42J4N6W13VA9X2ZZQSKP",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "245ca5c3-683f-3dd7-a667-13b9ba42a775"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Samuel M Dangwa",
+            "person_id": "01K5ST44KA0DH1CNYBVQKX1DB9",
+            "congresses": [
+                "12",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "c08aacf3-5aae-3777-a2ed-cc407d94f5c7"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Santanina Centi Tillah-Rasul",
+            "person_id": "01K718PWDABJ1QYXW97K2XA2FV",
+            "congresses": [
+                "8",
+                "9"
+            ],
+            "politician_id": "ad869867-a9f1-3ddc-9c08-2b0bddc5aa5a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Saturnino Cunanan Ocampo",
+            "person_id": "01K5ST4ANVY0NC9H7EX15KYY56",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "044e9d06-57d2-3c36-a61c-c016fe774e46"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Simeon L Kintanar",
+            "person_id": "01K5ST48DWD8SAH1D2P0MV32RQ",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "f34e1324-250a-3382-8f5c-59c6463a6046"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Sotero Cosme Hidalgo Laurel II",
+            "person_id": "01K718WSWR069VZMZV5VGPJ8MG",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "2447f369-a16a-3caf-bbc4-b1168b40a524"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Sunny Rose A Madamba",
+            "person_id": "01K5ST49853T323Y77D4C985BC",
+            "congresses": [
+                "12",
+                "13"
+            ],
+            "politician_id": "6419cdb9-255a-3c73-88c5-2559eaa4d11e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Teodolo M Coquilla",
+            "person_id": "01K5ST441QGA5F57FS9BPBD8AT",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "115db37d-9e92-31fb-b054-aabcffdd6f77"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Teodoro L Lim",
+            "person_id": "01K5ST48Y1S0PGQKX4AXVBTX8A",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "2962b011-0518-3f6f-941f-5d1d9a94b61c"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Thomas L Dumpit Jr",
+            "person_id": "01K5ST45BMBHNTJTQK6RH46A1H",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "286c02f9-917e-3975-9ff1-60a3aaf7c10e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Tomas M Dumpit",
+            "person_id": "01K5ST45BPCRXXCKDZMJV9W6PH",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "5269d514-e598-3464-9434-5fc910ec43c9"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Tranquilino B Carmona",
+            "person_id": "01K5ST435AW1H53GBJKT2W9FVJ",
+            "congresses": [
+                "13",
+                "9"
+            ],
+            "politician_id": "0ff4e412-6f65-3ae4-be98-c02764677e0a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Trinidad G Apostol",
+            "person_id": "01K5ST40WNBNDN0WN697HBF6TM",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "e947f676-41fc-3dd9-99bb-f91468432f9a"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Uliran T Joaquin",
+            "person_id": "01K5ST48A7Y735V4B2YN05703R",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "334370c7-3b1c-374e-9b74-5a2fb7496d00"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Ulpiano P Sarmiento III",
+            "person_id": "01K5ST4E15GCCXYDCBS66MC7GE",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "67e6bca5-5d20-3144-950f-ca0fdcd18349"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Victor Rodriguez Sumulong",
+            "person_id": "01K5ST4EKZQ6Y5R1YV98AFF5C2",
+            "congresses": [
+                "11",
+                "12",
+                "13"
+            ],
+            "politician_id": "10b869f4-7358-35cd-886b-070290ec7741"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Victor S Dominguez",
+            "person_id": "01K5ST4591T2DGXQKEYB94ATAX",
+            "congresses": [
+                "10",
+                "13",
+                "14",
+                "9"
+            ],
+            "politician_id": "fcc79f93-73e2-34f9-a5f8-8b7749c1d8ce"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Victor San Andres Ziga",
+            "person_id": "01K719AVABS8MV14PKFQ6R1QQS",
+            "congresses": [
+                "8"
+            ],
+            "politician_id": "8a4e9e5f-f2b9-3a6e-8b6d-c8eaa77c4f4e"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Victoria H Reyes",
+            "person_id": "01K5ST4C9YJSJADZKPDVDP27VA",
+            "congresses": [
+                "12",
+                "13",
+                "14"
+            ],
+            "politician_id": "3705fb72-ea8d-3ac8-9a1b-288f6eace028"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Vigor Ma. D Mendoza II",
+            "person_id": "01K5ST4A239PF5F915PE6FZVQD",
+            "congresses": [
+                "14"
+            ],
+            "politician_id": "9209bad4-a7b9-3063-bc9d-d1deac9aa2d9"
+        },
+        {
+            "status": "INACTIVE",
+            "full_name": "Wigberto Ebarle Tañada Sr",
+            "person_id": "01K715MN0QA5PASM57D214DA5G",
+            "congresses": [
+                "10",
+                "8",
+                "9"
+            ],
+            "politician_id": "74bafcd6-4fae-373b-af9a-dc307fa19a42"
+        }
+    ],
+    "current_profiles": 1175,
+    "executive_roster": [
+        {
+            "id": "1fc507ac-3204-3c55-9f99-36bec920b4e4",
+            "name": "Lino Edgardo Schramm Cayetano",
+            "source": "https://pco.gov.ph/news_releases/pco-changes-to-be-gradual-guided-by-continuous-performance-evaluation-cayetano/",
+            "position": "EXECUTIVE_ACTING_SECRETARY_OF_THE_PRESIDENTIAL_COMMUNICATIONS_OFFICE",
+            "term_end": null,
+            "profile_id": "1fc507ac-3204-3c55-9f99-36bec920b4e4",
+            "term_start": null
+        },
+        {
+            "id": "ef19826e-d830-325f-a73b-41112d4c0d1e",
+            "name": "Benjamin De Castro Abalos Jr.",
+            "source": "https://pco.gov.ph/news_releases/president-marcos-appoints-abalos-as-cabinet-secretary-2/",
+            "position": "EXECUTIVE_CABINET_SECRETARY",
+            "term_end": null,
+            "profile_id": "ef19826e-d830-325f-a73b-41112d4c0d1e",
+            "term_start": null
+        },
+        {
+            "id": "e62d0019-8f7c-8c28-c411-ccf80ddd6a67",
+            "name": "Shirley C. Agrupis",
+            "source": "https://ro11.ched.gov.ph/2026/11/23/ched-ibm-forge-partnership-to-bring-industry-recognized-digital-and-ai-skills-into-higher-education/12684/press-release/",
+            "position": "EXECUTIVE_CHAIRPERSON_OF_THE_COMMISSION_ON_HIGHER_EDUCATION",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "76583886-a543-b9b1-a698-39172066b180",
+            "name": "Leo Tereso A. Magno",
+            "source": "https://peace.gov.ph/2026/11/sec-sarmiento-reaffirms-national-government-support-for-new-barmm-administration/",
+            "position": "EXECUTIVE_CHAIRPERSON_OF_THE_MINDANAO_DEVELOPMENT_AUTHORITY",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "f4a50348-fad9-688f-12d9-7fea71f9e85e",
+            "name": "Anna Liza G. Logan",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_CHIEF_PRESIDENTIAL_LEGAL_COUNSEL",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "581f149f-1e86-3c88-9976-834ec4811183",
+            "name": "Jose Francisco B. Benitez",
+            "source": "https://www.tesda.gov.ph/Directory",
+            "position": "EXECUTIVE_DIRECTOR_GENERAL_OF_TESDA",
+            "term_end": null,
+            "profile_id": "581f149f-1e86-3c88-9976-834ec4811183",
+            "term_start": null
+        },
+        {
+            "id": "38c80659-09b9-f9a3-b5ca-862fac9d055a",
+            "name": "Gay Jane P. Perez",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_DIRECTOR_GENERAL_OF_THE_PHILIPPINE_SPACE_AGENCY",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "bdc2a03c-dddf-35e3-b79e-164a1168d442",
+            "name": "Ralph Gonzalez Recto",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_EXECUTIVE_SECRETARY",
+            "term_end": null,
+            "profile_id": "bdc2a03c-dddf-35e3-b79e-164a1168d442",
+            "term_start": null
+        },
+        {
+            "id": "cee7bddd-5470-abb3-f19c-c8d41333c568",
+            "name": "Elaine T. Masukat",
+            "source": "https://bataan.gov.ph/news/hor-approves-budgets-of-the-office-of-the-president-and-presidential-management-staff/",
+            "position": "EXECUTIVE_HEAD_OF_THE_PRESIDENTIAL_MANAGEMENT_STAFF",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "0f12bc0b-ccf5-2857-9d1b-7be0d56b3c49",
+            "name": "Eduardo S. L. Oban Jr.",
+            "source": "https://nsc.gov.ph/nsc-officials/",
+            "position": "EXECUTIVE_NATIONAL_SECURITY_ADVISER",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "93d6ef2c-f76d-39fb-93fe-679dae9532c0",
+            "name": "Nasser C. Pangandaman Sr.",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_MARAWI_REHABILITATION",
+            "term_end": null,
+            "profile_id": "93d6ef2c-f76d-39fb-93fe-679dae9532c0",
+            "term_start": null
+        },
+        {
+            "id": "6ebe2a4e-9784-34f4-8ca8-16db9c4a12c8",
+            "name": "Antonio H. Cerilles",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_MINDANAO_CONCERNS",
+            "term_end": null,
+            "profile_id": "6ebe2a4e-9784-34f4-8ca8-16db9c4a12c8",
+            "term_start": null
+        },
+        {
+            "id": "d7067c8a-a8e3-78f7-5714-09ee961612e8",
+            "name": "Ma. Esperanza Christina C. Frasco",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_SUSTAINABLE_AND_RESILIENT_COMMUNITIES",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "a2976714-221d-70c9-d626-6ff14bee14df",
+            "name": "Jose Rizalino L. Acuzar",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_ON_PASIG_RIVER_REHABILITATION",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "65cf7969-56cb-30a6-8fd1-f631a726a2a2",
+            "name": "Mel Senen Sevilla Sarmiento",
+            "source": "https://peace.gov.ph/2026/11/sec-sarmiento-reaffirms-national-government-support-for-new-barmm-administration/",
+            "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_ON_PEACE_RECONCILIATION_AND_UNITY",
+            "term_end": null,
+            "profile_id": "65cf7969-56cb-30a6-8fd1-f631a726a2a2",
+            "term_start": null
+        },
+        {
+            "id": "bda511ba-4334-4fbf-a37e-b309cad158e0",
+            "name": "Andres C. Centino",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_PRESIDENTIAL_ASSISTANT_FOR_MARITIME_CONCERNS",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "1cca88c7-2012-4a5f-7227-ee54f854742f",
+            "name": "Philip G. Lo",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_PRESIDENTIAL_ASSISTANT_FOR_THE_VISAYAS",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "64a1ce34-986e-3edb-b965-c41bdbef7110",
+            "name": "Jose Ma. Clemente Sarte Salceda",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_PRESIDENTIAL_LEGISLATIVE_OFFICER",
+            "term_end": null,
+            "profile_id": "64a1ce34-986e-3edb-b965-c41bdbef7110",
+            "term_start": null
+        },
+        {
+            "id": "84c6038a-8614-3076-b16c-7121964cda3b",
+            "name": "Conrado M. Estrella III",
+            "source": "https://pco.gov.ph/presidential-speech/speech-by-president-ferdinand-r-marcos-jr-at-the-mass-oath-taking-of-newly-promoted-and-newly-hired-deped-personnel-from-the-province-of-pangasinan/",
+            "position": "EXECUTIVE_SECRETARY_OF_AGRARIAN_REFORM",
+            "term_end": null,
+            "profile_id": "84c6038a-8614-3076-b16c-7121964cda3b",
+            "term_start": null
+        },
+        {
+            "id": "937443ba-b47f-3bfb-fece-34e177375b19",
+            "name": "Francisco P. Tiu Laurel Jr.",
+            "source": "https://sagipsaka.da.gov.ph/wp-content/uploads/2026/10/AC-05-2026-AMENDMENT-TO-AC-08-2019-IRR-OF-RA-11321-SAGIP-SAKA-ACT.pdf",
+            "position": "EXECUTIVE_SECRETARY_OF_AGRICULTURE",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "737343c3-1fcb-e70b-3732-1a76766535de",
+            "name": "Kim Robert C. De Leon",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_BUDGET_AND_MANAGEMENT",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "e09f219c-248c-4d69-c811-19c3eef8f554",
+            "name": "Arsenio M. Balisacan",
+            "source": "https://www.pna.gov.ph/article/depdev-seeks-strengthened-intl-trade-cooperation-amid-global-uncertainty",
+            "position": "EXECUTIVE_SECRETARY_OF_ECONOMY_PLANNING_AND_DEVELOPMENT",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "ea7b86cd-0b10-3938-8b5d-5e21b7b9b258",
+            "name": "Juan Edgardo Manalang Angara",
+            "source": "https://pco.gov.ph/presidential-speech/speech-by-president-ferdinand-r-marcos-jr-at-the-mass-oath-taking-of-newly-promoted-and-newly-hired-deped-personnel-from-the-province-of-pangasinan/",
+            "position": "EXECUTIVE_SECRETARY_OF_EDUCATION",
+            "term_end": null,
+            "profile_id": "ea7b86cd-0b10-3938-8b5d-5e21b7b9b258",
+            "term_start": null
+        },
+        {
+            "id": "89e4862d-df13-3f08-9ba6-f2d6ed5c376f",
+            "name": "Sharon S. Garin",
+            "source": "https://doe.gov.ph/doe-reinforces-power-supply-readiness-amid-looming-el-nio",
+            "position": "EXECUTIVE_SECRETARY_OF_ENERGY",
+            "term_end": null,
+            "profile_id": "89e4862d-df13-3f08-9ba6-f2d6ed5c376f",
+            "term_start": null
+        },
+        {
+            "id": "6dc26072-c975-a69e-8f2e-2a5d66962e3b",
+            "name": "Juan Miguel T. Cuna",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_ENVIRONMENT_AND_NATURAL_RESOURCES",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "480ab0c1-3828-1498-f646-7b77dc5213ef",
+            "name": "Frederick D. Go",
+            "source": "https://www.pna.gov.ph/article/frederick-go-stays-as-dof-chief-to-sustain-fiscal-reforms",
+            "position": "EXECUTIVE_SECRETARY_OF_FINANCE",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "47b57210-cc86-f146-5e97-23257943efb7",
+            "name": "Ma. Theresa P. Lazaro",
+            "source": "https://dfa.gov.ph/images/2026/Officers_Directory_in_the_Home_Office_as_of_09_January_2026.docx.pdf",
+            "position": "EXECUTIVE_SECRETARY_OF_FOREIGN_AFFAIRS",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "d3280f41-0d9f-2795-e04b-3a534bc8c4e7",
+            "name": "Edwin M. Mercado",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_HEALTH",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "bd70c9f2-191e-526a-2d05-e3219ea7dffb",
+            "name": "Jose Ramon P. Aliling",
+            "source": "https://nha.gov.ph/wp-content/uploads/2025/05/DHSUD-SEC-ALILING-BIO.pdf",
+            "position": "EXECUTIVE_SECRETARY_OF_HUMAN_SETTLEMENTS_AND_URBAN_DEVELOPMENT",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "ae1d8b10-3d0d-adde-8e64-59a45c0137cd",
+            "name": "Robert Joseph de Claro",
+            "source": "https://pco.gov.ph/news_releases/pbbm-appoints-robert-joseph-de-claro-as-new-dict-secretary/",
+            "position": "EXECUTIVE_SECRETARY_OF_INFORMATION_AND_COMMUNICATIONS_TECHNOLOGY",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "cb18b2af-8423-cd33-d204-522cb2cd287b",
+            "name": "Fredderick A. Vida",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_JUSTICE",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "b580dc3e-dd78-3842-8013-27267687dd89",
+            "name": "Francis N. Tolentino",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_LABOR_AND_EMPLOYMENT",
+            "term_end": null,
+            "profile_id": "b580dc3e-dd78-3842-8013-27267687dd89",
+            "term_start": null
+        },
+        {
+            "id": "af6e8c92-1e61-35a3-7fbe-bb20b277da42",
+            "name": "Hans Leo J. Cacdac",
+            "source": "https://dmw.gov.ph/news-releases/news-release-102026-3",
+            "position": "EXECUTIVE_SECRETARY_OF_MIGRANT_WORKERS",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "dab59b3a-25d0-3522-9b62-7054d5acf79b",
+            "name": "Gilberto Eduardo Gerardo Cojuangco Teodoro Jr.",
+            "source": "https://pco.gov.ph/presidential-speech/speech-by-president-ferdinand-r-marcos-jr-at-the-oath-taking-of-the-newly-promoted-generals-and-flag-officers-of-the-armed-forces-of-the-philippines-afp/",
+            "position": "EXECUTIVE_SECRETARY_OF_NATIONAL_DEFENSE",
+            "term_end": null,
+            "profile_id": "dab59b3a-25d0-3522-9b62-7054d5acf79b",
+            "term_start": null
+        },
+        {
+            "id": "cfebb619-2fd0-00f2-26aa-fefaeeb0a126",
+            "name": "Giovanni Z. Lopez",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_PUBLIC_WORKS_AND_HIGHWAYS",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "e6b44409-2f72-1677-f6b8-a7aaa012b3b2",
+            "name": "Renato U. Solidum Jr.",
+            "source": "https://www.dost.gov.ph/transparency/about-dost/the-secretary",
+            "position": "EXECUTIVE_SECRETARY_OF_SCIENCE_AND_TECHNOLOGY",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "22139e3e-f03f-3cfe-938f-62c9eda12a19",
+            "name": "Rexlon Ting Gatchalian",
+            "source": "https://www.dswd.gov.ph/dswds-air-to-water-project-in-masbate-built-for-long-term-community-resilience-not-just-for-el-nino-sec-gatchalian/",
+            "position": "EXECUTIVE_SECRETARY_OF_SOCIAL_WELFARE_AND_DEVELOPMENT",
+            "term_end": null,
+            "profile_id": "22139e3e-f03f-3cfe-938f-62c9eda12a19",
+            "term_start": null
+        },
+        {
+            "id": "20b527aa-825c-9d24-e454-89229dbfad07",
+            "name": "Juanito Victor C. Remulla",
+            "source": "https://region6.dilg.gov.ph/remulla-calls-for-stronger-family-school-involvement-against-evolving-threats-to-children/",
+            "position": "EXECUTIVE_SECRETARY_OF_THE_INTERIOR_AND_LOCAL_GOVERNMENT",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "3481a505-272f-f2e6-b434-8536f83c189f",
+            "name": "Maria Bernardita A. Mathay",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_TOURISM",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "e3740d83-486d-b142-536d-9c6ad6bf11e0",
+            "name": "Ma. Cristina Aldeguer-Roque",
+            "source": "https://msmehub.dti.gov.ph/dti-strengthens-b2b-market-linkages-with-continuing-initiatives/",
+            "position": "EXECUTIVE_SECRETARY_OF_TRADE_AND_INDUSTRY",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "f12397c4-3166-293f-b552-7581d2d4011d",
+            "name": "Vince Dizon",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "EXECUTIVE_SECRETARY_OF_TRANSPORTATION",
+            "term_end": null,
+            "profile_id": null,
+            "term_start": null
+        },
+        {
+            "id": "50585964-dd47-3f5d-968b-219810d00814",
+            "name": "Antonio Ernesto F. Lagdameo Jr.",
+            "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+            "position": "EXECUTIVE_SPECIAL_ASSISTANT_TO_THE_PRESIDENT",
+            "term_end": null,
+            "profile_id": "50585964-dd47-3f5d-968b-219810d00814",
+            "term_start": null
+        },
+        {
+            "id": "c9169871-4006-401a-8bf7-51d6a8820fb3",
+            "name": "Ferdinand Romualdez Marcos Jr.",
+            "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+            "position": "PRESIDENT",
+            "term_end": "2028-06-30",
+            "profile_id": "c9169871-4006-401a-8bf7-51d6a8820fb3",
+            "term_start": "2022-06-30"
+        },
+        {
+            "id": "c62bd1fd-c297-2267-3ea7-38657251ecef",
+            "name": "Sara Zimmerman Duterte",
+            "source": "https://www.pna.gov.ph/article/senate-skips-questions-on-ovps-p7852-m-2027-budget",
+            "position": "VICE_PRESIDENT",
+            "term_end": "2028-06-30",
+            "profile_id": null,
+            "term_start": "2022-06-30"
+        }
+    ],
+    "retained_profiles": 1001,
+    "eligible_for_deletion": 174,
+    "current_public_profiles": 1173,
+    "expected_final_profiles": 1029,
+    "affected_rows_fingerprint": "b078799369f3e13640c1c1affa5e01d4",
+    "executive_profiles_to_add": 28,
+    "executive_profiles_to_reuse": 16,
+    "protected_executive_profiles": 65,
+    "expected_final_public_profiles": 1027,
+    "retained_with_recent_membership": 948,
+    "verified_former_executive_exemptions": [
+        {
+            "name": "Abraham Kahlil Blanco Mitra",
+            "office": "Former Games and Amusements Board chairperson",
+            "source": "https://www.dbm.gov.ph/wp-content/uploads/AboutDBM/2020-govt-directory-for-posting-08262020.pdf",
+            "profile_id": "2b6be324-8932-3720-9723-845156a14150"
+        },
+        {
+            "name": "Alberto Gatmaitan Romulo",
+            "office": "Former Executive Secretary",
+            "source": "https://www.dbm.gov.ph/wp-content/uploads/DBCC/2024/DBCC-50-years-in-harmony.pdf",
+            "profile_id": "3cd43cf6-419d-3c55-abce-9a0b66896b0a"
+        },
+        {
+            "name": "Alfredo Siojo Lim",
+            "office": "Former Interior and Local Government Secretary and Manila mayor",
+            "source": "https://legacy.senate.gov.ph/press_release/2020/0819_prib3.asp",
+            "profile_id": "37739ae9-268e-3c2b-b714-cb7de23fe44e"
+        },
+        {
+            "name": "Aquilino Quilinging Pimentel Jr",
+            "office": "Former Local Government Minister",
+            "source": "https://www.pna.gov.ph/articles/1083705",
+            "profile_id": "394cd122-5739-3829-a0e0-29cf0645f163"
+        },
+        {
+            "name": "Arturo Modesto Tolentino",
+            "office": "Former Minister of Foreign Affairs",
+            "source": "https://legacy.senate.gov.ph/senators/senpres/tolentino.asp",
+            "profile_id": "790bd7e7-f199-32dd-a81e-b536b0aa6491"
+        },
+        {
+            "name": "Benigno Simeon Cojuangco Aquino III",
+            "office": "Former President",
+            "source": "https://issuances-library.senate.gov.ph/sites/default/files/2023-02/ra%252010397.pdf",
+            "profile_id": "d6b23b63-7975-30a1-bfaa-2a3a8824c368"
+        },
+        {
+            "name": "Blas Fajardo Ople",
+            "office": "Former Labor and Foreign Affairs Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/blas_ople.htm",
+            "profile_id": "8a6ea8f5-fa09-3171-871e-ad2b23094bb5"
+        },
+        {
+            "name": "Carmencita Ongsiako Reyes",
+            "office": "Former Marinduque governor",
+            "source": "https://marinduque.gov.ph/history/",
+            "profile_id": "a51a20a1-ba92-32db-b200-9bbe3f6ab9f6"
+        },
+        {
+            "name": "Darlene Magnolia Ricasa Antonino-Custodio",
+            "office": "Former General Santos mayor",
+            "source": "https://www.pna.gov.ph/articles/1051298",
+            "profile_id": "9c4afbe0-f455-3c8e-a03c-abc5c9131a6e"
+        },
+        {
+            "name": "Datu Pax S Mangudadatu",
+            "office": "Former Sultan Kudarat governor",
+            "source": "https://cpbrd.congress.gov.ph/wp-content/uploads/2026/04/CSP-65-STATISTICAL-INVENTORY-OF-POTENTIAL-POLITICAL-DYNASTS.pdf",
+            "profile_id": "8606195b-2f85-3afd-b096-9e7a7aae93d3"
+        },
+        {
+            "name": "Del R De Guzman",
+            "office": "Former Marikina mayor",
+            "source": "https://www.marikina.gov.ph/facts/2023%20Facts%20and%20Figures.pdf",
+            "profile_id": "4d278113-e90b-3846-a491-968106204b18"
+        },
+        {
+            "name": "Douglas Ra Cagas",
+            "office": "Former Davao del Sur governor",
+            "source": "https://www.pna.gov.ph/articles/1143207",
+            "profile_id": "13b14922-1e74-3622-8c1c-97df3750e996"
+        },
+        {
+            "name": "Eduardo Nonato N Joson",
+            "office": "Former Nueva Ecija governor and National Food Authority administrator",
+            "source": "https://congress.gov.ph/index.php/media/press-releases/9253",
+            "profile_id": "667491e9-7184-3382-9850-bcf57caaa1ee"
+        },
+        {
+            "name": "Emilio C Macias II",
+            "office": "Former Negros Oriental governor",
+            "source": "https://www.negor.gov.ph/history/",
+            "profile_id": "f40aceba-8bd4-3c71-8a78-c7e4bddb84eb"
+        },
+        {
+            "name": "Ernesto Madarang Maceda Sr",
+            "office": "Former Executive Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/senpres/maceda.asp",
+            "profile_id": "4ca27489-7aab-3e50-9e3a-583d148e0780"
+        },
+        {
+            "name": "Exequiel B Javier",
+            "office": "Former Antique governor",
+            "source": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/61612",
+            "profile_id": "29be1d81-15a1-39e4-b8ec-297c2efc0f2f"
+        },
+        {
+            "name": "Francisco Sarmiento Tatad",
+            "office": "Former Public Information Minister",
+            "source": "https://www.pna.gov.ph/opinion/pieces/790-reminiscing-on-the-1976-1978-batasang-bayan-membership",
+            "profile_id": "4aaa0911-a8a2-3e58-8e41-62942bda3597"
+        },
+        {
+            "name": "Heherson Turingan Alvarez",
+            "office": "Former Cabinet secretary",
+            "source": "https://web.senate.gov.ph/lisdata/3254729423%21.pdf",
+            "profile_id": "d1b8b22b-efa5-3969-8495-a000215a8077"
+        },
+        {
+            "name": "Herminia M Ramiro",
+            "office": "Former Misamis Occidental governor",
+            "source": "https://www.dbm.gov.ph/wp-content/uploads/AboutDBM/2017%20govt%20directory6-2.pdf",
+            "profile_id": "09c97d68-8ffd-3971-8d28-5ce369ed4e44"
+        },
+        {
+            "name": "Hernani A Braganza",
+            "office": "Former Agrarian Reform Secretary",
+            "source": "https://peace.gov.ph/2017/04/peace-talks-resume-gph-cpp-npa-ndf/",
+            "profile_id": "8f2868a5-fb28-324d-b8db-f14780661256"
+        },
+        {
+            "name": "Jose David Lina Jr",
+            "office": "Former Laguna governor",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/joey_lina.htm",
+            "profile_id": "b4977db7-37e0-38a2-b8f6-e1a8c5c5704d"
+        },
+        {
+            "name": "Joseph Ejercito Estrada",
+            "office": "Former President and Vice President",
+            "source": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/67196",
+            "profile_id": "b2d6a539-c671-3397-8436-30f4e39dd810"
+        },
+        {
+            "name": "Juan Martin Flavier",
+            "office": "Former Health Secretary",
+            "source": "https://legacy.senate.gov.ph/press_release/2014/1104_prib1.asp",
+            "profile_id": "cbe33e2e-874a-3e65-877d-d03ae0eb095a"
+        },
+        {
+            "name": "Juan Romeo Nereus Olaivar Acosta",
+            "office": "Former Presidential Adviser for Environmental Protection",
+            "source": "https://llda.gov.ph/wp-content/uploads/dox/ldbem/2013-2014/ldbem2013-2014.pdf",
+            "profile_id": "65eb5a42-9b0e-3cbe-945a-0bae4811e231"
+        },
+        {
+            "name": "Leonardo Q Montemayor",
+            "office": "Former Agriculture Secretary",
+            "source": "https://www.da.gov.ph/da-nta-sets-international-forum-amplifying-campaign-against-illicit-tobacco-trade-addresses-industry-growth/",
+            "profile_id": "18049f04-b43e-3ad8-b58f-1e0d6158613b"
+        },
+        {
+            "name": "Liwayway Pimentel Vinzons-Chato",
+            "office": "Former Commissioner of Internal Revenue",
+            "source": "https://bir-cdn.bir.gov.ph/local/pdf/BIR%20Chronicles_02242016_for%20web.pdf",
+            "profile_id": "8f776605-a65c-36f7-8a2e-95a7fadf7dec"
+        },
+        {
+            "name": "Manuel C Ortega",
+            "office": "Former La Union governor",
+            "source": "https://www.congress.gov.ph/media/press-releases/1010",
+            "profile_id": "e0d61600-d2be-38dd-b307-3dd40c19d246"
+        },
+        {
+            "name": "Manuel Leuterio de Castro Jr",
+            "office": "Former Vice President",
+            "source": "https://officialgazette.gov.ph/2004/10/29/speech-of-president-arroyo-during-the-afp-change-of-command-ceremony/",
+            "profile_id": "4d3052b3-5423-37a6-b500-3d01096676de"
+        },
+        {
+            "name": "Manuel N Mamba",
+            "office": "Former Cagayan governor",
+            "source": "https://cagayan.gov.ph/talambuhay-ni-governor-mamba-inilunsad-ngayong-hunyo-25-2025-kasabay-ng-pagdiriwang-ng-442nd-aggao-nac-cagayan/",
+            "profile_id": "f504fbfb-8085-3e4b-a1de-ab58251637dc"
+        },
+        {
+            "name": "Mar Araneta Roxas",
+            "office": "Former Interior and Local Government Secretary",
+            "source": "https://www.napocor.gov.ph/wp-content/uploads/Transparency_Seal/Reports/Annual_Reports/2015_NPC_Annual_Report.pdf",
+            "profile_id": "f1c359f3-65f7-354d-8cd3-dc48b40dd402"
+        },
+        {
+            "name": "Monico Ogtong Puentevella",
+            "office": "Former Bacolod mayor",
+            "source": "https://bacolodcity.gov.ph/the-unveiling-of-former-mayor-monicos-frame/",
+            "profile_id": "f04d6b96-ea29-36cc-8d68-7b0b717efaf0"
+        },
+        {
+            "name": "Orlando Sanchez Mercado",
+            "office": "Former National Defense Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/orlando_mercado.htm",
+            "profile_id": "b047746d-5e19-3ab2-95b5-a0a44ba2b882"
+        },
+        {
+            "name": "Oyie Matias Umali",
+            "office": "Nueva Ecija governor",
+            "source": "https://calabarzon.dilg.gov.ph/dilg-ensures-succession-following-suspension-of-gov-umali/",
+            "profile_id": "9b41b538-450f-345a-8cc3-f96a1f1cac3d"
+        },
+        {
+            "name": "Proceso J Alcala",
+            "office": "Former Agriculture Secretary",
+            "source": "https://www.napocor.gov.ph/wp-content/uploads/Transparency_Seal/Reports/Annual_Reports/2015_NPC_Annual_Report.pdf",
+            "profile_id": "47129ecb-e64c-3f87-bc96-5bfb9e3d4a34"
+        },
+        {
+            "name": "Raul Sagarbarria Roco",
+            "office": "Former Education Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/raul_roco.htm",
+            "profile_id": "5f871bcb-3740-36e8-b7f2-24ae73896fb6"
+        },
+        {
+            "name": "Raul Sevilla Manglapus",
+            "office": "Former Foreign Affairs Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/raul_manglapus.htm",
+            "profile_id": "44bdb671-d1be-3391-ae4d-73334eefc8c5"
+        },
+        {
+            "name": "Robert Zabala Barbers",
+            "office": "Former Interior and Local Government Secretary",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/robert_barbers.htm",
+            "profile_id": "8c3d5c78-7a5a-30c8-b722-d1d7ce556216"
+        },
+        {
+            "name": "Teodoro L Locsin Jr",
+            "office": "Former Foreign Affairs Secretary",
+            "source": "https://www.pna.gov.ph/index.php/articles/1051376",
+            "profile_id": "59036ac2-e21e-3a3a-8273-4defc3963d5f"
+        },
+        {
+            "name": "Teofisto Tayko Guingona Jr",
+            "office": "Former Vice President",
+            "source": "https://legacy.senate.gov.ph/senators/former_senators/teofisto_guingona_jr.htm",
+            "profile_id": "9ac2526f-fc15-34ad-a061-7c80247e409f"
+        },
+        {
+            "name": "Vicente Tirona Paterno",
+            "office": "Former Industry Minister",
+            "source": "https://www.pna.gov.ph/opinion/pieces/790-reminiscing-on-the-1976-1978-batasang-bayan-membership",
+            "profile_id": "20d1d796-7843-3a11-94b5-85151f910991"
+        },
+        {
+            "name": "Victor Aguedo E Agbayani",
+            "office": "Former Pangasinan governor",
+            "source": "https://www.pangasinan.gov.ph/wp-content/uploads/issuances/114-2004.pdf",
+            "profile_id": "31099678-e4e1-3efc-a43f-fe92a31f57c6"
+        },
+        {
+            "name": "Wahab M Akbar",
+            "office": "Former Basilan governor",
+            "source": "https://www.comelec.gov.ph/php-tpls-attachments/ListElectedCandidates/2001_list_of_elected_provincial_candidates.pdf",
+            "profile_id": "574ad2ed-256c-3207-9e39-9a553a9087a7"
+        },
+        {
+            "name": "Wilhelmino Manucdoc Sy-Alvarado",
+            "office": "Former Bulacan governor",
+            "source": "https://bulacan.gov.ph/general-info/provincial-governors/wilhelmino-sy-alvarado/",
+            "profile_id": "4997d5c1-bd09-3a53-b395-2b930a600cc6"
+        },
+        {
+            "name": "Yusop H Jikiri",
+            "office": "Former Sulu governor",
+            "source": "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/45109",
+            "profile_id": "9c714ce8-b6d1-3626-8808-5cb983bd8a2e"
+        }
+    ],
+    "protected_executive_profiles_with_older_only_memberships": 47,
+    "retained_without_confirmed_recent_or_exclusively_older_memberships": 6
+}

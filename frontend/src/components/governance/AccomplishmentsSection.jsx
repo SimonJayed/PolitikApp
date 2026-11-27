@@ -2,6 +2,8 @@ import { LoadingSkeleton } from "../Skeletons"
 import { useEffect, useRef, useState } from 'react'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import BaseModal from '../BaseModal'
+import { REVIEW_STATUS_LABELS } from '../../features/verification/citationReviews'
+import { publicCitationHref } from '../../api/congress'
 
 const emptyForm = { title: '', description: '', period: 'unknown', accomplishmentDate: '', accomplishmentYear: '', category: '', sourceUrl: '', visible: true }
 
@@ -14,29 +16,28 @@ function periodLabel(entry) {
 }
 
 function Citation({ url }) {
-  // Only render navigable web citations, even if historical data is malformed.
-  try {
-    const parsed = new URL(url)
-    if (!['http:', 'https:'].includes(parsed.protocol)) return null
-  } catch { return null }
-  return <a href={url} target="_blank" rel="noreferrer">View supporting source<span className="srOnly"> (opens in a new tab)</span></a>
+  const href = publicCitationHref(url)
+  return href ? <a href={href} target="_blank" rel="noreferrer">View supporting source<span className="srOnly"> (opens in a new tab)</span></a> : null
 }
 
-export function PublicAccomplishments({ records = [] }) {
+export function PublicAccomplishments({ records = [], reviews }) {
   const visible = records.filter(entry => entry.visible)
   return visible.length === 0
     ? <p className="prMuted prEmptyState">No accomplishments are currently available for this politician.</p>
-    : <ul className="accomplishmentList">{visible.map(entry => <li key={entry.accomplishmentId}>
+    : <ul className="accomplishmentList">{visible.map(entry => {
+      const review = reviews?.get(entry.accomplishmentId)
+      return <li key={entry.accomplishmentId}>
       <article>
         <h3>{entry.title}</h3>
         <p className="prMuted">{periodLabel(entry)}{entry.category ? ` · ${entry.category}` : ''}</p>
         <p className="accomplishmentDescription">{entry.description}</p>
-        <Citation url={entry.sourceUrl} />
+        <p className="prMuted">{REVIEW_STATUS_LABELS[review?.status] ?? 'Unverified'}</p>
+        {review?.status !== 'INVALID_SOURCE' && <Citation url={review?.sourceUrl || entry.sourceUrl} />}
       </article>
-    </li>)}</ul>
+    </li>})}</ul>
 }
 
-export default function AccomplishmentsSection({ politicianId, isAdmin, token, showPublic = true, embedded = false, onRecordsChange }) {
+export default function AccomplishmentsSection({ politicianId, isAdmin, token, reviews, showPublic = true, embedded = false, onRecordsChange }) {
   const [records, setRecords] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -131,7 +132,7 @@ export default function AccomplishmentsSection({ politicianId, isAdmin, token, s
     </div>}
     {loading ? <LoadingSkeleton label="Loading accomplishments" />
       : error ? <div role="alert"><p>{error}</p><button className="prBtn prBtnOutline" type="button" onClick={() => setRefresh(value => value + 1)}>Retry</button></div>
-        : showPublic && <PublicAccomplishments records={records} />}
+        : showPublic && <PublicAccomplishments records={records} reviews={reviews} />}
     {message && <p role="status">{message}</p>}
     {canManage && !loading && !error && <details className="accomplishmentManagement">
       <summary>Manage accomplishments ({records.length})</summary>

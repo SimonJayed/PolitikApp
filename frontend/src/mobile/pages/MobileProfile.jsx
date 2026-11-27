@@ -5,12 +5,18 @@ import { formatDisplayName } from '../../features/congress/displayName'
 import { formatWgiScore } from '../../features/congress/wgiLeaderboard'
 import CongressProfilePanel from '../../components/governance/CongressProfilePanel'
 import CongressSourceSection from '../../components/governance/CongressSourceSection'
+import LegislativeAccountabilitySection from '../../components/governance/LegislativeAccountabilitySection'
 import AccomplishmentsSection from '../../components/governance/AccomplishmentsSection'
 import AccountabilityRecords from '../../components/governance/AccountabilityRecords'
+import ProfileBiography from '../../components/governance/ProfileBiography'
+import { MobileBudgetTracked } from '../../components/governance/BudgetBreakdown'
+import { useCitationReviews } from '../../features/verification/citationReviews'
+import { accountabilityRecords } from '../../features/congress/accountabilityRecords'
 import CongressMembershipSummary from '../../components/governance/CongressMembershipSummary'
 import MobileSegmentedTabs from '../components/tabs/MobileSegmentedTabs'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
-import { congressRequest } from '../../api/congress'
+import { chamberForPosition, matchesBranch } from '../../features/congress/politicianDirectory'
+import { useCongressMemberships, useLegislativeAccountabilityAvailability } from '../../features/congress/useCongressMemberships'
 
 const PROFILE_TABS = [
   { id: 'overview', label: 'Overview' },
@@ -31,29 +37,32 @@ export function MobileProfile({
   politiciansState,
 }) {
   const [activeTab, setActiveTab] = useState('overview')
-  const [congressData, setCongressData] = useState(null)
-  const [loadingCongress, setLoadingCongress] = useState(true)
+  const [timeline, setTimeline] = useState(null)
+  const citationReviews = useCitationReviews(politicianId)
 
   const profile = politicians.find(p => p.politicianId === politicianId)
+  const executive = profile && matchesBranch(profile, 'EXECUTIVE')
+  const congressHistory = useCongressMemberships(executive ? politicianId : null)
+  const hasLegislativeAccountability = useLegislativeAccountabilityAvailability(executive ? politicianId : null)
+  const showCongressHistory = !executive || congressHistory.memberships.length > 0 || congressHistory.authoredCount > 0
+  const isAdmin = dbUser?.role === 'ADMIN'
+  const tabs = PROFILE_TABS.filter(tab => tab.id !== 'legislation' || showCongressHistory || isAdmin || hasLegislativeAccountability)
+  const visibleTab = tabs.some(tab => tab.id === activeTab) ? activeTab : 'overview'
 
   useEffect(() => {
-    let cancelled = false
-    if (!politicianId) return
-
-    setLoadingCongress(true)
-    congressRequest(politicianId)
-      .then((data) => {
-        if (!cancelled) setCongressData(data)
+    if (!politicianId || activeTab !== 'accountability') return undefined
+    const controller = new AbortController()
+    fetch(`${API_BASE_URL}/api/politicians/${encodeURIComponent(politicianId)}/dashboard`, { signal: controller.signal })
+      .then(readApiResponse)
+      .then(data => {
+        if (!controller.signal.aborted) setTimeline({
+          politicianId, entries: accountabilityRecords(data.publishedTimelineLedger || data.timeline || data.entries || []),
+        })
+      }).catch(error => {
+        if (!controller.signal.aborted) setTimeline({ politicianId, error: error.message })
       })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setLoadingCongress(false)
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [politicianId])
+    return () => controller.abort()
+  }, [activeTab, politicianId])
 
   if (!profile) {
     return politiciansState?.status === 'idle' || politiciansState?.status === 'loading'
@@ -100,7 +109,7 @@ export function MobileProfile({
               color: '#0F172A',
               lineHeight: 1.25,
             }}>
-              {formatDisplayName(profile.fullName)}
+              {formatDisplayName(profile.fullName).name}
             </h2>
 
             <div style={{ fontSize: '0.8125rem', color: '#64748B', fontWeight: 500 }}>
@@ -118,7 +127,7 @@ export function MobileProfile({
                 borderRadius: '6px',
                 border: '1px solid #DBEAFE',
               }}>
-                WGI: {formatWgiScore(profile.wgiScore || profile.overallScore)}
+                WGI: {formatWgiScore(profile.wgiCompositeScore ?? profile.wgiScore ?? profile.overallScore)}
               </span>
               {profile.status && (
                 <span style={{
@@ -156,51 +165,52 @@ export function MobileProfile({
 
       {/* Segmented Sticky Sub-Navigation */}
       <MobileSegmentedTabs
-        tabs={PROFILE_TABS}
-        activeTab={activeTab}
+        tabs={tabs}
+        activeTab={visibleTab}
         onSelectTab={setActiveTab}
       />
 
       {/* Tab Panels */}
-      <div id={`panel-${activeTab}`} role="tabpanel" aria-labelledby={`tab-${activeTab}`}>
-        {activeTab === 'overview' && (
+      <div id={`panel-${visibleTab}`} role="tabpanel" aria-labelledby={`tab-${visibleTab}`}>
+        {visibleTab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <CongressMembershipSummary
-              memberships={congressData?.memberships || []}
-            />
-            <CongressProfilePanel
-              profile={profile}
-              congressData={congressData}
-              loading={loadingCongress}
-            />
+            <MobileBudgetTracked key={politicianId} politicianId={politicianId} total={profile.trackedBudgetAllocated} />
+            <div className="mobileCard" style={{ padding: '14px' }}>
+              <h3>Biography</h3>
+              <ProfileBiography biography={profile.biography} review={citationReviews.get(politicianId)} />
+            </div>
+            {showCongressHistory && <CongressMembershipSummary politicianId={politicianId} />}
           </div>
         )}
 
-        {activeTab === 'accomplishments' && (
+        {visibleTab === 'accomplishments' && (
           <div className="mobileCard" style={{ padding: '14px' }}>
             <AccomplishmentsSection
               politicianId={profile.politicianId}
               token={token}
+              reviews={citationReviews}
             />
           </div>
         )}
 
-        {activeTab === 'accountability' && (
+        {visibleTab === 'accountability' && (
           <div className="mobileCard" style={{ padding: '14px' }}>
-            <AccountabilityRecords
+            {timeline?.politicianId === politicianId && timeline.error ? <p role="alert">{timeline.error}</p>
+              : <AccountabilityRecords entries={timeline?.politicianId === politicianId ? timeline.entries : []}
+                loading={timeline?.politicianId !== politicianId} reviews={citationReviews} />}
+          </div>
+        )}
+
+        {visibleTab === 'legislation' && (
+          <div className="mobileCard" style={{ padding: '14px' }}>
+            {(showCongressHistory || isAdmin) && <CongressSourceSection
               politicianId={profile.politicianId}
+              isAdmin={isAdmin}
               token={token}
-            />
-          </div>
-        )}
-
-        {activeTab === 'legislation' && (
-          <div className="mobileCard" style={{ padding: '14px' }}>
-            <CongressSourceSection
-              politicianId={profile.politicianId}
-              congressData={congressData}
-              loading={loadingCongress}
-            />
+            />}
+            <LegislativeAccountabilitySection key={politicianId} politicianId={politicianId} isAdmin={isAdmin}
+              token={token} preferredChamber={chamberForPosition(profile.position)?.toUpperCase()} />
+            {isAdmin && token && <CongressProfilePanel politicianId={politicianId} token={token} />}
           </div>
         )}
       </div>

@@ -1,0 +1,48 @@
+{
+    "scope": "Profiles recorded as Mayor or Vice Mayor",
+    "affected": {
+        "accomplishments_to_delete": 0,
+        "timeline_entries_to_delete": 1,
+        "open_congress_links_to_detach": 1,
+        "profile_submissions_to_delete": 0,
+        "curation_audit_events_to_delete": 0,
+        "moderation_queue_rows_to_delete": 0,
+        "news_politician_associations_to_delete": 0,
+        "open_congress_person_revisions_retained": 1,
+        "article_bookmarks_on_linked_news_retained": 0,
+        "open_congress_membership_relationships_retained": 1,
+        "open_congress_bill_authorship_relationships_retained": 5,
+        "published_scoring_records_for_executive_profiles_to_reuse": 0
+    },
+    "blockers": [
+    ],
+    "deletion_list": [
+        {
+            "reason": "Profile position is Mayor or Vice Mayor",
+            "status": "ACTIVE",
+            "position": "VICE_MAYOR",
+            "full_name": "Tomas de la Rama Osmeña",
+            "person_id": "01K5ST4B0EK582X48JBZH7PCED",
+            "congresses": [
+                "15"
+            ],
+            "politician_id": "fa825b2b-1b28-4234-98e8-b7dd465cb08f"
+        }
+    ],
+    "current_profiles": 953,
+    "executive_roster": null,
+    "retained_profiles": 952,
+    "eligible_for_deletion": 1,
+    "current_public_profiles": 953,
+    "expected_final_profiles": 952,
+    "affected_rows_fingerprint": "53b531cb8e213fd09ce5a9255e8c6468",
+    "executive_profiles_to_add": 0,
+    "executive_profiles_to_reuse": 0,
+    "protected_executive_profiles": 18,
+    "expected_final_public_profiles": 952,
+    "retained_with_recent_membership": 947,
+    "verified_former_executive_exemptions": null,
+    "published_potential_scoring_timeline_rows_to_delete": 1,
+    "protected_executive_profiles_with_older_only_memberships": 2,
+    "retained_without_confirmed_recent_or_exclusively_older_memberships": 3
+}

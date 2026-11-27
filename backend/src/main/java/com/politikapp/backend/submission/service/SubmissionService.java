@@ -52,7 +52,7 @@ public class SubmissionService {
             ProfileEditSubmission submission = submissionRepository.save(ProfileEditSubmission.submitted(
                     payload.politicianId(),
                     contributorId,
-                    payload.sourceUrl(),
+                    CitationUrls.removeTracking(payload.sourceUrl()),
                     payload.categoryTag(),
                     payload.actionIdentifier(),
                     enrichedDetails,

@@ -8,11 +8,16 @@ import PoliticianEditor from '../../components/governance/PoliticianEditor'
 import EditSubmissionForm from '../../components/governance/EditSubmissionForm'
 import CongressProfilePanel from '../../components/governance/CongressProfilePanel'
 import CongressSourceSection from '../../components/governance/CongressSourceSection'
+import LegislativeAccountabilitySection from '../../components/governance/LegislativeAccountabilitySection'
 import AccomplishmentsSection from '../../components/governance/AccomplishmentsSection'
 import AccountabilityRecords from '../../components/governance/AccountabilityRecords'
+import ProfileBiography from '../../components/governance/ProfileBiography'
+import { useCitationReviews } from '../../features/verification/citationReviews'
 import { accountabilityRecords, filterAccountabilityRecords } from '../../features/congress/accountabilityRecords'
 import CongressMembershipSummary from '../../components/governance/CongressMembershipSummary'
 import { formatDisplayName } from '../../features/congress/displayName'
+import { chamberForPosition, matchesBranch } from '../../features/congress/politicianDirectory'
+import { useCongressMemberships, useLegislativeAccountabilityAvailability } from '../../features/congress/useCongressMemberships'
 import BaseModal from '../../components/BaseModal'
 import { API_BASE_URL, readApiResponse } from '../../api/client'
 import { congressRequest } from '../../api/congress'
@@ -113,6 +118,7 @@ export default function PoliticianProfilePage({
   const [draftPage, setDraftPage] = useState(1)
   const [managePage, setManagePage] = useState(1)
   const [accomplishments, setAccomplishments] = useState({ records: [], loading: true, error: '' })
+  const citationReviews = useCitationReviews(politicianId)
   const publicEntries = accountabilityRecords(verifiedEntries, accomplishments.politicianId === politicianId ? accomplishments.records : [])
   const visibleEntries = filterAccountabilityRecords(publicEntries, recordType, recordQuery)
   const [editing, setEditing] = useState(false)
@@ -121,6 +127,9 @@ export default function PoliticianProfilePage({
   const [congressDrafts, setCongressDrafts] = useState([])
   const [draftReview, setDraftReview] = useState(null)
   const isAdmin = dbUser?.role === 'ADMIN'
+  const executive = profile && matchesBranch(profile, 'EXECUTIVE')
+  const congressHistory = useCongressMemberships(executive ? politicianId : null)
+  const hasLegislativeAccountability = useLegislativeAccountabilityAvailability(executive ? politicianId : null)
   const [archived, setArchived] = useState(false)
 
   useEffect(() => { setArchived(false); setCongressDrafts([]); setDraftReview(null); setRecordPage(1); setDraftPage(1); setManagePage(1) }, [politicianId])
@@ -245,6 +254,9 @@ export default function PoliticianProfilePage({
   const curatedBills = verifiedEntries.filter(entry => entry.actionIdentifier === 'SPONSORED_LEGISLATION')
     .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')) || String(a.timelineId).localeCompare(String(b.timelineId)))
   const curatedPaged = paginate(curatedBills, curatedPage, 10)
+  const showCongressHistory = !executive || congressHistory.memberships.length > 0 || congressHistory.authoredCount > 0
+  const showLegislation = showCongressHistory || isAdmin || curatedBills.length > 0 || hasLegislativeAccountability
+  const visibleSection = section === 'legislative-records' && !showLegislation ? 'overview' : section
   const position = profile ? (profile.position ? formatPosition(profile.position) : 'Current office unverified') : ''
   const jurisdiction = profile ? formatJurisdiction(profile.jurisdiction) || 'Unspecified jurisdiction' : ''
   const party = profile ? profile.partyAffiliation || 'Party affiliation unavailable' : ''
@@ -281,7 +293,7 @@ export default function PoliticianProfilePage({
                   {profile.partyAffiliation && <span>{party}</span>}
                 </p>}
                 {(profile.termStart || profile.termEnd) && <p className="prTerm">Recorded term: {term}.</p>}
-                <CongressMembershipSummary politicianId={politicianId} detailed />
+                {showCongressHistory && <CongressMembershipSummary politicianId={politicianId} detailed />}
                 {termEnded && (
                   <p className="prNotice">This term has ended; current office information may be outdated.</p>
                 )}
@@ -298,10 +310,10 @@ export default function PoliticianProfilePage({
           </header>
 
           <nav className="prTabs" aria-label="Profile sections">
-            {profileSections.map(value => {
+            {profileSections.filter(value => value !== 'legislative-records' || showLegislation).map(value => {
               const { label, Icon } = sectionDetails[value]
               return <a key={value} href={profileHref(value)}
-                aria-current={section === value ? 'page' : undefined} onClick={event => {
+                aria-current={visibleSection === value ? 'page' : undefined} onClick={event => {
                   if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
                   event.preventDefault()
                   onSectionChange(value)
@@ -313,11 +325,11 @@ export default function PoliticianProfilePage({
           </nav>
           <StatusLine state={recordState} />
 
-          {section === 'overview' && <div className="prLayout">
+          {visibleSection === 'overview' && <div className="prLayout">
             <div className="prMain">
               <section className="prCard prBio">
                 <h2 className="prCardTitle">Biography</h2>
-                <p className={profile.biography ? undefined : 'prEmptyState'}>{profile.biography || 'No biography available.'}</p>
+                <ProfileBiography biography={profile.biography} review={citationReviews.get(politicianId)} />
               </section>
 
               <section className="prCard">
@@ -400,7 +412,7 @@ export default function PoliticianProfilePage({
                   </label>
                 </div>
 
-                <AccountabilityRecords entries={recordsPaged.pageItems} loading={state.status === 'loading' || accomplishments.politicianId !== politicianId || accomplishments.loading} emptyMessage={recordType === 'COA_FINDING' && !recordQuery.trim() ? 'No COA findings available.' : 'No accountability records match this selection.'} />
+                <AccountabilityRecords entries={recordsPaged.pageItems} reviews={citationReviews} loading={state.status === 'loading' || accomplishments.politicianId !== politicianId || accomplishments.loading} emptyMessage={recordType === 'COA_FINDING' && !recordQuery.trim() ? 'No COA findings available.' : 'No accountability records match this selection.'} />
                 {state.status === 'success' && <Pager paged={recordsPaged} onChange={setRecordPage} label="Record pagination" />}
                 <AccomplishmentsSection key={`accomplishments:${politicianId}:${isAdmin}`} politicianId={politicianId} isAdmin={isAdmin} token={token} embedded showPublic={false} onRecordsChange={setAccomplishments} />
               </section>
@@ -446,8 +458,11 @@ export default function PoliticianProfilePage({
               </section>
           </div>}
 
-          {section === 'legislative-records' && <div className="prMain">
-              <CongressSourceSection key={`congress-source:${politicianId}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />
+          {visibleSection === 'legislative-records' && <div className="prMain">
+              {(showCongressHistory || isAdmin) && <CongressSourceSection key={`congress-source:${politicianId}`} politicianId={politicianId} isAdmin={isAdmin} token={token} />}
+              <LegislativeAccountabilitySection key={`legislative-accountability:${politicianId}`}
+                politicianId={politicianId} isAdmin={isAdmin} token={token}
+                preferredChamber={chamberForPosition(profile.position)?.toUpperCase()} />
 
               {isAdmin && (
                 <CongressProfilePanel key={`congress-admin:${politicianId}`} politicianId={politicianId} token={token} onDraftCreated={loadCongressDrafts} />
@@ -522,15 +537,15 @@ export default function PoliticianProfilePage({
               )}
 
 
-            {curatedBills.length > 0 && <section className="prCard" aria-label="Verified legislative records">
-              <h2 className="prCardTitle">Verified legislative records</h2>
-              <AccountabilityRecords entries={curatedPaged.pageItems} />
-              <Pager paged={curatedPaged} onChange={setCuratedPage} label="Verified legislation pagination" />
+            {curatedBills.length > 0 && <section className="prCard" aria-label="Published legislative records">
+              <h2 className="prCardTitle">Published legislative records</h2>
+              <AccountabilityRecords entries={curatedPaged.pageItems} reviews={citationReviews} />
+              <Pager paged={curatedPaged} onChange={setCuratedPage} label="Published legislation pagination" />
             </section>}
           </div>}
 
           {section === 'accomplishments' &&
-            <AccomplishmentsSection key={politicianId} politicianId={politicianId} isAdmin={isAdmin} token={token} />}
+            <AccomplishmentsSection key={politicianId} politicianId={politicianId} isAdmin={isAdmin} token={token} reviews={citationReviews} />}
 
           {isAdmin && editing && (
             <PoliticianEditor

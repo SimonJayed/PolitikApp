@@ -14,6 +14,6 @@ public record SymmetricalKpiPayload(
         int coaAuditDiscrepancies,
         BigDecimal trackedBudgetAllocated,
         double legislativeEfficiencyRatio,
-        double wgiCompositeScore
+        Double wgiCompositeScore
 ) {
 }

@@ -1,6 +1,8 @@
 package com.politikapp.backend.submission.entity;
 
+import com.politikapp.backend.politician.entity.ActionDetailsConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -36,6 +38,7 @@ public class ProfileEditSubmission {
     private String actionIdentifier;
 
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    @Convert(converter = ActionDetailsConverter.class)
     @Column(name = "action_details")
     private Map<String, Object> actionDetails;
 

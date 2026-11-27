@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 /** An explicit population operation; source history never becomes curated KPI evidence. */
 @Service
 public class CongressPopulationService {
+    // Keep Tomas Osmeña's source history without recreating a Vice Mayor directory profile.
+    private static final Set<String> EXCLUDED_LOCAL_OFFICIALS = Set.of("01K5ST4B0EK582X48JBZH7PCED");
+
     public record Row(String personId, String name, UUID politicianId, String action, String reason) {}
     public record Report(String commit, boolean dryRun, int people, int created, int existingLinked,
                          int alreadyLinked, int skipped, long memberships, long billRelationships, List<Row> rows) {}
@@ -79,8 +82,10 @@ public class CongressPopulationService {
                 (rs, i) -> new Profile(rs.getObject(1, UUID.class), rs.getString(2), rs.getString(3)));
         var claimed = people.stream().filter(p -> p.linked()!=null).collect(Collectors.toMap(Person::linked, Person::id));
         var names = people.stream().collect(Collectors.groupingBy(p -> normalize(p.name()), Collectors.counting()));
+        var recentMemberships = peopleWithQualifyingMemberships();
+        recentMemberships.removeAll(EXCLUDED_LOCAL_OFFICIALS);
         var proposals = new HashMap<UUID,Integer>();
-        for (Person p : people) if (p.linked()==null) for (Profile candidate : profiles) {
+        for (Person p : people) if (p.linked()==null && recentMemberships.contains(p.id())) for (Profile candidate : profiles) {
             if (matches(candidate.name(),p.name(),p.payload())) proposals.merge(candidate.id(),1,Integer::sum);
         }
         var rows = new ArrayList<Row>();
@@ -90,6 +95,10 @@ public class CongressPopulationService {
             String action, reason;
             if (id != null) {
                 action="ALREADY_LINKED"; reason="Existing source identity retained."; already++;
+            } else if (EXCLUDED_LOCAL_OFFICIALS.contains(person.id())) {
+                action="SKIP"; reason="Politicians directory excludes this local officeholder."; skipped++;
+            } else if (!recentMemberships.contains(person.id())) {
+                action="SKIP"; reason="No documented membership from the 15th Congress onward."; skipped++;
             } else if (person.name()==null || person.name().isBlank() || person.name().length()>150
                     || person.payload().path("first_name").asText("").isBlank()
                     || person.payload().path("last_name").asText("").isBlank()) {
@@ -129,6 +138,28 @@ public class CongressPopulationService {
                 where rel.relationship='AUTHORED_BY' and rel.target_id is not null and e.kind='BILL'
                 """+" and rel.target_id in ("+placeholders+")) relationships", Long.class,eligibleIds.toArray());
         return new Report(commit,true,people.size(),created,linked,already,skipped,memberships,bills,List.copyOf(rows));
+    }
+
+    private Set<String> peopleWithQualifyingMemberships() {
+        Set<String> people = new HashSet<>();
+        jdbc.query("""
+                select rel.entity_id, rel.details::text
+                from public.open_congress_relationships rel
+                join public.open_congress_entities e on e.id=rel.entity_id
+                where e.kind='PERSON' and rel.relationship='MEMBER_OF' and e.politician_id is null
+                """, rs -> {
+            try {
+                String details = rs.getString(2);
+                if (details == null) return;
+                String congress = json.readTree(details).path("congress").asText("");
+                if (congress.matches("[0-9]{1,3}") && Integer.parseInt(congress) >= 15) {
+                    people.add(rs.getString(1));
+                }
+            } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
+                // A malformed membership supplies no qualifying Congress number.
+            }
+        });
+        return people;
     }
 
     static boolean matches(String profile, String sourceName, JsonNode payload) {

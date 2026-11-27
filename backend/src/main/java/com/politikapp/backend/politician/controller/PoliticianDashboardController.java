@@ -1,8 +1,10 @@
 package com.politikapp.backend.politician.controller;
 
 import com.politikapp.backend.politician.dto.ComparisonMatrixResponse;
+import com.politikapp.backend.politician.dto.BudgetBreakdownResponse;
 import com.politikapp.backend.politician.dto.DashboardCompositeResponse;
 import com.politikapp.backend.politician.service.ComparisonService;
+import com.politikapp.backend.politician.service.BudgetBreakdownService;
 import com.politikapp.backend.politician.service.DashboardService;
 import com.politikapp.backend.congress.CongressPublicService;
 import com.politikapp.backend.congress.OriginalSourceService;
@@ -21,18 +23,26 @@ public class PoliticianDashboardController {
     private final ComparisonService comparisonService;
     private final CongressPublicService congressPublicService;
     private final OriginalSourceService originalSources;
+    private final BudgetBreakdownService budgetBreakdown;
 
     public PoliticianDashboardController(DashboardService dashboardService, ComparisonService comparisonService,
-                                         CongressPublicService congressPublicService, OriginalSourceService originalSources) {
+                                         CongressPublicService congressPublicService, OriginalSourceService originalSources,
+                                         BudgetBreakdownService budgetBreakdown) {
         this.dashboardService = dashboardService;
         this.comparisonService = comparisonService;
         this.congressPublicService = congressPublicService;
         this.originalSources = originalSources;
+        this.budgetBreakdown = budgetBreakdown;
     }
 
     @GetMapping("/{politicianId}/dashboard")
     public ResponseEntity<DashboardCompositeResponse> getDashboard(@PathVariable UUID politicianId) {
         return ResponseEntity.ok(dashboardService.getDashboardData(politicianId));
+    }
+
+    @GetMapping("/{politicianId}/budget-breakdown")
+    public BudgetBreakdownResponse budgetBreakdown(@PathVariable UUID politicianId) {
+        return budgetBreakdown.get(politicianId);
     }
 
     @GetMapping("/{politicianId}/congress-records")

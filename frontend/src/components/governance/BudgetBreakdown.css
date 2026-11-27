@@ -1,0 +1,84 @@
+.metricCurrency {
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.budgetBreakdownAction {
+  justify-self: start;
+  width: fit-content;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  color: var(--ph-blue, #122a58);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-decoration: underline;
+  text-decoration-color: var(--ph-gold, #d6a94b);
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.budgetTrackedMobile {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+}
+
+.budgetTrackedMobile h3 { margin: 0; }
+.budgetTrackedMobile > strong { font-size: 1.5rem; color: var(--ph-blue, #122a58); }
+.budgetTrackedMobile .kpiIndicatorTop { display: flex; justify-content: space-between; align-items: center; }
+.budgetTrackedMobile .kpiIndicatorTop > * {
+  display: grid;
+  place-items: center;
+  height: 36px;
+  width: 36px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--ph-blue, #122a58);
+  background: var(--bg-inset, #fbf7ed);
+}
+.budgetTrackedMobile .kpiIndicatorHelp { cursor: pointer; }
+
+.budgetBreakdownDialog .sharedModalBody {
+  color: var(--text, #182643);
+  background: var(--bg-inset, #fbf7ed);
+}
+
+.budgetBreakdownIntro { margin: 0 0 14px; }
+.budgetBreakdownSummary,
+.budgetBreakdownAllocations > li {
+  padding: clamp(12px, 2.4vw, 18px);
+  background: var(--bg-surface, #fffdf8);
+  border: 1px solid var(--line-soft, #e4ddcc);
+  border-radius: var(--radius-md, 12px);
+}
+
+.budgetBreakdownSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  border-inline-start: 4px solid var(--ph-gold, #d6a94b);
+}
+
+.budgetBreakdownSummary div { display: grid; gap: 3px; min-width: 0; }
+.budgetBreakdownSummary strong { font-size: clamp(1.2rem, 4.5vw, 1.65rem); }
+.budgetBreakdownSummary strong,
+.budgetAllocationHeading strong { color: var(--ph-blue, #122a58); overflow-wrap: anywhere; }
+.budgetBreakdownAllocations { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 10px; }
+.budgetAllocationHeading { display: flex; justify-content: space-between; align-items: baseline; gap: 6px 16px; }
+.budgetAllocationHeading h3 { margin: 0; font-size: 0.95rem; min-width: 0; overflow-wrap: anywhere; }
+.budgetAllocationHeading strong { flex: 0 1 auto; }
+.budgetAllocationMetadata { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 6px; }
+.budgetAllocationMetadata,
+.budgetAllocationNoSource { color: var(--muted, #53617a); font-size: 0.81rem; overflow-wrap: anywhere; }
+.budgetAllocationShare { font-size: 0.83rem; font-weight: 700; margin: 10px 0 4px; }
+.budgetAllocationBar { height: 7px; background: #e8e0d0; overflow: hidden; border-radius: 999px; margin-bottom: 8px; }
+.budgetAllocationBar > span { height: 100%; display: block; background: var(--ph-gold, #d6a94b); }
+
+@media (max-width: 520px) {
+  .budgetAllocationHeading { flex-direction: column; }
+}

@@ -1,0 +1,270 @@
+[
+  {
+    "name": "Ferdinand Romualdez Marcos Jr.",
+    "position": "PRESIDENT",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": "c9169871-4006-401a-8bf7-51d6a8820fb3",
+    "term_start": "2022-06-30",
+    "term_end": "2028-06-30"
+  },
+  {
+    "name": "Sara Zimmerman Duterte",
+    "position": "VICE_PRESIDENT",
+    "source": "https://www.pna.gov.ph/article/senate-skips-questions-on-ovps-p7852-m-2027-budget",
+    "profile_id": null,
+    "term_start": "2022-06-30",
+    "term_end": "2028-06-30"
+  },
+  {
+    "name": "Ralph Gonzalez Recto",
+    "position": "EXECUTIVE_EXECUTIVE_SECRETARY",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": "bdc2a03c-dddf-35e3-b79e-164a1168d442"
+  },
+  {
+    "name": "Benjamin De Castro Abalos Jr.",
+    "position": "EXECUTIVE_CABINET_SECRETARY",
+    "source": "https://pco.gov.ph/news_releases/president-marcos-appoints-abalos-as-cabinet-secretary-2/",
+    "profile_id": "ef19826e-d830-325f-a73b-41112d4c0d1e"
+  },
+  {
+    "name": "Conrado M. Estrella III",
+    "position": "EXECUTIVE_SECRETARY_OF_AGRARIAN_REFORM",
+    "source": "https://pco.gov.ph/presidential-speech/speech-by-president-ferdinand-r-marcos-jr-at-the-mass-oath-taking-of-newly-promoted-and-newly-hired-deped-personnel-from-the-province-of-pangasinan/",
+    "profile_id": "84c6038a-8614-3076-b16c-7121964cda3b"
+  },
+  {
+    "name": "Francisco P. Tiu Laurel Jr.",
+    "position": "EXECUTIVE_SECRETARY_OF_AGRICULTURE",
+    "source": "https://sagipsaka.da.gov.ph/wp-content/uploads/2026/10/AC-05-2026-AMENDMENT-TO-AC-08-2019-IRR-OF-RA-11321-SAGIP-SAKA-ACT.pdf",
+    "profile_id": null
+  },
+  {
+    "name": "Kim Robert C. De Leon",
+    "position": "EXECUTIVE_SECRETARY_OF_BUDGET_AND_MANAGEMENT",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Arsenio M. Balisacan",
+    "position": "EXECUTIVE_SECRETARY_OF_ECONOMY_PLANNING_AND_DEVELOPMENT",
+    "source": "https://www.pna.gov.ph/article/depdev-seeks-strengthened-intl-trade-cooperation-amid-global-uncertainty",
+    "profile_id": null
+  },
+  {
+    "name": "Juan Edgardo Manalang Angara",
+    "position": "EXECUTIVE_SECRETARY_OF_EDUCATION",
+    "source": "https://pco.gov.ph/presidential-speech/speech-by-president-ferdinand-r-marcos-jr-at-the-mass-oath-taking-of-newly-promoted-and-newly-hired-deped-personnel-from-the-province-of-pangasinan/",
+    "profile_id": "ea7b86cd-0b10-3938-8b5d-5e21b7b9b258"
+  },
+  {
+    "name": "Sharon S. Garin",
+    "position": "EXECUTIVE_SECRETARY_OF_ENERGY",
+    "source": "https://doe.gov.ph/doe-reinforces-power-supply-readiness-amid-looming-el-nio",
+    "profile_id": "89e4862d-df13-3f08-9ba6-f2d6ed5c376f"
+  },
+  {
+    "name": "Juan Miguel T. Cuna",
+    "position": "EXECUTIVE_SECRETARY_OF_ENVIRONMENT_AND_NATURAL_RESOURCES",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Frederick D. Go",
+    "position": "EXECUTIVE_SECRETARY_OF_FINANCE",
+    "source": "https://www.pna.gov.ph/article/frederick-go-stays-as-dof-chief-to-sustain-fiscal-reforms",
+    "profile_id": null
+  },
+  {
+    "name": "Ma. Theresa P. Lazaro",
+    "position": "EXECUTIVE_SECRETARY_OF_FOREIGN_AFFAIRS",
+    "source": "https://dfa.gov.ph/images/2026/Officers_Directory_in_the_Home_Office_as_of_09_January_2026.docx.pdf",
+    "profile_id": null
+  },
+  {
+    "name": "Edwin M. Mercado",
+    "position": "EXECUTIVE_SECRETARY_OF_HEALTH",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Jose Ramon P. Aliling",
+    "position": "EXECUTIVE_SECRETARY_OF_HUMAN_SETTLEMENTS_AND_URBAN_DEVELOPMENT",
+    "source": "https://nha.gov.ph/wp-content/uploads/2025/05/DHSUD-SEC-ALILING-BIO.pdf",
+    "profile_id": null
+  },
+  {
+    "name": "Robert Joseph de Claro",
+    "position": "EXECUTIVE_SECRETARY_OF_INFORMATION_AND_COMMUNICATIONS_TECHNOLOGY",
+    "source": "https://pco.gov.ph/news_releases/pbbm-appoints-robert-joseph-de-claro-as-new-dict-secretary/",
+    "profile_id": null
+  },
+  {
+    "name": "Juanito Victor C. Remulla",
+    "position": "EXECUTIVE_SECRETARY_OF_THE_INTERIOR_AND_LOCAL_GOVERNMENT",
+    "source": "https://region6.dilg.gov.ph/remulla-calls-for-stronger-family-school-involvement-against-evolving-threats-to-children/",
+    "profile_id": null
+  },
+  {
+    "name": "Fredderick A. Vida",
+    "position": "EXECUTIVE_SECRETARY_OF_JUSTICE",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Francis N. Tolentino",
+    "position": "EXECUTIVE_SECRETARY_OF_LABOR_AND_EMPLOYMENT",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": "b580dc3e-dd78-3842-8013-27267687dd89"
+  },
+  {
+    "name": "Hans Leo J. Cacdac",
+    "position": "EXECUTIVE_SECRETARY_OF_MIGRANT_WORKERS",
+    "source": "https://dmw.gov.ph/news-releases/news-release-102026-3",
+    "profile_id": null
+  },
+  {
+    "name": "Gilberto Eduardo Gerardo Cojuangco Teodoro Jr.",
+    "position": "EXECUTIVE_SECRETARY_OF_NATIONAL_DEFENSE",
+    "source": "https://pco.gov.ph/presidential-speech/speech-by-president-ferdinand-r-marcos-jr-at-the-oath-taking-of-the-newly-promoted-generals-and-flag-officers-of-the-armed-forces-of-the-philippines-afp/",
+    "profile_id": "dab59b3a-25d0-3522-9b62-7054d5acf79b"
+  },
+  {
+    "name": "Giovanni Z. Lopez",
+    "position": "EXECUTIVE_SECRETARY_OF_PUBLIC_WORKS_AND_HIGHWAYS",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Renato U. Solidum Jr.",
+    "position": "EXECUTIVE_SECRETARY_OF_SCIENCE_AND_TECHNOLOGY",
+    "source": "https://www.dost.gov.ph/transparency/about-dost/the-secretary",
+    "profile_id": null
+  },
+  {
+    "name": "Rexlon Ting Gatchalian",
+    "position": "EXECUTIVE_SECRETARY_OF_SOCIAL_WELFARE_AND_DEVELOPMENT",
+    "source": "https://www.dswd.gov.ph/dswds-air-to-water-project-in-masbate-built-for-long-term-community-resilience-not-just-for-el-nino-sec-gatchalian/",
+    "profile_id": "22139e3e-f03f-3cfe-938f-62c9eda12a19"
+  },
+  {
+    "name": "Maria Bernardita A. Mathay",
+    "position": "EXECUTIVE_SECRETARY_OF_TOURISM",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Ma. Cristina Aldeguer-Roque",
+    "position": "EXECUTIVE_SECRETARY_OF_TRADE_AND_INDUSTRY",
+    "source": "https://msmehub.dti.gov.ph/dti-strengthens-b2b-market-linkages-with-continuing-initiatives/",
+    "profile_id": null
+  },
+  {
+    "name": "Vince Dizon",
+    "position": "EXECUTIVE_SECRETARY_OF_TRANSPORTATION",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Lino Edgardo Schramm Cayetano",
+    "position": "EXECUTIVE_ACTING_SECRETARY_OF_THE_PRESIDENTIAL_COMMUNICATIONS_OFFICE",
+    "source": "https://pco.gov.ph/news_releases/pco-changes-to-be-gradual-guided-by-continuous-performance-evaluation-cayetano/",
+    "profile_id": "1fc507ac-3204-3c55-9f99-36bec920b4e4"
+  },
+  {
+    "name": "Antonio Ernesto F. Lagdameo Jr.",
+    "position": "EXECUTIVE_SPECIAL_ASSISTANT_TO_THE_PRESIDENT",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": "50585964-dd47-3f5d-968b-219810d00814"
+  },
+  {
+    "name": "Mel Senen Sevilla Sarmiento",
+    "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_ON_PEACE_RECONCILIATION_AND_UNITY",
+    "source": "https://peace.gov.ph/2026/11/sec-sarmiento-reaffirms-national-government-support-for-new-barmm-administration/",
+    "profile_id": "65cf7969-56cb-30a6-8fd1-f631a726a2a2"
+  },
+  {
+    "name": "Eduardo S. L. Oban Jr.",
+    "position": "EXECUTIVE_NATIONAL_SECURITY_ADVISER",
+    "source": "https://nsc.gov.ph/nsc-officials/",
+    "profile_id": null
+  },
+  {
+    "name": "Gay Jane P. Perez",
+    "position": "EXECUTIVE_DIRECTOR_GENERAL_OF_THE_PHILIPPINE_SPACE_AGENCY",
+    "source": "https://pco.gov.ph/news_releases/pbbm-swears-in-10-key-cabinet-officials-presses-stronger-accountability-and-results-for-filipinos/",
+    "profile_id": null
+  },
+  {
+    "name": "Shirley C. Agrupis",
+    "position": "EXECUTIVE_CHAIRPERSON_OF_THE_COMMISSION_ON_HIGHER_EDUCATION",
+    "source": "https://ro11.ched.gov.ph/2026/11/23/ched-ibm-forge-partnership-to-bring-industry-recognized-digital-and-ai-skills-into-higher-education/12684/press-release/",
+    "profile_id": null
+  },
+  {
+    "name": "Jose Francisco B. Benitez",
+    "position": "EXECUTIVE_DIRECTOR_GENERAL_OF_TESDA",
+    "source": "https://www.tesda.gov.ph/Directory",
+    "profile_id": "581f149f-1e86-3c88-9976-834ec4811183"
+  },
+  {
+    "name": "Jose Ma. Clemente Sarte Salceda",
+    "position": "EXECUTIVE_PRESIDENTIAL_LEGISLATIVE_OFFICER",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": "64a1ce34-986e-3edb-b965-c41bdbef7110"
+  },
+  {
+    "name": "Nasser C. Pangandaman Sr.",
+    "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_MARAWI_REHABILITATION",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": "93d6ef2c-f76d-39fb-93fe-679dae9532c0"
+  },
+  {
+    "name": "Jose Rizalino L. Acuzar",
+    "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_ON_PASIG_RIVER_REHABILITATION",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": null
+  },
+  {
+    "name": "Ma. Esperanza Christina C. Frasco",
+    "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_SUSTAINABLE_AND_RESILIENT_COMMUNITIES",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": null
+  },
+  {
+    "name": "Andres C. Centino",
+    "position": "EXECUTIVE_PRESIDENTIAL_ASSISTANT_FOR_MARITIME_CONCERNS",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": null
+  },
+  {
+    "name": "Antonio H. Cerilles",
+    "position": "EXECUTIVE_PRESIDENTIAL_ADVISER_FOR_MINDANAO_CONCERNS",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": "6ebe2a4e-9784-34f4-8ca8-16db9c4a12c8"
+  },
+  {
+    "name": "Philip G. Lo",
+    "position": "EXECUTIVE_PRESIDENTIAL_ASSISTANT_FOR_THE_VISAYAS",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": null
+  },
+  {
+    "name": "Leo Tereso A. Magno",
+    "position": "EXECUTIVE_CHAIRPERSON_OF_THE_MINDANAO_DEVELOPMENT_AUTHORITY",
+    "source": "https://peace.gov.ph/2026/11/sec-sarmiento-reaffirms-national-government-support-for-new-barmm-administration/",
+    "profile_id": null
+  },
+  {
+    "name": "Elaine T. Masukat",
+    "position": "EXECUTIVE_HEAD_OF_THE_PRESIDENTIAL_MANAGEMENT_STAFF",
+    "source": "https://bataan.gov.ph/news/hor-approves-budgets-of-the-office-of-the-president-and-presidential-management-staff/",
+    "profile_id": null
+  },
+  {
+    "name": "Anna Liza G. Logan",
+    "position": "EXECUTIVE_CHIEF_PRESIDENTIAL_LEGAL_COUNSEL",
+    "source": "https://op-proper.gov.ph/transparency-seal-2/op-officials-directory/",
+    "profile_id": null
+  }
+]

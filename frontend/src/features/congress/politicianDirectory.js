@@ -16,6 +16,16 @@ function memberships(person, metadata) {
   return metadata?.get(person.politicianId)?.memberships || []
 }
 
+export function matchesBranch(person, branch, metadata) {
+  if (branch === 'ALL') return true
+  const position = normalizePosition(person.position)
+  const executive = position.startsWith('EXECUTIVE_')
+    || ['PRESIDENT', 'VICE_PRESIDENT', 'GOVERNOR', 'VICE_GOVERNOR', 'MAYOR', 'VICE_MAYOR'].includes(position)
+  if (branch === 'EXECUTIVE') return executive
+  return branch === 'LEGISLATIVE' && !executive && Boolean(chamberForPosition(position)
+    || position === 'CITY_COUNCILOR' || memberships(person, metadata).some(member => chamberForPosition(member.chamber)))
+}
+
 export function matchesPosition(person, position, metadata) {
   if (position === 'ALL') return true
   const chamber = chamberForPosition(position)
@@ -53,6 +63,7 @@ export function directoryRank(person, metadata, currentCongress, today) {
   const active = currentTerm(person, today)
   if (active && position === 'PRESIDENT') return 0
   if (active && position === 'VICE_PRESIDENT') return 1
+  if (person.status === 'ACTIVE' && position.startsWith('EXECUTIVE_')) return 3.5
   const other = { GOVERNOR: 4, VICE_GOVERNOR: 5, MAYOR: 6, VICE_MAYOR: 7, CITY_COUNCILOR: 8 }
   if (active && Object.hasOwn(other, position)) return other[position]
   const records = memberships(person, metadata)
