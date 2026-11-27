@@ -1,21 +1,15 @@
-# Stage 1: Build JAR using Maven Wrapper
-FROM eclipse-temurin:17-jdk-alpine AS builder
+# Stage 1: Build JAR using Maven
+FROM maven:3.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /workspace
 
-RUN apk add --no-cache bash
-
-COPY mvnw pom.xml ./
-COPY .mvn .mvn
-
-# Clean CRLF line endings from Windows checkouts
-RUN sed -i 's/\r$//' mvnw && chmod +x mvnw
+COPY pom.xml ./
 
 # Cache dependencies
-RUN ./mvnw dependency:go-offline -B
+RUN mvn dependency:go-offline -B
 
 # Build executable JAR
 COPY src src
-RUN ./mvnw clean package -DskipTests -B
+RUN mvn clean package -DskipTests -B
 
 # Stage 2: Minimal Production JRE Runtime
 FROM eclipse-temurin:17-jre-alpine AS runner
